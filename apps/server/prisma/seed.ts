@@ -22,7 +22,7 @@ import {
   rolePermissionRepository,
   roleRepository,
 } from "@/repositories";
-import { _migrateDepartments, _migrateEmployeeManagers, _migrateEmployees, _migrateJourneyNotes, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { _migrateDepartments, _migrateEmployeeManagers, _migrateEmployees, _migrateJourneyNotes, _migrateContacts, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService, microsoftService } from "@/services";
 import {
   FEED_PERFORMANCE_SHEET_SEED,
@@ -827,6 +827,57 @@ async function seedCatalog() {
   }
 }
 
+async function seedJourneys() {
+  try {
+    const firstEmployee = await prisma.employee.findFirst({
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (!firstEmployee) {
+      logger.error("No employees found to create dummy company");
+      return;
+    }
+
+    const DUMMY_LEGACY_COMPANY_UUID = '00000000-0000-0000-0000-000000000000';
+
+    let dummyCompany = await prisma.company.findUnique({
+      where: { id: DUMMY_LEGACY_COMPANY_UUID },
+    });
+
+    if (!dummyCompany) {
+      dummyCompany = await prisma.company.create({
+        data: {
+          id: DUMMY_LEGACY_COMPANY_UUID,
+          name: "Legacy Companies",
+          status: "ACTIVE",
+          createdById: firstEmployee.id,
+          updatedById: firstEmployee.id,
+        },
+      });
+      logger.info(`Created dummy company for legacy contacts: ${dummyCompany.id}`);
+    }
+
+    const existingContacts = await prisma.contact.count();
+
+    if (existingContacts === 0) {
+      logger.info("Seeding journeys and contacts...");
+
+      await _migrateJourneyNotes(legacyService);
+
+      const contactsFromContactsTable = await _migrateContacts(dummyCompany.id, legacyService);
+      logger.info(`Contacts (from Contacts table): ${contactsFromContactsTable.created} created, ${contactsFromContactsTable.skipped} skipped, ${contactsFromContactsTable.errors} errors`);
+
+      await closeDatabaseConnections();
+    }
+    else {
+      logger.info(`Found ${existingContacts} existing contacts. Skipping journey seeding.`);
+    }
+  }
+  catch (error) {
+    logger.error("Error during journey seeding:", error);
+  }
+}
+
 export async function seedDatabase() {
   await seedEmployees();
   // await seedPermissions();
@@ -835,7 +886,7 @@ export async function seedDatabase() {
   await seedServiceTechDailyForm();
   await seedPerformanceSheetVersions();
   await seedCatalog();
-  await _migrateJourneyNotes(legacyService);
+  await seedJourneys();
 
   logger.info("All seeding completed successfully");
 }

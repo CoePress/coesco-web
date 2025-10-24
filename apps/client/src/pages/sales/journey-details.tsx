@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit, Plus, User, Trash2, Search } from "lucide-react";
-import { PageHeader, Tabs, Table, Button, Modal, AddJourneyContactModal } from "@/components";
+import { PageHeader, Tabs, Table, Button, Modal, AddContactModal } from "@/components";
 import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
@@ -214,11 +214,12 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     Contact_Note: "",
   });
 
-  const [showAddJourneyContactModal, setShowAddJourneyContactModal] = useState(false);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<any>(null);
 
   const [journeyNotes, setJourneyNotes] = useState<any[]>([]);
   const [journeyNextSteps, setJourneyNextSteps] = useState<any[]>([]);
+  const [lastActivityDate, setLastActivityDate] = useState<string | null>(null);
   const [newNoteBody, setNewNoteBody] = useState("");
   const [newNextStepBody, setNewNextStepBody] = useState("");
   const [isCreatingNote, setIsCreatingNote] = useState(false);
@@ -286,6 +287,31 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       }
     };
     fetchNextSteps();
+  }, [journey?.ID, journey?.id]);
+
+  useEffect(() => {
+    const fetchLastActivity = async () => {
+      if (!journey?.ID && !journey?.id) return;
+      try {
+        const journeyId = journey.ID || journey.id;
+        const activityData = await api.get('/core/notes', {
+          filter: JSON.stringify({
+            entityId: journeyId,
+            entityType: "journey",
+            type: "LastActivity"
+          }),
+          sort: 'createdAt',
+          order: 'desc',
+          limit: 1
+        });
+        if (activityData?.success && Array.isArray(activityData.data) && activityData.data.length > 0) {
+          setLastActivityDate(activityData.data[0].body);
+        }
+      } catch (error) {
+        console.error('Error fetching last activity:', error);
+      }
+    };
+    fetchLastActivity();
   }, [journey?.ID, journey?.id]);
 
   const handleCreateNote = async () => {
@@ -551,6 +577,23 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const navigate = useNavigate();
 
+  const updateLastActivity = async () => {
+    if (!journey?.ID && !journey?.id) return;
+    try {
+      const journeyId = journey.ID || journey.id;
+      const now = new Date().toISOString();
+      await api.post('/core/notes', {
+        body: now,
+        entityId: journeyId,
+        entityType: "journey",
+        type: "LastActivity",
+        createdBy: employee?.initials
+      });
+      setLastActivityDate(now);
+    } catch (error) {
+      console.error('Error updating last activity:', error);
+    }
+  };
 
   const handleSaveDetails = async () => {
     const baseUpdates = {
@@ -569,6 +612,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       setIsEditingDetails(false);
       const stageId = STAGES.find(s => s.label === detailsForm.stage)?.id;
       updateJourney({ ...rawUpdates, stage: stageId });
+      await updateLastActivity();
     }
   };
 
@@ -580,7 +624,11 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     const originalUpdates = { Visit_Date: detailsForm.visitDate, Anticipated_Visit_Date: detailsForm.anticipatedVisitDate, Visit_Outcome: detailsForm.visitOutcome };
     const rawUpdates = { Visit_Date: formatDateForDatabase(detailsForm.visitDate), Anticipated_Visit_Date: formatDateForDatabase(detailsForm.anticipatedVisitDate), Visit_Outcome: detailsForm.visitOutcome };
     const success = await saveJourneyUpdates(api, journey, rawUpdates, originalUpdates, employee, setIsSaving);
-    if (success) { setIsEditingVisitLogging(false); updateJourney(rawUpdates); }
+    if (success) {
+      setIsEditingVisitLogging(false);
+      updateJourney(rawUpdates);
+      await updateLastActivity();
+    }
   };
 
   const handleCancelVisitLogging = () => {
@@ -591,7 +639,11 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const handleSaveCustomer = async () => {
     const updates = { Company_ID: customerForm.companyId, Industry: customerForm.industry, Target_Account: companyName, Address_ID: customerForm.addressId };
     const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
-    if (success) { setIsEditingCustomer(false); updateJourney(updates); }
+    if (success) {
+      setIsEditingCustomer(false);
+      updateJourney(updates);
+      await updateLastActivity();
+    }
   };
 
   const handleCancelCustomer = () => {
@@ -631,34 +683,67 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const handleSetPrimaryContact = async (contactId: string, JourneyID: string) => {
     if (!journey?.ID && !journey?.id) return;
-    
+
     const originalContacts = journeyContacts;
-    
-    setJourneyContacts(prevContacts => 
+    const selectedContact = journeyContacts.find(c => c.ID === contactId);
+
+    if (!selectedContact) {
+      console.error('Could not find contact with ID:', contactId);
+      return;
+    }
+
+    const isPrismaContact = selectedContact._isPrisma === true;
+
+    setJourneyContacts(prevContacts =>
       prevContacts.map(contact => ({
         ...contact,
         IsPrimary: contact.ID === contactId ? 1 : 0
       }))
     );
-    
+
     setIsSaving(true);
     try {
-      const bulkUpdateResult = await api.patch(
-        `/legacy/std/Journey_Contact/filter/custom?filterField=Jrn_ID&filterValue=${JourneyID}`,
-        { IsPrimary: 0 }
-      );
-      
-      if (bulkUpdateResult !== null) {
-        const primaryUpdateResult = await api.patch(
-          `/legacy/std/Journey_Contact/${contactId}`,
-          { IsPrimary: 1 }
-        );
-        
-        if (primaryUpdateResult === null) {
+      if (isPrismaContact) {
+        const result = await api.patch(`/sales/journey-contacts/${contactId}`, {
+          isPrimary: true
+        });
+
+        if (!result) {
           setJourneyContacts(originalContacts);
         }
       } else {
-        setJourneyContacts(originalContacts);
+        await Promise.all([
+          api.patch(
+            `/legacy/std/Journey_Contact/filter/custom?filterField=Jrn_ID&filterValue=${JourneyID}`,
+            { IsPrimary: 0 }
+          ).catch(err => {
+            console.error('Error clearing legacy primaries:', err);
+          }),
+          api.get('/sales/journey-contacts', {
+            filter: JSON.stringify({ journeyId: JourneyID, isPrimary: true })
+          }).then(async (result) => {
+            if (result?.success && Array.isArray(result.data) && result.data.length > 0) {
+              const updatePromises = result.data.map((jc: any) =>
+                api.patch(`/sales/journey-contacts/${jc.id}`, { isPrimary: false })
+                  .catch(err => {
+                    console.error(`Failed to clear primary for journey contact ${jc.id}:`, err);
+                    return null;
+                  })
+              );
+              await Promise.all(updatePromises);
+            }
+          }).catch(err => {
+            console.error('Error fetching Prisma contacts to clear:', err);
+          })
+        ]);
+
+        const result = await api.patch(`/legacy/std/Journey_Contact/${contactId}`, {
+          IsPrimary: 1
+        });
+
+        if (result === null) {
+          setJourneyContacts(originalContacts);
+        }
       }
     } catch (error) {
       console.error("Error updating primary contact:", error);
@@ -734,12 +819,20 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       return;
     }
 
+    const isPrismaContact = contactToDelete._isPrisma === true;
+
     setIsSaving(true);
     try {
-      const result = await api.delete(`/legacy/std/Journey_Contact/${contactToDelete.ID}`);
-      
+      let result;
+
+      if (isPrismaContact) {
+        result = await api.delete(`/sales/journey-contacts/${contactToDelete.ID}`);
+      } else {
+        result = await api.delete(`/legacy/std/Journey_Contact/${contactToDelete.ID}`);
+      }
+
       if (result !== null) {
-        setJourneyContacts(prevContacts => 
+        setJourneyContacts(prevContacts =>
           prevContacts.filter(contact => contact.ID !== contactToDelete.ID)
         );
         setContactToDelete(null);
@@ -755,60 +848,58 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     }
   };
 
-  const handleContactAdded = async (newContact: any) => {
-    if (newContact.ID && newContact.Jrn_ID && !newContact.Cont_Id && !newContact._needsRefresh) {
-      setJourneyContacts(prev => {
-        if (newContact.IsPrimary === 1) {
-          const updatedContacts = prev.map(contact => ({
-            ...contact,
-            IsPrimary: 0
-          }));
-          return [...updatedContacts, newContact];
-        }
-        return [...prev, newContact];
-      });
-      return;
-    }
+  const handleContactAdded = async () => {
+    if (!journey?.ID && !journey?.id) return;
 
-    if (newContact._needsRefresh && newContact.Jrn_ID) {
-      try {
-        const contactsData = await api.get('/legacy/std/Journey_Contact/filter/custom', {
+    try {
+      const journeyId = journey.ID || journey.id;
+
+      console.log('[DEBUG] Refreshing journey contacts for journey:', journeyId);
+
+      const [legacyContacts, prismaContacts] = await Promise.all([
+        api.get('/legacy/std/Journey_Contact/filter/custom', {
           filterField: 'Jrn_ID',
-          filterValue: newContact.Jrn_ID
-        });
-        
-        if (contactsData !== null && Array.isArray(contactsData)) {
-          setJourneyContacts(contactsData);
-        }
-      } catch (error) {
-        console.error("Error refreshing journey contacts:", error);
-      }
-      return;
-    }
+          filterValue: journeyId
+        }).catch(err => {
+          console.error('[DEBUG] Error fetching legacy contacts:', err);
+          return [];
+        }),
+        api.get('/sales/journey-contacts', {
+          filter: JSON.stringify({ journeyId }),
+          include: JSON.stringify({ contact: true })
+        }).then(result => {
+          console.log('[DEBUG] Prisma journey-contacts result:', result);
+          const contacts = result?.success && Array.isArray(result.data) ? result.data : [];
+          return contacts.map((jc: any) => ({
+            ID: jc.id,
+            Jrn_ID: jc.journeyId,
+            Contact_ID: jc.contactId,
+            Contact_Name: jc.contact ? `${jc.contact.firstName} ${jc.contact.lastName}`.trim() : '',
+            Contact_Position: jc.contact?.title || '',
+            Contact_Email: jc.contact?.email || '',
+            Contact_Office: jc.contact?.phone || '',
+            Contact_Mobile: jc.contact?.phoneExtension || '',
+            Contact_Note: '',
+            IsPrimary: jc.isPrimary ? 1 : 0,
+            _isPrisma: true
+          }));
+        }).catch(err => {
+          console.error('[DEBUG] Error fetching prisma contacts:', err);
+          return [];
+        })
+      ]);
 
-    if (newContact.Cont_Id && (journey?.ID || journey?.id)) {
-      try {
-        const journeyId = journey.ID || journey.id;
-        const journeyContactData = {
-          Jrn_ID: journeyId,
-          Contact_ID: newContact.Cont_Id,
-          Contact_Name: `${newContact.FirstName || ''} ${newContact.LastName || ''}`.trim(),
-          Contact_Position: "",
-          Contact_Email: newContact.Email || "",
-          Contact_Office: newContact.PhoneNumber || "",
-          Contact_Mobile: "",
-          Contact_Note: newContact.Notes || "",
-          IsPrimary: journeyContacts.length === 0 ? 1 : 0,
-        };
+      const legacyArray = Array.isArray(legacyContacts) ? legacyContacts : [];
 
-        const journeyContact = await api.post("/legacy/std/Journey_Contact", journeyContactData);
+      console.log('[DEBUG] Legacy contacts count:', legacyArray.length);
+      console.log('[DEBUG] Prisma contacts count:', prismaContacts.length);
 
-        if (journeyContact !== null) {
-          setJourneyContacts(prev => [...prev, journeyContact]);
-        }
-      } catch (error) {
-        console.error("Error creating journey contact link:", error);
-      }
+      const mergedContacts = [...legacyArray, ...prismaContacts];
+      console.log('[DEBUG] Total merged contacts:', mergedContacts.length);
+
+      setJourneyContacts(mergedContacts);
+    } catch (error) {
+      console.error("[DEBUG] Error refreshing journey contacts:", error);
     }
   };
 
@@ -970,7 +1061,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                   <Button
                     variant="secondary-outline"
                     size="sm"
-                    onClick={() => setShowAddJourneyContactModal(true)}
+                    onClick={() => setShowAddContactModal(true)}
                     disabled={isSaving}
                   >
                     <Plus size={14} />
@@ -1055,7 +1146,16 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                             ) : (
                               <>
                                 <div className="text-sm text-text font-medium mb-1">
-                                  {contact.Contact_Name || "Unnamed Contact"}
+                                  {contact._isPrisma && contact.Contact_ID ? (
+                                    <button
+                                      onClick={() => navigate(`/sales/contacts/${contact.Contact_ID}`)}
+                                      className="text-primary hover:underline cursor-pointer"
+                                    >
+                                      {contact.Contact_Name || "Unnamed Contact"}
+                                    </button>
+                                  ) : (
+                                    <span>{contact.Contact_Name || "Unnamed Contact"}</span>
+                                  )}
                                 </div>
                                 {contact.Contact_Position && (
                                   <div className="text-xs text-text-muted mb-1">
@@ -1077,6 +1177,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                             {editingContactId !== contact.ID && (
                               <>
                                 {isPrimary && <span className="text-xs bg-gray text-white px-2 py-1 rounded">Primary</span>}
+                                {!contact.Contact_ID && !contact.Cont_Id && <span className="text-xs bg-gray text-white px-2 py-1 rounded" title="Some features will not function with this Contact as the legacy database needs to be updated">Legacy</span>}
                                 <Button
                                   variant="secondary-outline"
                                   size="sm"
@@ -1126,6 +1227,43 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
             </div>
             <div className="grid grid-cols-4 gap-x-6 gap-y-4">
               <FormField label="Created"><div className="text-sm text-text">{formatDateSafe(journey?.CreateDT)}</div></FormField>
+
+              <FormField label="Last Activity Date">
+                <div className="text-sm text-text">
+                  {lastActivityDate ? formatDateSafe(lastActivityDate) : "-"}
+                </div>
+              </FormField>
+
+              <div>
+                <div className="text-sm text-text-muted">Next Action Date</div>
+                {isEditingDetails ? (
+                  <input
+                    type="date"
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.lastActionDate || ""}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({
+                        ...s,
+                        lastActionDate: e.target.value,
+                      }))
+                    }
+                  />
+                ) : (
+                  <div className="text-sm text-text">
+                    {(() => {
+                      try {
+                        return journey?.Action_Date
+                          ? formatDate(journey.Action_Date)
+                          : journey?.updatedAt
+                          ? formatDate(journey.updatedAt)
+                          : "-";
+                      } catch (error) {
+                        return journey?.Action_Date || journey?.updatedAt || "-";
+                      }
+                    })()}
+                  </div>
+                )}
+              </div>
 
               <FormField label="Journey Start Date">
                 {isEditingDetails ? <input type="date" className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text" value={detailsForm.journeyStartDate} onChange={(e) => setDetailsForm((s) => ({ ...s, journeyStartDate: e.target.value }))} /> : <div className="text-sm text-text">{formatDateSafe(journey?.Journey_Start_Date)}</div>}
@@ -1408,37 +1546,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                           : "-";
                       } catch (error) {
                         return detailsForm.expectedPoDate || "-";
-                      }
-                    })()}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Action Date</div>
-                {isEditingDetails ? (
-                  <input
-                    type="date"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.lastActionDate || ""}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({
-                        ...s,
-                        lastActionDate: e.target.value,
-                      }))
-                    }
-                  />
-                ) : (
-                  <div className="text-sm text-text">
-                    {(() => {
-                      try {
-                        return journey?.Action_Date
-                          ? formatDate(journey.Action_Date)
-                          : journey?.updatedAt
-                          ? formatDate(journey.updatedAt)
-                          : "-";
-                      } catch (error) {
-                        return journey?.Action_Date || journey?.updatedAt || "-";
                       }
                     })()}
                   </div>
@@ -1922,25 +2029,36 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         </div>
       </div>
 
-      <AddJourneyContactModal
-        isOpen={showAddJourneyContactModal}
-        onClose={() => setShowAddJourneyContactModal(false)}
+      <AddContactModal
+        isOpen={showAddContactModal}
+        onClose={() => setShowAddContactModal(false)}
         onContactAdded={handleContactAdded}
-        journeyId={journey?.ID}
+        companyId={journey?.Company_ID}
+        addressId={journey?.Address_ID}
+        journeyId={journey?.ID || journey?.id}
+        showPrimaryOption={true}
       />
 
       <Modal
         isOpen={!!contactToDelete}
         onClose={() => setContactToDelete(null)}
-        title="Delete Contact"
+        title={contactToDelete?._isPrisma ? "Remove Contact" : "Delete Contact"}
         size="sm"
       >
         <div className="space-y-4">
           <p className="text-text">
-            Are you sure you want to delete the contact "{contactToDelete?.Contact_Name || 'Unnamed Contact'}"?
+            {contactToDelete?._isPrisma ? (
+              <>Are you sure you want to remove the contact "{contactToDelete?.Contact_Name || 'Unnamed Contact'}" from this journey?</>
+            ) : (
+              <>Are you sure you want to delete the legacy contact "{contactToDelete?.Contact_Name || 'Unnamed Contact'}"?</>
+            )}
           </p>
           <p className="text-text-muted text-sm">
-            This action cannot be undone.
+            {contactToDelete?._isPrisma ? (
+              <>This will unlink the contact from this journey. The contact itself will remain in the system.</>
+            ) : (
+              <>This is a legacy contact and will be permanently deleted due to no way of unlinking. This action cannot be undone.</>
+            )}
           </p>
           <div className="flex justify-end gap-2">
             <Button
@@ -1956,9 +2074,12 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               size="sm"
               onClick={confirmDeleteContact}
               disabled={isSaving}
-              className="!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700"
+              className="!bg-red-400 !border-red-400 hover:!bg-red-500 hover:!border-red-500"
             >
-              {isSaving ? "Deleting..." : "Delete Contact"}
+              {isSaving
+                ? (contactToDelete?._isPrisma ? "Removing..." : "Deleting...")
+                : (contactToDelete?._isPrisma ? "Remove Contact" : "Delete Contact")
+              }
             </Button>
           </div>
         </div>
@@ -2798,8 +2919,49 @@ const JourneyDetailsPage = () => {
           }
         }
         try {
-          const contactsData = await api.get('/legacy/std/Journey_Contact/filter/custom', { filterField: 'Jrn_ID', filterValue: journeyId });
-          if (contactsData !== null) setJourneyContacts(Array.isArray(contactsData) ? contactsData : []);
+          console.log('[DEBUG] Initial fetch of journey contacts for:', journeyId);
+
+          const [legacyContacts, prismaContacts] = await Promise.all([
+            api.get('/legacy/std/Journey_Contact/filter/custom', {
+              filterField: 'Jrn_ID',
+              filterValue: journeyId
+            }).catch(err => {
+              console.error('[DEBUG] Error fetching legacy contacts:', err);
+              return [];
+            }),
+            api.get('/sales/journey-contacts', {
+              filter: JSON.stringify({ journeyId }),
+              include: JSON.stringify({ contact: true })
+            }).then(result => {
+              console.log('[DEBUG] Initial Prisma journey-contacts result:', result);
+              const contacts = result?.success && Array.isArray(result.data) ? result.data : [];
+              return contacts.map((jc: any) => ({
+                ID: jc.id,
+                Jrn_ID: jc.journeyId,
+                Contact_ID: jc.contactId,
+                Contact_Name: jc.contact ? `${jc.contact.firstName} ${jc.contact.lastName}`.trim() : '',
+                Contact_Position: jc.contact?.title || '',
+                Contact_Email: jc.contact?.email || '',
+                Contact_Office: jc.contact?.phone || '',
+                Contact_Mobile: jc.contact?.phoneExtension || '',
+                Contact_Note: '',
+                IsPrimary: jc.isPrimary ? 1 : 0,
+                _isPrisma: true
+              }));
+            }).catch(err => {
+              console.error('[DEBUG] Error fetching prisma contacts:', err);
+              return [];
+            })
+          ]);
+
+          const legacyArray = Array.isArray(legacyContacts) ? legacyContacts : [];
+          const mergedContacts = [...legacyArray, ...prismaContacts];
+
+          console.log('[DEBUG] Initial legacy contacts:', legacyArray.length);
+          console.log('[DEBUG] Initial prisma contacts:', prismaContacts.length);
+          console.log('[DEBUG] Initial total contacts:', mergedContacts.length);
+
+          setJourneyContacts(mergedContacts);
         } catch (contactError) {
           console.warn("Could not fetch journey contacts:", contactError);
           setJourneyContacts([]);

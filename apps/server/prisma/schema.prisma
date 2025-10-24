@@ -282,7 +282,7 @@ model Contact {
   dealerJourneys   Journey[]        @relation("JourneyDealerContact")
   journeyContacts  JourneyContact[]
 
-  /// @searchFields(firstName: 5, lastName: 4, email: 2, title: 1)
+  /// @searchFields(firstName: 4, lastName: 3, email: 2, title: 1)
 
   @@index([createdById])
   @@index([companyId])

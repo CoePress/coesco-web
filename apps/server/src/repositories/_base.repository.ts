@@ -438,7 +438,6 @@ export class BaseRepository<T> {
     }
 
     const searchFields = this.getSearchFields();
-    logger.info(`[FUZZY] Search fields before filtering:`, searchFields);
 
     if (!searchFields || searchFields.length === 0) {
       throw new Error("Search fields must be defined for fuzzy search");
@@ -447,11 +446,8 @@ export class BaseRepository<T> {
     const filteredSearchFields = searchFields.filter((f) => {
       const fieldName = typeof f === "string" ? f : f.field;
       const isEnum = this.isEnumField(fieldName);
-      logger.info(`[FUZZY] Field ${fieldName} is enum: ${isEnum}`);
       return !isEnum;
     });
-
-    logger.info(`[FUZZY] Search fields after filtering:`, filteredSearchFields);
 
     if (filteredSearchFields.length === 0) {
       throw new Error("No valid search fields available for fuzzy search after filtering enum fields");
@@ -462,8 +458,6 @@ export class BaseRepository<T> {
     const page = params.page ?? 1;
     const take = params.limit ?? 25;
     const skip = (page - 1) * take;
-
-    logger.info(`[FUZZY] Search term: "${searchTerm}", threshold: ${threshold}`);
 
     const columns = await this.getColumns();
     const scope = await this.getScope(columns, params?.includeDeleted);
@@ -482,8 +476,6 @@ export class BaseRepository<T> {
     const tableNames = deriveTableNames(this.modelName);
     const tableName = tableNames[tableNames.length - 1];
 
-    logger.info(`[FUZZY] Table name: ${tableName}`);
-
     let whereClause = "";
     if (scope) {
       const scopeConditions = this.buildScopeSQL(scope);
@@ -497,34 +489,9 @@ export class BaseRepository<T> {
        WHERE (${similarityConditions})
        ${whereClause}`;
 
-    logger.info(`[FUZZY] Count query:`, countQuery);
-
-    const debugQuery = `SELECT "modelNumber", "description",
-              GREATEST(${maxSimilarity}) as similarity_score
-       FROM "${tableName}"
-       ${whereClause ? `WHERE ${whereClause.replace("AND ", "")}` : ""}
-       ORDER BY similarity_score DESC
-       LIMIT 10`;
-
-    logger.info(`[FUZZY] Debug query (top 10 similarities):`, debugQuery);
-
-    try {
-      const debugResults = await prisma.$queryRawUnsafe<Array<any>>(debugQuery);
-      logger.info(`[FUZZY] Top 10 similarity scores:`, JSON.stringify(debugResults.map((r: any) => ({
-        modelNumber: r.modelNumber,
-        description: r.description?.substring(0, 50),
-        score: r.similarity_score,
-      }))));
-    }
-    catch (err) {
-      logger.error(`[FUZZY] Debug query failed:`, err);
-    }
-
     const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(countQuery);
 
     const total = Number(countResult[0]?.count ?? 0);
-
-    logger.info(`[FUZZY] Total results: ${total}`);
 
     const selectQuery = `SELECT *,
               GREATEST(${maxSimilarity}) as similarity_score
@@ -535,19 +502,7 @@ export class BaseRepository<T> {
        LIMIT ${take}
        OFFSET ${skip}`;
 
-    logger.info(`[FUZZY] Select query:`, selectQuery);
-
     const items = await prisma.$queryRawUnsafe(selectQuery);
-
-    logger.info(`[FUZZY] Items returned: ${Array.isArray(items) ? items.length : 0}`);
-    if (Array.isArray(items) && items.length > 0) {
-      const itemsWithScores = (items as any[]).slice(0, 5).map(item => ({
-        modelNumber: item.modelNumber,
-        description: item.description?.substring(0, 50),
-        score: item.similarity_score,
-      }));
-      logger.info(`[FUZZY] Top items with scores:`, JSON.stringify(itemsWithScores));
-    }
 
     const totalPages = Math.ceil(total / take);
 

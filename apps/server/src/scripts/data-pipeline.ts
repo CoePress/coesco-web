@@ -480,6 +480,55 @@ function findLongestCommonPrefix(strings: string[]): string {
   return prefix;
 }
 
+function parseContactName(fullName: string | null): { firstName: string | null; lastName: string | null } {
+  if (!fullName || fullName.trim() === "") {
+    return { firstName: null, lastName: null };
+  }
+
+  const trimmed = fullName.trim();
+
+  if (trimmed.includes(",")) {
+    const [last, first] = trimmed.split(",").map(s => s.trim());
+    return {
+      firstName: first || null,
+      lastName: last || null,
+    };
+  }
+
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: null };
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" ") || null,
+  };
+}
+
+function shouldSkipContact(phone: string | null, email: string | null): boolean {
+  return (
+    (!phone || phone.trim() === "")
+    && (!email || email.trim() === "")
+  );
+}
+
+function mapContactType(legacyType: string | null): string {
+  if (!legacyType)
+    return "Sales";
+
+  const typeMap: Record<string, string> = {
+    A: "Accounting",
+    S: "Sales",
+    P: "Parts_Service",
+    E: "Engineering",
+    I: "Inactive",
+    L: "Left_Company",
+  };
+
+  return typeMap[legacyType.toUpperCase()] || "Sales";
+}
+
 // Migrations
 async function _migrateCoilTypes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
@@ -1501,7 +1550,6 @@ export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService
 
   const existingNotesCount = await mainDatabase.note.count();
   if (existingNotesCount > 0) {
-    logger.info(`Found ${existingNotesCount} existing journey notes. Skipping migration.`);
     legacyService = originalService;
     return {
       total: 0,
@@ -2029,6 +2077,232 @@ export async function _migrateEmployeeManagers(legacyServiceInstance?: LegacySer
   };
 
   const result = await _migrateEmployeeManagersInternal();
+
+  legacyService = originalService;
+
+  return result;
+}
+
+export async function _migrateContacts(dummyCompanyId: string, legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
+  const originalService = legacyService;
+
+  if (legacyServiceInstance) {
+    legacyService = legacyServiceInstance;
+  }
+  else {
+    await legacyService.initialize();
+  }
+
+  const mapping: TableMapping = {
+    sourceDatabase: "std",
+    sourceTable: "Contacts",
+    targetTable: "contact",
+    fieldMappings: [
+      {
+        from: "FirstName",
+        to: "firstName",
+        transform: value => value?.toString().trim() || "",
+      },
+      {
+        from: "LastName",
+        to: "lastName",
+        transform: value => value?.toString().trim() || null,
+      },
+      {
+        from: "Email",
+        to: "email",
+        transform: value => value?.toString().trim() || null,
+      },
+      {
+        from: "PhoneNumber",
+        to: "phone",
+        transform: value => value?.toString().trim() || null,
+      },
+      {
+        from: "PhoneExt",
+        to: "phoneExtension",
+        transform: value => value?.toString().trim() || null,
+      },
+      {
+        from: "ConTitle",
+        to: "title",
+        transform: value => value?.toString().trim() || null,
+      },
+      {
+        from: "Type",
+        to: "type",
+        transform: value => mapContactType(value?.toString()),
+      },
+    ],
+    beforeSave: async (data, original) => {
+      if (shouldSkipContact(data.phone, data.email)) {
+        return null;
+      }
+
+      const companyLegacyId = original.Company_ID?.toString();
+      if (!companyLegacyId) {
+        logger.warn("No Company_ID found for contact");
+        return null;
+      }
+
+      data.companyId = dummyCompanyId;
+      data.legacyCompanyId = companyLegacyId;
+
+      const addressLegacyId = original.Address_ID?.toString();
+      data.addressId = addressLegacyId || null;
+
+      const existingContact = await mainDatabase.contact.findFirst({
+        where: {
+          legacyCompanyId: companyLegacyId,
+          firstName: {
+            equals: data.firstName || "",
+            mode: "insensitive",
+          },
+          lastName: data.lastName
+            ? {
+                equals: data.lastName,
+                mode: "insensitive",
+              }
+            : null,
+        },
+      });
+
+      if (existingContact) {
+        logger.info(`Duplicate contact found: ${data.firstName} ${data.lastName}`);
+        return null;
+      }
+
+      data.isPrimary = false;
+      data.createdAt = new Date(original.CreateDate || new Date());
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
+
+      return data;
+    },
+    skipDuplicates: true,
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+
+  logger.info("Starting contact notes migration...");
+  let notesCreated = 0;
+  let notesSkipped = 0;
+  let notesErrors = 0;
+
+  try {
+    const notesParams = {
+      filter: null,
+      sort: null,
+      order: null,
+      offset: 0,
+    };
+
+    const notesTotalCount = await legacyService.getCount("std", "Contacts", notesParams);
+    const notesFetchSize = 5000;
+    const notesExpectedBatches = Math.ceil(notesTotalCount / notesFetchSize);
+
+    logger.info(`Processing ${notesTotalCount} contacts for notes, expecting ${notesExpectedBatches} batches`);
+
+    let notesTotalProcessed = 0;
+    let notesCurrentBatch = 0;
+
+    while (notesTotalProcessed < notesTotalCount) {
+      const paginatedResult = await legacyService.getAllPaginated(
+        "std",
+        "Contacts",
+        { ...notesParams, totalCount: notesTotalCount },
+        notesFetchSize,
+      );
+
+      if (!paginatedResult.records || paginatedResult.records.length === 0) {
+        break;
+      }
+
+      const sourceRecords = paginatedResult.records;
+      notesTotalProcessed += sourceRecords.length;
+      notesCurrentBatch++;
+
+      logger.info(`Processing notes batch ${notesCurrentBatch}/${notesExpectedBatches}: ${sourceRecords.length} records`);
+
+      const allNotes: any[] = [];
+
+      for (const record of sourceRecords) {
+        const notes = record.Notes?.toString().trim();
+        if (!notes || notes === "") {
+          notesSkipped++;
+          continue;
+        }
+
+        const companyLegacyId = record.Company_ID?.toString();
+        const firstName = record.FirstName?.toString().trim() || "";
+        const lastName = record.LastName?.toString().trim() || null;
+
+        if (!companyLegacyId) {
+          notesSkipped++;
+          continue;
+        }
+
+        const contact = await mainDatabase.contact.findFirst({
+          where: {
+            legacyCompanyId: companyLegacyId,
+            firstName: {
+              equals: firstName,
+              mode: "insensitive",
+            },
+            lastName: lastName
+              ? {
+                  equals: lastName,
+                  mode: "insensitive",
+                }
+              : null,
+          },
+        });
+
+        if (!contact) {
+          notesSkipped++;
+          continue;
+        }
+
+        const createdAt = record.CreateDate ? new Date(record.CreateDate) : new Date();
+
+        allNotes.push({
+          entityId: contact.id,
+          entityType: "contact",
+          type: "note",
+          body: notes,
+          createdBy: record.CreateInit?.toLowerCase() || "system",
+          createdAt,
+        });
+      }
+
+      if (allNotes.length > 0) {
+        try {
+          const createResult = await mainDatabase.note.createMany({
+            data: allNotes,
+            skipDuplicates: true,
+          });
+          notesCreated += createResult.count;
+        }
+        catch (error: any) {
+          logger.error(`Error creating contact notes in batch ${notesCurrentBatch}:`, error.message);
+          notesErrors += allNotes.length;
+        }
+      }
+
+      notesParams.offset = paginatedResult.nextOffset;
+
+      if (!paginatedResult.hasMore || paginatedResult.records.length < notesFetchSize) {
+        break;
+      }
+    }
+
+    logger.info(`Contact notes migration complete: ${notesCreated} created, ${notesSkipped} skipped, ${notesErrors} errors`);
+  }
+  catch (error: any) {
+    logger.error("Error during contact notes migration:", error.message);
+  }
 
   legacyService = originalService;
 

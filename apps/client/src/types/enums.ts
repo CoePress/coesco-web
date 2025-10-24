@@ -1,8 +1,8 @@
 export enum ContactType {
-  Accounting = "A",
-  Engineering = "E",
-  Inactive = "I",
-  Left_Company = "L",
-  Parts_Service = "P",
-  Sales = "S",
+  Accounting = "Accounting",
+  Engineering = "Engineering",
+  Inactive = "Inactive",
+  Left_Company = "Left_Company",
+  Parts_Service = "Parts_Service",
+  Sales = "Sales",
 }

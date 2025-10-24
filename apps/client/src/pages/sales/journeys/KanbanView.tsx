@@ -364,6 +364,7 @@ interface KanbanViewProps {
   onTagsUpdated?: () => void;
   employee?: any;
   journeyTags: Map<string, any[]>;
+  isLoading?: boolean;
 }
 
 export const KanbanView = ({
@@ -379,6 +380,7 @@ export const KanbanView = ({
   onTagsUpdated,
   employee,
   journeyTags,
+  isLoading = false,
 }: KanbanViewProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [originalStage, setOriginalStage] = useState<number | null>(null);
@@ -531,12 +533,21 @@ export const KanbanView = ({
         const fromStageLabel = STAGES.find(s => s.id === fromStage)?.label || `Stage ${fromStage}`;
         const toStageLabel = STAGES.find(s => s.id === toStage)?.label || `Stage ${toStage}`;
 
-        await api.post('/legacy/std/Journey_Log', {
-          Jrn_ID: journeyId,
-          Action: `Journey_Stage: FROM ${fromStageLabel} TO ${toStageLabel}`,
-          CreateDtTm: new Date().toISOString().replace('T', ' ').substring(0, 23),
-          CreateInit: employee.initials
-        });
+        await Promise.all([
+          api.post('/legacy/std/Journey_Log', {
+            Jrn_ID: journeyId,
+            Action: `Journey_Stage: FROM ${fromStageLabel} TO ${toStageLabel}`,
+            CreateDtTm: new Date().toISOString().replace('T', ' ').substring(0, 23),
+            CreateInit: employee.initials
+          }),
+          api.post('/core/notes', {
+            body: new Date().toISOString(),
+            entityId: journeyId,
+            entityType: "journey",
+            type: "LastActivity",
+            createdBy: employee.initials
+          })
+        ]);
       } catch (error) {
         console.error("Failed to log journey stage change:", error);
       }
@@ -551,7 +562,14 @@ export const KanbanView = ({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-hidden">
+      <div className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-hidden relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
+            <div className="bg-foreground p-4 rounded border shadow-lg">
+              <span className="text-sm text-text-muted">Loading journeys...</span>
+            </div>
+          </div>
+        )}
         <div className="inline-flex gap-2 p-2 h-full">
           {STAGES.filter(s => visibleStageIds?.includes(s.id)).map((stage) => {
             const { items, stageTotal, stageWeighted } = stageCalculations.get(stage.id) || { items: [], stageTotal: 0, stageWeighted: 0 };

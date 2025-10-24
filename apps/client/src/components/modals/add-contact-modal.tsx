@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Button } from "@/components";
 import { useApi } from "@/hooks/use-api";
+import { useAuth } from "@/contexts/auth.context";
+import { ContactType } from "@/types/enums";
 
 interface AddContactModalProps {
   isOpen: boolean;
@@ -8,6 +10,8 @@ interface AddContactModalProps {
   onContactAdded?: (contact: any) => void;
   companyId?: string | number;
   addressId?: string | number;
+  journeyId?: string;
+  showPrimaryOption?: boolean;
 }
 
 export const AddContactModal = ({
@@ -15,70 +19,106 @@ export const AddContactModal = ({
   onClose,
   onContactAdded,
   companyId,
-  addressId
+  addressId,
+  journeyId,
+  showPrimaryOption = false
 }: AddContactModalProps) => {
   const api = useApi();
+  const { employee } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<"create" | "search">("create");
+  const [isPrimary, setIsPrimary] = useState(false);
+
   const [formData, setFormData] = useState({
-    Company_ID: companyId || "",
-    Address_ID: addressId || "",
-    FirstName: "",
-    LastName: "",
-    Type: "",
-    Notes: "",
-    PhoneNumber: "",
-    PhoneExt: "",
-    FaxPhoneNum: "",
-    Email: "",
-    Website: "",
+    legacyCompanyId: companyId || "",
+    addressId: addressId || "",
+    firstName: "",
+    lastName: "",
+    type: "",
+    phone: "",
+    phoneExtension: "",
+    email: "",
+    title: "",
   });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<any>(null);
+
+  useEffect(() => {
+    if (companyId || addressId) {
+      setFormData(prev => ({
+        ...prev,
+        legacyCompanyId: companyId || prev.legacyCompanyId,
+        addressId: addressId || prev.addressId,
+      }));
+    }
+  }, [companyId, addressId]);
+
+  useEffect(() => {
+    if (!searchQuery.trim() || activeTab !== "search") {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await api.get("/sales/contacts", {
+          filter: JSON.stringify({
+            OR: [
+              { firstName: { contains: searchQuery, mode: "insensitive" } },
+              { lastName: { contains: searchQuery, mode: "insensitive" } }
+            ]
+          }),
+          limit: 10
+        });
+
+        if (results?.success && Array.isArray(results.data)) {
+          setSearchResults(results.data);
+        }
+      } catch (error) {
+        console.error("Error searching contacts:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, activeTab]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Find the highest Cont_Id for this company
-      const existingContacts = await api.get("/legacy/std/Contacts/filter/custom", {
-        Company_ID: formData.Company_ID,
-        sort: "Cont_Id",
-        order: "desc",
-        limit: 1,
-        fields: "Cont_Id"
-      });
-
-      let nextContId = 1;
-      if (existingContacts && Array.isArray(existingContacts) && existingContacts.length > 0) {
-        const highestContId = existingContacts[0].Cont_Id;
-        nextContId = highestContId + 1;
-      }
+      const DUMMY_LEGACY_COMPANY_UUID = '00000000-0000-0000-0000-000000000000';
 
       const trimmedData = {
-        ...formData,
-        Cont_Id: nextContId,
-        FirstName: formData.FirstName.trim(),
-        LastName: formData.LastName.trim(),
+        companyId: companyId || DUMMY_LEGACY_COMPANY_UUID,
+        legacyCompanyId: formData.legacyCompanyId,
+        addressId: formData.addressId || null,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        type: formData.type,
+        phone: formData.phone,
+        phoneExtension: formData.phoneExtension,
+        email: formData.email,
+        title: formData.title,
+        isPrimary: false,
       };
 
-      const newContact = await api.post("/legacy/std/Contacts", trimmedData);
+      const newContact = await api.post("/sales/contacts", trimmedData);
 
       if (newContact) {
-        // Reset form
-        setFormData({
-          Company_ID: companyId || "",
-          Address_ID: addressId || "",
-          FirstName: "",
-          LastName: "",
-          Type: "",
-          Notes: "",
-          PhoneNumber: "",
-          PhoneExt: "",
-          FaxPhoneNum: "",
-          Email: "",
-          Website: "",
-        });
+        if (journeyId) {
+          await createJourneyContact(newContact.id);
+        }
 
-        // Notify parent component
+        resetForm();
+
         if (onContactAdded) {
           onContactAdded(newContact);
         }
@@ -95,21 +135,71 @@ export const AddContactModal = ({
     }
   };
 
-  const handleCancel = () => {
-    // Reset form data
+  const handleLinkContact = async () => {
+    if (!selectedContact || !journeyId) return;
+
+    setIsSubmitting(true);
+    try {
+      await createJourneyContact(selectedContact.id);
+
+      resetForm();
+
+      if (onContactAdded) {
+        onContactAdded(selectedContact);
+      }
+
+      onClose();
+    } catch (error) {
+      console.error("Error linking contact:", error);
+      alert("Error linking contact. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const createJourneyContact = async (contactId: string) => {
+    if (!employee?.id) {
+      throw new Error("Employee ID not found");
+    }
+
+    const journeyContactData = {
+      journeyId: journeyId!,
+      contactId,
+      isPrimary,
+      createdById: employee.id,
+      updatedById: employee.id,
+    };
+
+    const result = await api.post("/sales/journey-contacts", journeyContactData);
+
+    if (!result) {
+      throw new Error("Failed to create journey contact");
+    }
+
+    return result;
+  };
+
+  const resetForm = () => {
     setFormData({
-      Company_ID: companyId || "",
-      Address_ID: addressId || "",
-      FirstName: "",
-      LastName: "",
-      Type: "",
-      Notes: "",
-      PhoneNumber: "",
-      PhoneExt: "",
-      FaxPhoneNum: "",
-      Email: "",
-      Website: "",
+      legacyCompanyId: companyId || "",
+      addressId: addressId || "",
+      firstName: "",
+      lastName: "",
+      type: "",
+      phone: "",
+      phoneExtension: "",
+      email: "",
+      title: "",
     });
+    setSearchQuery("");
+    setSearchResults([]);
+    setSelectedContact(null);
+    setIsPrimary(false);
+    setActiveTab("create");
+  };
+
+  const handleCancel = () => {
+    resetForm();
     onClose();
   };
 
@@ -117,10 +207,38 @@ export const AddContactModal = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCancel}
-      title="Add New Contact"
+      title="Add Contact"
       size="md"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {journeyId && (
+        <div className="flex border-b border-border mb-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab("create")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "create"
+                ? "text-primary border-b-2 border-primary"
+                : "text-text-muted hover:text-text"
+            }`}
+          >
+            Create New
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("search")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "search"
+                ? "text-primary border-b-2 border-primary"
+                : "text-text-muted hover:text-text"
+            }`}
+          >
+            Search Existing
+          </button>
+        </div>
+      )}
+
+      {activeTab === "create" ? (
+        <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">
@@ -128,15 +246,15 @@ export const AddContactModal = ({
             </label>
             <input
               type="text"
-              value={formData.FirstName}
+              value={formData.firstName}
               onChange={(e) => {
                 const value = e.target.value;
                 if (value.length === 0 || value[0] !== ' ') {
-                  setFormData(prev => ({ ...prev, FirstName: value }));
+                  setFormData(prev => ({ ...prev, firstName: value }));
                 }
               }}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={20}
+              maxLength={100}
               required
             />
           </div>
@@ -147,15 +265,15 @@ export const AddContactModal = ({
             </label>
             <input
               type="text"
-              value={formData.LastName}
+              value={formData.lastName}
               onChange={(e) => {
                 const value = e.target.value;
                 if (value.length === 0 || value[0] !== ' ') {
-                  setFormData(prev => ({ ...prev, LastName: value }));
+                  setFormData(prev => ({ ...prev, lastName: value }));
                 }
               }}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={25}
+              maxLength={100}
               required
             />
           </div>
@@ -167,28 +285,31 @@ export const AddContactModal = ({
               Contact Type <span className="text-error">*</span>
             </label>
             <select
-              value={formData.Type}
-              onChange={(e) => setFormData(prev => ({ ...prev, Type: e.target.value }))}
+              value={formData.type}
+              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               required
             >
               <option value="">Select Type</option>
-              <option value="A">Administrative</option>
-              <option value="E">Engineering</option>
-              <option value="S">Sales</option>
+              <option value={ContactType.Accounting}>Accounting</option>
+              <option value={ContactType.Engineering}>Engineering</option>
+              <option value={ContactType.Sales}>Sales</option>
+              <option value={ContactType.Parts_Service}>Parts/Service</option>
+              <option value={ContactType.Inactive}>Inactive</option>
+              <option value={ContactType.Left_Company}>Left Company</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">
-              Company ID <span className="text-error">*</span>
+              Title
             </label>
             <input
-              type="number"
-              value={formData.Company_ID}
-              onChange={(e) => setFormData(prev => ({ ...prev, Company_ID: e.target.value }))}
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              required
+              maxLength={100}
             />
           </div>
         </div>
@@ -200,10 +321,10 @@ export const AddContactModal = ({
             </label>
             <input
               type="email"
-              value={formData.Email}
-              onChange={(e) => setFormData(prev => ({ ...prev, Email: e.target.value }))}
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={60}
+              maxLength={255}
             />
           </div>
 
@@ -213,10 +334,10 @@ export const AddContactModal = ({
             </label>
             <input
               type="text"
-              value={formData.PhoneNumber}
-              onChange={(e) => setFormData(prev => ({ ...prev, PhoneNumber: e.target.value }))}
+              value={formData.phone}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={20}
+              maxLength={50}
             />
           </div>
         </div>
@@ -228,38 +349,10 @@ export const AddContactModal = ({
             </label>
             <input
               type="text"
-              value={formData.PhoneExt}
-              onChange={(e) => setFormData(prev => ({ ...prev, PhoneExt: e.target.value }))}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={6}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Fax Number
-            </label>
-            <input
-              type="text"
-              value={formData.FaxPhoneNum}
-              onChange={(e) => setFormData(prev => ({ ...prev, FaxPhoneNum: e.target.value }))}
+              value={formData.phoneExtension}
+              onChange={(e) => setFormData(prev => ({ ...prev, phoneExtension: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               maxLength={20}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Website
-            </label>
-            <input
-              type="url"
-              value={formData.Website}
-              onChange={(e) => setFormData(prev => ({ ...prev, Website: e.target.value }))}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={60}
             />
           </div>
 
@@ -268,27 +361,28 @@ export const AddContactModal = ({
               Address ID
             </label>
             <input
-              type="number"
-              value={formData.Address_ID}
-              onChange={(e) => setFormData(prev => ({ ...prev, Address_ID: e.target.value }))}
+              type="text"
+              value={formData.addressId}
+              onChange={(e) => setFormData(prev => ({ ...prev, addressId: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-text-muted mb-1">
-            Notes
-          </label>
-          <textarea
-            value={formData.Notes}
-            onChange={(e) => setFormData(prev => ({ ...prev, Notes: e.target.value }))}
-            className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-            maxLength={30}
-            rows={3}
-            placeholder="Notes (max 30 characters)"
-          />
-        </div>
+        {showPrimaryOption && journeyId && (
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="isPrimary"
+              checked={isPrimary}
+              onChange={(e) => setIsPrimary(e.target.checked)}
+              className="text-primary focus:ring-primary"
+            />
+            <label htmlFor="isPrimary" className="text-sm text-text">
+              Set as Primary Contact
+            </label>
+          </div>
+        )}
 
         <div className="flex justify-end gap-2 pt-4">
           <Button
@@ -307,6 +401,91 @@ export const AddContactModal = ({
           </button>
         </div>
       </form>
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1">
+              Search by Name
+            </label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Enter first or last name..."
+              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+            />
+          </div>
+
+          {isSearching && (
+            <div className="text-center py-4 text-text-muted">
+              Searching...
+            </div>
+          )}
+
+          {!isSearching && searchResults.length > 0 && (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {searchResults.map((contact) => (
+                <div
+                  key={contact.id}
+                  onClick={() => setSelectedContact(contact)}
+                  className={`p-3 border rounded cursor-pointer transition-colors ${
+                    selectedContact?.id === contact.id
+                      ? "border-primary bg-gray"
+                      : "border-border hover:bg-gray"
+                  }`}
+                >
+                  <div className="font-medium text-text">
+                    {contact.firstName} {contact.lastName}
+                  </div>
+                  <div className="text-xs text-text-muted">
+                    {contact.email && <div>Email: {contact.email}</div>}
+                    {contact.phone && <div>Phone: {contact.phone}</div>}
+                    {contact.type && <div>Type: {contact.type}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!isSearching && searchQuery && searchResults.length === 0 && (
+            <div className="text-center py-4 text-text-muted">
+              No contacts found
+            </div>
+          )}
+
+          {showPrimaryOption && journeyId && (
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isPrimarySearch"
+                checked={isPrimary}
+                onChange={(e) => setIsPrimary(e.target.checked)}
+                className="text-primary focus:ring-primary"
+              />
+              <label htmlFor="isPrimarySearch" className="text-sm text-text">
+                Set as Primary Contact
+              </label>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="secondary-outline"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleLinkContact}
+              disabled={isSubmitting || !selectedContact}
+            >
+              {isSubmitting ? "Linking..." : "Link Contact"}
+            </Button>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 };

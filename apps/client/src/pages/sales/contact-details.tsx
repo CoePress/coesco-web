@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Building2, Mail, Phone, Globe, Calendar, User, MapPin, Edit, UserX } from "lucide-react";
+import { Building2, Mail, Phone, Calendar, User, MapPin, Edit, UserX, Briefcase, Trash2 } from "lucide-react";
 import { PageHeader, Button } from "@/components";
 import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { formatDate } from "@/utils";
@@ -8,58 +8,55 @@ import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
 
 interface EditFormData {
-  FirstName: string;
-  LastName: string;
-  ConTitle: string;
-  Type: string;
-  PhoneNumber: string;
-  PhoneExt: string;
-  Email: string;
-  Website: string;
-  FaxPhoneNum: string;
-  AltPhone: string;
-  AltDesc: string;
-  Notes: string;
-  MoreAddress: string;
-  Address_ID: string;
+  firstName: string;
+  lastName: string;
+  title: string;
+  type: string;
+  phone: string;
+  phoneExtension: string;
+  email: string;
+  addressId: string;
 }
 
 const ContactDetails = () => {
   const { id: contactId } = useParams<{ id: string }>();
+  const api = useApi();
+
   const [contactData, setContactData] = useState<any>(null);
   const [companyData, setCompanyData] = useState<any>(null);
   const [addressData, setAddressData] = useState<any>(null);
   const [availableAddresses, setAvailableAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Editing state
+
+  const [activeTab, setActiveTab] = useState<"details" | "journeys">("details");
+  const [journeysData, setJourneysData] = useState<any[]>([]);
+  const [journeysLoading, setJourneysLoading] = useState(false);
+
+  const [contactNotes, setContactNotes] = useState<any[]>([]);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+  const [newNoteBody, setNewNoteBody] = useState("");
+  const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteBody, setEditingNoteBody] = useState("");
+  const [noteToDelete, setNoteToDelete] = useState<any>(null);
+
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
-  // Delete confirmation state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editForm, setEditForm] = useState<EditFormData>({
-    FirstName: "",
-    LastName: "",
-    ConTitle: "",
-    Type: "",
-    PhoneNumber: "",
-    PhoneExt: "",
-    Email: "",
-    Website: "",
-    FaxPhoneNum: "",
-    AltPhone: "",
-    AltDesc: "",
-    Notes: "",
-    MoreAddress: "",
-    Address_ID: ""
+    firstName: "",
+    lastName: "",
+    title: "",
+    type: "",
+    phone: "",
+    phoneExtension: "",
+    email: "",
+    addressId: ""
   });
-  
-  const api = useApi();
 
   const getContactTypeName = (type: ContactType | string | null | undefined): string => {
-    switch (type?.toUpperCase()) {
+    switch (type) {
       case ContactType.Accounting: return 'Accounting';
       case ContactType.Engineering: return 'Engineering';
       case ContactType.Inactive: return 'Inactive';
@@ -71,7 +68,7 @@ const ContactDetails = () => {
   };
 
   const getContactTypeColor = (type: ContactType | string | null | undefined): string => {
-    switch (type?.toUpperCase()) {
+    switch (type) {
       case ContactType.Accounting: return 'bg-blue-100 text-blue-800 border-blue-200';
       case ContactType.Engineering: return 'bg-green-100 text-green-800 border-green-200';
       case ContactType.Inactive: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -84,44 +81,48 @@ const ContactDetails = () => {
 
   const initializeEditForm = (contact: any) => {
     setEditForm({
-      FirstName: contact?.FirstName || "",
-      LastName: contact?.LastName || "",
-      ConTitle: contact?.ConTitle || "",
-      Type: contact?.Type || "",
-      PhoneNumber: contact?.PhoneNumber || "",
-      PhoneExt: contact?.PhoneExt || "",
-      Email: contact?.Email || "",
-      Website: contact?.Website || "",
-      FaxPhoneNum: contact?.FaxPhoneNum || "",
-      AltPhone: contact?.AltPhone || "",
-      AltDesc: contact?.AltDesc || "",
-      Notes: contact?.Notes || "",
-      MoreAddress: contact?.MoreAddress || "",
-      Address_ID: contact?.Address_ID || ""
+      firstName: contact?.firstName || "",
+      lastName: contact?.lastName || "",
+      title: contact?.title || "",
+      type: contact?.type || "",
+      phone: contact?.phone || "",
+      phoneExtension: contact?.phoneExtension || "",
+      email: contact?.email || "",
+      addressId: contact?.addressId || ""
     });
   };
 
   const handleSave = async () => {
-    if (!contactData?.Cont_Id || !contactData?.Company_ID) return;
+    if (!contactData?.id) return;
 
     setIsSaving(true);
     try {
       const trimmedData = {
-        ...editForm,
-        FirstName: editForm.FirstName.trim(),
-        LastName: editForm.LastName.trim(),
+        firstName: editForm.firstName.trim(),
+        lastName: editForm.lastName.trim(),
+        title: editForm.title,
+        type: editForm.type,
+        phone: editForm.phone,
+        phoneExtension: editForm.phoneExtension,
+        email: editForm.email,
+        addressId: editForm.addressId || null,
+        companyId: contactData.companyId,
+        isPrimary: contactData.isPrimary,
+        legacyCompanyId: contactData.legacyCompanyId,
+        createdById: contactData.createdById,
+        updatedById: contactData.updatedById,
       };
 
-      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactData.Cont_Id}&Company_ID=${contactData.Company_ID}`, trimmedData);
+      const result = await api.patch(`/sales/contacts/${contactData.id}`, trimmedData);
       if (result !== null) {
         // Update local contact data with new values
         const updatedContactData = { ...contactData, ...trimmedData };
         setContactData(updatedContactData);
 
-        // Update address data based on the new Address_ID
-        if (trimmedData.Address_ID) {
+        // Update address data based on the new addressId
+        if (trimmedData.addressId) {
           const selectedAddress = availableAddresses.find((addr: any) =>
-            String(addr.Address_ID) === String(trimmedData.Address_ID)
+            addr.Address_ID == trimmedData.addressId
           );
           setAddressData(selectedAddress || null);
         } else {
@@ -130,7 +131,7 @@ const ContactDetails = () => {
 
         setIsEditing(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating contact:", error);
     } finally {
       setIsSaving(false);
@@ -142,8 +143,8 @@ const ContactDetails = () => {
     initializeEditForm(contactData);
 
     // Reset address data to original
-    if (contactData.Address_ID) {
-      const originalAddress = availableAddresses.find((addr: any) => addr.Address_ID === contactData.Address_ID);
+    if (contactData.addressId) {
+      const originalAddress = availableAddresses.find((addr: any) => addr.Address_ID == contactData.addressId);
       setAddressData(originalAddress || null);
     } else {
       setAddressData(null);
@@ -156,16 +157,16 @@ const ContactDetails = () => {
   };
 
   const handleDisableContact = async (type: ContactType) => {
-    if (!contactData?.Cont_Id || !contactData?.Company_ID) return;
+    if (!contactData?.id) return;
 
     setIsSaving(true);
     try {
-      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactData.Cont_Id}&Company_ID=${contactData.Company_ID}`, {
-        Type: type
+      const result = await api.patch(`/sales/contacts/${contactData.id}`, {
+        type: type
       });
 
       if (result !== null) {
-        setContactData({ ...contactData, Type: type });
+        setContactData({ ...contactData, type: type });
         setShowDeleteModal(false);
       }
     } catch (error) {
@@ -182,66 +183,89 @@ const ContactDetails = () => {
     setError(null);
 
     try {
-      // Parse composite ID format: "companyId_contId"
-      const parts = contactId.includes('_') ? contactId.split('_') : [contactId];
-      const expectedCompanyId = parts.length === 2 ? parts[0] : null;
-      const actualContactId = parts.length === 2 ? parts[1] : parts[0];
+      const rawContactResponse = await api.get(`/sales/contacts/${contactId}`);
 
-      const queryParams: Record<string, string> = {
-        Cont_Id: actualContactId
-      };
-
-      if (expectedCompanyId) {
-        queryParams.Company_ID = expectedCompanyId;
-      }
-
-      const rawContactResponse = await api.get('/legacy/std/Contacts/filter/custom', queryParams);
-      
       if (rawContactResponse) {
-        // Handle response format - custom filter always returns array
-        const rawContact = Array.isArray(rawContactResponse) 
-          ? rawContactResponse[0] 
-          : rawContactResponse;
-        
+        const rawContact = rawContactResponse.data || rawContactResponse;
+
         // Handle null/undefined contact data
         if (!rawContact) {
           setError('Contact data is null or undefined');
           return;
         }
-        
+
         setContactData(rawContact);
         initializeEditForm(rawContact);
-        
-        // Fetch company data if we have a Company_ID
-        if (rawContact?.Company_ID) {
+
+        // Fetch company name from legacy database
+        if (rawContact?.legacyCompanyId) {
           try {
-            const companyRaw = await api.get(`/legacy/base/Company/${rawContact.Company_ID}`);
-            if (companyRaw) {
-              setCompanyData(companyRaw);
+            const companyResponse = await api.get('/legacy/base/Company', {
+              filter: JSON.stringify({
+                operator: "in",
+                field: "Company_ID",
+                values: [parseInt(rawContact.legacyCompanyId, 10)]
+              }),
+              fields: 'Company_ID,CustDlrName',
+              limit: 1
+            });
+
+            const companies = companyResponse?.data
+              ? (Array.isArray(companyResponse.data) ? companyResponse.data : [])
+              : (Array.isArray(companyResponse) ? companyResponse : []);
+
+            if (companies.length > 0 && companies[0]?.CustDlrName) {
+              setCompanyData({ name: companies[0].CustDlrName });
             }
           } catch (companyError) {
             console.warn("Could not fetch company data:", companyError);
           }
-        }
 
-        // Fetch all addresses for the company
-        if (rawContact?.Company_ID) {
+          // Fetch all addresses for the company
           try {
-            const allAddresses = await api.get('/legacy/base/Address/filter/custom', {
-              Company_ID: rawContact.Company_ID
+            const addressResponse = await api.get('/legacy/base/Address/filter/custom', {
+              Company_ID: rawContact.legacyCompanyId
             });
 
-            if (allAddresses && allAddresses.length > 0) {
-              setAvailableAddresses(allAddresses);
+            console.log('=== ADDRESS DEBUG ===');
+            console.log('Raw address response:', addressResponse);
 
-              // Set the current address data if Address_ID exists
-              if (rawContact.Address_ID) {
-                const currentAddress = allAddresses.find((addr: any) => addr.Address_ID === rawContact.Address_ID);
+            const addresses = addressResponse?.data
+              ? (Array.isArray(addressResponse.data) ? addressResponse.data : [])
+              : (Array.isArray(addressResponse) ? addressResponse : []);
+
+            console.log('Extracted addresses array:', addresses);
+            console.log('Number of addresses:', addresses.length);
+
+            if (addresses.length > 0) {
+              console.log('First address sample:', addresses[0]);
+              console.log('Address_ID values:', addresses.map((a: any) => a.Address_ID));
+
+              setAvailableAddresses(addresses);
+
+              // Set the current address data if addressId exists
+              console.log('rawContact.addressId:', rawContact.addressId);
+              console.log('rawContact.addressId type:', typeof rawContact.addressId);
+
+              if (rawContact.addressId) {
+                const currentAddress = addresses.find((addr: any) => {
+                  console.log(`Comparing addr.Address_ID (${addr.Address_ID}, type: ${typeof addr.Address_ID}) === rawContact.addressId (${rawContact.addressId}, type: ${typeof rawContact.addressId})`);
+                  return addr.Address_ID == rawContact.addressId;
+                });
+                console.log('Found matching address:', currentAddress);
                 if (currentAddress) {
                   setAddressData(currentAddress);
+                  console.log('Set addressData to:', currentAddress);
+                } else {
+                  console.log('No matching address found');
                 }
+              } else {
+                console.log('No addressId on contact');
               }
+            } else {
+              console.log('No addresses returned from API');
             }
+            console.log('=== END ADDRESS DEBUG ===');
           } catch (addressError) {
             console.warn("Could not fetch address data:", addressError);
           }
@@ -256,9 +280,161 @@ const ContactDetails = () => {
     }
   };
 
+  const fetchJourneys = async () => {
+    if (!contactId) return;
+
+    setJourneysLoading(true);
+    try {
+      const journeyContactsResponse = await api.get('/sales/journey-contacts', {
+        filter: JSON.stringify({ contactId }),
+        limit: 1000
+      });
+
+      const journeyContacts = Array.isArray(journeyContactsResponse?.data)
+        ? journeyContactsResponse.data
+        : [];
+
+      const journeyIds = journeyContacts.map((jc: any) => jc.journeyId).filter(Boolean);
+
+      if (journeyIds.length === 0) {
+        setJourneysData([]);
+        return;
+      }
+
+      const journeysResponse = await api.get('/legacy/base/Journey', {
+        filter: JSON.stringify({
+          field: 'ID',
+          operator: 'in',
+          values: journeyIds
+        }),
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Status,Journey_Start_Date,Expected_Decision_Date,CreateDT,Priority'
+      });
+
+      const journeysArray = journeysResponse?.data
+        ? journeysResponse.data
+        : (Array.isArray(journeysResponse) ? journeysResponse : []);
+
+      setJourneysData(journeysArray);
+    } catch (error) {
+      console.error('Error fetching journeys:', error);
+      setJourneysData([]);
+    } finally {
+      setJourneysLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchContactData();
   }, [contactId]);
+
+  useEffect(() => {
+    if (activeTab === 'journeys' && journeysData.length === 0 && !journeysLoading) {
+      fetchJourneys();
+    }
+  }, [activeTab, contactId]);
+
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (!contactId) return;
+      setIsLoadingNotes(true);
+      try {
+        const noteData = await api.get('/core/notes', {
+          filter: JSON.stringify({
+            entityId: contactId,
+            entityType: "contact",
+            type: "note"
+          }),
+          sort: 'createdAt',
+          order: 'desc'
+        });
+        if (noteData?.success && Array.isArray(noteData.data)) {
+          setContactNotes(noteData.data);
+        }
+      } catch (error) {
+        console.error('Error fetching contact notes:', error);
+        setContactNotes([]);
+      } finally {
+        setIsLoadingNotes(false);
+      }
+    };
+    fetchNotes();
+  }, [contactId]);
+
+  const handleCreateNote = async () => {
+    if (!newNoteBody.trim() || !contactId) return;
+    setIsCreatingNote(true);
+    try {
+      const newNote = await api.post('/core/notes', {
+        body: newNoteBody.trim(),
+        entityId: contactId,
+        entityType: "contact",
+        type: "note",
+        createdBy: "system"
+      });
+      if (newNote?.success && newNote.data) {
+        setContactNotes(prev => [newNote.data, ...prev]);
+        setNewNoteBody("");
+      }
+    } catch (error) {
+      console.error('Error creating note:', error);
+      alert('Failed to create note. Please try again.');
+    } finally {
+      setIsCreatingNote(false);
+    }
+  };
+
+  const handleEditNote = (note: any) => {
+    setEditingNoteId(note.id);
+    setEditingNoteBody(note.body || "");
+  };
+
+  const handleSaveNote = async () => {
+    if (!editingNoteId || !editingNoteBody.trim()) return;
+    setIsSaving(true);
+    try {
+      const result = await api.patch(`/core/notes/${editingNoteId}`, {
+        body: editingNoteBody.trim()
+      });
+      if (result?.success && result.data) {
+        setContactNotes(prev => prev.map(note =>
+          note.id === editingNoteId ? result.data : note
+        ));
+        setEditingNoteId(null);
+        setEditingNoteBody("");
+      }
+    } catch (error) {
+      console.error('Error updating note:', error);
+      alert('Failed to update note. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEditNote = () => {
+    setEditingNoteId(null);
+    setEditingNoteBody("");
+  };
+
+  const handleDeleteNote = (note: any) => {
+    setNoteToDelete(note);
+  };
+
+  const confirmDeleteNote = async () => {
+    if (!noteToDelete) return;
+    setIsSaving(true);
+    try {
+      const result = await api.delete(`/core/notes/${noteToDelete.id}`);
+      if (result !== null) {
+        setContactNotes(prev => prev.filter(note => note.id !== noteToDelete.id));
+        setNoteToDelete(null);
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert('Failed to delete note. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading contact details...</div>;
@@ -292,14 +468,14 @@ const ContactDetails = () => {
     );
   }
 
-  const fullName = `${contactData?.FirstName || ""} ${contactData?.LastName || ""}`.trim() || "Unnamed Contact";
-  const companyName = companyData?.CustDlrName || (contactData?.Company_ID ? `Company ${contactData.Company_ID}` : 'Unknown Company');
+  const fullName = `${contactData?.firstName || ""} ${contactData?.lastName || ""}`.trim() || "Unnamed Contact";
+  const companyName = companyData?.name || (contactData?.legacyCompanyId ? `Company ${contactData.legacyCompanyId}` : 'Unknown Company');
 
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={fullName}
-        description={`Contact ID: ${contactData.Cont_Id} • ${getContactTypeName(contactData.Type)} • ${companyName}`}
+        description={`Contact ID: ${contactData.id} • ${getContactTypeName(contactData.type)} • ${companyName}`}
         goBack
         actions={
           <div className="flex gap-2">
@@ -344,8 +520,34 @@ const ContactDetails = () => {
           </div>
         }
       />
-      
-      <div className="p-4 flex flex-1 flex-col gap-6">
+
+      <div className="border-b border-border">
+        <div className="flex px-4">
+          <button
+            onClick={() => setActiveTab("details")}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === "details"
+                ? "border-primary text-primary"
+                : "border-transparent text-text-muted hover:text-text"
+            }`}
+          >
+            Details
+          </button>
+          <button
+            onClick={() => setActiveTab("journeys")}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === "journeys"
+                ? "border-primary text-primary"
+                : "border-transparent text-text-muted hover:text-text"
+            }`}
+          >
+            Journeys
+          </button>
+        </div>
+      </div>
+
+      {activeTab === "details" && (
+        <div className="p-4 flex flex-1 flex-col gap-6">
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Personal Information */}
@@ -361,11 +563,11 @@ const ContactDetails = () => {
                       <input
                         type="text"
                         className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={editForm.FirstName}
+                        value={editForm.firstName}
                         onChange={(e) => {
                           const value = e.target.value;
                           if (value.length === 0 || value[0] !== ' ') {
-                            setEditForm(s => ({ ...s, FirstName: value }));
+                            setEditForm(s => ({ ...s, firstName: value }));
                           }
                         }}
                         placeholder="First Name"
@@ -373,11 +575,11 @@ const ContactDetails = () => {
                       <input
                         type="text"
                         className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={editForm.LastName}
+                        value={editForm.lastName}
                         onChange={(e) => {
                           const value = e.target.value;
                           if (value.length === 0 || value[0] !== ' ') {
-                            setEditForm(s => ({ ...s, LastName: value }));
+                            setEditForm(s => ({ ...s, lastName: value }));
                           }
                         }}
                         placeholder="Last Name"
@@ -388,19 +590,19 @@ const ContactDetails = () => {
                   )}
                 </div>
               </div>
-              
+
               <div>
                 <div className="text-sm text-text-muted">Title</div>
                 {isEditing ? (
                   <input
                     type="text"
                     className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={editForm.ConTitle}
-                    onChange={(e) => setEditForm(s => ({ ...s, ConTitle: e.target.value }))}
+                    value={editForm.title}
+                    onChange={(e) => setEditForm(s => ({ ...s, title: e.target.value }))}
                     placeholder="Contact Title"
                   />
                 ) : (
-                  <div className="text-text">{contactData.ConTitle || "-"}</div>
+                  <div className="text-text">{contactData.title || "-"}</div>
                 )}
               </div>
 
@@ -409,8 +611,8 @@ const ContactDetails = () => {
                 {isEditing ? (
                   <select
                     className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={editForm.Type}
-                    onChange={(e) => setEditForm(s => ({ ...s, Type: e.target.value }))}
+                    value={editForm.type}
+                    onChange={(e) => setEditForm(s => ({ ...s, type: e.target.value }))}
                   >
                     <option value="">Select Type</option>
                     <option value={ContactType.Accounting}>Accounting</option>
@@ -421,15 +623,15 @@ const ContactDetails = () => {
                     <option value={ContactType.Sales}>Sales</option>
                   </select>
                 ) : (
-                  <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getContactTypeColor(contactData.Type)}`}>
-                    {getContactTypeName(contactData.Type)}
+                  <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getContactTypeColor(contactData.type)}`}>
+                    {getContactTypeName(contactData.type)}
                   </span>
                 )}
               </div>
 
               <div>
                 <div className="text-sm text-text-muted">Contact ID</div>
-                <div className="text-text font-mono">{contactData.Cont_Id}</div>
+                <div className="text-text font-mono">{contactData.id}</div>
               </div>
 
               <div>
@@ -437,13 +639,13 @@ const ContactDetails = () => {
                 {isEditing && availableAddresses.length > 0 ? (
                   <select
                     className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
-                    value={editForm.Address_ID}
+                    value={editForm.addressId}
                     onChange={(e) => {
                       const newAddressId = e.target.value;
-                      setEditForm(s => ({ ...s, Address_ID: newAddressId }));
+                      setEditForm(s => ({ ...s, addressId: newAddressId }));
 
                       // Update addressData preview
-                      const selectedAddress = availableAddresses.find((addr: any) => addr.Address_ID === newAddressId);
+                      const selectedAddress = availableAddresses.find((addr: any) => addr.Address_ID == newAddressId);
                       if (selectedAddress) {
                         setAddressData(selectedAddress);
                       } else {
@@ -459,7 +661,7 @@ const ContactDetails = () => {
                     ))}
                   </select>
                 ) : (
-                  <div className="text-text font-mono">{contactData.Address_ID || "-"}</div>
+                  <div className="text-text font-mono">{contactData.addressId || "-"}</div>
                 )}
               </div>
             </div>
@@ -473,8 +675,8 @@ const ContactDetails = () => {
                 <Building2 size={16} className="text-text-muted" />
                 <div>
                   <div className="text-sm text-text-muted">Company</div>
-                  <Link 
-                    to={`/sales/companies/${contactData.Company_ID}`}
+                  <Link
+                    to={`/sales/companies/${contactData.legacyCompanyId}`}
                     className="text-primary hover:underline font-medium"
                   >
                     {companyName}
@@ -484,68 +686,12 @@ const ContactDetails = () => {
 
               <div>
                 <div className="text-sm text-text-muted">Company ID</div>
-                <div className="text-text font-mono">{contactData.Company_ID}</div>
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Additional Address</div>
-                {isEditing ? (
-                  <textarea
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text resize-none"
-                    value={editForm.MoreAddress}
-                    onChange={(e) => setEditForm(s => ({ ...s, MoreAddress: e.target.value }))}
-                    placeholder="Additional address information"
-                    rows={2}
-                  />
-                ) : (
-                  <div className="text-text">{contactData.MoreAddress || "-"}</div>
-                )}
+                <div className="text-text font-mono">{contactData.legacyCompanyId}</div>
               </div>
             </div>
           </div>
 
-          {/* Address Information */}
-          <div className="bg-foreground rounded shadow-sm border p-4">
-            <h3 className="text-lg font-semibold text-text mb-4">Address Information</h3>
-            {addressData ? (
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <MapPin size={16} className="text-text-muted mt-1" />
-                  <div className="flex-1">
-                    <div className="text-sm text-text-muted">Address</div>
-                    <div className="text-text">
-                      {addressData.Address1 && (
-                        <div>{addressData.Address1}</div>
-                      )}
-                      {addressData.Address2 && (
-                        <div>{addressData.Address2}</div>
-                      )}
-                      {addressData.Address3 && (
-                        <div>{addressData.Address3}</div>
-                      )}
-                      {(addressData.City || addressData.State || addressData.ZipCode) && (
-                        <div>
-                          {[addressData.City, addressData.State, addressData.ZipCode].filter(Boolean).join(', ')}
-                        </div>
-                      )}
-                      {addressData.Country && addressData.Country !== 'USA' && (
-                        <div>{addressData.Country}</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : contactData.Address_ID ? (
-              <div className="text-text-muted text-sm">Address data not available</div>
-            ) : (
-              <div className="text-text-muted text-sm">No address assigned</div>
-            )}
-          </div>
-        </div>
-
-        {/* Contact Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Primary Contact Details */}
+          {/* Contact Details */}
           <div className="bg-foreground rounded shadow-sm border p-4">
             <h3 className="text-lg font-semibold text-text mb-4">Contact Details</h3>
             <div className="space-y-3">
@@ -558,22 +704,22 @@ const ContactDetails = () => {
                       <input
                         type="text"
                         className="col-span-2 rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={editForm.PhoneNumber}
-                        onChange={(e) => setEditForm(s => ({ ...s, PhoneNumber: e.target.value }))}
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm(s => ({ ...s, phone: e.target.value }))}
                         placeholder="Phone number"
                       />
                       <input
                         type="text"
                         className="rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={editForm.PhoneExt}
-                        onChange={(e) => setEditForm(s => ({ ...s, PhoneExt: e.target.value }))}
+                        value={editForm.phoneExtension}
+                        onChange={(e) => setEditForm(s => ({ ...s, phoneExtension: e.target.value }))}
                         placeholder="Ext"
                       />
                     </div>
-                  ) : contactData.PhoneNumber ? (
-                    <Link to={`tel:${contactData.PhoneNumber}`} className="text-primary hover:underline">
-                      {contactData.PhoneNumber}
-                      {contactData.PhoneExt && ` x${contactData.PhoneExt}`}
+                  ) : contactData.phone ? (
+                    <Link to={`tel:${contactData.phone}`} className="text-primary hover:underline">
+                      {contactData.phone}
+                      {contactData.phoneExtension && ` x${contactData.phoneExtension}`}
                     </Link>
                   ) : (
                     <div className="text-text">-</div>
@@ -589,167 +735,289 @@ const ContactDetails = () => {
                     <input
                       type="email"
                       className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                      value={editForm.Email}
-                      onChange={(e) => setEditForm(s => ({ ...s, Email: e.target.value }))}
+                      value={editForm.email}
+                      onChange={(e) => setEditForm(s => ({ ...s, email: e.target.value }))}
                       placeholder="Email address"
                     />
-                  ) : contactData.Email ? (
-                    <Link to={`mailto:${contactData.Email}`} className="text-primary hover:underline">
-                      {contactData.Email}
+                  ) : contactData.email ? (
+                    <Link to={`mailto:${contactData.email}`} className="text-primary hover:underline">
+                      {contactData.email}
                     </Link>
                   ) : (
                     <div className="text-text">-</div>
                   )}
                 </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Globe size={16} className="text-text-muted mt-1" />
-                <div className="flex-1">
-                  <div className="text-sm text-text-muted">Website</div>
-                  {isEditing ? (
-                    <input
-                      type="url"
-                      className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                      value={editForm.Website}
-                      onChange={(e) => setEditForm(s => ({ ...s, Website: e.target.value }))}
-                      placeholder="Website URL"
-                    />
-                  ) : contactData.Website ? (
-                    <Link to={contactData.Website} target="_blank" className="text-primary hover:underline">
-                      {contactData.Website}
-                    </Link>
-                  ) : (
-                    <div className="text-text">-</div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Fax</div>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={editForm.FaxPhoneNum}
-                    onChange={(e) => setEditForm(s => ({ ...s, FaxPhoneNum: e.target.value }))}
-                    placeholder="Fax number"
-                  />
-                ) : (
-                  <div className="text-text">{contactData.FaxPhoneNum || "-"}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Alternative Contact Information */}
-          <div className="bg-foreground rounded shadow-sm border p-4">
-            <h3 className="text-lg font-semibold text-text mb-4">Alternative Contact</h3>
-            <div className="space-y-3">
-              <div>
-                <div className="text-sm text-text-muted">Alternative Phone</div>
-                {isEditing ? (
-                  <textarea
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text resize-none"
-                    value={editForm.AltPhone}
-                    onChange={(e) => setEditForm(s => ({ ...s, AltPhone: e.target.value }))}
-                    placeholder="Alternative phone numbers"
-                    rows={3}
-                  />
-                ) : contactData.AltPhone ? (
-                  <div className="text-text whitespace-pre-wrap bg-surface rounded p-2 text-sm">
-                    {contactData.AltPhone}
-                  </div>
-                ) : (
-                  <div className="text-text-muted text-sm">No alternative phone numbers</div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Description</div>
-                {isEditing ? (
-                  <textarea
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text resize-none"
-                    value={editForm.AltDesc}
-                    onChange={(e) => setEditForm(s => ({ ...s, AltDesc: e.target.value }))}
-                    placeholder="Alternative contact description"
-                    rows={3}
-                  />
-                ) : contactData.AltDesc ? (
-                  <div className="text-text whitespace-pre-wrap bg-surface rounded p-2 text-sm">
-                    {contactData.AltDesc}
-                  </div>
-                ) : (
-                  <div className="text-text-muted text-sm">No alternative description</div>
-                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Notes and Dates */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Notes */}
-          <div className="bg-foreground rounded shadow-sm border p-4">
-            <h3 className="text-lg font-semibold text-text mb-4">Notes</h3>
-            {isEditing ? (
-              <textarea
-                className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text resize-none"
-                value={editForm.Notes}
-                onChange={(e) => setEditForm(s => ({ ...s, Notes: e.target.value }))}
-                placeholder="Contact notes"
-                rows={6}
-              />
-            ) : contactData.Notes ? (
-              <div className="text-text bg-surface rounded p-2">
-                {contactData.Notes}
+        {/* Address Information */}
+        <div className="bg-foreground rounded shadow-sm border p-4">
+          <h3 className="text-lg font-semibold text-text mb-4">Address Information</h3>
+          {addressData ? (
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <MapPin size={16} className="text-text-muted mt-1" />
+                <div className="flex-1">
+                  <div className="text-sm text-text-muted">Address</div>
+                  <div className="text-text">
+                    {addressData.Address1 && (
+                      <div>{addressData.Address1}</div>
+                    )}
+                    {addressData.Address2 && (
+                      <div>{addressData.Address2}</div>
+                    )}
+                    {addressData.Address3 && (
+                      <div>{addressData.Address3}</div>
+                    )}
+                    {(addressData.City || addressData.State || addressData.ZipCode) && (
+                      <div>
+                        {[addressData.City, addressData.State, addressData.ZipCode].filter(Boolean).join(', ')}
+                      </div>
+                    )}
+                    {addressData.Country && addressData.Country !== 'USA' && (
+                      <div>{addressData.Country}</div>
+                    )}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="text-text-muted text-sm">No notes available</div>
-            )}
+            </div>
+          ) : contactData.addressId ? (
+            <div className="text-text-muted text-sm">Address data not available</div>
+          ) : (
+            <div className="text-text-muted text-sm">No address assigned</div>
+          )}
+        </div>
+
+        {/* Notes */}
+        <div className="bg-foreground rounded shadow-sm border p-4 flex flex-col" style={{ maxHeight: '500px' }}>
+          <h3 className="text-lg font-semibold text-text mb-4">Notes</h3>
+
+          <div className="flex gap-2 mb-4">
+            <textarea
+              className="flex-1 p-2 bg-background rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+              value={newNoteBody}
+              onChange={(e) => setNewNoteBody(e.target.value)}
+              placeholder="Enter a new note..."
+              rows={2}
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleCreateNote}
+              disabled={isCreatingNote || !newNoteBody.trim()}
+            >
+              {isCreatingNote ? "Adding..." : "Add Note"}
+            </Button>
           </div>
 
-          {/* Audit Information */}
-          <div className="bg-foreground rounded shadow-sm border p-4">
-            <h3 className="text-lg font-semibold text-text mb-4">Record Information</h3>
-            <div className="space-y-3">
+          <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
+            {isLoadingNotes ? (
+              <div className="text-sm text-text-muted text-center py-4">Loading notes...</div>
+            ) : contactNotes.length === 0 ? (
+              <div className="text-sm text-text-muted text-center py-4">No notes yet</div>
+            ) : (
+              contactNotes.map((note) => (
+                <div key={note.id} className="p-3 bg-background rounded border border-border">
+                  {editingNoteId === note.id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        className="w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                        value={editingNoteBody}
+                        onChange={(e) => setEditingNoteBody(e.target.value)}
+                        rows={3}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={handleSaveNote}
+                          disabled={isSaving || !editingNoteBody.trim()}
+                        >
+                          {isSaving ? "Saving..." : "Save"}
+                        </Button>
+                        <Button
+                          variant="secondary-outline"
+                          size="sm"
+                          onClick={handleCancelEditNote}
+                          disabled={isSaving}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-text">
+                            {note.createdBy || "Unknown"}
+                          </span>
+                          <span className="text-xs text-text-muted">
+                            {note.createdAt ? new Date(note.createdAt).toLocaleString() : "N/A"}
+                          </span>
+                          {note.updatedAt && note.updatedAt !== note.createdAt && (
+                            <span className="text-xs text-text-muted">
+                              Updated: {new Date(note.updatedAt).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={() => handleEditNote(note)}
+                            disabled={isSaving || editingNoteId !== null}
+                            className="!p-1 !h-6 !w-6"
+                          >
+                            <Edit size={12} />
+                          </Button>
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={() => handleDeleteNote(note)}
+                            disabled={isSaving || editingNoteId !== null}
+                            className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
+                          >
+                            <Trash2 size={12} className="text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="text-sm text-text whitespace-pre-wrap">
+                        {note.body || ""}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Record Information */}
+        <div className="bg-foreground rounded shadow-sm border p-4">
+          <h3 className="text-lg font-semibold text-text mb-4">Record Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex items-center gap-3">
+              <Calendar size={16} className="text-text-muted" />
+              <div>
+                <div className="text-sm text-text-muted">Created</div>
+                <div className="text-text">
+                  {contactData.createdAt ? formatDate(contactData.createdAt) : "Unknown"}
+                </div>
+              </div>
+            </div>
+
+            {contactData.updatedAt && (
               <div className="flex items-center gap-3">
                 <Calendar size={16} className="text-text-muted" />
                 <div>
-                  <div className="text-sm text-text-muted">Created</div>
+                  <div className="text-sm text-text-muted">Last Modified</div>
                   <div className="text-text">
-                    {contactData.CreateDate ? formatDate(contactData.CreateDate) : "Unknown"}
-                    {contactData.CreateInit && ` by ${contactData.CreateInit}`}
+                    {formatDate(contactData.updatedAt)}
                   </div>
                 </div>
               </div>
-
-              {contactData.ModifyDate && (
-                <div className="flex items-center gap-3">
-                  <Calendar size={16} className="text-text-muted" />
-                  <div>
-                    <div className="text-sm text-text-muted">Last Modified</div>
-                    <div className="text-text">
-                      {formatDate(contactData.ModifyDate)}
-                      {contactData.ModifyInit && ` by ${contactData.ModifyInit}`}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {contactData.PrevModDate && (
-                <div>
-                  <div className="text-sm text-text-muted">Previous Modification</div>
-                  <div className="text-text text-sm">
-                    {formatDate(contactData.PrevModDate)}
-                    {contactData.PrevModInit && ` by ${contactData.PrevModInit}`}
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      </div>
+        </div>
+      )}
+
+      {activeTab === "journeys" && (
+        <div className="p-4 flex flex-1 flex-col gap-6">
+          {journeysLoading ? (
+            <div className="flex justify-center items-center h-64">Loading journeys...</div>
+          ) : journeysData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-text-muted">
+              <Briefcase size={48} className="mb-4 opacity-50" />
+              <p className="text-lg font-medium">No Journeys</p>
+              <p className="text-sm">This contact is not linked to any journeys.</p>
+            </div>
+          ) : (
+            <div className="bg-foreground rounded shadow-sm border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b border-border">
+                    <tr>
+                      <th className="text-left p-4 text-sm font-semibold text-text">Journey</th>
+                      <th className="text-left p-4 text-sm font-semibold text-text">Stage</th>
+                      <th className="text-left p-4 text-sm font-semibold text-text">Status</th>
+                      <th className="text-left p-4 text-sm font-semibold text-text">Priority</th>
+                      <th className="text-left p-4 text-sm font-semibold text-text">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {journeysData.map((journey: any) => {
+                      const displayName = journey?.Project_Name ||
+                        journey?.Target_Account ||
+                        `Journey #${journey?.ID || 'Unknown'}`;
+
+                      const journeyStage = journey?.Journey_Stage || '-';
+                      const journeyStatus = journey?.Journey_Status || 'Active';
+                      const priority = journey?.Priority || '-';
+                      const startDate = journey?.Journey_Start_Date || journey?.Expected_Decision_Date || journey?.CreateDT;
+
+                      return (
+                        <tr key={journey?.ID || Math.random()} className="border-b border-border last:border-b-0 hover:bg-background/50">
+                          <td className="p-4">
+                            {journey?.ID ? (
+                              <Link
+                                to={`/sales/pipeline/${journey.ID}`}
+                                className="text-primary hover:underline font-medium"
+                              >
+                                {displayName}
+                              </Link>
+                            ) : (
+                              <div className="font-medium text-text">{displayName}</div>
+                            )}
+                            {journey?.Target_Account && journey?.Target_Account !== displayName && (
+                              <div className="text-xs text-text-muted mt-1">
+                                {journey.Target_Account}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <span className="text-sm text-text-muted">{journeyStage}</span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                              journeyStatus?.toLowerCase().includes('active') ? 'bg-success/20 text-success' :
+                              journeyStatus?.toLowerCase().includes('complete') ? 'bg-info/20 text-info' :
+                              journeyStatus?.toLowerCase().includes('cancel') ? 'bg-error/20 text-error' :
+                              journeyStatus?.toLowerCase().includes('lost') ? 'bg-error/20 text-error' :
+                              journeyStatus?.toLowerCase().includes('won') ? 'bg-success/20 text-success' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {journeyStatus}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                              priority === 'A' ? 'bg-error/20 text-error' :
+                              priority === 'B' ? 'bg-warning/20 text-warning' :
+                              priority === 'C' ? 'bg-info/20 text-info' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {priority}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-sm text-text-muted">
+                              {startDate ? formatDate(startDate) : '-'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <DeleteContactModal
         isOpen={showDeleteModal}
@@ -758,6 +1026,37 @@ const ContactDetails = () => {
         contact={contactData}
         isUpdating={isSaving}
       />
+
+      {/* Delete Note Confirmation Modal */}
+      {noteToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-foreground rounded shadow-lg border p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-text mb-4">Delete Note</h3>
+            <p className="text-sm text-text-muted mb-6">
+              Are you sure you want to delete this note? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => setNoteToDelete(null)}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={confirmDeleteNote}
+                disabled={isSaving}
+                className="bg-error hover:bg-error/90"
+              >
+                {isSaving ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

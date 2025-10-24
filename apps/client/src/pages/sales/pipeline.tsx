@@ -340,6 +340,8 @@ const Pipeline = () => {
     limit: 25
   });
   const [isLoadingListView, setIsLoadingListView] = useState(false);
+  const [kanbanViewJourneys, setKanbanViewJourneys] = useState<any[]>([]);
+  const [isLoadingKanbanView, setIsLoadingKanbanView] = useState(false);
 
 
   const filteredJourneys = useMemo(() => {
@@ -449,11 +451,6 @@ const Pipeline = () => {
     
     return results;
   }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter, journeyTags]);
-  const kanbanJourneys = useMemo(() => {
-    return filteredJourneys
-      .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
-      .slice(0, kanbanBatchSize);
-  }, [filteredJourneys, kanbanBatchSize]);
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
 
   const fetchListViewJourneys = useCallback(async () => {
@@ -680,12 +677,223 @@ const Pipeline = () => {
     }
   }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, api, searchTerm, rsmFilter, journeyStatusFilter, filters]);
 
+  const fetchKanbanViewJourneys = useCallback(async () => {
+    if (isLoadingKanbanView) return;
+
+    const trimmedSearch = searchTerm.trim();
+    const hasTagSearch = trimmedSearch.toLowerCase().startsWith('tag:');
+
+    if (hasTagSearch) {
+      setKanbanViewJourneys(filteredJourneys.slice(0, kanbanBatchSize));
+      return;
+    }
+
+    setIsLoadingKanbanView(true);
+    try {
+      const params: any = {
+        page: 1,
+        limit: kanbanBatchSize,
+        sort: 'Action_Date',
+        order: 'desc',
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+      };
+
+      const filterConditions: any[] = [];
+
+      if (searchTerm && trimmedSearch.toLowerCase() !== 'tag:') {
+        filterConditions.push({
+          operator: "or",
+          conditions: [
+            { field: "Project_Name", operator: "contains", value: trimmedSearch },
+            { field: "Target_Account", operator: "contains", value: trimmedSearch }
+          ]
+        });
+      }
+
+      if (rsmFilter) {
+        filterConditions.push({
+          field: "RSM",
+          operator: "contains",
+          value: rsmFilter
+        });
+      }
+
+      if (journeyStatusFilter) {
+        filterConditions.push({
+          field: "Journey_Status",
+          operator: "equals",
+          value: journeyStatusFilter
+        });
+      }
+
+      if (filters.priority) {
+        filterConditions.push({
+          field: "Priority",
+          operator: "equals",
+          value: filters.priority
+        });
+      }
+
+      if (filters.confidenceLevels.length > 0) {
+        const confidenceValues = filters.confidenceLevels.map((level: number) => {
+          if (level === 0) return "Closed Lost";
+          if (level === 100) return "Closed Won";
+          return `${level}%`;
+        });
+        filterConditions.push({
+          field: "Chance_To_Secure_order",
+          operator: "in",
+          values: confidenceValues
+        });
+      }
+
+      if (filters.dateRange[0] || filters.dateRange[1]) {
+        const fieldMap: Record<string, string> = {
+          'closeDate': 'Expected_Decision_Date',
+          'Action_Date': 'Action_Date',
+          'Journey_Start_Date': 'Journey_Start_Date',
+          'Quote_Presentation_Date': 'Quote_Presentation_Date',
+          'Expected_Decision_Date': 'Expected_Decision_Date',
+          'Date_PO_Received': 'Date_PO_Received',
+          'Date_Lost': 'Date_Lost'
+        };
+        const dbField = fieldMap[filters.dateField] || 'Expected_Decision_Date';
+
+        if (filters.dateRange[0]) {
+          filterConditions.push({
+            field: dbField,
+            operator: "gte",
+            value: filters.dateRange[0]
+          });
+        }
+        if (filters.dateRange[1]) {
+          filterConditions.push({
+            field: dbField,
+            operator: "lte",
+            value: filters.dateRange[1]
+          });
+        }
+      }
+
+      if (filters.minValue) {
+        filterConditions.push({
+          field: "Journey_Value",
+          operator: "gte",
+          value: parseFloat(filters.minValue)
+        });
+      }
+
+      if (filters.maxValue) {
+        filterConditions.push({
+          field: "Journey_Value",
+          operator: "lte",
+          value: parseFloat(filters.maxValue)
+        });
+      }
+
+      if (filters.visibleStages.length !== STAGES.length) {
+        const stageConditions = filters.visibleStages.map((stageId: number) => {
+          switch (stageId) {
+            case 1:
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "LEAD" },
+                  { field: "Journey_Stage", operator: "contains", value: "OPEN" },
+                  { field: "Journey_Stage", operator: "contains", value: "NEW" }
+                ]
+              };
+            case 2:
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
+                  { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
+                  { field: "Journey_Stage", operator: "contains", value: "PAIN" },
+                  { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
+                ]
+              };
+            case 3:
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
+                  { field: "Journey_Stage", operator: "contains", value: "DEMO" },
+                  { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
+                  { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
+                ]
+              };
+            case 4:
+              return {
+                field: "Journey_Stage",
+                operator: "contains",
+                value: "NEGOT"
+              };
+            case 5:
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "PO" },
+                  { field: "Journey_Stage", operator: "contains", value: "WON" },
+                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
+                  { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
+                  { field: "Journey_Stage", operator: "contains", value: "ORDER" }
+                ]
+              };
+            case 6:
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "LOST" },
+                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
+                  { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
+                  { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
+                ]
+              };
+            default:
+              return null;
+          }
+        }).filter(Boolean);
+
+        if (stageConditions.length > 0) {
+          filterConditions.push({
+            operator: "or",
+            conditions: stageConditions
+          });
+        }
+      }
+
+      if (filterConditions.length > 0) {
+        params.filter = JSON.stringify({ filters: filterConditions });
+      }
+
+      const raw = await api.get('/legacy/base/Journey', params);
+
+      if (raw !== null) {
+        const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
+        const mapped = journeysArray.map(adaptLegacyJourney);
+        setKanbanViewJourneys(mapped);
+      }
+    } catch (error) {
+      console.error("Error fetching kanban view journeys:", error);
+    } finally {
+      setIsLoadingKanbanView(false);
+    }
+  }, [isLoadingKanbanView, kanbanBatchSize, api, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys]);
+
   useEffect(() => {
     if (viewMode === 'list') {
       fetchListViewJourneys();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+
+  useEffect(() => {
+    if (viewMode === 'kanban') {
+      fetchKanbanViewJourneys();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters]);
 
   const handleListPageChange = (newPage: number) => {
     setListPage(newPage);
@@ -731,19 +939,13 @@ const Pipeline = () => {
   }, [showTags]);
 
   useEffect(() => {
-    if (showTags && viewMode === 'kanban') {
-      const journeysToFetch = filteredJourneys
-        .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
-        .slice(0, kanbanBatchSize);
-
-      if (journeysToFetch.length > 0) {
-        const journeyIds = journeysToFetch.map((j: any) => j.id.toString());
-        fetchJourneyTags(journeyIds).then(tagsMap => {
-          setJourneyTags(tagsMap);
-        });
-      }
+    if (showTags && viewMode === 'kanban' && kanbanViewJourneys.length > 0) {
+      const journeyIds = kanbanViewJourneys.map((j: any) => j.id.toString());
+      fetchJourneyTags(journeyIds).then(tagsMap => {
+        setJourneyTags(tagsMap);
+      });
     }
-  }, [showTags, viewMode]);
+  }, [showTags, viewMode, kanbanViewJourneys]);
 
   useEffect(() => {
     saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
@@ -783,7 +985,7 @@ const Pipeline = () => {
   const [idsByStage, setIdsByStage] = useState<Record<number, string[]>>(emptyStageMap);
   const stageCalculations = useMemo(() => {
     const calculations = new Map();
-    const journeysForCalculation = viewMode === "kanban" ? kanbanJourneys : filteredJourneys;
+    const journeysForCalculation = viewMode === "kanban" ? kanbanViewJourneys : filteredJourneys;
     STAGES.filter(s => visibleStageIds?.includes(s.id)).forEach((stage) => {
       const items = idsByStage[stage.id] ?? [];
       const stageTotal = items.reduce((sum, id) => {
@@ -794,7 +996,7 @@ const Pipeline = () => {
       calculations.set(stage.id, { items, stageTotal, stageWeighted, stage });
     });
     return calculations;
-  }, [idsByStage, filteredJourneys, kanbanJourneys, visibleStageIds, viewMode]);
+  }, [idsByStage, filteredJourneys, kanbanViewJourneys, visibleStageIds, viewMode]);
 
   useEffect(() => {
     const next = STAGES.reduce((acc, s) => {
@@ -802,7 +1004,7 @@ const Pipeline = () => {
       return acc;
     }, {} as Record<number, string[]>);
 
-    const journeysForStaging = viewMode === "kanban" ? kanbanJourneys : filteredJourneys;
+    const journeysForStaging = viewMode === "kanban" ? kanbanViewJourneys : filteredJourneys;
     (journeysForStaging ?? []).forEach(j => {
       const sid: StageId = (j.stage as StageId) ?? 1;
       if (!next[sid]) next[sid] = [];
@@ -810,17 +1012,18 @@ const Pipeline = () => {
     });
 
     setIdsByStage(next);
-  }, [filteredJourneys, kanbanJourneys, viewMode]);
+  }, [filteredJourneys, kanbanViewJourneys, viewMode]);
 
   const handleDeleteJourney = useCallback(async (journeyId: string) => {
     try {
       const success = await del(`/legacy/std/Journey/${journeyId}`);
-      
+
       if (success) {
-        setLegacyJourneys(prev => 
+        setLegacyJourneys(prev =>
           prev ? prev.filter(j => j.id.toString() !== journeyId) : prev
         );
         setJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
+        setKanbanViewJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
       } else {
         alert("Failed to delete journey. Please try again.");
       }
@@ -835,13 +1038,13 @@ const Pipeline = () => {
   const handleTagsUpdated = useCallback(async () => {
     if (!showTags) return;
 
-    const journeysToUpdate = viewMode === 'kanban' ? kanbanJourneys : (legacyJourneys || journeys);
+    const journeysToUpdate = viewMode === 'kanban' ? kanbanViewJourneys : (legacyJourneys || journeys);
     if (journeysToUpdate && journeysToUpdate.length > 0) {
       const journeyIds = journeysToUpdate.map((j: any) => j.id.toString());
       const tagsMap = await fetchJourneyTags(journeyIds);
       setJourneyTags(tagsMap);
     }
-  }, [showTags, viewMode, kanbanJourneys, legacyJourneys, journeys]);
+  }, [showTags, viewMode, kanbanViewJourneys, legacyJourneys, journeys]);
 
   const handleStageUpdate = useCallback(async (journeyId: string, newStage: number) => {
     try {
@@ -851,25 +1054,30 @@ const Pipeline = () => {
           console.error(`Invalid stage ID: ${newStage}`);
           return;
         }
-        const result = await stageUpdateApi.patch(`/legacy/base/Journey/${journeyId}`, { 
-          Journey_Stage: stageLabel 
+        const result = await stageUpdateApi.patch(`/legacy/base/Journey/${journeyId}`, {
+          Journey_Stage: stageLabel
         });
-        
+
         if (result !== null) {
           await new Promise(resolve => setTimeout(resolve, 100));
-          const refetchSuccess = await refetchLegacyJourneys();
-          if (!refetchSuccess) {
-            setLegacyJourneys((prev) =>
-              (prev ?? []).map((j) =>
-                j.id.toString() === journeyId
-                  ? {
-                      ...j,
-                      stage: newStage,
-                      updatedAt: new Date().toISOString(),
-                    }
-                  : j
-              )
-            );
+
+          if (viewMode === 'kanban') {
+            await fetchKanbanViewJourneys();
+          } else {
+            const refetchSuccess = await refetchLegacyJourneys();
+            if (!refetchSuccess) {
+              setLegacyJourneys((prev) =>
+                (prev ?? []).map((j) =>
+                  j.id.toString() === journeyId
+                    ? {
+                        ...j,
+                        stage: newStage,
+                        updatedAt: new Date().toISOString(),
+                      }
+                    : j
+                )
+              );
+            }
           }
         } else {
           console.error("Failed to update journey stage on server");
@@ -885,7 +1093,7 @@ const Pipeline = () => {
     } catch (error) {
       console.error("Error updating journey stage:", error);
     }
-  }, [isLegacyData, refetchLegacyJourneys, put]);
+  }, [isLegacyData, refetchLegacyJourneys, put, viewMode, fetchKanbanViewJourneys]);
 
   const handleSort = useCallback((field: string, order?: 'asc' | 'desc') => {
     if (order) {
@@ -1260,7 +1468,7 @@ const Pipeline = () => {
             validJourneyStatuses={validJourneyStatuses}
           />
           <KanbanView
-            journeys={kanbanJourneys}
+            journeys={kanbanViewJourneys}
             customersById={customersById}
             visibleStageIds={visibleStageIds}
             idsByStage={idsByStage}
@@ -1272,6 +1480,7 @@ const Pipeline = () => {
             onTagsUpdated={handleTagsUpdated}
             employee={employee}
             journeyTags={journeyTags}
+            isLoading={isLoadingKanbanView}
           />
         </div>
       )}
@@ -1329,6 +1538,9 @@ const Pipeline = () => {
                 const updated = [adaptedJourney, ...prev];
                 return updated;
               });
+              if (viewMode === 'kanban') {
+                fetchKanbanViewJourneys();
+              }
               setNavigationModal({
                 isOpen: true,
                 journeyName: adaptedJourney.name || adaptedJourney.Project_Name || adaptedJourney.Target_Account || 'New Journey',
@@ -1344,6 +1556,12 @@ const Pipeline = () => {
           isOpen={isImportModalOpen}
           onClose={toggleImportModal}
           onSuccess={() => {
+            if (viewMode === 'kanban') {
+              fetchKanbanViewJourneys();
+            } else if (viewMode === 'list') {
+              fetchListViewJourneys();
+            }
+
             const fetchData = async () => {
               const [journeysData] = await Promise.all([
                 get('/legacy/base/Journey', {
