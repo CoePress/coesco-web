@@ -1,5 +1,7 @@
+/* eslint-disable node/prefer-global/buffer */
 import { env } from "@/config/env";
 import { bugReportRepository } from "@/repositories";
+import { logger } from "@/utils/logger";
 
 interface CreateBugReportInput {
   description: string;
@@ -204,7 +206,7 @@ export class BugReportingService {
       });
 
       if (!transitionsResponse.ok) {
-        console.error(`Failed to get transitions for issue ${issueKey}`);
+        logger.error(`Failed to get transitions for issue ${issueKey}`);
         return;
       }
 
@@ -214,7 +216,7 @@ export class BugReportingService {
       );
 
       if (!bugsTransition) {
-        console.error(`No transition to "Bugs" status found for issue ${issueKey}`);
+        logger.error(`No transition to "Bugs" status found for issue ${issueKey}`);
         return;
       }
 
@@ -233,11 +235,11 @@ export class BugReportingService {
 
       if (!transitionResponse.ok) {
         const errorText = await transitionResponse.text();
-        console.error(`Failed to transition issue to Bugs: ${transitionResponse.status} - ${errorText}`);
+        logger.error(`Failed to transition issue to Bugs: ${transitionResponse.status} - ${errorText}`);
       }
     }
     catch (error) {
-      console.error(`Failed to transition issue to Bugs: ${(error as Error).message}`);
+      logger.error(`Failed to transition issue to Bugs: ${(error as Error).message}`);
     }
   }
 
@@ -261,11 +263,11 @@ export class BugReportingService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Failed to attach screenshot: ${response.status} - ${errorText}`);
+        logger.error(`Failed to attach screenshot: ${response.status} - ${errorText}`);
       }
     }
     catch (error) {
-      console.error(`Failed to attach screenshot: ${(error as Error).message}`);
+      logger.error(`Failed to attach screenshot: ${(error as Error).message}`);
     }
   }
 }

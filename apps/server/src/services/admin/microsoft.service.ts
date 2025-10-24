@@ -89,35 +89,28 @@ export class MicrosoftService {
   }
 
   private async getMicrosoftUsers() {
-    try {
-      const allUsers = [];
-      let url
-        = "https://graph.microsoft.com/v1.0/users?$select=id,mail,displayName,givenName,surname,jobTitle,department";
+    const allUsers = [];
+    let url
+      = "https://graph.microsoft.com/v1.0/users?$select=id,mail,displayName,givenName,surname,jobTitle,department";
 
-      while (url) {
-        const token = await this.generateMicrosoftToken();
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          signal: AbortSignal.timeout(30000),
-        });
+    while (url) {
+      const token = await this.generateMicrosoftToken();
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        signal: AbortSignal.timeout(30000),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        allUsers.push(...data.value);
+      allUsers.push(...data.value);
 
-        url = data["@odata.nextLink"] || null;
-      }
-
-      return allUsers;
+      url = data["@odata.nextLink"] || null;
     }
-    catch (error: any) {
-      const errorMessage
-        = error.response?.data?.error?.message || error.message;
-      throw new Error(`Failed to fetch Microsoft users: ${errorMessage}`);
-    }
+
+    return allUsers;
   }
 
   private async generateMicrosoftToken() {
@@ -144,11 +137,7 @@ export class MicrosoftService {
           hasSecret: !!env.AZURE_CLIENT_SECRET,
         },
       });
-      throw new Error(
-        `Failed to generate token: ${
-          error.response?.data?.error_description || error.message
-        }`,
-      );
+      throw error;
     }
   }
 }

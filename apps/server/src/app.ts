@@ -13,7 +13,7 @@ import path from "node:path";
 import { Server } from "socket.io";
 import swaggerUi from "swagger-ui-express";
 
-import { __dev__, __prod__ } from "./config/env";
+import { __dev__, __prod__, __test__ } from "./config/env";
 import { errorHandler, NotFoundError } from "./middleware/error.middleware";
 import { preventDirectoryTraversal, preventStaticFileServing } from "./middleware/security.middleware";
 import routes from "./routes";
@@ -22,10 +22,10 @@ import { logger } from "./utils/logger";
 const app = express();
 const server = createServer(app);
 
-const origin = __dev__ ? ["http://localhost:5173", "http://192.231.64.54:5173"] : ["https://portal.cpec.com", "https://cpec-portal.netlify.app"];
+const allowedOrigins = __dev__ || __test__ ? ["http://localhost:5173", "http://192.231.64.54:5173"] : ["https://portal.cpec.com", "https://cpec-portal.netlify.app"];
 
 const corsOptions = {
-  origin,
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-File-Name"],
@@ -34,7 +34,7 @@ const corsOptions = {
 
 const io = new Server(server, {
   cors: {
-    origin,
+    origin: allowedOrigins,
     credentials: true,
   },
   transports: ["polling", "websocket"],

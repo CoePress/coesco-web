@@ -31,6 +31,10 @@ type SocketContextType = {
   sessionSocket: Socket | null;
   isSessionConnected: boolean;
   onSessionRevoked: (callback: (data: any) => void) => () => void;
+
+  performanceSocket: Socket | null;
+  isPerformanceConnected: boolean;
+  calculatePerformanceSheet: (formData: Record<string, any>, scriptName: string, callback?: (result: any) => void) => void;
 };
 
 export const SocketContext = createContext<SocketContextType | undefined>(
@@ -54,6 +58,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [isLockConnected, setIsLockConnected] = useState(false);
   const sessionSocketRef = useRef<Socket | null>(null);
   const [isSessionConnected, setIsSessionConnected] = useState(false);
+  const performanceSocketRef = useRef<Socket | null>(null);
+  const [isPerformanceConnected, setIsPerformanceConnected] = useState(false);
 
   useEffect(() => {
     managerRef.current = new Manager(env.VITE_BASE_URL, {
@@ -178,11 +184,39 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   }, [user?.id]);
 
   useEffect(() => {
+    if (user?.id && managerRef.current) {
+      if (!performanceSocketRef.current) {
+        performanceSocketRef.current = managerRef.current.socket("/performance");
+
+        const socket = performanceSocketRef.current;
+        socket.on("connect", () => {
+          setIsPerformanceConnected(true);
+        });
+
+        socket.on("disconnect", () => {
+          setIsPerformanceConnected(false);
+        });
+
+        socket.on("connect_error", () => {
+          setIsPerformanceConnected(false);
+        });
+      }
+    } else {
+      if (performanceSocketRef.current) {
+        performanceSocketRef.current.disconnect();
+        performanceSocketRef.current = null;
+        setIsPerformanceConnected(false);
+      }
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
     return () => {
       systemSocketRef.current?.disconnect();
       iotSocketRef.current?.disconnect();
       lockSocketRef.current?.disconnect();
       sessionSocketRef.current?.disconnect();
+      performanceSocketRef.current?.disconnect();
       managerRef.current?.engine?.close();
     };
   }, []);
@@ -240,6 +274,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     return () => {};
   }, []);
 
+  const calculatePerformanceSheet = useCallback((formData: Record<string, any>, scriptName: string, callback?: (result: any) => void) => {
+    if (performanceSocketRef.current?.connected) {
+      performanceSocketRef.current.emit("performance-sheet:calculate", { formData, scriptName }, callback);
+    }
+  }, []);
+
   const contextValue: SocketContextType = useMemo(() => ({
     systemSocket: systemSocketRef.current,
     systemStatus,
@@ -260,12 +300,17 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     sessionSocket: sessionSocketRef.current,
     isSessionConnected,
     onSessionRevoked,
+
+    performanceSocket: performanceSocketRef.current,
+    isPerformanceConnected,
+    calculatePerformanceSheet,
   }), [
     systemStatus,
     isSystemConnected,
     machineStates,
     isLockConnected,
     isSessionConnected,
+    isPerformanceConnected,
     subscribeToSystemStatus,
     unsubscribeFromSystemStatus,
     subscribeToMachineStates,
@@ -273,6 +318,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     emit,
     onLockChanged,
     onSessionRevoked,
+    calculatePerformanceSheet,
   ]);
 
   return (

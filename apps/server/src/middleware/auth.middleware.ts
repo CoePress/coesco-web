@@ -4,7 +4,7 @@ import { verify } from "jsonwebtoken";
 
 import type { EmployeeContext } from "@/utils/context";
 
-import { cookieOptions, env } from "@/config/env";
+import { API_KEYS, cookieOptions, env } from "@/config/env";
 import { sessionService } from "@/services";
 import { SYSTEM_USER_ID } from "@/utils/constants";
 import { contextStorage } from "@/utils/context";
@@ -12,11 +12,12 @@ import { prisma } from "@/utils/prisma";
 
 import { UnauthorizedError } from "./error.middleware";
 
-const API_KEYS = new Set(["fe2ac930-94d5-41a4-9ad3-1c1f5910391c"]);
-
 export function asyncHandler(fn: any) {
   return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+    return Promise.resolve(fn(req, res, next)).catch((error) => {
+      next(error);
+      throw error;
+    });
   };
 }
 
@@ -114,6 +115,9 @@ export const protect = asyncHandler(
       contextStorage.run(context, () => next());
     }
     catch (error) {
+      if (error instanceof UnauthorizedError) {
+        throw error;
+      }
       res.clearCookie("accessToken", cookieOptions);
       res.clearCookie("refreshToken", cookieOptions);
       throw new UnauthorizedError("Invalid session");

@@ -1,0 +1,13 @@
+node_modules
+dist
+build
+.turbo
+.env
+.env.*
+npm-debug.log
+.git
+.gitignore
+*.md
+coverage
+.vscode
+.idea

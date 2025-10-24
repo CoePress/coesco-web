@@ -2,11 +2,40 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+import viteImagemin from "vite-plugin-imagemin";
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    viteImagemin({
+      gifsicle: {
+        optimizationLevel: 7,
+        interlaced: false,
+      },
+      optipng: {
+        optimizationLevel: 7,
+      },
+      mozjpeg: {
+        quality: 80,
+      },
+      pngquant: {
+        quality: [0.8, 0.9],
+        speed: 4,
+      },
+      svgo: {
+        plugins: [
+          {
+            name: 'removeViewBox',
+            active: false,
+          },
+          {
+            name: 'removeEmptyAttrs',
+            active: true,
+          },
+        ],
+      },
+    }),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [
@@ -66,7 +95,10 @@ export default defineConfig({
     },
   },
   build: {
-    sourcemap: true
+    sourcemap: 'hidden'
+  },
+  esbuild: {
+    drop: ['console', 'debugger'],
   },
   resolve: {
     alias: {

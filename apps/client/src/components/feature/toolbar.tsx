@@ -18,6 +18,7 @@ export type Filter = {
 type Props = {
   onSearch?: (query: string) => void;
   searchPlaceholder?: string;
+  searchValue?: string;
   filters?: Filter[];
   onFilterChange?: (key: string, value: string) => void;
   filterValues?: Record<string, string>;
@@ -31,6 +32,7 @@ type Props = {
 const Toolbar = ({
   onSearch,
   searchPlaceholder = "Search...",
+  searchValue,
   filters,
   onFilterChange,
   filterValues = {},
@@ -40,8 +42,14 @@ const Toolbar = ({
   children,
   className = ""
 }: Props) => {
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(searchValue || '')
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    if (searchValue !== undefined) {
+      setSearchQuery(searchValue)
+    }
+  }, [searchValue])
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value

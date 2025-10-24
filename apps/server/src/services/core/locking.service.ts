@@ -52,34 +52,56 @@ export class LockingService {
   ): Promise<LockResult> {
     try {
       const entityTypes = await this.getEntityTypes();
-      const foundType = entityTypes.find(
-        t =>
-          t.tableName.replace(/_/g, "-") === recordType
-          || t.tableName === recordType,
-      );
+      const normalizedRecordType = recordType.replace(/-/g, "_");
+
+      const foundType = entityTypes.find((t) => {
+        const tableNameWithHyphens = t.tableName.replace(/_/g, "-");
+        return (
+          t.tableName === recordType
+          || t.tableName === normalizedRecordType
+          || tableNameWithHyphens === recordType
+          || t.modelName.toLowerCase() === recordType.toLowerCase()
+          || t.tableName === `${recordType}s`
+          || t.tableName === `${normalizedRecordType}s`
+        );
+      });
+
       if (!foundType) {
         return {
           success: false,
           error: `Entity type '${recordType}' does not exist.`,
         };
       }
+
       const modelName = foundType.modelName;
-      const prismaModel = (prisma as any)[
-        modelName.charAt(0).toLowerCase() + modelName.slice(1)
-      ];
+      const prismaModelKey = modelName.charAt(0).toLowerCase() + modelName.slice(1);
+      const prismaModel = (prisma as any)[prismaModelKey];
+
       if (!prismaModel) {
         return {
           success: false,
           error: `Prisma model for entity type '${recordType}' does not exist.`,
         };
       }
-      const entity = await prismaModel.findUnique({ where: { id: recordId } });
+
+      let entity;
+      try {
+        entity = await prismaModel.findUnique({ where: { id: recordId } });
+      }
+      catch {
+        return {
+          success: false,
+          error: `Failed to check if entity of type '${recordType}' with ID '${recordId}' exists.`,
+        };
+      }
+
       if (!entity) {
         return {
           success: false,
           error: `Entity of type '${recordType}' with ID '${recordId}' does not exist.`,
         };
       }
+
       const lockKey = this.getLockKey(recordType, recordId);
       const existingLock = await cacheService.get<LockInfo>(lockKey);
       const userName = await this.getEmployeeName(userId);
@@ -107,6 +129,7 @@ export class LockingService {
           };
         }
       }
+
       const lockInfo: LockInfo = {
         userId,
         userName,

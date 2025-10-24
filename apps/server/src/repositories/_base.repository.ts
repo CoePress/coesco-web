@@ -4,6 +4,7 @@ import type { IQueryParams } from "@/types";
 
 import { deriveTableNames, getObjectDiff } from "@/utils";
 import { getEmployeeContext } from "@/utils/context";
+import { logger } from "@/utils/logger";
 import { buildQuery, prisma } from "@/utils/prisma";
 
 const columnCache = new Map<string, string[]>();
@@ -17,16 +18,21 @@ export class BaseRepository<T> {
 
   async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
     const searchFields = this.getSearchFields();
+
+    if (params?.fuzzy && params?.search) {
+      return this.fuzzySearch(params, tx);
+    }
+
     const { query, countQuery, page, take, hasComputedSearch } = await this.buildQueryParams(
       params,
       searchFields,
       params?.includeDeleted,
     );
 
-    const client = tx ?? this.model;
+    const model = tx?.[this.modelName as keyof typeof tx] ?? this.model;
 
     if (hasComputedSearch && params?.search) {
-      const allItems = await client.findMany(query);
+      const allItems = await model.findMany(query);
       const total = allItems.length;
       const totalPages = take ? Math.ceil(total / take) : 1;
 
@@ -43,8 +49,8 @@ export class BaseRepository<T> {
     }
 
     const [items, total] = await Promise.all([
-      client.findMany(query),
-      client.count(countQuery),
+      model.findMany(query),
+      model.count(countQuery),
     ]);
 
     const totalPages = take ? Math.ceil(total / (take || 1)) : 1;
@@ -249,7 +255,8 @@ export class BaseRepository<T> {
     if (cols.includes("deletedAt")) {
       if (includeDeleted === "only") {
         scope.push({ deletedAt: { not: null } });
-      } else if (!includeDeleted) {
+      }
+      else if (!includeDeleted) {
         scope.push({ deletedAt: null });
       }
     }
@@ -299,10 +306,17 @@ export class BaseRepository<T> {
     const transformedOrderBy = this.transformSort(params?.sort, params?.order);
     const transforms = this.getTransforms();
 
+    const hasTransformedFields = searchFields && searchFields.length > 0
+      && Object.keys(transforms).length > 0;
+
     const regularSearchFields = searchFields?.filter((sf) => {
       const fieldName = typeof sf === "string" ? sf : sf.field;
       return !transforms[fieldName];
     });
+
+    const hasComputedSearch = Boolean(
+      params?.search && hasTransformedFields && regularSearchFields && regularSearchFields.length < searchFields!.length,
+    );
 
     const queryParams = transformedOrderBy
       ? { ...params, sort: undefined, order: undefined }
@@ -334,7 +348,7 @@ export class BaseRepository<T> {
 
     const countQuery = { where: finalWhere };
 
-    return { query, countQuery, page, take, hasComputedSearch: false };
+    return { query, countQuery, page, take, hasComputedSearch };
   }
 
   private async log(
@@ -402,5 +416,187 @@ export class BaseRepository<T> {
 
   protected getTransforms(): Record<string, string> {
     return {};
+  }
+
+  private isEnumField(fieldName: string): boolean {
+    const pascalModelName = this.modelName!.charAt(0).toUpperCase() + this.modelName!.slice(1);
+    const model = Prisma.dmmf.datamodel.models.find(m =>
+      m.name === this.modelName || m.name === pascalModelName,
+    );
+
+    if (!model) {
+      return false;
+    }
+
+    const field = model.fields.find(f => f.name === fieldName);
+    return field?.kind === "enum";
+  }
+
+  private async fuzzySearch(params: IQueryParams<T>, tx?: Prisma.TransactionClient) {
+    if (!this.modelName) {
+      throw new Error("Model name is required for fuzzy search");
+    }
+
+    const searchFields = this.getSearchFields();
+    logger.info(`[FUZZY] Search fields before filtering:`, searchFields);
+
+    if (!searchFields || searchFields.length === 0) {
+      throw new Error("Search fields must be defined for fuzzy search");
+    }
+
+    const filteredSearchFields = searchFields.filter(f => {
+      const fieldName = typeof f === "string" ? f : f.field;
+      const isEnum = this.isEnumField(fieldName);
+      logger.info(`[FUZZY] Field ${fieldName} is enum: ${isEnum}`);
+      return !isEnum;
+    });
+
+    logger.info(`[FUZZY] Search fields after filtering:`, filteredSearchFields);
+
+    if (filteredSearchFields.length === 0) {
+      throw new Error("No valid search fields available for fuzzy search after filtering enum fields");
+    }
+
+    const threshold = params.fuzzyThreshold ?? 0.1;
+    const searchTerm = params.search!;
+    const page = params.page ?? 1;
+    const take = params.limit ?? 25;
+    const skip = (page - 1) * take;
+
+    logger.info(`[FUZZY] Search term: "${searchTerm}", threshold: ${threshold}`);
+
+    const columns = await this.getColumns();
+    const scope = await this.getScope(columns, params?.includeDeleted);
+
+    const fieldNames = filteredSearchFields.map(f => typeof f === "string" ? f : f.field);
+    const escapedSearchTerm = searchTerm.replace(/'/g, "''");
+
+    const similarityConditions = fieldNames
+      .map(field => `similarity(CAST("${field}" AS TEXT), '${escapedSearchTerm}') > ${threshold}`)
+      .join(" OR ");
+
+    const maxSimilarity = fieldNames
+      .map(field => `similarity(CAST("${field}" AS TEXT), '${escapedSearchTerm}')`)
+      .join(", ");
+
+    const tableNames = deriveTableNames(this.modelName);
+    const tableName = tableNames[tableNames.length - 1];
+
+    logger.info(`[FUZZY] Table name: ${tableName}`);
+
+    let whereClause = "";
+    if (scope) {
+      const scopeConditions = this.buildScopeSQL(scope);
+      if (scopeConditions) {
+        whereClause = `AND ${scopeConditions}`;
+      }
+    }
+
+    const countQuery = `SELECT COUNT(*) as count
+       FROM "${tableName}"
+       WHERE (${similarityConditions})
+       ${whereClause}`;
+
+    logger.info(`[FUZZY] Count query:`, countQuery);
+
+    const debugQuery = `SELECT "modelNumber", "description",
+              GREATEST(${maxSimilarity}) as similarity_score
+       FROM "${tableName}"
+       ${whereClause ? `WHERE ${whereClause.replace('AND ', '')}` : ''}
+       ORDER BY similarity_score DESC
+       LIMIT 10`;
+
+    logger.info(`[FUZZY] Debug query (top 10 similarities):`, debugQuery);
+
+    try {
+      const debugResults = await prisma.$queryRawUnsafe<Array<any>>(debugQuery);
+      logger.info(`[FUZZY] Top 10 similarity scores:`, JSON.stringify(debugResults.map((r: any) => ({
+        modelNumber: r.modelNumber,
+        description: r.description?.substring(0, 50),
+        score: r.similarity_score
+      }))));
+    } catch (err) {
+      logger.error(`[FUZZY] Debug query failed:`, err);
+    }
+
+    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(countQuery);
+
+    const total = Number(countResult[0]?.count ?? 0);
+
+    logger.info(`[FUZZY] Total results: ${total}`);
+
+    const selectQuery = `SELECT *,
+              GREATEST(${maxSimilarity}) as similarity_score
+       FROM "${tableName}"
+       WHERE (${similarityConditions})
+       ${whereClause}
+       ORDER BY similarity_score DESC
+       LIMIT ${take}
+       OFFSET ${skip}`;
+
+    logger.info(`[FUZZY] Select query:`, selectQuery);
+
+    const items = await prisma.$queryRawUnsafe(selectQuery);
+
+    logger.info(`[FUZZY] Items returned: ${Array.isArray(items) ? items.length : 0}`);
+    if (Array.isArray(items) && items.length > 0) {
+      const itemsWithScores = (items as any[]).slice(0, 5).map(item => ({
+        modelNumber: item.modelNumber,
+        description: item.description?.substring(0, 50),
+        score: item.similarity_score
+      }));
+      logger.info(`[FUZZY] Top items with scores:`, JSON.stringify(itemsWithScores));
+    }
+
+    const totalPages = Math.ceil(total / take);
+
+    return {
+      success: true,
+      data: items,
+      meta: {
+        page,
+        limit: take,
+        total,
+        totalPages,
+      },
+    };
+  }
+
+  private buildScopeSQL(scope: Record<string, any>): string {
+    const conditions: string[] = [];
+
+    if (scope.AND && Array.isArray(scope.AND)) {
+      for (const condition of scope.AND) {
+        if (condition.deletedAt !== undefined) {
+          if (condition.deletedAt === null) {
+            conditions.push("\"deletedAt\" IS NULL");
+          }
+          else if (condition.deletedAt?.not === null) {
+            conditions.push("\"deletedAt\" IS NOT NULL");
+          }
+        }
+        if (condition.ownerId !== undefined) {
+          if (condition.ownerId === null) {
+            conditions.push("\"ownerId\" IS NULL");
+          }
+        }
+        if (condition.OR && Array.isArray(condition.OR)) {
+          const orConditions = condition.OR.map((or: any) => {
+            if (or.ownerId !== undefined) {
+              if (or.ownerId === null) {
+                return "\"ownerId\" IS NULL";
+              }
+              return `"ownerId" = '${or.ownerId}'`;
+            }
+            return "";
+          }).filter(Boolean);
+          if (orConditions.length > 0) {
+            conditions.push(`(${orConditions.join(" OR ")})`);
+          }
+        }
+      }
+    }
+
+    return conditions.join(" AND ");
   }
 }
