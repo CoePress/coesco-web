@@ -21,14 +21,11 @@ const Settings = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-3">
+            <div className="py-3">
               <div>
                 <div className="text-sm text-text mb-1">Email</div>
                 <div className="text-xs text-text-muted">{employee?.email || "user@example.com"}</div>
               </div>
-              <Button variant="secondary-outline" size="sm">
-                Change email
-              </Button>
             </div>
 
             <div className="border-t border-border"></div>
