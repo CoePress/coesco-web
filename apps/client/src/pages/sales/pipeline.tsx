@@ -35,7 +35,7 @@ const Pipeline = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { employee } = useAuth();
-  const { put, get, delete: del, patch } = useApi();
+  const { get, delete: del, patch } = useApi();
   const [journeys, setJourneys] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [journeyTags, setJourneyTags] = useState<Map<string, any[]>>(new Map());
@@ -104,32 +104,6 @@ const Pipeline = () => {
 
     fetchData();
   }, []);
-
-  const refetchLegacyJourneys = async () => {
-    try {
-      const raw = await get('/legacy/base/Journey', {
-        page: 1,
-        limit: 200,
-        sort: 'CreateDT',
-        order: 'desc',
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Address_ID,RSM,Journey_Status'
-      });
-
-      if (raw !== null) {
-        const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
-        const mapped = journeysArray.map(adaptLegacyJourney);
-        setLegacyJourneys(mapped);
-
-        return true;
-      } else {
-        console.error("Legacy journeys refetch failed");
-        return false;
-      }
-    } catch (error) {
-      console.error("Error refetching journeys:", error);
-      return false;
-    }
-  };
 
   const mapLegacyStageToId = (stage: any): StageId => {
     const s = String(stage ?? "").toLowerCase();
@@ -865,6 +839,7 @@ const Pipeline = () => {
 
     const journeyContacts = new Map();
     const journeyAddresses = new Map();
+    const emptyContact = [{ Contact_Name: '', Contact_Email: '', Contact_Position: '' }];
 
     await Promise.all(
       filteredJourneys.map(async (journey) => {
@@ -874,13 +849,11 @@ const Pipeline = () => {
             filterValue: journey.id,
             fields: 'Contact_Name,Contact_Email,Contact_Position,IsPrimary'
           });
-
-          const emptyContact = [{ Contact_Name: '', Contact_Email: '', Contact_Position: '' }];
           if (contactData?.length) {
             const contacts = options.includePrimaryContactOnly
-              ? [contactData.find(c => c.IsPrimary === true || c.IsPrimary === 'true' || c.IsPrimary === 1) || contactData[0]]
+              ? [contactData.find((c: any) => c.IsPrimary === true || c.IsPrimary === 'true' || c.IsPrimary === 1) || contactData[0]]
               : contactData;
-            journeyContacts.set(journey.id.toString(), contacts.map(c => ({
+            journeyContacts.set(journey.id.toString(), contacts.map((c: any) => ({
               Contact_Name: c.Contact_Name || '',
               Contact_Email: c.Contact_Email || '',
               Contact_Position: c.Contact_Position || ''
@@ -947,9 +920,9 @@ const Pipeline = () => {
         journey.Lead_Source || '',
         Number(journey.Journey_Value || journey.value || 0),
         journey.Next_Steps || '',
-        contacts.map(c => c.Contact_Name).filter(Boolean).join('\n'),
-        contacts.map(c => c.Contact_Email || '').join('\n'),
-        contacts.map(c => c.Contact_Position || '').join('\n'),
+        contacts.map((c: any) => c.Contact_Name).filter(Boolean).join('\n'),
+        contacts.map((c: any) => c.Contact_Email || '').join('\n'),
+        contacts.map((c: any) => c.Contact_Position || '').join('\n'),
         address ? [address.AddressName, address.Address1, address.Address2, address.Address3, [address.City, address.State, address.ZipCode].filter(Boolean).join(', '), address.Country].filter(Boolean).join('\n') : ''
       ];
     });
