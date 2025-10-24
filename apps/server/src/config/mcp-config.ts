@@ -632,6 +632,11 @@ export const SCHEMAS: ISchema[] = [
         type: "string",
         required: false,
       },
+      type: {
+        type: "contacttype",
+        required: true,
+        hasDefault: true,
+      },
       isPrimary: {
         type: "boolean",
         required: true,
@@ -1467,51 +1472,6 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
-    name: "journey-note",
-    description: "Schema for JourneyNote entity",
-    schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
-      },
-      journeyId: {
-        type: "string",
-        required: true,
-      },
-      type: {
-        type: "string",
-        required: true,
-        hasDefault: true,
-      },
-      body: {
-        type: "string",
-        required: true,
-      },
-      createdBy: {
-        type: "string",
-        required: false,
-      },
-      updatedBy: {
-        type: "string",
-        required: false,
-      },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
-      },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-      deletedAt: {
-        type: "datetime",
-        required: false,
-      },
-    },
-  },
-  {
     name: "login-history",
     description: "Schema for LoginHistory entity",
     schema: {
@@ -1716,6 +1676,55 @@ export const SCHEMAS: ISchema[] = [
       },
       fileUrl: {
         type: "string",
+        required: false,
+      },
+    },
+  },
+  {
+    name: "note",
+    description: "Schema for Note entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      entityId: {
+        type: "string",
+        required: true,
+      },
+      entityType: {
+        type: "string",
+        required: true,
+      },
+      type: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      body: {
+        type: "string",
+        required: true,
+      },
+      createdBy: {
+        type: "string",
+        required: false,
+      },
+      updatedBy: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
         required: false,
       },
     },

@@ -317,6 +317,15 @@ model JourneyContact {
   @@map("journey_contacts")
 }
 
+enum ContactType {
+  Accounting
+  Engineering
+  Inactive
+  Left_Company
+  Parts_Service
+  Sales
+}
+
 model Address {
   id           String    @id @default(uuid())
   companyId    String
