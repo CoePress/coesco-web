@@ -18,9 +18,6 @@ export default defineConfig({
   build: {
     sourcemap: true,
   },
-  esbuild: {
-    drop: ["console", "debugger"],
-  },
   resolve: {
     alias: {
       "@": "/src",
