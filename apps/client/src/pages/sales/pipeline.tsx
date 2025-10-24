@@ -35,8 +35,7 @@ const Pipeline = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { employee } = useAuth();
-  const { put, get, delete: del } = useApi();
-  const api = useApi();
+  const { put, get, delete: del, patch } = useApi();
   const [journeys, setJourneys] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [journeyTags, setJourneyTags] = useState<Map<string, any[]>>(new Map());
@@ -106,11 +105,9 @@ const Pipeline = () => {
     fetchData();
   }, []);
 
-  const refetchApi = useApi();
-
   const refetchLegacyJourneys = async () => {
     try {
-      const raw = await refetchApi.get('/legacy/base/Journey', {
+      const raw = await get('/legacy/base/Journey', {
         page: 1,
         limit: 200,
         sort: 'CreateDT',
@@ -231,13 +228,11 @@ const Pipeline = () => {
     };
   };
 
-  const initialFetchApi = useApi();
-
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const raw = await initialFetchApi.get('/legacy/base/Journey', {
+        const raw = await get('/legacy/base/Journey', {
           page: 1,
           limit: 200,
           sort: 'CreateDT',
@@ -255,8 +250,8 @@ const Pipeline = () => {
       }
 
       const [rsms, statuses] = await Promise.all([
-        fetchAvailableRsms(api),
-        fetchDemographicCategory(api, 'Journey_status')
+        fetchAvailableRsms({ get }),
+        fetchDemographicCategory({ get }, 'Journey_status')
       ]);
 
       if (!cancelled && rsms.length > 0) {
@@ -348,9 +343,7 @@ const Pipeline = () => {
     let results = baseJourneys ?? [];
     const q = searchTerm.trim();
     if (q) {
-      // Check if it's exactly "tag:" or starts with "tag:"
       if (q.toLowerCase() === 'tag:') {
-        // Show only journeys that have any tags
         results = results.filter(j => {
           const tags = journeyTags.get(j.id.toString()) || [];
           return tags.length > 0;
@@ -453,6 +446,116 @@ const Pipeline = () => {
   }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter, journeyTags]);
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
 
+  const buildStageConditions = (stageId: number) => {
+    const stageMap: Record<number, any> = {
+      1: { operator: "or", conditions: [
+        { field: "Journey_Stage", operator: "contains", value: "LEAD" },
+        { field: "Journey_Stage", operator: "contains", value: "OPEN" },
+        { field: "Journey_Stage", operator: "contains", value: "NEW" }
+      ]},
+      2: { operator: "or", conditions: [
+        { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
+        { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
+        { field: "Journey_Stage", operator: "contains", value: "PAIN" },
+        { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
+      ]},
+      3: { operator: "or", conditions: [
+        { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
+        { field: "Journey_Stage", operator: "contains", value: "DEMO" },
+        { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
+        { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
+      ]},
+      4: { field: "Journey_Stage", operator: "contains", value: "NEGOT" },
+      5: { operator: "or", conditions: [
+        { field: "Journey_Stage", operator: "contains", value: "PO" },
+        { field: "Journey_Stage", operator: "contains", value: "WON" },
+        { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
+        { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
+        { field: "Journey_Stage", operator: "contains", value: "ORDER" }
+      ]},
+      6: { operator: "or", conditions: [
+        { field: "Journey_Stage", operator: "contains", value: "LOST" },
+        { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
+        { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
+        { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
+      ]}
+    };
+    return stageMap[stageId] || null;
+  };
+
+  const buildFilterConditions = (includeSearch = true) => {
+    const filterConditions: any[] = [];
+    const trimmedSearch = searchTerm.trim();
+
+    if (includeSearch && searchTerm && trimmedSearch.toLowerCase() !== 'tag:') {
+      filterConditions.push({
+        operator: "or",
+        conditions: [
+          { field: "Project_Name", operator: "contains", value: trimmedSearch },
+          { field: "Target_Account", operator: "contains", value: trimmedSearch }
+        ]
+      });
+    }
+
+    if (rsmFilter) {
+      filterConditions.push({ field: "RSM", operator: "contains", value: rsmFilter });
+    }
+
+    if (journeyStatusFilter) {
+      filterConditions.push({ field: "Journey_Status", operator: "equals", value: journeyStatusFilter });
+    }
+
+    if (filters.priority) {
+      filterConditions.push({ field: "Priority", operator: "equals", value: filters.priority });
+    }
+
+    if (filters.confidenceLevels.length > 0) {
+      const confidenceValues = filters.confidenceLevels.map((level: number) => {
+        if (level === 0) return "Closed Lost";
+        if (level === 100) return "Closed Won";
+        return `${level}%`;
+      });
+      filterConditions.push({ field: "Chance_To_Secure_order", operator: "in", values: confidenceValues });
+    }
+
+    if (filters.dateRange[0] || filters.dateRange[1]) {
+      const fieldMap: Record<string, string> = {
+        'closeDate': 'Expected_Decision_Date',
+        'Action_Date': 'Action_Date',
+        'Journey_Start_Date': 'Journey_Start_Date',
+        'Quote_Presentation_Date': 'Quote_Presentation_Date',
+        'Expected_Decision_Date': 'Expected_Decision_Date',
+        'Date_PO_Received': 'Date_PO_Received',
+        'Date_Lost': 'Date_Lost'
+      };
+      const dbField = fieldMap[filters.dateField] || 'Expected_Decision_Date';
+
+      if (filters.dateRange[0]) {
+        filterConditions.push({ field: dbField, operator: "gte", value: filters.dateRange[0] });
+      }
+      if (filters.dateRange[1]) {
+        filterConditions.push({ field: dbField, operator: "lte", value: filters.dateRange[1] });
+      }
+    }
+
+    if (filters.minValue) {
+      filterConditions.push({ field: "Journey_Value", operator: "gte", value: parseFloat(filters.minValue) });
+    }
+
+    if (filters.maxValue) {
+      filterConditions.push({ field: "Journey_Value", operator: "lte", value: parseFloat(filters.maxValue) });
+    }
+
+    if (filters.visibleStages.length !== STAGES.length) {
+      const stageConditions = filters.visibleStages.map(buildStageConditions).filter(Boolean);
+      if (stageConditions.length > 0) {
+        filterConditions.push({ operator: "or", conditions: stageConditions });
+      }
+    }
+
+    return filterConditions;
+  };
+
   const fetchListViewJourneys = useCallback(async () => {
     if (isLoadingListView) return;
 
@@ -483,177 +586,12 @@ const Pipeline = () => {
         fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
       };
 
-      const filterConditions: any[] = [];
-
-      if (searchTerm) {
-        const trimmedSearch = searchTerm.trim();
-        filterConditions.push({
-          operator: "or",
-          conditions: [
-            { field: "Project_Name", operator: "contains", value: trimmedSearch },
-            { field: "Target_Account", operator: "contains", value: trimmedSearch }
-          ]
-        });
-      }
-
-      if (rsmFilter) {
-        filterConditions.push({
-          field: "RSM",
-          operator: "contains",
-          value: rsmFilter
-        });
-      }
-
-      if (journeyStatusFilter) {
-        filterConditions.push({
-          field: "Journey_Status",
-          operator: "equals",
-          value: journeyStatusFilter
-        });
-      }
-
-      if (filters.priority) {
-        filterConditions.push({
-          field: "Priority",
-          operator: "equals",
-          value: filters.priority
-        });
-      }
-
-      if (filters.confidenceLevels.length > 0) {
-        const confidenceValues = filters.confidenceLevels.map((level: number) => {
-          if (level === 0) return "Closed Lost";
-          if (level === 100) return "Closed Won";
-          return `${level}%`;
-        });
-        filterConditions.push({
-          field: "Chance_To_Secure_order",
-          operator: "in",
-          values: confidenceValues
-        });
-      }
-
-      if (filters.dateRange[0] || filters.dateRange[1]) {
-        const fieldMap: Record<string, string> = {
-          'closeDate': 'Expected_Decision_Date',
-          'Action_Date': 'Action_Date',
-          'Journey_Start_Date': 'Journey_Start_Date',
-          'Quote_Presentation_Date': 'Quote_Presentation_Date',
-          'Expected_Decision_Date': 'Expected_Decision_Date',
-          'Date_PO_Received': 'Date_PO_Received',
-          'Date_Lost': 'Date_Lost'
-        };
-        const dbField = fieldMap[filters.dateField] || 'Expected_Decision_Date';
-
-        if (filters.dateRange[0]) {
-          filterConditions.push({
-            field: dbField,
-            operator: "gte",
-            value: filters.dateRange[0]
-          });
-        }
-        if (filters.dateRange[1]) {
-          filterConditions.push({
-            field: dbField,
-            operator: "lte",
-            value: filters.dateRange[1]
-          });
-        }
-      }
-
-      if (filters.minValue) {
-        filterConditions.push({
-          field: "Journey_Value",
-          operator: "gte",
-          value: parseFloat(filters.minValue)
-        });
-      }
-
-      if (filters.maxValue) {
-        filterConditions.push({
-          field: "Journey_Value",
-          operator: "lte",
-          value: parseFloat(filters.maxValue)
-        });
-      }
-
-      if (filters.visibleStages.length !== STAGES.length) {
-        const stageConditions = filters.visibleStages.map((stageId: number) => {
-          switch (stageId) {
-            case 1: // Lead
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "LEAD" },
-                  { field: "Journey_Stage", operator: "contains", value: "OPEN" },
-                  { field: "Journey_Stage", operator: "contains", value: "NEW" }
-                ]
-              };
-            case 2: // Qualified
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
-                  { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
-                  { field: "Journey_Stage", operator: "contains", value: "PAIN" },
-                  { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
-                ]
-              };
-            case 3: // Presentations
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
-                  { field: "Journey_Stage", operator: "contains", value: "DEMO" },
-                  { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
-                  { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
-                ]
-              };
-            case 4: // Negotiation
-              return {
-                field: "Journey_Stage",
-                operator: "contains",
-                value: "NEGOT"
-              };
-            case 5: // Closed Won
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "PO" },
-                  { field: "Journey_Stage", operator: "contains", value: "WON" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
-                  { field: "Journey_Stage", operator: "contains", value: "ORDER" }
-                ]
-              };
-            case 6: // Closed Lost
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "LOST" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
-                  { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
-                ]
-              };
-            default:
-              return null;
-          }
-        }).filter(Boolean);
-
-        if (stageConditions.length > 0) {
-          filterConditions.push({
-            operator: "or",
-            conditions: stageConditions
-          });
-        }
-      }
-
+      const filterConditions = buildFilterConditions();
       if (filterConditions.length > 0) {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await api.get('/legacy/base/Journey', params);
+      const raw = await get('/legacy/base/Journey', params);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
@@ -675,7 +613,7 @@ const Pipeline = () => {
     } finally {
       setIsLoadingListView(false);
     }
-  }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, api, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+  }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, get, searchTerm, rsmFilter, journeyStatusFilter, filters]);
 
   const fetchKanbanViewJourneys = useCallback(async () => {
     if (isLoadingKanbanView) return;
@@ -698,176 +636,12 @@ const Pipeline = () => {
         fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
       };
 
-      const filterConditions: any[] = [];
-
-      if (searchTerm && trimmedSearch.toLowerCase() !== 'tag:') {
-        filterConditions.push({
-          operator: "or",
-          conditions: [
-            { field: "Project_Name", operator: "contains", value: trimmedSearch },
-            { field: "Target_Account", operator: "contains", value: trimmedSearch }
-          ]
-        });
-      }
-
-      if (rsmFilter) {
-        filterConditions.push({
-          field: "RSM",
-          operator: "contains",
-          value: rsmFilter
-        });
-      }
-
-      if (journeyStatusFilter) {
-        filterConditions.push({
-          field: "Journey_Status",
-          operator: "equals",
-          value: journeyStatusFilter
-        });
-      }
-
-      if (filters.priority) {
-        filterConditions.push({
-          field: "Priority",
-          operator: "equals",
-          value: filters.priority
-        });
-      }
-
-      if (filters.confidenceLevels.length > 0) {
-        const confidenceValues = filters.confidenceLevels.map((level: number) => {
-          if (level === 0) return "Closed Lost";
-          if (level === 100) return "Closed Won";
-          return `${level}%`;
-        });
-        filterConditions.push({
-          field: "Chance_To_Secure_order",
-          operator: "in",
-          values: confidenceValues
-        });
-      }
-
-      if (filters.dateRange[0] || filters.dateRange[1]) {
-        const fieldMap: Record<string, string> = {
-          'closeDate': 'Expected_Decision_Date',
-          'Action_Date': 'Action_Date',
-          'Journey_Start_Date': 'Journey_Start_Date',
-          'Quote_Presentation_Date': 'Quote_Presentation_Date',
-          'Expected_Decision_Date': 'Expected_Decision_Date',
-          'Date_PO_Received': 'Date_PO_Received',
-          'Date_Lost': 'Date_Lost'
-        };
-        const dbField = fieldMap[filters.dateField] || 'Expected_Decision_Date';
-
-        if (filters.dateRange[0]) {
-          filterConditions.push({
-            field: dbField,
-            operator: "gte",
-            value: filters.dateRange[0]
-          });
-        }
-        if (filters.dateRange[1]) {
-          filterConditions.push({
-            field: dbField,
-            operator: "lte",
-            value: filters.dateRange[1]
-          });
-        }
-      }
-
-      if (filters.minValue) {
-        filterConditions.push({
-          field: "Journey_Value",
-          operator: "gte",
-          value: parseFloat(filters.minValue)
-        });
-      }
-
-      if (filters.maxValue) {
-        filterConditions.push({
-          field: "Journey_Value",
-          operator: "lte",
-          value: parseFloat(filters.maxValue)
-        });
-      }
-
-      if (filters.visibleStages.length !== STAGES.length) {
-        const stageConditions = filters.visibleStages.map((stageId: number) => {
-          switch (stageId) {
-            case 1:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "LEAD" },
-                  { field: "Journey_Stage", operator: "contains", value: "OPEN" },
-                  { field: "Journey_Stage", operator: "contains", value: "NEW" }
-                ]
-              };
-            case 2:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
-                  { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
-                  { field: "Journey_Stage", operator: "contains", value: "PAIN" },
-                  { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
-                ]
-              };
-            case 3:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
-                  { field: "Journey_Stage", operator: "contains", value: "DEMO" },
-                  { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
-                  { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
-                ]
-              };
-            case 4:
-              return {
-                field: "Journey_Stage",
-                operator: "contains",
-                value: "NEGOT"
-              };
-            case 5:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "PO" },
-                  { field: "Journey_Stage", operator: "contains", value: "WON" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
-                  { field: "Journey_Stage", operator: "contains", value: "ORDER" }
-                ]
-              };
-            case 6:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "LOST" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
-                  { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
-                ]
-              };
-            default:
-              return null;
-          }
-        }).filter(Boolean);
-
-        if (stageConditions.length > 0) {
-          filterConditions.push({
-            operator: "or",
-            conditions: stageConditions
-          });
-        }
-      }
-
+      const filterConditions = buildFilterConditions();
       if (filterConditions.length > 0) {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await api.get('/legacy/base/Journey', params);
+      const raw = await get('/legacy/base/Journey', params);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
@@ -879,20 +653,18 @@ const Pipeline = () => {
     } finally {
       setIsLoadingKanbanView(false);
     }
-  }, [isLoadingKanbanView, kanbanBatchSize, api, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys]);
+  }, [isLoadingKanbanView, kanbanBatchSize, get, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys]);
 
   useEffect(() => {
     if (viewMode === 'list') {
       fetchListViewJourneys();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters]);
 
   useEffect(() => {
     if (viewMode === 'kanban') {
       fetchKanbanViewJourneys();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters]);
 
   const handleListPageChange = (newPage: number) => {
@@ -904,39 +676,16 @@ const Pipeline = () => {
   }, [searchTerm]);
   useEffect(() => {
     saveToLocalStorage('searchTerm', searchTerm);
-  }, [searchTerm]);
-
-  useEffect(() => {
     saveToLocalStorage('filters', filters);
-  }, [filters]);
-
-  useEffect(() => {
     saveToLocalStorage('rsmFilter', rsmFilter);
-  }, [rsmFilter]);
-
-  useEffect(() => {
     saveToLocalStorage('rsmFilterDisplay', rsmFilterDisplay);
-  }, [rsmFilterDisplay]);
-
-  useEffect(() => {
     saveToLocalStorage('journeyStatusFilter', journeyStatusFilter);
-  }, [journeyStatusFilter]);
-
-  useEffect(() => {
     saveToLocalStorage('viewMode', viewMode);
-  }, [viewMode]);
-
-  useEffect(() => {
     saveToLocalStorage('sortField', sortField);
-  }, [sortField]);
-
-  useEffect(() => {
     saveToLocalStorage('sortDirection', sortDirection);
-  }, [sortDirection]);
-  
-  useEffect(() => {
     saveToLocalStorage('showTags', showTags);
-  }, [showTags]);
+    saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
+  }, [searchTerm, filters, rsmFilter, rsmFilterDisplay, journeyStatusFilter, viewMode, sortField, sortDirection, showTags, kanbanBatchSize]);
 
   useEffect(() => {
     if (showTags && viewMode === 'kanban' && kanbanViewJourneys.length > 0) {
@@ -946,10 +695,6 @@ const Pipeline = () => {
       });
     }
   }, [showTags, viewMode, kanbanViewJourneys]);
-
-  useEffect(() => {
-    saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
-  }, [kanbanBatchSize]);
 
   useEffect(() => {
     const view = searchParams.get('view');
@@ -1033,8 +778,6 @@ const Pipeline = () => {
     }
   }, [del]);
 
-  const stageUpdateApi = useApi();
-  
   const handleTagsUpdated = useCallback(async () => {
     if (!showTags) return;
 
@@ -1047,53 +790,37 @@ const Pipeline = () => {
   }, [showTags, viewMode, kanbanViewJourneys, legacyJourneys, journeys]);
 
   const handleStageUpdate = useCallback(async (journeyId: string, newStage: number) => {
+    const stageLabel = STAGES.find(s => s.id === newStage)?.label;
+    if (!stageLabel) {
+      console.error(`Invalid stage ID: ${newStage}`);
+      return;
+    }
+
+    const updateLocalState = () => {
+      setLegacyJourneys((prev) =>
+        (prev ?? []).map((j) =>
+          j.id.toString() === journeyId
+            ? { ...j, stage: newStage, updatedAt: new Date().toISOString() }
+            : j
+        )
+      );
+      setKanbanViewJourneys((prev) =>
+        prev.map((j) =>
+          j.id.toString() === journeyId
+            ? { ...j, stage: newStage, updatedAt: new Date().toISOString() }
+            : j
+        )
+      );
+    };
+
+    updateLocalState();
+
     try {
-      if (isLegacyData) {
-        const stageLabel = STAGES.find(s => s.id === newStage)?.label;
-        if (!stageLabel) {
-          console.error(`Invalid stage ID: ${newStage}`);
-          return;
-        }
-        const result = await stageUpdateApi.patch(`/legacy/base/Journey/${journeyId}`, {
-          Journey_Stage: stageLabel
-        });
-
-        if (result !== null) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-
-          if (viewMode === 'kanban') {
-            await fetchKanbanViewJourneys();
-          } else {
-            const refetchSuccess = await refetchLegacyJourneys();
-            if (!refetchSuccess) {
-              setLegacyJourneys((prev) =>
-                (prev ?? []).map((j) =>
-                  j.id.toString() === journeyId
-                    ? {
-                        ...j,
-                        stage: newStage,
-                        updatedAt: new Date().toISOString(),
-                      }
-                    : j
-                )
-              );
-            }
-          }
-        } else {
-          console.error("Failed to update journey stage on server");
-        }
-      } else {
-        const stageLabel = STAGES.find(s => s.id === newStage)?.label;
-        if (!stageLabel) {
-          console.error(`Invalid stage ID: ${newStage}`);
-          return;
-        }
-        await put(`/legacy/base/Journey/${journeyId}`, { Journey_Stage: stageLabel });
-      }
+      await patch(`/legacy/base/Journey/${journeyId}`, { Journey_Stage: stageLabel });
     } catch (error) {
       console.error("Error updating journey stage:", error);
     }
-  }, [isLegacyData, refetchLegacyJourneys, put, viewMode, fetchKanbanViewJourneys]);
+  }, [patch]);
 
   const handleSort = useCallback((field: string, order?: 'asc' | 'desc') => {
     if (order) {
@@ -1108,7 +835,7 @@ const Pipeline = () => {
   }, [sortField, sortDirection]);
 
   const totalPipelineValue = filteredJourneys.reduce((sum, j) => sum + Number(j.value ?? 0), 0);
-  
+
   const weightedPipelineValue = useMemo(() => {
     return filteredJourneys.reduce((sum, j) => {
       const stage = STAGES.find(s => s.id === j.stage);
@@ -1118,111 +845,64 @@ const Pipeline = () => {
   }, [filteredJourneys]);
 
   const pageTitle = "Journeys";
-  const pageDescription = `${filteredJourneys.length} Journeys`;
+  const pageDescription = viewMode === "list"
+    ? `Showing ${listViewJourneys.length} of ${listViewPagination.total} Journeys`
+    : viewMode === "kanban"
+      ? `Showing ${kanbanViewJourneys.length} of ${filteredJourneys.length} Journeys`
+      : `${filteredJourneys.length} Journeys`;
 
 
   const exportToExcel = useCallback(async (options: { includePrimaryContactOnly: boolean }) => {
-    const headers = [
-      'Quote Number',
-      'CreateDate',
-      'ActionDate',
-      'Confidence',
-      'Est PO Date',
-      'Stage',
-      'RSM',
-      'Industry',
-      'Dealer',
-      'Customer',
-      'Equipment',
-      'Lead Source',
-      'Projected Value',
-      'Journey Steps',
-      'Contact Name',
-      'Contact Email',
-      'Contact Position',
-      'Address'
-    ];
-    const uniqueRsmInitials = [...new Set(
-      filteredJourneys
-        .map(journey => journey.RSM)
-        .filter(rsm => rsm && rsm.trim())
-    )];
+    const headers = ['Quote Number', 'CreateDate', 'ActionDate', 'Confidence', 'Est PO Date', 'Stage', 'RSM', 'Industry', 'Dealer', 'Customer', 'Equipment', 'Lead Source', 'Projected Value', 'Journey Steps', 'Contact Name', 'Contact Email', 'Contact Position', 'Address'];
 
-    const rsmFullNames = new Map<string, string>();
-    uniqueRsmInitials.forEach(initials => {
-      const displayName = rsmDisplayNames.get(initials);
-      if (displayName) {
-        const nameMatch = displayName.match(/^(.+?)\s*\(/);
-        rsmFullNames.set(initials, nameMatch ? nameMatch[1].trim() : initials);
-      } else {
-        rsmFullNames.set(initials, initials);
-      }
-    });
+    const rsmFullNames = new Map(
+      [...new Set(filteredJourneys.map(j => j.RSM).filter(Boolean))].map(initials => {
+        const displayName = rsmDisplayNames.get(initials);
+        const nameMatch = displayName?.match(/^(.+?)\s*\(/);
+        return [initials, nameMatch ? nameMatch[1].trim() : initials];
+      })
+    );
 
-    const journeyContacts = new Map<string, Array<{ Contact_Name: string; Contact_Email: string; Contact_Position: string }>>();
-    const journeyAddresses = new Map<string, { AddressName: string; Address1: string; Address2: string; Address3: string; City: string; State: string; Country: string; ZipCode: string }>();
+    const journeyContacts = new Map();
+    const journeyAddresses = new Map();
 
     await Promise.all(
       filteredJourneys.map(async (journey) => {
         try {
-          const contactData = await api.get('/legacy/base/Journey_Contact/filter/custom', {
+          const contactData = await get('/legacy/base/Journey_Contact/filter/custom', {
             filterField: 'Jrn_ID',
             filterValue: journey.id,
             fields: 'Contact_Name,Contact_Email,Contact_Position,IsPrimary'
           });
 
-          if (contactData && Array.isArray(contactData) && contactData.length > 0) {
-            if (options.includePrimaryContactOnly) {
-              let selectedContact = contactData.find(contact => contact.IsPrimary === true || contact.IsPrimary === 'true' || contact.IsPrimary === 1);
-              if (!selectedContact) {
-                selectedContact = contactData[0];
-              }
-
-              journeyContacts.set(journey.id.toString(), [{
-                Contact_Name: selectedContact.Contact_Name || '',
-                Contact_Email: selectedContact.Contact_Email || '',
-                Contact_Position: selectedContact.Contact_Position || ''
-              }]);
-            } else {
-              journeyContacts.set(journey.id.toString(), contactData.map(contact => ({
-                Contact_Name: contact.Contact_Name || '',
-                Contact_Email: contact.Contact_Email || '',
-                Contact_Position: contact.Contact_Position || ''
-              })));
-            }
+          const emptyContact = [{ Contact_Name: '', Contact_Email: '', Contact_Position: '' }];
+          if (contactData?.length) {
+            const contacts = options.includePrimaryContactOnly
+              ? [contactData.find(c => c.IsPrimary === true || c.IsPrimary === 'true' || c.IsPrimary === 1) || contactData[0]]
+              : contactData;
+            journeyContacts.set(journey.id.toString(), contacts.map(c => ({
+              Contact_Name: c.Contact_Name || '',
+              Contact_Email: c.Contact_Email || '',
+              Contact_Position: c.Contact_Position || ''
+            })));
           } else {
-            journeyContacts.set(journey.id.toString(), [{
-              Contact_Name: '',
-              Contact_Email: '',
-              Contact_Position: ''
-            }]);
+            journeyContacts.set(journey.id.toString(), emptyContact);
           }
         } catch (error) {
           console.error(`Error fetching contact data for journey ${journey.id}:`, error);
-          journeyContacts.set(journey.id.toString(), [{
-            Contact_Name: '',
-            Contact_Email: '',
-            Contact_Position: ''
-          }]);
+          journeyContacts.set(journey.id.toString(), emptyContact);
         }
 
         if (journey.Address_ID && journey.Company_ID) {
           try {
-            const addressesData = await api.get('/legacy/std/Address/filter/custom', {
+            const addressesData = await get('/legacy/std/Address/filter/custom', {
               filterField: 'Company_ID',
               filterValue: journey.Company_ID
             });
 
-            let matchingAddress = null;
-
-            if (addressesData && Array.isArray(addressesData)) {
-              matchingAddress = addressesData.find(addr =>
-                addr.Address_ID === journey.Address_ID ||
-                addr.Address_ID === Number(journey.Address_ID)
-              );
-            } else if (addressesData && addressesData.Address_ID === journey.Address_ID) {
-              matchingAddress = addressesData;
-            }
+            const matchingAddress = Array.isArray(addressesData)
+              ? addressesData.find(addr => addr.Address_ID === journey.Address_ID || addr.Address_ID === Number(journey.Address_ID))
+              : (addressesData?.Address_ID === journey.Address_ID ? addressesData : null);
 
             if (matchingAddress) {
               journeyAddresses.set(journey.id.toString(), {
@@ -1246,33 +926,11 @@ const Pipeline = () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Pipeline Export');
 
-    const formatDateOnly = (dateString: any) => {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-      const year = date.getFullYear();
-      return `${month}/${day}/${year}`;
-    };
+    const formatDateOnly = (d: any) => d ? new Date(d).toLocaleDateString('en-US') : '';
 
     const dataRows = filteredJourneys.map(journey => {
-      const customer = customersById.get(String(journey.customerId));
-      const rsmFullName = journey.RSM ? rsmFullNames.get(journey.RSM) || journey.RSM : '';
       const contacts = journeyContacts.get(journey.id.toString()) || [{ Contact_Name: '', Contact_Email: '', Contact_Position: '' }];
       const address = journeyAddresses.get(journey.id.toString());
-
-      const contactNames = contacts.map(c => c.Contact_Name).filter(Boolean).join('\n');
-      const contactEmails = contacts.map(c => c.Contact_Email || '').join('\n');
-      const contactPositions = contacts.map(c => c.Contact_Position || '').join('\n');
-
-      const formattedAddress = address ? [
-        address.AddressName,
-        address.Address1,
-        address.Address2,
-        address.Address3,
-        [address.City, address.State, address.ZipCode].filter(Boolean).join(', '),
-        address.Country
-      ].filter(Boolean).join('\n') : '';
 
       return [
         journey.Quote_Number || '',
@@ -1281,18 +939,18 @@ const Pipeline = () => {
         journey.Chance_To_Secure_order || '',
         formatDateOnly(journey.Expected_Decision_Date),
         journey.Journey_Stage || stageLabel(journey.stage),
-        rsmFullName,
+        journey.RSM ? rsmFullNames.get(journey.RSM) || journey.RSM : '',
         journey.Industry || '',
         journey.Dealer || journey.Dealer_Name || journey.dealer || '',
-        customer?.name || journey.companyName || journey.Target_Account || '',
+        customersById.get(String(journey.customerId))?.name || journey.companyName || journey.Target_Account || '',
         journey.Equipment_Type || '',
         journey.Lead_Source || '',
         Number(journey.Journey_Value || journey.value || 0),
         journey.Next_Steps || '',
-        contactNames,
-        contactEmails,
-        contactPositions,
-        formattedAddress
+        contacts.map(c => c.Contact_Name).filter(Boolean).join('\n'),
+        contacts.map(c => c.Contact_Email || '').join('\n'),
+        contacts.map(c => c.Contact_Position || '').join('\n'),
+        address ? [address.AddressName, address.Address1, address.Address2, address.Address3, [address.City, address.State, address.ZipCode].filter(Boolean).join(', '), address.Country].filter(Boolean).join('\n') : ''
       ];
     });
     const lastColumn = String.fromCharCode(64 + headers.length);
@@ -1312,51 +970,29 @@ const Pipeline = () => {
     });
     worksheet.columns.forEach((column: any, index: any) => {
       let maxLength = headers[index].length;
-
       worksheet.getColumn(index + 1).eachCell({ includeEmpty: false }, (cell: any) => {
-        const cellValue = cell.value ? String(cell.value) : '';
-        const lines = cellValue.split('\n');
-        const longestLine = Math.max(...lines.map(line => line.length));
-        maxLength = Math.max(maxLength, longestLine);
+        const lines = String(cell.value || '').split('\n');
+        maxLength = Math.max(maxLength, ...lines.map(line => line.length));
       });
       column.width = Math.min(Math.max(maxLength + 2, 10), 50);
     });
     worksheet.eachRow((row: any, rowNumber: any) => {
-      if (rowNumber === 1) {
-        row.height = 15;
-        row.eachCell((cell: any) => {
-          cell.font = { bold: true };
-          cell.alignment = { wrapText: true, vertical: 'top' };
-        });
-        return;
-      }
+      row.height = 15;
       let maxLines = 1;
       row.eachCell((cell: any, colNumber: any) => {
         cell.alignment = { wrapText: true, vertical: 'top' };
-
-        const headerName = headers[colNumber - 1];
-        if (headerName === 'Projected Value') {
-          cell.numFmt = '$#,##0.00';
+        if (rowNumber === 1) {
+          cell.font = { bold: true };
+        } else {
+          if (headers[colNumber - 1] === 'Projected Value') cell.numFmt = '$#,##0.00';
+          const cellValue = String(cell.value || '');
+          const columnWidth = worksheet.getColumn(colNumber).width || 10;
+          const totalLines = cellValue.split('\n').reduce((sum, line) =>
+            sum + (line.length === 0 ? 1 : Math.ceil(line.length / Math.floor(columnWidth))), 0);
+          maxLines = Math.max(maxLines, totalLines);
         }
-        const cellValue = cell.value ? String(cell.value) : '';
-        const columnWidth = worksheet.getColumn(colNumber).width || 10;
-        const charsPerLine = Math.floor(columnWidth);
-
-        let totalLines = 0;
-        const explicitLines = cellValue.split('\n');
-
-        explicitLines.forEach(line => {
-          if (line.length === 0) {
-            totalLines += 1;
-          } else {
-            const wrappedLines = Math.ceil(line.length / charsPerLine);
-            totalLines += wrappedLines;
-          }
-        });
-
-        maxLines = Math.max(maxLines, totalLines);
       });
-      row.height = Math.max(maxLines * 15, 15);
+      if (rowNumber > 1) row.height = Math.max(maxLines * 15, 15);
     });
     const fileName = `pipeline-export-${new Date().toISOString().split('T')[0]}.xlsx`;
     const buffer = await workbook.xlsx.writeBuffer();

@@ -15,7 +15,7 @@ type StageId = (typeof STAGES)[number]["id"];
 const mapLegacyStageToId = (stage: any): StageId => {
   const s = String(stage ?? "").toLowerCase();
   if (!s) return 1;
-  if (s.includes("qualify") || s.includes("pain") || s.includes("discover")) return 2;
+  if (s.includes("qualify") || s.includes("qualifi") || s.includes("pain") || s.includes("discover")) return 2;
   if (s.includes("present") || s.includes("demo") || s.includes("proposal") || s.includes("quote")) return 3;
   if (s.includes("negot")) return 4;
   if (s.includes("po") || s.includes("won") || s.includes("closedwon") || s.includes("closed won") || s.includes("order")) return 5;
@@ -26,9 +26,12 @@ const mapLegacyStageToId = (stage: any): StageId => {
 
 const stageLabel = (id?: number) => STAGES.find(s => s.id === Number(id))?.label ?? `Stage ${id ?? ""}`;
 const getStageLabel = (journey: any) => {
+  if (journey?.Journey_Stage) {
+    const mappedStageId = mapLegacyStageToId(journey.Journey_Stage);
+    return stageLabel(mappedStageId);
+  }
   if (typeof journey?.stage === 'number') return stageLabel(journey.stage);
-  const mappedStageId = mapLegacyStageToId(journey?.Journey_Stage || journey?.stage);
-  return mappedStageId ? stageLabel(mappedStageId) : "-";
+  return "-";
 };
 
 const getPriorityLabel = (priority: string) => {
