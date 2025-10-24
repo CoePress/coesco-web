@@ -14,6 +14,7 @@ import type { IAuthResponse, IAuthTokens } from "@/types";
 import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { getClientIp } from "@/utils";
+import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
 import { emailService, loginHistoryService, sessionService } from "..";
@@ -29,6 +30,48 @@ export class AuthService {
         authority: `https://login.microsoftonline.com/${env.AZURE_TENANT_ID}`,
       },
     });
+  }
+
+  private async safeLogAttempt(data: Parameters<typeof loginHistoryService.logAttempt>[0]): Promise<void> {
+    try {
+      await loginHistoryService.logAttempt(data);
+    }
+    catch (error) {
+      logger.error("Failed to log login attempt:", error);
+    }
+  }
+
+  private async createSessionWithRetry(
+    data: Parameters<typeof sessionService.createSession>[0],
+    maxRetries = 3,
+  ): Promise<any> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await sessionService.createSession(data);
+      }
+      catch (error) {
+        lastError = error as Error;
+        logger.error(`Session creation attempt ${attempt}/${maxRetries} failed:`, error);
+
+        if (attempt < maxRetries) {
+          const delayMs = Math.min(1000 * 2 ** (attempt - 1), 5000);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  private async safeQueuePasswordResetEmail(data: { to: string; resetToken: string; firstName: string }): Promise<void> {
+    try {
+      await emailService.sendPasswordReset(data);
+    }
+    catch (error) {
+      logger.error("Failed to send password reset email:", error);
+    }
   }
 
   private generateTokens(userId: string): IAuthTokens {
@@ -74,7 +117,7 @@ export class AuthService {
 
     if (!user || !user.employee) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           username,
           loginMethod: LoginMethod.PASSWORD,
           success: false,
@@ -88,7 +131,7 @@ export class AuthService {
 
     if (!user.isActive) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           userId: user.id,
           username,
           loginMethod: LoginMethod.PASSWORD,
@@ -103,7 +146,7 @@ export class AuthService {
 
     if (!user.password) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           userId: user.id,
           username,
           loginMethod: LoginMethod.PASSWORD,
@@ -119,7 +162,7 @@ export class AuthService {
     const isValidPassword = await compare(password, user.password);
     if (!isValidPassword) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           userId: user.id,
           username,
           loginMethod: LoginMethod.PASSWORD,
@@ -142,14 +185,7 @@ export class AuthService {
     let sessionId: string | undefined;
 
     if (req) {
-      console.log("[IP Debug] Headers:", {
-        "x-forwarded-for": req.headers["x-forwarded-for"],
-        "x-real-ip": req.headers["x-real-ip"],
-        "req.ip": req.ip,
-        "getClientIp": getClientIp(req),
-      });
-
-      const session = await sessionService.createSession({
+      const session = await this.createSessionWithRetry({
         userId: user.id,
         token,
         refreshToken,
@@ -160,9 +196,8 @@ export class AuthService {
       });
 
       sessionId = session.id;
-      console.log("[Auth Service] Created session with ID:", sessionId);
 
-      await loginHistoryService.logAttempt({
+      await this.safeLogAttempt({
         userId: user.id,
         username,
         loginMethod: LoginMethod.PASSWORD,
@@ -171,11 +206,6 @@ export class AuthService {
         userAgent: req.headers["user-agent"],
       });
     }
-    else {
-      console.log("[Auth Service] No req object, sessionId will be undefined");
-    }
-
-    console.log("[Auth Service] Returning login response with sessionId:", sessionId);
 
     return {
       token,
@@ -332,7 +362,7 @@ export class AuthService {
 
     if (!user || !user.employee) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           username: userInfo.userPrincipalName || userInfo.mail,
           loginMethod: LoginMethod.MICROSOFT,
           success: false,
@@ -346,7 +376,7 @@ export class AuthService {
 
     if (!user.isActive) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           userId: user.id,
           username: user.username || userInfo.userPrincipalName,
           loginMethod: LoginMethod.MICROSOFT,
@@ -369,7 +399,7 @@ export class AuthService {
     let sessionId: string | undefined;
 
     if (req) {
-      const session = await sessionService.createSession({
+      const session = await this.createSessionWithRetry({
         userId: user.id,
         token,
         refreshToken,
@@ -381,7 +411,7 @@ export class AuthService {
 
       sessionId = session.id;
 
-      await loginHistoryService.logAttempt({
+      await this.safeLogAttempt({
         userId: user.id,
         username: user.username || userInfo.userPrincipalName,
         loginMethod: LoginMethod.MICROSOFT,
@@ -466,6 +496,7 @@ export class AuthService {
       return;
     }
 
+    // eslint-disable-next-line node/prefer-global/process
     const defaultUsersPath = join(process.cwd(), "src/config/default-users.json");
     const defaultUsers = JSON.parse(readFileSync(defaultUsersPath, "utf-8"));
 
@@ -533,7 +564,7 @@ export class AuthService {
       },
     });
 
-    await emailService.sendPasswordReset({
+    this.safeQueuePasswordResetEmail({
       to: email,
       resetToken,
       firstName: employee.firstName,
@@ -745,7 +776,7 @@ export class AuthService {
     const { token, refreshToken } = this.generateTokens(user.id);
 
     if (req) {
-      await sessionService.createSession({
+      await this.createSessionWithRetry({
         userId: user.id,
         token,
         refreshToken,
@@ -755,7 +786,7 @@ export class AuthService {
         expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
       });
 
-      await loginHistoryService.logAttempt({
+      await this.safeLogAttempt({
         userId: user.id,
         username: user.username!,
         loginMethod: LoginMethod.PASSWORD,

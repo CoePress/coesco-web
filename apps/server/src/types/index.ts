@@ -17,6 +17,8 @@ export interface IQueryParams<T> {
   filter?: Partial<Record<keyof T, FilterValue>> | string;
   search?: string;
   searchFields?: Array<keyof T>;
+  fuzzy?: boolean;
+  fuzzyThreshold?: number;
   dateFrom?: Date | string;
   dateTo?: Date | string;
   include?: string[] | Record<string, any> | string;

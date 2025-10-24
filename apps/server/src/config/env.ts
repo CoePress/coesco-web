@@ -11,6 +11,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.string().regex(/^\d+$/).transform(Number),
   DATABASE_URL: z.string().url(),
+  DATABASE_CONNECTION_LIMIT: z.string().transform(Number).default("10"),
+  DATABASE_POOL_TIMEOUT: z.string().transform(Number).default("20"),
+  DATABASE_CONNECTION_TIMEOUT: z.string().transform(Number).default("10"),
   REDIS_HOST: z.string(),
   REDIS_PORT: z.string().transform(Number),
   REDIS_URL: z.string(),
@@ -53,6 +56,12 @@ const envSchema = z.object({
   QUOTE_HOST: z.string(),
   QUOTE_PORT: z.string(),
   QUOTE_DB: z.string(),
+
+  API_KEYS: z.string().min(1).describe("Comma-separated list of valid API keys for system access"),
+
+  BACKUP_DIR: z.string().optional(),
+  BACKUP_RETENTION_DAYS: z.string().transform(Number).optional(),
+  BACKUP_ENABLED: z.string().transform(val => val === "true").default("true"),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -66,6 +75,10 @@ export const env = parsed.data!;
 export const __dev__ = env.NODE_ENV === "development";
 export const __test__ = env.NODE_ENV === "test";
 export const __prod__ = env.NODE_ENV === "production";
+
+export const API_KEYS = new Set(
+  env.API_KEYS.split(",").map(key => key.trim()).filter(key => key.length > 0),
+);
 
 export const cookieOptions: CookieOptions = {
   httpOnly: true,

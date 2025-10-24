@@ -1,11 +1,11 @@
 import { Routes, Route } from "react-router-dom";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
-import MainMenu from "./pages/main-menu";
-import NotFound from "./pages/not-found";
-import Login from "./pages/login";
-import ChangePassword from "./pages/change-password";
-import ForgotPassword from "./pages/forgot-password";
+import MainMenu from "./pages/general/main-menu";
+import NotFound from "./pages/general/not-found";
+import Login from "./pages/general/login";
+import ChangePassword from "./pages/general/change-password";
+import ForgotPassword from "./pages/general/forgot-password";
 import ChatPage from "./pages/utility/chat";
 import { RecentChats, Resources, Settings } from "./pages";
 import { __dev__ } from "./config/env";

@@ -1,8 +1,8 @@
-/* eslint-disable no-console */
-
 import { getDMMF } from "@prisma/sdk";
 import fs from "node:fs";
 import path from "node:path";
+
+import { logger } from "@/utils/logger";
 
 async function getRelationships(models: any) {
   const modelNames = new Set(models.map((m: any) => m.name));
@@ -109,7 +109,6 @@ export async function getEnums() {
 function parseAnnotations(model: any) {
   const annotations: any = {};
 
-  // Use custom annotations from manual parsing, fallback to documentation
   const docSource = model.customAnnotations || model.documentation || "";
 
   if (docSource) {
@@ -120,7 +119,6 @@ function parseAnnotations(model: any) {
       let depth = 0;
       let endIndex = 0;
 
-      // Find the actual end by counting parentheses
       for (let i = 0; i < transformMatch[0].length; i++) {
         if (transformMatch[0][i] === "(")
           depth++;
@@ -133,11 +131,9 @@ function parseAnnotations(model: any) {
         }
       }
 
-      // Re-extract with correct bounds
       const fullMatch = docSource.match(/@transform\((.+?)\)(?=\s*@|\s*$)/s);
       if (fullMatch) {
         content = fullMatch[1];
-        // Split by commas that are not inside parentheses
         const transforms: string[] = [];
         let current = "";
         let parenDepth = 0;
@@ -187,7 +183,6 @@ function parseAnnotations(model: any) {
       const content = sortFieldsMatch[1];
       annotations.sortFields = {};
 
-      // Match pattern: fieldName: [field1, field2, ...]
       const fieldRegex = /(\w+)\s*:\s*\[([^\]]+)\]/g;
       let match;
       while ((match = fieldRegex.exec(content)) !== null) {
@@ -211,7 +206,6 @@ async function generateValidations(model: any) {
       && field.name !== "createdAt"
       && field.name !== "updatedAt"
     ) {
-      // For boolean fields, check for undefined/null instead of falsy values
       if (field.type === "Boolean") {
         lines.push(
           `if (entity.${field.name} === undefined || entity.${field.name} === null) throw new BadRequestError("${field.name} is required");`,
@@ -331,9 +325,9 @@ async function generateServiceFiles(models: any, relationships: any) {
     const transformSort = await generateTransformSort(model);
 
     if (model.customAnnotations) {
-      console.log(`${model.name} annotations:`, model.customAnnotations);
+      logger.info(`${model.name} annotations:`, model.customAnnotations);
       const annotations = parseAnnotations(model);
-      console.log(`${model.name} parsed:`, JSON.stringify(annotations, null, 2));
+      logger.info(`${model.name} parsed:`, JSON.stringify(annotations, null, 2));
     }
 
     const methods = [transforms, transformSort, searchFields].filter(m => m).join("\n");
@@ -361,20 +355,20 @@ ${methods}}`.trim();
       const { body } = extractCommentAndBody(existing);
 
       if (body === newBody) {
-        console.log(`No changes: ${model.name}`);
+        logger.info(`No changes: ${model.name}`);
         continue;
       }
     }
 
     const fullContent = `${getTimestampComment()}\n${newBody}`;
     fs.writeFileSync(serviceFile, fullContent);
-    console.log(
+    logger.info(
       `${fs.existsSync(serviceFile) ? "Updated" : "Created"}: ${model.name}`,
     );
 
     relationships
       .filter((r: any) => r.model === model.name)
-      .forEach((r: any) => console.log(r));
+      .forEach((r: any) => logger.info(r));
   }
 }
 
@@ -414,21 +408,21 @@ ${instances.join("\n")}`.trim();
     const { body } = extractCommentAndBody(existing);
     existingBody = body;
     if (existingBody === newBody) {
-      console.log("No changes to index file");
+      logger.info("No changes to index file");
       return;
     }
   }
 
   const fullContent = `${getTimestampComment()}\n${newBody}`;
   fs.writeFileSync(indexFile, fullContent);
-  console.log("Updated index file");
+  logger.info("Updated index file");
 }
 
 async function updateMCPConfig(models: any) {
   const mcpConfigFile = path.resolve(__dirname, "../config/mcp-config.ts");
 
   if (!fs.existsSync(mcpConfigFile)) {
-    console.log("MCP config file does not exist, skipping update");
+    logger.info("MCP config file does not exist, skipping update");
     return;
   }
 
@@ -499,7 +493,7 @@ ${schemaEntries.join("\n")}
   );
 
   fs.writeFileSync(mcpConfigFile, content);
-  console.log("Updated MCP config service map and schemas");
+  logger.info("Updated MCP config service map and schemas");
 }
 
 async function generateSharedTypes(models: any) {
@@ -526,7 +520,7 @@ ${enumValues}
 
     fs.writeFileSync(enumFile, enumContent);
     modelExports.push(`export * from './${kebabName}';`);
-    console.log(`Generated enum: ${enumDef.name}`);
+    logger.info(`Generated enum: ${enumDef.name}`);
   }
 
   for (const model of models) {
@@ -601,7 +595,7 @@ export type Update${model.name}Input = Partial<Create${model.name}Input>;
 
     fs.writeFileSync(typeFile, typeContent);
     modelExports.push(`export * from './${kebabName}';`);
-    console.log(`Generated type: ${model.name}`);
+    logger.info(`Generated type: ${model.name}`);
   }
 
   // Generate auto-generated index
@@ -623,7 +617,7 @@ export * from './custom';
   // Only create index.ts if it doesn't exist, to avoid overwriting custom exports
   if (!fs.existsSync(indexFile)) {
     fs.writeFileSync(indexFile, indexContent);
-    console.log("Created main index file");
+    logger.info("Created main index file");
   }
 }
 

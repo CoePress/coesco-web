@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import { ZodError } from "zod";
 
-import { __prod__ } from "@/config/env";
+import { __dev__ } from "@/config/env";
 
 export class AppError extends Error {
   status: number;
@@ -58,7 +58,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
     errorMessage = "Internal Server Error";
   }
 
-  if (!__prod__ && err instanceof Error && err.stack) {
+  if (__dev__ && err instanceof Error && err.stack) {
     stack = err.stack
       .split("\n")
       .map(line => line.trim())

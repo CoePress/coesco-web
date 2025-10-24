@@ -11,8 +11,6 @@ export class WebhookService {
     this.registerHandler("test", handleTestWebhook);
     this.registerHandler("notification", handleNotificationWebhook);
     this.registerHandler("data.sync", handleDataSyncWebhook);
-
-    console.log(`[WebhookService] Initialized with ${this.handlers.size} handlers`);
   }
 
   registerHandler(event: string, handler: WebhookHandler): void {

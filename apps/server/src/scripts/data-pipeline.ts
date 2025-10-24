@@ -2042,7 +2042,7 @@ async function main() {
     await legacyService.initialize();
     // const coilTypes = await _migrateCoilTypes();
     // const productClasses = await _migrateProductClasses();
-    // const equipmentItems = await _migrateEquipListToItems();
+    const equipmentItems = await _migrateEquipListToItems();
     // const optionCategories = await _migrateOptionCategories();
     // const optionHeaders = await _migrateOptionHeaders();
     // const optionDetails = await _migrateOptionDetails();
@@ -2059,7 +2059,7 @@ async function main() {
     logger.info(`Migration Results (${duration}s):`);
     // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
     // logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
-    // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
     // logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
     // logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
     // logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
