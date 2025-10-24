@@ -2,7 +2,43 @@ import { Prisma, PrismaClient } from "@prisma/client";
 
 import type { IQueryBuilderResult, IQueryParams } from "@/types";
 
-export const prisma = new PrismaClient();
+import { __dev__, __test__, env } from "@/config/env";
+
+import { logger } from "./logger";
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: __dev__
+    ? [
+        { level: "query", emit: "event" },
+        { level: "error", emit: "stdout" },
+        { level: "warn", emit: "stdout" },
+      ]
+    : [
+        { level: "error", emit: "stdout" },
+        { level: "warn", emit: "stdout" },
+      ],
+  datasources: {
+    db: {
+      url: `${env.DATABASE_URL}?connection_limit=${env.DATABASE_CONNECTION_LIMIT}&pool_timeout=${env.DATABASE_POOL_TIMEOUT}&connect_timeout=${env.DATABASE_CONNECTION_TIMEOUT}`,
+    },
+  },
+});
+
+if (__dev__) {
+  prisma.$on("query" as never, (e: Prisma.QueryEvent) => {
+    if (e.duration > 1000) {
+      logger.warn(`Slow query (${e.duration}ms): ${e.query}`);
+    }
+  });
+}
+
+if (__dev__) {
+  globalForPrisma.prisma = prisma;
+}
 
 const relationFieldCache = new Map<string, Set<string>>();
 const modelSoftDeleteCache = new Map<string, boolean>();
@@ -63,16 +99,30 @@ function getRelationTargetModel(modelName: string, fieldName: string): string | 
   return field?.kind === "object" && field.type ? field.type : null;
 }
 
+function isEnumField(modelName: string, fieldName: string): boolean {
+  const normalized = normalizeModelName(modelName);
+  const model = Prisma.dmmf.datamodel.models.find(m => m.name === normalized);
+
+  if (!model) {
+    return false;
+  }
+
+  const field = model.fields.find(f => f.name === fieldName);
+  return field?.kind === "enum";
+}
+
 function normalizeSearchFields(searchFields?: Array<string | { field: string; weight: number }>) {
   return (searchFields || []).map(f =>
     typeof f === "string" ? { field: f, weight: 1 } : f,
   );
 }
 
-function buildSearchWhere(search: string, normalized: { field: string; weight: number }[]) {
-  return normalized.map(({ field }) => ({
-    [field]: { contains: search, mode: "insensitive" },
-  }));
+function buildSearchWhere(search: string, normalized: { field: string; weight: number }[], modelName?: string) {
+  return normalized
+    .filter(({ field }) => !modelName || !isEnumField(modelName, field))
+    .map(({ field }) => ({
+      [field]: { contains: search, mode: "insensitive" },
+    }));
 }
 
 function resolveSearchOrdering(sort: string | undefined, normalized: { field: string; weight: number }[]) {
@@ -88,7 +138,7 @@ function parseComplexParam(param: any) {
       return JSON.parse(param);
     }
     catch (error) {
-      console.error("Invalid JSON format:", error);
+      logger.error("Invalid JSON format:", error);
       return null;
     }
   }
@@ -190,7 +240,7 @@ function processFilterValue(value: any): any {
 function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderResult, includeDeleted?: boolean | "only", modelName?: string) {
   if (params.select) {
     const parsedSelect = parseComplexParam(params.select);
-    if (Array.isArray(parsedSelect)) {
+    if (Array.isArray(parsedSelect) && parsedSelect.length > 0) {
       if (
         parsedSelect.some(
           item => typeof item === "string" && item.includes("."),
@@ -208,7 +258,7 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
         );
       }
     }
-    else if (parsedSelect && typeof parsedSelect === "object") {
+    else if (parsedSelect && typeof parsedSelect === "object" && !Array.isArray(parsedSelect)) {
       result.select = parsedSelect;
     }
   }
@@ -223,7 +273,7 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
   }
   else if (params.include) {
     const parsedInclude = parseComplexParam(params.include);
-    if (Array.isArray(parsedInclude)) {
+    if (Array.isArray(parsedInclude) && parsedInclude.length > 0) {
       if (
         parsedInclude.some(
           item => typeof item === "string" && item.includes("."),
@@ -241,7 +291,7 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
         );
       }
     }
-    else if (parsedInclude && typeof parsedInclude === "object") {
+    else if (parsedInclude && typeof parsedInclude === "object" && !Array.isArray(parsedInclude)) {
       result.include = parsedInclude;
     }
   }
@@ -262,7 +312,7 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
   const normalizedSearch = normalizeSearchFields(searchFields);
 
   if (params.search && normalizedSearch.length > 0) {
-    result.where.OR = buildSearchWhere(params.search, normalizedSearch);
+    result.where.OR = buildSearchWhere(params.search, normalizedSearch, modelName);
     const searchOrder = resolveSearchOrdering(params.sort, normalizedSearch);
     if (searchOrder)
       result.orderBy = searchOrder;
@@ -275,7 +325,9 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
         filterObj = JSON.parse(params.filter);
       }
       catch (error) {
-        console.error("Invalid filter format:", error);
+        if (!__test__) {
+          logger.warn("Invalid filter format:", error);
+        }
       }
     }
     else if (typeof params.filter === "object") {

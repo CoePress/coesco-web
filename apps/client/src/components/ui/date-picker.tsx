@@ -9,6 +9,10 @@ interface DatePickerProps {
   maxDate?: string;
   className?: string;
   disabled?: boolean;
+  label?: string;
+  id?: string;
+  name?: string;
+  required?: boolean;
 }
 
 const DatePicker = ({
@@ -18,7 +22,11 @@ const DatePicker = ({
   minDate,
   maxDate,
   className = '',
-  disabled = false
+  disabled = false,
+  label,
+  id,
+  name,
+  required = false
 }: DatePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -204,20 +212,31 @@ const DatePicker = ({
 
   return (
     <div className="relative" ref={pickerRef}>
+      {label && (
+        <label
+          htmlFor={id || name}
+          className="block mb-2 text-sm font-medium text-text"
+        >
+          {label}
+          {required && <span className="text-error ml-1">*</span>}
+        </label>
+      )}
       <div className="relative">
         <input
           type="text"
+          id={id || name}
+          name={name}
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
           disabled={disabled}
           className={`
-            w-full px-3 py-1.5 pr-10 min-h-[34px]
-            bg-surface border border-border rounded-sm
+            w-full text-sm px-3 py-1.5 pr-10 rounded
+            bg-foreground border border-border
             text-text placeholder:text-text-muted
-            focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary
-            disabled:opacity-50 disabled:cursor-not-allowed
+            focus:outline-none focus:border-primary
+            disabled:bg-surface disabled:text-text-muted
             transition-all duration-150
             ${className}
           `}

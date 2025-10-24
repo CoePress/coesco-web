@@ -1,37 +1,43 @@
 /* eslint-disable node/prefer-global/process */
 import { FormFieldControlType, FormFieldDataType, FormStatus, ItemType, MachineControllerType, MachineType } from "@prisma/client";
 
-import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, _migrateJourneyNotes, closeDatabaseConnections } from "@/scripts/data-pipeline";
-import { legacyService } from "@/services";
-import { MicrosoftService } from "@/services/admin/microsoft.service";
+import defaultUsers from "@/config/default-users.json";
 import {
   formConditionalRuleRepository,
   formFieldRepository,
   formPageRepository,
-  formSectionRepository,
   formRepository,
+  formSectionRepository,
+  itemRepository,
   machineRepository,
+  optionCategoryRepository,
+  optionDetailsRepository,
+  optionHeaderRepository,
+  optionRuleRepository,
+  optionRuleTargetRepository,
+  optionRuleTriggerRepository,
   performanceSheetVersionRepository,
-  permissionRepository,
+  productClassOptionCategoryRepository,
+  productClassRepository,
   rolePermissionRepository,
   roleRepository,
-  productClassRepository,
-  optionCategoryRepository,
-  optionHeaderRepository,
-  optionDetailsRepository,
-  optionRuleRepository,
-  optionRuleTriggerRepository,
-  optionRuleTargetRepository,
-  productClassOptionCategoryRepository,
-  itemRepository,
 } from "@/repositories";
+import { _migrateDepartments, _migrateEmployeeManagers, _migrateEmployees, _migrateJourneyNotes, _migrateContacts, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { legacyService, microsoftService } from "@/services";
+import {
+  FEED_PERFORMANCE_SHEET_SEED,
+  MATERIAL_SPECS_PERFORMANCE_SHEET_SEED,
+  REEL_DRIVE_PERFORMANCE_SHEET_SEED,
+  RFQ_PERFORMANCE_SHEET_SEED,
+  ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED,
+  SHEAR_PERFORMANCE_SHEET_SEED,
+  STR_UTILITY_PERFORMANCE_SHEET_SEED,
+  SUMMARY_REPORT_PERFORMANCE_SHEET_SEED,
+  TDDBHD_PERFORMANCE_SHEET_SEED,
+} from "@/templates/performance-sheet";
 import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
-import defaultUsers from "@/config/default-users.json";
-import { RFQ_PERFORMANCE_SHEET_SEED, TDDBHD_PERFORMANCE_SHEET_SEED } from "@/templates/performance-sheet";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
-
-const microsoftService = new MicrosoftService();
 
 const machines = [
   {
@@ -291,12 +297,22 @@ async function seedPerformanceSheetVersions() {
       logger.info("Seeding performance sheet versions...");
 
       await performanceSheetVersionRepository.create({
-        sections: [RFQ_PERFORMANCE_SHEET_SEED, TDDBHD_PERFORMANCE_SHEET_SEED],
+        sections: [
+          RFQ_PERFORMANCE_SHEET_SEED,
+          MATERIAL_SPECS_PERFORMANCE_SHEET_SEED,
+          TDDBHD_PERFORMANCE_SHEET_SEED,
+          REEL_DRIVE_PERFORMANCE_SHEET_SEED,
+          STR_UTILITY_PERFORMANCE_SHEET_SEED,
+          ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED,
+          FEED_PERFORMANCE_SHEET_SEED,
+          SHEAR_PERFORMANCE_SHEET_SEED,
+          SUMMARY_REPORT_PERFORMANCE_SHEET_SEED,
+        ],
         createdById: "system",
         updatedById: "system",
       }, undefined, true);
 
-      logger.info("Seeded performance sheet version with 2 tabs (RFQ and TDDBHD)");
+      logger.info("Seeded performance sheet version with 9 tabs");
     }
   }
   catch (error) {
@@ -388,7 +404,8 @@ async function seedServiceTechDailyForm() {
               createdById: "system",
               updatedById: "system",
             });
-          } catch (error) {
+          }
+          catch (error) {
             logger.error(`Error creating conditional rule "${ruleTemplate.name}":`, error);
           }
         }
@@ -810,6 +827,57 @@ async function seedCatalog() {
   }
 }
 
+async function seedJourneys() {
+  try {
+    const firstEmployee = await prisma.employee.findFirst({
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (!firstEmployee) {
+      logger.error("No employees found to create dummy company");
+      return;
+    }
+
+    const DUMMY_LEGACY_COMPANY_UUID = '00000000-0000-0000-0000-000000000000';
+
+    let dummyCompany = await prisma.company.findUnique({
+      where: { id: DUMMY_LEGACY_COMPANY_UUID },
+    });
+
+    if (!dummyCompany) {
+      dummyCompany = await prisma.company.create({
+        data: {
+          id: DUMMY_LEGACY_COMPANY_UUID,
+          name: "Legacy Companies",
+          status: "ACTIVE",
+          createdById: firstEmployee.id,
+          updatedById: firstEmployee.id,
+        },
+      });
+      logger.info(`Created dummy company for legacy contacts: ${dummyCompany.id}`);
+    }
+
+    const existingContacts = await prisma.contact.count();
+
+    if (existingContacts === 0) {
+      logger.info("Seeding journeys and contacts...");
+
+      await _migrateJourneyNotes(legacyService);
+
+      const contactsFromContactsTable = await _migrateContacts(dummyCompany.id, legacyService);
+      logger.info(`Contacts (from Contacts table): ${contactsFromContactsTable.created} created, ${contactsFromContactsTable.skipped} skipped, ${contactsFromContactsTable.errors} errors`);
+
+      await closeDatabaseConnections();
+    }
+    else {
+      logger.info(`Found ${existingContacts} existing contacts. Skipping journey seeding.`);
+    }
+  }
+  catch (error) {
+    logger.error("Error during journey seeding:", error);
+  }
+}
+
 export async function seedDatabase() {
   await seedEmployees();
   // await seedPermissions();
@@ -818,7 +886,7 @@ export async function seedDatabase() {
   await seedServiceTechDailyForm();
   await seedPerformanceSheetVersions();
   await seedCatalog();
-  await _migrateJourneyNotes(legacyService);
+  await seedJourneys();
 
   logger.info("All seeding completed successfully");
 }

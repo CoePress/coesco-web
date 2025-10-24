@@ -23,7 +23,8 @@ const Products = () => {
 
   const [productType, setProductType] = useState<'equipment' | 'parts' | 'services'>(getInitialProductType);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [_searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [fuzzySearch, setFuzzySearch] = useState(false);
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
   const [sort, setSort] = useState("modelNumber");
@@ -109,8 +110,12 @@ const Products = () => {
       limit,
       sort,
       order,
+      ...(searchQuery && {
+        search: searchQuery,
+        fuzzy: fuzzySearch
+      }),
     });
-    
+
     if (response?.success) {
       setProducts(response.data || []);
       if (response.meta) {
@@ -127,7 +132,7 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [include, page, limit, sort, order, filter]);
+  }, [include, page, limit, sort, order, filter, searchQuery, fuzzySearch]);
 
   const handleAddToQuote = (e: React.MouseEvent | null, product: any) => {
     e?.preventDefault();
@@ -342,11 +347,22 @@ const Products = () => {
         <Toolbar
           onSearch={handleSearchChange}
           searchPlaceholder="Search products..."
+          searchValue={searchQuery}
           onFilterChange={handleFilterChange}
           filterValues={filterValues}
           actions={
             <>
-
+              {searchQuery && (
+                <label className="flex items-center gap-2 px-3 py-1.5 bg-surface rounded border border-border cursor-pointer hover:bg-surface/80 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={fuzzySearch}
+                    onChange={(e) => setFuzzySearch(e.target.checked)}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                  />
+                  <span className="text-sm font-medium text-text select-none">Fuzzy Search</span>
+                </label>
+              )}
               <div className="flex gap-1 bg-surface p-1 rounded border border-border">
                 <button
                   onClick={() => handleProductTypeChange('equipment')}

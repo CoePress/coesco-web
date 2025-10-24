@@ -560,31 +560,23 @@ const ProductionDashboard = () => {
     setDateRange({ start: startDate, end: endDate });
   };
 
-  const Actions = () => {
-    return (
-      <div className="flex gap-2 items-center">
-        {/* <Button onClick={() => setIsMapModalOpen(true)} variant="secondary-outline">
-          <MapIcon size={16} />
-          Map
-        </Button> */}
-        <DateRangePicker
-          startDate={dateRange.start}
-          endDate={dateRange.end}
-          onChange={handleDateRangeChange}
-        />
-        <Button onClick={refresh} variant="primary" className="px-2">
-          <RefreshCcw size={16} />
-        </Button>
-      </div>
-    );
-  };
-
   return (
     <div className="w-full flex-1 flex flex-col">
       <PageHeader
         title="Production Dashboard"
         description="Real-time machine status and metrics"
-        actions={<Actions />}
+        actions={
+          <div className="flex gap-2 items-center">
+            <DateRangePicker
+              startDate={dateRange.start}
+              endDate={dateRange.end}
+              onChange={handleDateRangeChange}
+            />
+            <Button onClick={refresh} variant="primary" className="px-2">
+              <RefreshCcw size={16} />
+            </Button>
+          </div>
+        }
       />
 
       {error && (

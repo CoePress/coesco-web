@@ -2,14 +2,99 @@
 
 ## Development
 
-npx prisma migrate dev --name init
+### Initial Setup
 
-npx prisma migrate dev
-
-npx prisma db push
-
+```bash
+npm install
 npx prisma generate
+npm run dev
+```
 
+## Database Migrations
+
+### Making Schema Changes
+
+1. Edit `prisma/schema.prisma`
+2. Create and apply migration:
+   ```bash
+   npm run db:migrate -- --name your_change_description
+   ```
+3. Commit the migration files to git
+
+### Useful Commands
+
+```bash
+# Check migration status
+npm run db:migrate:status
+
+# Apply pending migrations (production)
+npm run db:migrate:deploy
+
+# Generate Prisma client
+npm run db:generate
+
+# Reset database (dev only - deletes all data)
+npm run db:reset
+```
+
+## Database Backups
+
+Automated daily backups run at 2:00 AM (America/New_York) via cron job.
+
+### Configuration
+
+```env
+BACKUP_DIR=./backups
+BACKUP_RETENTION_DAYS=14
+BACKUP_ENABLED=true
+```
+
+### Manual Backup
+
+```bash
+# Backups are created automatically
+# To restore:
+gunzip -c ./backups/backup-YYYY-MM-DD.sql.gz | psql "YOUR_DATABASE_URL"
+```
+
+## API Key Management
+
+API keys are used for system-level access to the server endpoints via the `x-api-key` header.
+
+### Generating API Keys
+
+Generate a new API key using Node.js crypto:
+
+```bash
+node -e "console.log(require('crypto').randomUUID())"
+```
+
+### Configuring API Keys
+
+Add API keys to your `.env` file as a comma-separated list:
+
+```env
+API_KEYS=fe2ac930-94d5-41a4-9ad3-1c1f5910391c,another-key-here,third-key-here
+```
+
+### Rotating API Keys
+
+To rotate API keys safely without downtime:
+
+1. Generate a new API key
+2. Add the new key to the `API_KEYS` environment variable (keep old keys)
+3. Restart the server: `sudo systemctl restart server.service`
+4. Update all clients/services to use the new key
+5. Once all clients are updated, remove the old key from `API_KEYS`
+6. Restart the server again
+
+### Using API Keys
+
+Include the API key in requests via the `x-api-key` header:
+
+```bash
+curl -H "x-api-key: your-api-key-here" https://api.cpec.com/endpoint
+```
 
 ## Devices
 
@@ -67,30 +152,63 @@ sudo systemctl stop fanuc.service
 sudo systemctl status fanuc.service
 journalctl -f --output=cat -u fanuc.service
 
+## Deployment Setup
+
+### First-Time Setup: SSH Keys (One-time)
+
+To deploy without password prompts, set up SSH key authentication:
+
+**Windows (PowerShell):**
+```powershell
+# Create .ssh directory if it doesn't exist
+mkdir $env:USERPROFILE\.ssh -ErrorAction SilentlyContinue
+
+# Generate SSH key (if you don't have one)
+ssh-keygen -t ed25519 -f $env:USERPROFILE\.ssh\id_ed25519 -N ""
+
+# Copy key to production server (will ask for password one last time)
+type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh administrator@cp-portal-1 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && chmod 700 ~/.ssh"
+```
+
+**Linux/Mac:**
+```bash
+# Generate SSH key (if you don't have one)
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+
+# Copy key to production server
+ssh-copy-id administrator@cp-portal-1
+```
+
+**On Production Server (passwordless sudo):**
+```bash
+# SSH into production
+ssh administrator@cp-portal-1
+
+# Set up passwordless sudo
+echo 'administrator ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/administrator
+sudo chmod 0440 /etc/sudoers.d/administrator
+
+exit
+```
+
+After setup, you can deploy without entering any passwords.
+
 ## Server Deployment
 
-# 1. Prune the monorepo for your server app (source only)
-turbo prune @coesco/server --out-dir deploy
+Run the deployment script:
 
-# 2. Send ONLY the source files to production
-cd deploy
-scp -r . administrator@cp-portal-1:/home/administrator/coesco/
+```powershell
+.\scripts\server-deploy.ps1
+```
 
-# 3. Install dependencies on production
-cd /home/administrator/coesco
-npm install
+This script handles:
+1. Pruning the monorepo
+2. Deleting old source files
+3. Uploading new files
+4. Installing dependencies
+5. Running database migrations
+6. Building the application
+7. Restarting the service
 
-# 4. Generate Prisma client
-cd apps/server
-npx prisma generate
-
-# 5. Build the server app
-cd ../..
-turbo run build --filter=@coesco/server
-
-# 6. Restart the service
-sudo systemctl restart server.service
-
-# 7. Check service status
-sudo systemctl status server.service
-journalctl -f --output=cat -u server.service
+docker build -f apps/server/Dockerfile -t coesco-server:latest .
+docker run -p 3000:3000 coesco-server:latest

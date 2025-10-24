@@ -25,4 +25,8 @@ export class ContactRepository extends BaseRepository<Contact> {
     if (!entity.updatedById)
       throw new BadRequestError("updatedById is required");
   }
+
+  protected getSearchFields(): (string | { field: string; weight: number })[] {
+    return [{ field: "firstName", weight: 4 }, { field: "lastName", weight: 3 }, { field: "email", weight: 2 }, { field: "title", weight: 1 }];
+  }
 }

@@ -608,9 +608,17 @@ export const SCHEMAS: ISchema[] = [
         required: true,
         hasDefault: true,
       },
+      addressId: {
+        type: "string",
+        required: false,
+      },
       companyId: {
         type: "string",
         required: true,
+      },
+      legacyCompanyId: {
+        type: "string",
+        required: false,
       },
       firstName: {
         type: "string",
@@ -628,9 +636,18 @@ export const SCHEMAS: ISchema[] = [
         type: "string",
         required: false,
       },
+      phoneExtension: {
+        type: "string",
+        required: false,
+      },
       title: {
         type: "string",
         required: false,
+      },
+      type: {
+        type: "contacttype",
+        required: true,
+        hasDefault: true,
       },
       isPrimary: {
         type: "boolean",
@@ -1427,6 +1444,51 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "journey-contact",
+    description: "Schema for JourneyContact entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      journeyId: {
+        type: "string",
+        required: true,
+      },
+      contactId: {
+        type: "string",
+        required: true,
+      },
+      isPrimary: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
+    },
+  },
+  {
     name: "journey-interaction",
     description: "Schema for JourneyInteraction entity",
     schema: {
@@ -1463,51 +1525,6 @@ export const SCHEMAS: ISchema[] = [
       updatedById: {
         type: "string",
         required: true,
-      },
-    },
-  },
-  {
-    name: "journey-note",
-    description: "Schema for JourneyNote entity",
-    schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
-      },
-      journeyId: {
-        type: "string",
-        required: true,
-      },
-      type: {
-        type: "string",
-        required: true,
-        hasDefault: true,
-      },
-      body: {
-        type: "string",
-        required: true,
-      },
-      createdBy: {
-        type: "string",
-        required: false,
-      },
-      updatedBy: {
-        type: "string",
-        required: false,
-      },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
-      },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-      deletedAt: {
-        type: "datetime",
-        required: false,
       },
     },
   },
@@ -1716,6 +1733,55 @@ export const SCHEMAS: ISchema[] = [
       },
       fileUrl: {
         type: "string",
+        required: false,
+      },
+    },
+  },
+  {
+    name: "note",
+    description: "Schema for Note entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      entityId: {
+        type: "string",
+        required: true,
+      },
+      entityType: {
+        type: "string",
+        required: true,
+      },
+      type: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      body: {
+        type: "string",
+        required: true,
+      },
+      createdBy: {
+        type: "string",
+        required: false,
+      },
+      updatedBy: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
         required: false,
       },
     },

@@ -21,3 +21,4 @@
 - Only use status colors (error, success, warning, info) when appropriate, these should never be used for non-status elements
 - Do not add comments unless specified
 - Do not attempt to start a server instance
+- NEVER EDIT REPOSITORY FILES (apps/server/src/repositories/*.repository.ts) - These are generated files created by service-generator.ts

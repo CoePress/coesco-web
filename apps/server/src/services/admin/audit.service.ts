@@ -80,20 +80,36 @@ export class AuditService {
     return await bugReportRepository.getById(id);
   }
 
-  async getLogFiles() {
+  async getLogFiles(page = 1, limit = 25) {
     if (!fs.existsSync(env.LOGS_DIR)) {
       return {
         success: true,
         data: [],
+        meta: {
+          total: 0,
+          page: 1,
+          totalPages: 0,
+        },
       };
     }
 
     const files = fs.readdirSync(env.LOGS_DIR).filter(f => f.endsWith(".log") || f.endsWith(".gz"));
     const sortedFiles = files.sort().reverse();
 
+    const total = sortedFiles.length;
+    const totalPages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedFiles = sortedFiles.slice(startIndex, endIndex);
+
     return {
       success: true,
-      data: sortedFiles,
+      data: paginatedFiles,
+      meta: {
+        total,
+        page,
+        totalPages,
+      },
     };
   }
 

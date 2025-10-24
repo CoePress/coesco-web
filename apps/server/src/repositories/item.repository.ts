@@ -25,4 +25,8 @@ export class ItemRepository extends BaseRepository<Item> {
     if (!entity.updatedById)
       throw new BadRequestError("updatedById is required");
   }
+
+  protected getSearchFields(): (string | { field: string; weight: number })[] {
+    return [{ field: "modelNumber", weight: 3 }, { field: "description", weight: 2 }, { field: "type", weight: 1 }];
+  }
 }

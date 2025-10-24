@@ -61,15 +61,21 @@ type LogFile = {
   modified?: string;
 };
 
-type LogView = "audit" | "email" | "bugs" | "login" | "system";
+type BackupFile = {
+  name: string;
+  size?: number;
+  modified?: string;
+};
+
+type LogView = "audit" | "email" | "bugs" | "login" | "system" | "backups";
 
 const Logs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const getInitialView = (): LogView => {
     const view = searchParams.get('view');
-    if (view && ['email', 'bugs', 'login', 'system'].includes(view)) {
-      return view as 'email' | 'bugs' | 'login' | 'system';
+    if (view && ['email', 'bugs', 'login', 'system', 'backups'].includes(view)) {
+      return view as 'email' | 'bugs' | 'login' | 'system' | 'backups';
     }
     return 'audit';
   };
@@ -93,6 +99,7 @@ const Logs = () => {
   const { get: getBugs, response: bugReports, loading: bugsLoading, error: bugsError } = useApi<IApiResponse<BugReport[]>>();
   const { get: getLogins, response: loginAttempts, loading: loginsLoading, error: loginsError } = useApi<IApiResponse<LoginAttempt[]>>();
   const { get: getLogFiles, response: logFiles, loading: logFilesLoading, error: logFilesError } = useApi<IApiResponse<string[]>>();
+  const { get: getBackupFiles, response: backupFiles, loading: backupFilesLoading, error: backupFilesError } = useApi<IApiResponse<string[]>>();
 
   const [params, setParams] = useState({
     sort: "createdAt" as string,
@@ -118,6 +125,16 @@ const Logs = () => {
   const [loginParams, setLoginParams] = useState({
     sort: "timestamp" as string,
     order: "desc" as "asc" | "desc",
+    page: 1,
+    limit: 25,
+  });
+
+  const [systemParams, setSystemParams] = useState({
+    page: 1,
+    limit: 25,
+  });
+
+  const [backupParams, setBackupParams] = useState({
     page: 1,
     limit: 25,
   });
@@ -165,6 +182,24 @@ const Logs = () => {
 
     return q;
   }, [loginParams]);
+
+  const systemQueryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      page: systemParams.page.toString(),
+      limit: systemParams.limit.toString(),
+    };
+
+    return q;
+  }, [systemParams]);
+
+  const backupQueryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      page: backupParams.page.toString(),
+      limit: backupParams.limit.toString(),
+    };
+
+    return q;
+  }, [backupParams]);
 
   const columns: TableColumn<AuditLog>[] = [
     {
@@ -322,6 +357,16 @@ const Logs = () => {
           onClick={() => handleViewLogFile(row.name)}>
           View
         </Button>
+      ),
+    },
+  ];
+
+  const backupFileColumns: TableColumn<BackupFile>[] = [
+    {
+      key: "name",
+      header: "File Name",
+      render: (_, row) => (
+        <span className="font-mono text-sm">{row.name}</span>
       ),
     },
   ];
@@ -484,7 +529,11 @@ const Logs = () => {
   };
 
   const fetchLogFiles = async () => {
-    await getLogFiles("/admin/logs/files");
+    await getLogFiles("/admin/logs/files", systemQueryParams);
+  };
+
+  const fetchBackupFiles = async () => {
+    await getBackupFiles("/admin/backups", backupQueryParams);
   };
 
   const handleViewLogFile = async (filename: string) => {
@@ -566,6 +615,8 @@ const Logs = () => {
       fetchLoginAttempts();
     } else if (view === "system") {
       fetchLogFiles();
+    } else if (view === "backups") {
+      fetchBackupFiles();
     }
   };
 
@@ -594,9 +645,21 @@ const Logs = () => {
   }, [loginParams]);
 
   useEffect(() => {
+    if (view === "system") {
+      fetchLogFiles();
+    }
+  }, [systemParams]);
+
+  useEffect(() => {
+    if (view === "backups") {
+      fetchBackupFiles();
+    }
+  }, [backupParams]);
+
+  useEffect(() => {
     const view = searchParams.get('view');
     const newView: LogView =
-      (view && ['email', 'bugs', 'login', 'system'].includes(view)) ? view as 'email' | 'bugs' | 'login' | 'system' : 'audit';
+      (view && ['email', 'bugs', 'login', 'system', 'backups'].includes(view)) ? view as 'email' | 'bugs' | 'login' | 'system' | 'backups' : 'audit';
 
     setView(newView);
   }, [searchParams]);
@@ -612,6 +675,8 @@ const Logs = () => {
       fetchLoginAttempts();
     } else if (view === "system") {
       fetchLogFiles();
+    } else if (view === "backups") {
+      fetchBackupFiles();
     }
   }, [view]);
 
@@ -638,6 +703,20 @@ const Logs = () => {
 
   const handleLoginParamsChange = (updates: Partial<typeof loginParams>) => {
     setLoginParams(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
+
+  const handleSystemParamsChange = (updates: Partial<typeof systemParams>) => {
+    setSystemParams(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
+
+  const handleBackupParamsChange = (updates: Partial<typeof backupParams>) => {
+    setBackupParams(prev => ({
       ...prev,
       ...updates
     }));
@@ -709,6 +788,16 @@ const Logs = () => {
             }`}
           >
             System
+          </button>
+          <button
+            onClick={() => handleViewChange('backups')}
+            className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+              view === 'backups'
+                ? 'bg-primary text-background'
+                : 'text-text-muted hover:text-text'
+            }`}
+          >
+            Backups
           </button>
         </div>
         <Button onClick={refresh} variant="primary" className="px-2">
@@ -820,17 +909,35 @@ const Logs = () => {
               className="rounded border overflow-clip"
               emptyMessage="No login attempts found"
             />
-          ) : (
+          ) : view === "system" ? (
             <Table<LogFile>
               columns={logFileColumns}
               data={(logFiles?.data || []).map(name => ({ name }))}
-              total={logFiles?.data?.length || 0}
+              total={logFiles?.meta?.total || logFiles?.data?.length || 0}
               idField="name"
-              pagination={false}
+              pagination
               loading={logFilesLoading}
               error={logFilesError}
+              currentPage={logFiles?.meta?.page || systemParams.page}
+              totalPages={logFiles?.meta?.totalPages || Math.ceil((logFiles?.data?.length || 0) / systemParams.limit)}
+              onPageChange={(page) => handleSystemParamsChange({ page })}
               className="rounded border overflow-clip"
               emptyMessage="No log files found"
+            />
+          ) : (
+            <Table<BackupFile>
+              columns={backupFileColumns}
+              data={(backupFiles?.data || []).map(name => ({ name }))}
+              total={backupFiles?.meta?.total || backupFiles?.data?.length || 0}
+              idField="name"
+              pagination
+              loading={backupFilesLoading}
+              error={backupFilesError}
+              currentPage={backupFiles?.meta?.page || backupParams.page}
+              totalPages={backupFiles?.meta?.totalPages || Math.ceil((backupFiles?.data?.length || 0) / backupParams.limit)}
+              onPageChange={(page) => handleBackupParamsChange({ page })}
+              className="rounded border overflow-clip"
+              emptyMessage="No backup files found"
             />
           )}
         </div>

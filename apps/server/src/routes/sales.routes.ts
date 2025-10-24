@@ -25,6 +25,13 @@ router.get("/contacts/:contactId", customerController.getContact);
 router.patch("/contacts/:contactId", customerController.updateContact);
 router.delete("/contacts/:contactId", customerController.deleteContact);
 
+// Journey Contacts
+router.post("/journey-contacts", customerController.createJourneyContact);
+router.get("/journey-contacts", customerController.getJourneyContacts);
+router.get("/journey-contacts/:journeyContactId", customerController.getJourneyContact);
+router.patch("/journey-contacts/:journeyContactId", customerController.updateJourneyContact);
+router.delete("/journey-contacts/:journeyContactId", customerController.deleteJourneyContact);
+
 // Journeys
 router.post("/journeys", journeyController.createJourney);
 router.get("/journeys", journeyController.getJourneys);

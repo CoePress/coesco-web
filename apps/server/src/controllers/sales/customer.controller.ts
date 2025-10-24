@@ -1,10 +1,10 @@
-import type { Address, Company, Contact } from "@prisma/client";
+import type { Address, Company, Contact, JourneyContact } from "@prisma/client";
 import type { Request, Response } from "express";
 
-import { CompanyStatus, Industry } from "@prisma/client";
+import { CompanyStatus, ContactType, Industry } from "@prisma/client";
 import { z } from "zod";
 
-import { addressService, contactService, customerService } from "@/services";
+import { addressService, contactService, customerService, journeyContactService } from "@/services";
 import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
 
@@ -46,15 +46,31 @@ const UpdateAddressSchema = CreateAddressSchema.partial().omit({ companyId: true
 
 const CreateContactSchema = z.object({
   companyId: z.string().uuid("Invalid company ID"),
+  addressId: z.string().nullable().optional(),
+  legacyCompanyId: z.string().nullable().optional(),
   firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().optional(),
-  title: z.string().optional(),
+  lastName: z.string().nullable().optional(),
+  email: z.union([z.string().email(), z.literal(""), z.null()]).optional(),
+  phone: z.string().nullable().optional(),
+  phoneExtension: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
+  type: z.nativeEnum(ContactType).optional(),
   isPrimary: z.boolean().optional(),
+  createdById: z.string().optional(),
+  updatedById: z.string().optional(),
 });
 
 const UpdateContactSchema = CreateContactSchema.partial().omit({ companyId: true });
+
+const CreateJourneyContactSchema = z.object({
+  journeyId: z.string().uuid("Invalid journey ID"),
+  contactId: z.string().uuid("Invalid contact ID"),
+  isPrimary: z.boolean().optional(),
+  createdById: z.string().optional(),
+  updatedById: z.string().optional(),
+});
+
+const UpdateJourneyContactSchema = CreateJourneyContactSchema.partial().omit({ journeyId: true, contactId: true });
 
 export class CustomerController {
   // Companies
@@ -141,6 +157,34 @@ export class CustomerController {
 
   deleteContact = asyncWrapper(async (req: Request, res: Response) => {
     const result = await contactService.deleteContact(req.params.contactId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  createJourneyContact = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateJourneyContactSchema.parse(req.body);
+    const result = await journeyContactService.createJourneyContact(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
+
+  getJourneyContacts = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<JourneyContact>(req.query);
+    const result = await journeyContactService.getAllJourneyContacts(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  getJourneyContact = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await journeyContactService.getJourneyContactById(req.params.journeyContactId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  updateJourneyContact = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateJourneyContactSchema.parse(req.body);
+    const result = await journeyContactService.updateJourneyContact(req.params.journeyContactId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  deleteJourneyContact = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await journeyContactService.deleteJourneyContact(req.params.journeyContactId);
     res.status(HTTP_STATUS.OK).json(result);
   });
 }

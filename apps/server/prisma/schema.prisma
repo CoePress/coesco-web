@@ -259,13 +259,50 @@ enum CompanyStatus {
 }
 
 model Contact {
+  id              String      @id @default(uuid())
+  addressId       String?
+  companyId       String
+  legacyCompanyId String?
+  firstName       String
+  lastName        String?
+  email           String?
+  phone           String?
+  phoneExtension  String?
+  title           String?
+  type            ContactType @default(Sales)
+  isPrimary       Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  company          Company          @relation(fields: [companyId], references: [id])
+  customerJourneys Journey[]        @relation("JourneyCustomerContact")
+  dealerJourneys   Journey[]        @relation("JourneyDealerContact")
+  journeyContacts  JourneyContact[]
+
+  /// @searchFields(firstName: 4, lastName: 3, email: 2, title: 1)
+
+  @@index([createdById])
+  @@index([companyId])
+  @@index([legacyCompanyId])
+  @@map("contacts")
+}
+
+enum ContactType {
+  Accounting
+  Engineering
+  Inactive
+  Left_Company
+  Parts_Service
+  Sales
+}
+
+model JourneyContact {
   id          String    @id @default(uuid())
-  companyId   String
-  firstName   String
-  lastName    String?
-  email       String?
-  phone       String?
-  title       String?
+  journeyId   String
+  contactId   String
   isPrimary   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -273,12 +310,13 @@ model Contact {
   createdById String
   updatedById String
 
-  company          Company   @relation(fields: [companyId], references: [id])
-  customerJourneys Journey[] @relation("JourneyCustomerContact")
-  dealerJourneys   Journey[] @relation("JourneyDealerContact")
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
+  @@unique([journeyId, contactId])
+  @@index([journeyId])
+  @@index([contactId])
   @@index([createdById])
-  @@map("contacts")
+  @@map("journey_contacts")
 }
 
 model Address {
@@ -352,18 +390,19 @@ model Journey {
   @@map("journeys")
 }
 
-model JourneyNote {
-  id        String    @id @default(uuid())
-  journeyId String
-  type      String    @default("note")
-  body      String
-  createdBy String?
-  updatedBy String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+model Note {
+  id         String    @id @default(uuid())
+  entityId   String
+  entityType String
+  type       String    @default("note")
+  body       String
+  createdBy  String?
+  updatedBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
 
-  @@map("journey_notes")
+  @@map("notes")
 }
 
 enum JourneyStatus {
@@ -600,6 +639,7 @@ model Item {
 
   options    OptionDetails[]
   quoteItems QuoteItem[]
+  /// @searchFields(modelNumber: 3, description: 2, type: 1)
 
   @@index([createdById])
   @@map("items")

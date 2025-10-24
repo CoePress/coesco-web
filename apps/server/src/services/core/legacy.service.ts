@@ -655,7 +655,7 @@ export class LegacyService {
     }
     catch (err) {
       const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(" AND ");
-      console.error(`Error fetching ${table} where ${filterDescription}:`, err);
+      logger.error(`Error fetching ${table} where ${filterDescription}:`, err);
       return null;
     }
   }
@@ -789,8 +789,6 @@ export class LegacyService {
       DELETE FROM PUB.${table}
       ${whereClause}
     `;
-
-    console.log(query);
 
     try {
       const result = await this.getDatabaseConnection(database)?.query(query);

@@ -1,5 +1,8 @@
 import type { Server, Socket } from "socket.io";
 
+import { spawn } from "node:child_process";
+import path from "node:path";
+
 import { chatService, lockingService, messageService } from "@/services";
 import { logger } from "@/utils/logger";
 
@@ -18,6 +21,7 @@ export class SocketService {
     this.registerSystemNamespace();
     this.registerLocksNamespace();
     this.registerSessionNamespace();
+    this.registerPerformanceNamespace();
   }
 
   public broadcastMachineStates(data: any): void {
@@ -270,6 +274,75 @@ export class SocketService {
 
       socket.on("disconnect", (reason) => {
         logger.info(`[${socket.id}] Session client disconnected: ${reason}`);
+      });
+    });
+  }
+
+  private registerPerformanceNamespace() {
+    const performance = this.getNamespace("performance");
+
+    performance.on("connection", (socket: Socket) => {
+      logger.info(`Performance client connected: ${socket.id}`);
+
+      socket.on("performance-sheet:calculate", async (payload, callback) => {
+        try {
+          const { formData, scriptName } = payload;
+          const scriptPath = path.join(__dirname, "../../scripts/performance-sheet", scriptName);
+          logger.info(`[${socket.id}] Calculate request - executing Python script: ${scriptPath}`);
+
+          const result = await this.executePythonScript(scriptPath, formData);
+
+          callback?.({ ok: true, result });
+        }
+        catch (err) {
+          logger.error(`Error processing calculation for socket ${socket.id}`, err);
+          callback?.({ ok: false, error: "Calculation failed" });
+        }
+      });
+
+      socket.on("disconnect", (reason) => {
+        logger.info(`[${socket.id}] Performance client disconnected: ${reason}`);
+      });
+    });
+  }
+
+  private async executePythonScript(scriptPath: string, formData: Record<string, any>): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const python = spawn("python", [scriptPath]);
+      let outputData = "";
+      let errorData = "";
+
+      python.stdin.write(JSON.stringify(formData));
+      python.stdin.end();
+
+      python.stdout.on("data", (data) => {
+        outputData += data.toString();
+      });
+
+      python.stderr.on("data", (data) => {
+        errorData += data.toString();
+      });
+
+      python.on("close", (code) => {
+        if (code !== 0) {
+          logger.error(`Python script exited with code ${code}: ${errorData}`);
+          reject(new Error(errorData || "Python script failed"));
+        }
+        else {
+          try {
+            const result = JSON.parse(outputData);
+            resolve(result);
+          }
+          catch (err) {
+            logger.error("Failed to parse Python script output:", outputData);
+            reject(new Error("Invalid JSON output from Python script"));
+          }
+        }
+      });
+
+      python.on("error", (err) => {
+        logger.error("Failed to start Python process:", err);
+        reject(err);
       });
     });
   }

@@ -291,6 +291,32 @@ export class SessionService {
     return count;
   }
 
+  async deleteExpiredSessions(): Promise<number> {
+    const result = await sessionRepository.getAll({
+      filter: {
+        expiresAt: { lt: new Date() },
+      },
+    });
+
+    if (!result.success || !result.data) {
+      return 0;
+    }
+
+    let count = 0;
+    for (const session of result.data) {
+      const deleteResult = await sessionRepository.delete(session.id);
+      if (deleteResult.success) {
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      logger.info(`Deleted ${count} expired sessions`);
+    }
+
+    return count;
+  }
+
   private async expireSession(sessionId: string): Promise<void> {
     await sessionRepository.update(sessionId, {
       isActive: false,

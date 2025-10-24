@@ -84,7 +84,7 @@ const PerformanceSheetVersions = () => {
       render: (_, row) => (
         <div className="flex items-center gap-2">
           <Link
-            to={`/admin/performance-sheet-versions/${row.id}/build`}
+            to={`/admin/performance-sheets/${row.id}/build`}
             className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm"
           >
             <Edit2 size={14} />

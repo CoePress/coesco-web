@@ -14,10 +14,13 @@ import { ConfigurationService } from "./catalog/configuration.service";
 import { OptionService } from "./catalog/option.service";
 import { ProductService } from "./catalog/product.service";
 import { AuthService } from "./core/auth.service";
+import { BackupService } from "./core/backup.service";
 import { CacheService } from "./core/cache.service";
 import { ChatService } from "./core/chat.service";
+import { CronService } from "./core/cron.service";
 import { EmailLogService } from "./core/email-log.service";
 import { EmailService } from "./core/email.service";
+import { HealthService } from "./core/health.service";
 import { LegacyService } from "./core/legacy.service";
 import { LockingService } from "./core/locking.service";
 import { LoginHistoryService } from "./core/login-history.service";
@@ -32,8 +35,9 @@ import { ResourceService } from "./production/resource.service";
 import { AddressService } from "./sales/address.service";
 import { ContactService } from "./sales/contact.service";
 import { CustomerService } from "./sales/customer.service";
-import { JourneyNoteService } from "./sales/journey-note.service";
+import { JourneyContactService } from "./sales/journey-contact.service";
 import { JourneyService } from "./sales/journey.service";
+import { NoteService } from "./sales/note.service";
 import { PerformanceService } from "./sales/performance.service";
 import { QuoteService } from "./sales/quote.service";
 
@@ -59,6 +63,7 @@ export const cacheService = new CacheService();
 export const chatService = new ChatService();
 export const emailLogService = new EmailLogService();
 export const emailService = new EmailService();
+export const healthService = new HealthService();
 export const legacyService = new LegacyService();
 export const lockingService = new LockingService();
 export const loginHistoryService = new LoginHistoryService();
@@ -67,6 +72,7 @@ export const sessionService = new SessionService();
 export const socketService = new SocketService();
 export const tagService = new TagService();
 export const webhookService = new WebhookService();
+export const backupService = new BackupService();
 
 // Production
 export const machiningService = new MachineMonitorService();
@@ -77,10 +83,13 @@ export const resourceService = new ResourceService();
 export const addressService = new AddressService();
 export const contactService = new ContactService();
 export const customerService = new CustomerService();
-export const journeyNoteService = new JourneyNoteService();
+export const journeyContactService = new JourneyContactService();
 export const journeyService = new JourneyService();
+export const noteService = new NoteService();
 export const performanceService = new PerformanceService();
 export const quoteService = new QuoteService();
+
+export const cronService = new CronService();
 
 export async function initializeServices() {
   // await deviceService.initialize();
@@ -89,6 +98,8 @@ export async function initializeServices() {
   await socketService.initialize(io);
   await authService.initializeDefaultUser();
   await webhookService.initialize();
+  await backupService.initialize();
+  await cronService.initialize();
 
   const collectMachineData = true;
 

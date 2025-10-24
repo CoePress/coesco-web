@@ -28,7 +28,7 @@ const CREDIT_STATUS_OPTIONS = [
 const TERMS_CODE_OPTIONS = ['30', '45', '01', '60', '90', '40', '50', '70'];
 
 const getContactTypeName = (type: ContactType | string | null | undefined): string => {
-  switch (type?.toUpperCase()) {
+  switch (type) {
     case ContactType.Accounting: return 'Accounting';
     case ContactType.Engineering: return 'Engineering';
     case ContactType.Inactive: return 'Inactive';
@@ -40,7 +40,7 @@ const getContactTypeName = (type: ContactType | string | null | undefined): stri
 };
 
 const getContactTypeColor = (type: ContactType | string | null | undefined): string => {
-  switch (type?.toUpperCase()) {
+  switch (type) {
     case ContactType.Accounting: return 'bg-blue-100 text-blue-800 border-blue-200';
     case ContactType.Engineering: return 'bg-green-100 text-green-800 border-green-200';
     case ContactType.Inactive: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -103,7 +103,7 @@ const CompanyDetails = () => {
   const [companyAddresses, setCompanyAddresses] = useState<any[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  const getContactName = (contact: any) => `${contact.FirstName || ""} ${contact.LastName || ""}`.trim();
+  const getContactName = (contact: any) => `${contact.firstName || ""} ${contact.lastName || ""}`.trim();
   const getContactInitial = (name: string) => name ? name.charAt(0).toUpperCase() : 'C';
   
   const mapLegacyStageToId = (stage: any): number => {
@@ -213,15 +213,16 @@ const CompanyDetails = () => {
       try {
         setIsInitialLoading(true);
         const [companyData, contactsData, journeysData, callHistoryData, addressesData] = await Promise.all([
-          api.get(`/legacy/std/Company/filter/custom`, { 
-            filterField: 'Company_ID', 
-            filterValue: id, 
-            limit: 1 
+          api.get(`/legacy/std/Company/filter/custom`, {
+            filterField: 'Company_ID',
+            filterValue: id,
+            limit: 1
           }),
-          api.get(`/legacy/std/Contacts/filter/custom`, { 
-            filterField: 'Company_ID', 
-            filterValue: id, 
-            limit: 100 
+          api.get(`/sales/contacts`, {
+            filter: JSON.stringify({
+              legacyCompanyId: id
+            }),
+            limit: 100
           }),
           api.get(`/legacy/std/Journey/filter/custom`, { 
             filterField: 'Company_ID', 
@@ -241,7 +242,7 @@ const CompanyDetails = () => {
         ]);
 
         if (!cancelled) {
-          const processedContacts = Array.isArray(contactsData) ? contactsData : [];
+          const processedContacts = Array.isArray(contactsData) ? contactsData : (contactsData?.data || []);
           setCompanyContacts(processedContacts);
 
           const processedJourneys = Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : [];
@@ -254,16 +255,16 @@ const CompanyDetails = () => {
           setCompanyAddresses(processedAddresses);
 
           const processedCompanyData = Array.isArray(companyData) ? companyData[0] : companyData;
-          
+
           if (processedCompanyData) {
-            const primaryContact = processedContacts.find(contact => contact.Type === 'A') || processedContacts[0];
+            const primaryContact = processedContacts.find((contact: any) => contact.type === ContactType.Accounting) || processedContacts[0];
             setCompany({
               ...processedCompanyData,
               id: processedCompanyData.Company_ID,
               name: processedCompanyData.CustDlrName || `Company ${processedCompanyData.Company_ID}`,
-              phone: primaryContact?.PhoneNumber || processedCompanyData.BillToPhone || "",
-              email: primaryContact?.Email || "",
-              website: primaryContact?.Website || "",
+              phone: primaryContact?.phone || processedCompanyData.BillToPhone || "",
+              email: primaryContact?.email || "",
+              website: "",
               active: Number(processedCompanyData.Active) === 1,
               isDealer: Number(processedCompanyData.IsDealer) || 0,
               creditStatus: processedCompanyData.CreditStatus,
@@ -638,12 +639,12 @@ const CompanyDetails = () => {
   };
 
   const handleEditContact = (contact: any) => {
-    setEditingContactId(contact.Cont_Id);
+    setEditingContactId(contact.id);
     setEditingContactData({ ...contact });
   };
 
   const handleContactDataChange = (fieldName: string, value: any) => {
-    if (fieldName === 'FirstName' || fieldName === 'LastName') {
+    if (fieldName === 'firstName' || fieldName === 'lastName') {
       value = value.trimStart();
     }
     setEditingContactData({ ...editingContactData, [fieldName]: value });
@@ -651,26 +652,26 @@ const CompanyDetails = () => {
 
   const handleSaveContact = async () => {
     if (!editingContactId) return;
-    
+
     try {
-      const contactBeingEdited = companyContacts.find(c => c.Cont_Id === editingContactId);
+      const contactBeingEdited = companyContacts.find(c => c.id === editingContactId);
       if (!contactBeingEdited) return;
 
       const updateData = {
-        FirstName: editingContactData.FirstName || '',
-        LastName: editingContactData.LastName || '',
-        Email: editingContactData.Email || '',
-        PhoneNumber: editingContactData.PhoneNumber || '',
-        PhoneExt: editingContactData.PhoneExt || '',
-        ConTitle: editingContactData.ConTitle || '',
-        Type: editingContactData.Type || ''
+        firstName: editingContactData.firstName || '',
+        lastName: editingContactData.lastName || '',
+        email: editingContactData.email || '',
+        phone: editingContactData.phone || '',
+        phoneExtension: editingContactData.phoneExtension || '',
+        title: editingContactData.title || '',
+        type: editingContactData.type || ''
       };
-      
-      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${editingContactId}&Company_ID=${contactBeingEdited.Company_ID}`, updateData);
-      
+
+      const result = await api.patch(`/sales/contacts/${editingContactId}`, updateData);
+
       if (result !== null) {
-        const updatedContacts = companyContacts.map(contact => 
-          contact.Cont_Id === editingContactId ? { ...contact, ...updateData } : contact
+        const updatedContacts = companyContacts.map(contact =>
+          contact.id === editingContactId ? { ...contact, ...updateData } : contact
         );
         setCompanyContacts(updatedContacts);
         setEditingContactId(null);
@@ -693,14 +694,14 @@ const CompanyDetails = () => {
     try {
       setIsMarkingInactive(true);
       const updateData = {
-        Type: newType
+        type: newType
       };
 
-      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${markInactiveContact.Cont_Id}&Company_ID=${markInactiveContact.Company_ID}`, updateData);
+      const result = await api.patch(`/sales/contacts/${markInactiveContact.id}`, updateData);
 
       if (result !== null) {
         const updatedContacts = companyContacts.map(c =>
-          c.Cont_Id === markInactiveContact.Cont_Id ? { ...c, Type: newType } : c
+          c.id === markInactiveContact.id ? { ...c, type: newType } : c
         );
         setCompanyContacts(updatedContacts);
         setMarkInactiveContact(null);
@@ -715,24 +716,21 @@ const CompanyDetails = () => {
 
   const handleAddContact = () => {
     console.log('Add Contact button clicked');
-    
-    const fallbackContactId = Date.now();
+
     setNewContactData({
-      Cont_Id: fallbackContactId,
-      Company_ID: parseInt(id || '0'),
-      FirstName: '',
-      LastName: '',
-      Email: '',
-      PhoneNumber: '',
-      PhoneExt: '',
-      ConTitle: '',
-      Type: ContactType.Sales
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      phoneExtension: '',
+      title: '',
+      type: ContactType.Sales
     });
     setIsAddingContact(true);
   };
 
   const handleNewContactDataChange = (fieldName: string, value: any) => {
-    if (fieldName === 'FirstName' || fieldName === 'LastName') {
+    if (fieldName === 'firstName' || fieldName === 'lastName') {
       value = value.trimStart();
     }
     setNewContactData({ ...newContactData, [fieldName]: value });
@@ -741,30 +739,31 @@ const CompanyDetails = () => {
   const handleSaveNewContact = async () => {
     try {
       console.log('Creating new contact with data:', newContactData);
-      
-      // Try to get a proper contact ID before saving
-      let contactDataToSave = { ...newContactData };
-      try {
-        const maxContactId = await api.get('/legacy/std/Contacts/Cont_Id/max');
-        if (maxContactId?.maxValue) {
-          contactDataToSave.Cont_Id = maxContactId.maxValue + 1;
-        }
-      } catch (error) {
-        console.warn('Could not get next contact ID, using fallback:', error);
+
+      // Get companyId from the current page
+      const companyIdFromUrl = id;
+      if (!companyIdFromUrl) {
+        alert('Cannot create contact: Company ID not found');
+        return;
       }
-      
-      await api.post('/legacy/std/Contacts', contactDataToSave);
-      
-      if (api.success && !api.error) {
-        console.log('Contact creation appears successful, refreshing data...');
-        const updatedContacts = [...companyContacts, contactDataToSave];
+
+      const DUMMY_LEGACY_COMPANY_UUID = '00000000-0000-0000-0000-000000000000';
+
+      const result = await api.post('/sales/contacts', {
+        ...newContactData,
+        companyId: DUMMY_LEGACY_COMPANY_UUID,
+        legacyCompanyId: companyIdFromUrl,
+        isPrimary: false
+      });
+
+      if (result) {
+        console.log('Contact creation successful');
+        const updatedContacts = [...companyContacts, result];
         setCompanyContacts(updatedContacts);
         setIsAddingContact(false);
         setNewContactData({});
       } else {
-        console.log('Contact creation failed');
-        console.log('Final API error details:', api.error);
-        alert('Failed to create contact record. Check console for details.');
+        alert('Failed to create contact record.');
       }
     } catch (error) {
       console.error('Error creating new contact:', error);
@@ -1241,11 +1240,11 @@ const CompanyDetails = () => {
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-semibold text-text">
                   Contacts ({(() => {
-                    let filteredContacts = showInactiveContacts 
-                      ? companyContacts 
-                      : companyContacts.filter(contact => 
-                          contact.Type !== ContactType.Inactive && 
-                          contact.Type !== ContactType.Left_Company
+                    let filteredContacts = showInactiveContacts
+                      ? companyContacts
+                      : companyContacts.filter(contact =>
+                          contact.type !== ContactType.Inactive &&
+                          contact.type !== ContactType.Left_Company
                         );
 
                     // Apply search filter for count
@@ -1253,10 +1252,10 @@ const CompanyDetails = () => {
                       const searchTerm = contactSearchTerm.toLowerCase().trim();
                       filteredContacts = filteredContacts.filter(contact => {
                         const fullName = getContactName(contact).toLowerCase();
-                        const email = (contact.Email || "").toLowerCase();
-                        const phone = (contact.PhoneNumber || "").toLowerCase();
-                        const title = (contact.ConTitle || "").toLowerCase();
-                        const type = getContactTypeName(contact.Type).toLowerCase();
+                        const email = (contact.email || "").toLowerCase();
+                        const phone = (contact.phone || "").toLowerCase();
+                        const title = (contact.title || "").toLowerCase();
+                        const type = getContactTypeName(contact.type).toLowerCase();
                         
                         return fullName.includes(searchTerm) ||
                                email.includes(searchTerm) ||
@@ -1304,8 +1303,8 @@ const CompanyDetails = () => {
                         <label className="block text-xs font-medium text-text-muted mb-1">First Name</label>
                         <input
                           type="text"
-                          value={newContactData.FirstName || ''}
-                          onChange={(e) => handleNewContactDataChange('FirstName', e.target.value)}
+                          value={newContactData.firstName || ''}
+                          onChange={(e) => handleNewContactDataChange('firstName', e.target.value)}
                           className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
                           placeholder="First name"
                         />
@@ -1314,8 +1313,8 @@ const CompanyDetails = () => {
                         <label className="block text-xs font-medium text-text-muted mb-1">Last Name</label>
                         <input
                           type="text"
-                          value={newContactData.LastName || ''}
-                          onChange={(e) => handleNewContactDataChange('LastName', e.target.value)}
+                          value={newContactData.lastName || ''}
+                          onChange={(e) => handleNewContactDataChange('lastName', e.target.value)}
                           className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
                           placeholder="Last name"
                         />
@@ -1324,8 +1323,8 @@ const CompanyDetails = () => {
                         <label className="block text-xs font-medium text-text-muted mb-1">Title</label>
                         <input
                           type="text"
-                          value={newContactData.ConTitle || ''}
-                          onChange={(e) => handleNewContactDataChange('ConTitle', e.target.value)}
+                          value={newContactData.title || ''}
+                          onChange={(e) => handleNewContactDataChange('title', e.target.value)}
                           className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
                           placeholder="Job title"
                         />
@@ -1334,8 +1333,8 @@ const CompanyDetails = () => {
                         <label className="block text-xs font-medium text-text-muted mb-1">Email</label>
                         <input
                           type="email"
-                          value={newContactData.Email || ''}
-                          onChange={(e) => handleNewContactDataChange('Email', e.target.value)}
+                          value={newContactData.email || ''}
+                          onChange={(e) => handleNewContactDataChange('email', e.target.value)}
                           className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
                           placeholder="email@example.com"
                         />
@@ -1344,8 +1343,8 @@ const CompanyDetails = () => {
                         <label className="block text-xs font-medium text-text-muted mb-1">Phone Number</label>
                         <input
                           type="tel"
-                          value={newContactData.PhoneNumber || ''}
-                          onChange={(e) => handleNewContactDataChange('PhoneNumber', e.target.value)}
+                          value={newContactData.phone || ''}
+                          onChange={(e) => handleNewContactDataChange('phone', e.target.value)}
                           className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
                           placeholder="Phone number"
                         />
@@ -1354,8 +1353,8 @@ const CompanyDetails = () => {
                         <label className="block text-xs font-medium text-text-muted mb-1">Extension</label>
                         <input
                           type="text"
-                          value={newContactData.PhoneExt || ''}
-                          onChange={(e) => handleNewContactDataChange('PhoneExt', e.target.value)}
+                          value={newContactData.phoneExtension || ''}
+                          onChange={(e) => handleNewContactDataChange('phoneExtension', e.target.value)}
                           className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
                           placeholder="Ext"
                         />
@@ -1398,11 +1397,11 @@ const CompanyDetails = () => {
                   </thead>
                   <tbody>
                     {(() => {
-                      let filteredContacts = showInactiveContacts 
-                        ? companyContacts 
-                        : companyContacts.filter(contact => 
-                            contact.Type !== ContactType.Inactive && 
-                            contact.Type !== ContactType.Left_Company
+                      let filteredContacts = showInactiveContacts
+                        ? companyContacts
+                        : companyContacts.filter(contact =>
+                            contact.type !== ContactType.Inactive &&
+                            contact.type !== ContactType.Left_Company
                           );
 
                       // Apply search filter
@@ -1410,11 +1409,11 @@ const CompanyDetails = () => {
                         const searchTerm = contactSearchTerm.toLowerCase().trim();
                         filteredContacts = filteredContacts.filter(contact => {
                           const fullName = getContactName(contact).toLowerCase();
-                          const email = (contact.Email || "").toLowerCase();
-                          const phone = (contact.PhoneNumber || "").toLowerCase();
-                          const title = (contact.ConTitle || "").toLowerCase();
-                          const type = getContactTypeName(contact.Type).toLowerCase();
-                          
+                          const email = (contact.email || "").toLowerCase();
+                          const phone = (contact.phone || "").toLowerCase();
+                          const title = (contact.title || "").toLowerCase();
+                          const type = getContactTypeName(contact.type).toLowerCase();
+
                           return fullName.includes(searchTerm) ||
                                  email.includes(searchTerm) ||
                                  phone.includes(searchTerm) ||
@@ -1422,13 +1421,13 @@ const CompanyDetails = () => {
                                  type.includes(searchTerm);
                         });
                       }
-                      
+
                       return filteredContacts.length > 0 ? (
                         filteredContacts.map((contact, index) => {
                         const fullName = getContactName(contact);
                         const contactInitial = getContactInitial(fullName);
-                        const uniqueKey = `contact-${contact.Cont_Id || contact.Company_ID}-${index}`;
-                        const isEditing = editingContactId === contact.Cont_Id;
+                        const uniqueKey = `contact-${contact.id}-${index}`;
+                        const isEditing = editingContactId === contact.id;
                         const displayData = isEditing ? editingContactData : contact;
                         
                         return (
@@ -1443,22 +1442,22 @@ const CompanyDetails = () => {
                                     <>
                                       <input
                                         type="text"
-                                        value={editingContactData.FirstName || ''}
-                                        onChange={(e) => handleContactDataChange('FirstName', e.target.value)}
+                                        value={editingContactData.firstName || ''}
+                                        onChange={(e) => handleContactDataChange('firstName', e.target.value)}
                                         className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary mb-1"
                                         placeholder="First name"
                                       />
                                       <input
                                         type="text"
-                                        value={editingContactData.LastName || ''}
-                                        onChange={(e) => handleContactDataChange('LastName', e.target.value)}
+                                        value={editingContactData.lastName || ''}
+                                        onChange={(e) => handleContactDataChange('lastName', e.target.value)}
                                         className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary mb-1"
                                         placeholder="Last name"
                                       />
                                       <input
                                         type="text"
-                                        value={editingContactData.ConTitle || ''}
-                                        onChange={(e) => handleContactDataChange('ConTitle', e.target.value)}
+                                        value={editingContactData.title || ''}
+                                        onChange={(e) => handleContactDataChange('title', e.target.value)}
                                         className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
                                         placeholder="Title"
                                       />
@@ -1466,14 +1465,14 @@ const CompanyDetails = () => {
                                   ) : (
                                     <>
                                       <Link
-                                        to={`/sales/contacts/${contact.Company_ID}_${contact.Cont_Id}`}
+                                        to={`/sales/contacts/${contact.id}`}
                                         className="text-primary hover:underline"
                                       >
                                         {fullName || "Unnamed Contact"}
                                       </Link>
-                                      {contact.ConTitle && (
+                                      {contact.title && (
                                         <span className="text-xs text-text-muted">
-                                          {contact.ConTitle}
+                                          {contact.title}
                                         </span>
                                       )}
                                     </>
@@ -1484,8 +1483,8 @@ const CompanyDetails = () => {
                             <td className="py-2">
                               {isEditing ? (
                                 <select
-                                  value={editingContactData.Type || ''}
-                                  onChange={(e) => handleContactDataChange('Type', e.target.value)}
+                                  value={editingContactData.type || ''}
+                                  onChange={(e) => handleContactDataChange('type', e.target.value)}
                                   className="w-full bg-background border border-border rounded px-2 py-1 text-sm text-text focus:outline-none focus:border-primary"
                                 >
                                   <option value="">Select Type</option>
@@ -1497,8 +1496,8 @@ const CompanyDetails = () => {
                                   <option value={ContactType.Sales}>Sales</option>
                                 </select>
                               ) : (
-                                <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getContactTypeColor(displayData.Type)}`}>
-                                  {getContactTypeName(displayData.Type)}
+                                <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getContactTypeColor(displayData.type)}`}>
+                                  {getContactTypeName(displayData.type)}
                                 </span>
                               )}
                             </td>
@@ -1506,15 +1505,15 @@ const CompanyDetails = () => {
                               {isEditing ? (
                                 <input
                                   type="email"
-                                  value={editingContactData.Email || ''}
-                                  onChange={(e) => handleContactDataChange('Email', e.target.value)}
+                                  value={editingContactData.email || ''}
+                                  onChange={(e) => handleContactDataChange('email', e.target.value)}
                                   className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full"
                                   placeholder="email@example.com"
                                 />
                               ) : (
-                                displayData.Email ? (
-                                  <a href={`mailto:${displayData.Email}`} className="text-info hover:underline">
-                                    {displayData.Email}
+                                displayData.email ? (
+                                  <a href={`mailto:${displayData.email}`} className="text-info hover:underline">
+                                    {displayData.email}
                                   </a>
                                 ) : (
                                   <span className="text-text">--</span>
@@ -1526,24 +1525,24 @@ const CompanyDetails = () => {
                                 <div className="flex gap-1">
                                   <input
                                     type="tel"
-                                    value={editingContactData.PhoneNumber || ''}
-                                    onChange={(e) => handleContactDataChange('PhoneNumber', e.target.value)}
+                                    value={editingContactData.phone || ''}
+                                    onChange={(e) => handleContactDataChange('phone', e.target.value)}
                                     className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary flex-1"
                                     placeholder="Phone number"
                                   />
                                   <input
                                     type="text"
-                                    value={editingContactData.PhoneExt || ''}
-                                    onChange={(e) => handleContactDataChange('PhoneExt', e.target.value)}
+                                    value={editingContactData.phoneExtension || ''}
+                                    onChange={(e) => handleContactDataChange('phoneExtension', e.target.value)}
                                     className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-16"
                                     placeholder="Ext"
                                   />
                                 </div>
                               ) : (
-                                displayData.PhoneNumber ? (
-                                  <a href={`tel:${displayData.PhoneNumber}`} className="text-text hover:underline">
-                                    {displayData.PhoneNumber}
-                                    {displayData.PhoneExt && ` ext. ${displayData.PhoneExt}`}
+                                displayData.phone ? (
+                                  <a href={`tel:${displayData.phone}`} className="text-text hover:underline">
+                                    {displayData.phone}
+                                    {displayData.phoneExtension && ` ext. ${displayData.phoneExtension}`}
                                   </a>
                                 ) : (
                                   <span className="text-text">--</span>
