@@ -4,7 +4,6 @@ import type { IQueryParams } from "@/types";
 
 import { deriveTableNames, getObjectDiff } from "@/utils";
 import { getEmployeeContext } from "@/utils/context";
-import { logger } from "@/utils/logger";
 import { buildQuery, prisma } from "@/utils/prisma";
 
 const columnCache = new Map<string, string[]>();
@@ -453,7 +452,7 @@ export class BaseRepository<T> {
       throw new Error("No valid search fields available for fuzzy search after filtering enum fields");
     }
 
-    const threshold = params.fuzzyThreshold ?? 0.1;
+    const threshold = params.fuzzyThreshold ?? 0.5;
     const searchTerm = params.search!;
     const page = params.page ?? 1;
     const take = params.limit ?? 25;
@@ -462,16 +461,30 @@ export class BaseRepository<T> {
     const columns = await this.getColumns();
     const scope = await this.getScope(columns, params?.includeDeleted);
 
-    const fieldNames = filteredSearchFields.map(f => typeof f === "string" ? f : f.field);
     const escapedSearchTerm = searchTerm.replace(/'/g, "''");
 
-    const similarityConditions = fieldNames
-      .map(field => `similarity(CAST("${field}" AS TEXT), '${escapedSearchTerm}') > ${threshold}`)
+    const similarityConditions = filteredSearchFields
+      .map((f) => {
+        const field = typeof f === "string" ? f : f.field;
+        return `(
+          similarity(CAST("${field}" AS TEXT), '${escapedSearchTerm}') > ${threshold}
+          OR word_similarity('${escapedSearchTerm}', CAST("${field}" AS TEXT)) > ${threshold}
+        )`;
+      })
       .join(" OR ");
 
-    const maxSimilarity = fieldNames
-      .map(field => `similarity(CAST("${field}" AS TEXT), '${escapedSearchTerm}')`)
-      .join(", ");
+    const weightedSimilarity = filteredSearchFields
+      .map((f) => {
+        const field = typeof f === "string" ? f : f.field;
+        const weight = typeof f === "string" ? 1 : f.weight;
+        return `(
+          GREATEST(
+            similarity(CAST("${field}" AS TEXT), '${escapedSearchTerm}'),
+            word_similarity('${escapedSearchTerm}', CAST("${field}" AS TEXT))
+          ) * ${weight}
+        )`;
+      })
+      .join(" + ");
 
     const tableNames = deriveTableNames(this.modelName);
     const tableName = tableNames[tableNames.length - 1];
@@ -494,7 +507,7 @@ export class BaseRepository<T> {
     const total = Number(countResult[0]?.count ?? 0);
 
     const selectQuery = `SELECT *,
-              GREATEST(${maxSimilarity}) as similarity_score
+              (${weightedSimilarity}) as similarity_score
        FROM "${tableName}"
        WHERE (${similarityConditions})
        ${whereClause}
