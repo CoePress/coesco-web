@@ -3,11 +3,14 @@ import { ContactType } from './contact-type';
 
 export interface Contact {
   id?: string;
+  addressId?: string;
   companyId: string;
+  legacyCompanyId?: string;
   firstName: string;
   lastName?: string;
   email?: string;
   phone?: string;
+  phoneExtension?: string;
   title?: string;
   type?: ContactType;
   isPrimary?: boolean;

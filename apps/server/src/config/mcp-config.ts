@@ -608,9 +608,17 @@ export const SCHEMAS: ISchema[] = [
         required: true,
         hasDefault: true,
       },
+      addressId: {
+        type: "string",
+        required: false,
+      },
       companyId: {
         type: "string",
         required: true,
+      },
+      legacyCompanyId: {
+        type: "string",
+        required: false,
       },
       firstName: {
         type: "string",
@@ -625,6 +633,10 @@ export const SCHEMAS: ISchema[] = [
         required: false,
       },
       phone: {
+        type: "string",
+        required: false,
+      },
+      phoneExtension: {
         type: "string",
         required: false,
       },
@@ -1407,6 +1419,51 @@ export const SCHEMAS: ISchema[] = [
       notes: {
         type: "string",
         required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
+    },
+  },
+  {
+    name: "journey-contact",
+    description: "Schema for JourneyContact entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      journeyId: {
+        type: "string",
+        required: true,
+      },
+      contactId: {
+        type: "string",
+        required: true,
+      },
+      isPrimary: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
       },
       createdAt: {
         type: "datetime",

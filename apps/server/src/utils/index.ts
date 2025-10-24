@@ -149,6 +149,7 @@ export function buildQueryParams<T>(query: any): IQueryParams<T> {
     search: query.search as string,
     filter: query.filter ? JSON.parse(query.filter as string) : undefined,
     include: query.include ? JSON.parse(query.include as string) : undefined,
+    fuzzy: query.fuzzy === "true" || query.fuzzy === true,
   };
 }
 

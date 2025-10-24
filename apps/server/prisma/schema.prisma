@@ -259,26 +259,32 @@ enum CompanyStatus {
 }
 
 model Contact {
-  id          String      @id @default(uuid())
-  companyId   String
-  firstName   String
-  lastName    String?
-  email       String?
-  phone       String?
-  title       String?
-  type        ContactType @default(Sales)
-  isPrimary   Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
+  id              String      @id @default(uuid())
+  addressId       String?
+  companyId       String
+  legacyCompanyId String?
+  firstName       String
+  lastName        String?
+  email           String?
+  phone           String?
+  phoneExtension  String?
+  title           String?
+  type            ContactType @default(Sales)
+  isPrimary       Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
 
-  company          Company   @relation(fields: [companyId], references: [id])
-  customerJourneys Journey[] @relation("JourneyCustomerContact")
-  dealerJourneys   Journey[] @relation("JourneyDealerContact")
+  company          Company          @relation(fields: [companyId], references: [id])
+  customerJourneys Journey[]        @relation("JourneyCustomerContact")
+  dealerJourneys   Journey[]        @relation("JourneyDealerContact")
+  journeyContacts  JourneyContact[]
 
   @@index([createdById])
+  @@index([companyId])
+  @@index([legacyCompanyId])
   @@map("contacts")
 }
 
@@ -289,6 +295,26 @@ enum ContactType {
   Left_Company
   Parts_Service
   Sales
+}
+
+model JourneyContact {
+  id          String    @id @default(uuid())
+  journeyId   String
+  contactId   String
+  isPrimary   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyId, contactId])
+  @@index([journeyId])
+  @@index([contactId])
+  @@index([createdById])
+  @@map("journey_contacts")
 }
 
 model Address {

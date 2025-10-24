@@ -10,11 +10,21 @@ import { prisma } from "./utils/prisma";
 
 async function main() {
   await initializeServices();
+  await enablePgTrgm();
   await seedDatabase();
 
   server.listen(env.PORT, () => {
     logger.info(`Server running on port ${env.PORT}`);
   });
+}
+
+async function enablePgTrgm() {
+  try {
+    await prisma.$executeRawUnsafe("CREATE EXTENSION IF NOT EXISTS pg_trgm");
+    logger.info("PostgreSQL pg_trgm extension enabled");
+  } catch (error) {
+    logger.warn("Failed to enable pg_trgm extension:", error);
+  }
 }
 
 main().catch(handleFatal);

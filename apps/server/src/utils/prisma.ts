@@ -260,12 +260,19 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
   }
 
   const normalizedSearch = normalizeSearchFields(searchFields);
+  const isFuzzy = params.fuzzy === true || params.fuzzy === "true";
 
   if (params.search && normalizedSearch.length > 0) {
-    result.where.OR = buildSearchWhere(params.search, normalizedSearch);
-    const searchOrder = resolveSearchOrdering(params.sort, normalizedSearch);
-    if (searchOrder)
-      result.orderBy = searchOrder;
+    if (isFuzzy) {
+      result.hasFuzzySearch = true;
+      result.fuzzySearchFields = normalizedSearch.map(f => f.field);
+      result.fuzzySearchTerm = params.search;
+    } else {
+      result.where.OR = buildSearchWhere(params.search, normalizedSearch);
+      const searchOrder = resolveSearchOrdering(params.sort, normalizedSearch);
+      if (searchOrder)
+        result.orderBy = searchOrder;
+    }
   }
 
   if (params.filter) {
