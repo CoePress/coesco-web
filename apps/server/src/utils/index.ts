@@ -151,6 +151,7 @@ export function buildQueryParams<T>(query: any): IQueryParams<T> {
     fuzzyThreshold: query.fuzzyThreshold ? Number.parseFloat(query.fuzzyThreshold as string) : undefined,
     filter: query.filter ? JSON.parse(query.filter as string) : undefined,
     include: query.include ? JSON.parse(query.include as string) : undefined,
+    fuzzy: query.fuzzy === "true" || query.fuzzy === true,
   };
 }
 

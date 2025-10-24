@@ -13,6 +13,10 @@ export class ContactRepository extends BaseRepository<Contact> {
   protected entityName = "Contact";
   protected modelName = "contact";
 
+  protected getSearchFields() {
+    return ["firstName", "lastName", "email", "phone", "title"];
+  }
+
   protected async validate(entity: ContactAttributes): Promise<void> {
     if (!entity.companyId)
       throw new BadRequestError("companyId is required");

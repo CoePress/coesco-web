@@ -310,6 +310,7 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
   }
 
   const normalizedSearch = normalizeSearchFields(searchFields);
+  const isFuzzy = params.fuzzy === true || params.fuzzy === "true";
 
   if (params.search && normalizedSearch.length > 0) {
     result.where.OR = buildSearchWhere(params.search, normalizedSearch, modelName);

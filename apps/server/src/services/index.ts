@@ -35,6 +35,7 @@ import { ResourceService } from "./production/resource.service";
 import { AddressService } from "./sales/address.service";
 import { ContactService } from "./sales/contact.service";
 import { CustomerService } from "./sales/customer.service";
+import { JourneyContactService } from "./sales/journey-contact.service";
 import { JourneyService } from "./sales/journey.service";
 import { NoteService } from "./sales/note.service";
 import { PerformanceService } from "./sales/performance.service";
@@ -82,8 +83,9 @@ export const resourceService = new ResourceService();
 export const addressService = new AddressService();
 export const contactService = new ContactService();
 export const customerService = new CustomerService();
-export const noteService = new NoteService();
+export const journeyContactService = new JourneyContactService();
 export const journeyService = new JourneyService();
+export const noteService = new NoteService();
 export const performanceService = new PerformanceService();
 export const quoteService = new QuoteService();
 

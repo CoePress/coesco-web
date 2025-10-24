@@ -326,6 +326,26 @@ enum ContactType {
   Sales
 }
 
+model JourneyContact {
+  id          String    @id @default(uuid())
+  journeyId   String
+  contactId   String
+  isPrimary   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyId, contactId])
+  @@index([journeyId])
+  @@index([contactId])
+  @@index([createdById])
+  @@map("journey_contacts")
+}
+
 model Address {
   id           String    @id @default(uuid())
   companyId    String

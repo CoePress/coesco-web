@@ -31,6 +31,34 @@ export class BaseRepository<T> {
 
     const model = tx?.[this.modelName as keyof typeof tx] ?? this.model;
 
+    if (hasFuzzySearch && fuzzySearchFields && fuzzySearchTerm) {
+      const scope = await this.getScope(undefined, params?.includeDeleted);
+      const items = await this.executeFuzzySearch(
+        fuzzySearchFields,
+        fuzzySearchTerm,
+        query,
+        scope,
+        tx,
+      );
+      const total = items.length;
+      const totalPages = take ? Math.ceil(total / take) : 1;
+
+      const paginatedItems = take
+        ? items.slice(query.skip || 0, (query.skip || 0) + take)
+        : items;
+
+      return {
+        success: true,
+        data: paginatedItems,
+        meta: {
+          page,
+          limit: take,
+          total,
+          totalPages,
+        },
+      };
+    }
+
     if (hasComputedSearch && params?.search) {
       const allItems = await model.findMany(query);
       const total = allItems.length;
@@ -214,6 +242,91 @@ export class BaseRepository<T> {
   }
 
   // Private Methods
+  private async executeFuzzySearch(
+    searchFields: string[],
+    searchTerm: string,
+    query: any,
+    scope?: Record<string, any>,
+    tx?: Prisma.TransactionClient,
+  ): Promise<any[]> {
+    if (!this.modelName) {
+      return [];
+    }
+
+    const tables = deriveTableNames(this.modelName);
+    const tableName = tables[tables.length - 1];
+
+    const similarityConditions = searchFields
+      .map(field => `COALESCE(similarity("${field}"::text, $1), 0)`)
+      .join(" + ");
+
+    const maxSimilarity = `(${similarityConditions})`;
+    const minSimilarityThreshold = 0.3;
+
+    const whereConditions: string[] = [];
+    const queryParams: any[] = [searchTerm];
+
+    whereConditions.push(`${maxSimilarity} >= ${minSimilarityThreshold}`);
+
+    if (scope) {
+      const scopeConditions = this.buildScopeConditions(scope);
+      if (scopeConditions) {
+        whereConditions.push(scopeConditions);
+      }
+    }
+
+    const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
+
+    const sql = `
+      SELECT *,
+        ${maxSimilarity} as similarity_score
+      FROM "${tableName}"
+      ${whereClause}
+      ORDER BY similarity_score DESC, "createdAt" DESC
+    `;
+
+    const client = tx ?? prisma;
+    const results = await client.$queryRawUnsafe(sql, ...queryParams);
+
+    return results as any[];
+  }
+
+  private buildScopeConditions(scope: Record<string, any>): string | null {
+    if (!scope.AND || !Array.isArray(scope.AND)) {
+      return null;
+    }
+
+    const conditions: string[] = [];
+
+    for (const condition of scope.AND) {
+      if (condition.OR) {
+        const orConditions = condition.OR.map((or: any) => {
+          if (or.ownerId === null) {
+            return '"ownerId" IS NULL';
+          }
+          if (or.ownerId) {
+            return `"ownerId" = '${or.ownerId}'`;
+          }
+          return null;
+        }).filter(Boolean);
+
+        if (orConditions.length > 0) {
+          conditions.push(`(${orConditions.join(" OR ")})`);
+        }
+      }
+
+      if (condition.deletedAt !== undefined) {
+        if (condition.deletedAt === null) {
+          conditions.push('"deletedAt" IS NULL');
+        } else if (condition.deletedAt?.not === null) {
+          conditions.push('"deletedAt" IS NOT NULL');
+        }
+      }
+    }
+
+    return conditions.length > 0 ? conditions.join(" AND ") : null;
+  }
+
   private async getColumns(): Promise<string[]> {
     if (this._columns)
       return this._columns;
@@ -322,7 +435,7 @@ export class BaseRepository<T> {
       ? { ...params, sort: undefined, order: undefined }
       : params ?? {};
 
-    const { where, orderBy, page, take, skip, select, include } = buildQuery(
+    const { where, orderBy, page, take, skip, select, include, hasFuzzySearch, fuzzySearchFields, fuzzySearchTerm } = buildQuery(
       queryParams,
       regularSearchFields,
       includeDeleted,
