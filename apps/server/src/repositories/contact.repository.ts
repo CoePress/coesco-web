@@ -13,10 +13,6 @@ export class ContactRepository extends BaseRepository<Contact> {
   protected entityName = "Contact";
   protected modelName = "contact";
 
-  protected getSearchFields() {
-    return ["firstName", "lastName", "email", "phone", "title"];
-  }
-
   protected async validate(entity: ContactAttributes): Promise<void> {
     if (!entity.companyId)
       throw new BadRequestError("companyId is required");
@@ -28,5 +24,9 @@ export class ContactRepository extends BaseRepository<Contact> {
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)
       throw new BadRequestError("updatedById is required");
+  }
+
+  protected getSearchFields(): (string | { field: string; weight: number })[] {
+    return [{ field: "firstName", weight: 5 }, { field: "lastName", weight: 4 }, { field: "email", weight: 2 }, { field: "title", weight: 1 }];
   }
 }

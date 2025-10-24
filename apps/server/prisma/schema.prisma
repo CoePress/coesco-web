@@ -282,39 +282,12 @@ model Contact {
   dealerJourneys   Journey[]        @relation("JourneyDealerContact")
   journeyContacts  JourneyContact[]
 
+  /// @searchFields(firstName: 5, lastName: 4, email: 2, title: 1)
+
   @@index([createdById])
   @@index([companyId])
   @@index([legacyCompanyId])
   @@map("contacts")
-}
-
-enum ContactType {
-  Accounting
-  Engineering
-  Inactive
-  Left_Company
-  Parts_Service
-  Sales
-}
-
-model JourneyContact {
-  id          String    @id @default(uuid())
-  journeyId   String
-  contactId   String
-  isPrimary   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
-
-  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
-
-  @@unique([journeyId, contactId])
-  @@index([journeyId])
-  @@index([contactId])
-  @@index([createdById])
-  @@map("journey_contacts")
 }
 
 enum ContactType {

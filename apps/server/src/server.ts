@@ -22,7 +22,8 @@ async function enablePgTrgm() {
   try {
     await prisma.$executeRawUnsafe("CREATE EXTENSION IF NOT EXISTS pg_trgm");
     logger.info("PostgreSQL pg_trgm extension enabled");
-  } catch (error) {
+  }
+  catch (error) {
     logger.warn("Failed to enable pg_trgm extension:", error);
   }
 }

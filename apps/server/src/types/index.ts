@@ -24,7 +24,6 @@ export interface IQueryParams<T> {
   include?: string[] | Record<string, any> | string;
   select?: string[] | Record<string, any> | string;
   includeDeleted?: boolean | "only";
-  fuzzy?: boolean | string;
 }
 
 export interface IQueryBuilderResult {

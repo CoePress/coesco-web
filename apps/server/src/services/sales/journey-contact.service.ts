@@ -21,7 +21,7 @@ export class JourneyContactService {
       if (data.isPrimary) {
         const result = await journeyContactRepository.getById(id);
         if (!result.success || !result.data) {
-          console.error('JourneyContact not found:', id);
+          console.error("JourneyContact not found:", id);
           throw new Error(`JourneyContact ${id} not found`);
         }
         await this.clearPrimaryContacts(result.data.journeyId);
@@ -29,8 +29,9 @@ export class JourneyContactService {
 
       const result = await journeyContactRepository.update(id, data);
       return result;
-    } catch (error) {
-      console.error('Error in updateJourneyContact:', error);
+    }
+    catch (error) {
+      console.error("Error in updateJourneyContact:", error);
       throw error;
     }
   }
@@ -53,19 +54,19 @@ export class JourneyContactService {
       prisma.journeyContact.updateMany({
         where: {
           journeyId,
-          isPrimary: true
+          isPrimary: true,
         },
-        data: { isPrimary: false }
+        data: { isPrimary: false },
       }),
       // Update all legacy Journey_Contact records (legacy DB doesn't have the same constraint)
       legacyService.updateByCustomFilter(
-        'std',
-        'Journey_Contact',
+        "std",
+        "Journey_Contact",
         { Jrn_ID: journeyId },
-        { IsPrimary: 0 }
-      ).catch(err => {
-        console.error('Error updating legacy Journey_Contact:', err);
-      })
+        { IsPrimary: 0 },
+      ).catch((err) => {
+        console.error("Error updating legacy Journey_Contact:", err);
+      }),
     ]);
   }
 }
