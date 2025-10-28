@@ -9,6 +9,7 @@ import {
   Building2,
   ChartNoAxesCombined,
   CodeIcon,
+  Database,
   DollarSignIcon,
   FactoryIcon,
   FileCheck2Icon,
@@ -26,7 +27,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -279,6 +280,12 @@ const adminModule: Module = {
       label: "Logs",
       icon: LogsIcon,
       component: Logs,
+    },
+    {
+      slug: "data-pipeline",
+      label: "Data Pipeline",
+      icon: Database,
+      component: DataPipeline,
     },
   ],
 };

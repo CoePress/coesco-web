@@ -51,11 +51,11 @@ class ErrorBoundary extends Component<Props, State> {
         <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="bg-foreground border border-border rounded-lg shadow-xl max-w-md p-6">
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-error">Something went wrong</h2>
-              <p className="text-text">We're sorry for the inconvenience. Please try refreshing the page.</p>
+              <h2 className="font-semibold text-error">Something went wrong</h2>
+              <p className="text-sm text-text">We're sorry for the inconvenience. Please try refreshing the page.</p>
               <div className="flex justify-end">
                 <button
-                  className="px-4 py-2 bg-primary text-background rounded hover:opacity-90 transition-opacity font-medium"
+                  className="px-3 py-1.5 bg-primary text-background rounded hover:opacity-90 transition-opacity text-sm"
                   onClick={() => window.location.reload()}
                 >
                   Refresh Page
