@@ -629,210 +629,6 @@ const Pipeline = () => {
     }
   }, [isLoadingKanbanView, kanbanBatchSize, get, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys]);
 
-  const fetchKanbanViewJourneys = useCallback(async () => {
-    if (isLoadingKanbanView) return;
-
-    const trimmedSearch = searchTerm.trim();
-    const hasTagSearch = trimmedSearch.toLowerCase().startsWith('tag:');
-
-    if (hasTagSearch) {
-      setKanbanViewJourneys(filteredJourneys.slice(0, kanbanBatchSize));
-      return;
-    }
-
-    setIsLoadingKanbanView(true);
-    try {
-      const params: any = {
-        page: 1,
-        limit: kanbanBatchSize,
-        sort: 'Action_Date',
-        order: 'desc',
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
-      };
-
-      const filterConditions: any[] = [];
-
-      if (searchTerm && trimmedSearch.toLowerCase() !== 'tag:') {
-        filterConditions.push({
-          operator: "or",
-          conditions: [
-            { field: "Project_Name", operator: "contains", value: trimmedSearch },
-            { field: "Target_Account", operator: "contains", value: trimmedSearch }
-          ]
-        });
-      }
-
-      if (rsmFilter) {
-        filterConditions.push({
-          field: "RSM",
-          operator: "contains",
-          value: rsmFilter
-        });
-      }
-
-      if (journeyStatusFilter) {
-        filterConditions.push({
-          field: "Journey_Status",
-          operator: "equals",
-          value: journeyStatusFilter
-        });
-      }
-
-      if (filters.priority) {
-        filterConditions.push({
-          field: "Priority",
-          operator: "equals",
-          value: filters.priority
-        });
-      }
-
-      if (filters.confidenceLevels.length > 0) {
-        const confidenceValues = filters.confidenceLevels.map((level: number) => {
-          if (level === 0) return "Closed Lost";
-          if (level === 100) return "Closed Won";
-          return `${level}%`;
-        });
-        filterConditions.push({
-          field: "Chance_To_Secure_order",
-          operator: "in",
-          values: confidenceValues
-        });
-      }
-
-      if (filters.dateRange[0] || filters.dateRange[1]) {
-        const fieldMap: Record<string, string> = {
-          'closeDate': 'Expected_Decision_Date',
-          'Action_Date': 'Action_Date',
-          'Journey_Start_Date': 'Journey_Start_Date',
-          'Quote_Presentation_Date': 'Quote_Presentation_Date',
-          'Expected_Decision_Date': 'Expected_Decision_Date',
-          'Date_PO_Received': 'Date_PO_Received',
-          'Date_Lost': 'Date_Lost'
-        };
-        const dbField = fieldMap[filters.dateField] || 'Expected_Decision_Date';
-
-        if (filters.dateRange[0]) {
-          filterConditions.push({
-            field: dbField,
-            operator: "gte",
-            value: filters.dateRange[0]
-          });
-        }
-        if (filters.dateRange[1]) {
-          filterConditions.push({
-            field: dbField,
-            operator: "lte",
-            value: filters.dateRange[1]
-          });
-        }
-      }
-
-      if (filters.minValue) {
-        filterConditions.push({
-          field: "Journey_Value",
-          operator: "gte",
-          value: parseFloat(filters.minValue)
-        });
-      }
-
-      if (filters.maxValue) {
-        filterConditions.push({
-          field: "Journey_Value",
-          operator: "lte",
-          value: parseFloat(filters.maxValue)
-        });
-      }
-
-      if (filters.visibleStages.length !== STAGES.length) {
-        const stageConditions = filters.visibleStages.map((stageId: number) => {
-          switch (stageId) {
-            case 1:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "LEAD" },
-                  { field: "Journey_Stage", operator: "contains", value: "OPEN" },
-                  { field: "Journey_Stage", operator: "contains", value: "NEW" }
-                ]
-              };
-            case 2:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
-                  { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
-                  { field: "Journey_Stage", operator: "contains", value: "PAIN" },
-                  { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
-                ]
-              };
-            case 3:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
-                  { field: "Journey_Stage", operator: "contains", value: "DEMO" },
-                  { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
-                  { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
-                ]
-              };
-            case 4:
-              return {
-                field: "Journey_Stage",
-                operator: "contains",
-                value: "NEGOT"
-              };
-            case 5:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "PO" },
-                  { field: "Journey_Stage", operator: "contains", value: "WON" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
-                  { field: "Journey_Stage", operator: "contains", value: "ORDER" }
-                ]
-              };
-            case 6:
-              return {
-                operator: "or",
-                conditions: [
-                  { field: "Journey_Stage", operator: "contains", value: "LOST" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
-                  { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
-                  { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
-                ]
-              };
-            default:
-              return null;
-          }
-        }).filter(Boolean);
-
-        if (stageConditions.length > 0) {
-          filterConditions.push({
-            operator: "or",
-            conditions: stageConditions
-          });
-        }
-      }
-
-      if (filterConditions.length > 0) {
-        params.filter = JSON.stringify({ filters: filterConditions });
-      }
-
-      const raw = await api.get('/legacy/base/Journey', params);
-
-      if (raw !== null) {
-        const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
-        const mapped = journeysArray.map(adaptLegacyJourney);
-        setKanbanViewJourneys(mapped);
-      }
-    } catch (error) {
-      console.error("Error fetching kanban view journeys:", error);
-    } finally {
-      setIsLoadingKanbanView(false);
-    }
-  }, [isLoadingKanbanView, kanbanBatchSize, api, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys]);
-
   useEffect(() => {
     if (viewMode === 'list') {
       fetchListViewJourneys();
@@ -843,7 +639,6 @@ const Pipeline = () => {
     if (viewMode === 'kanban') {
       fetchKanbanViewJourneys();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters]);
 
   const handleListPageChange = (newPage: number) => {
@@ -863,18 +658,6 @@ const Pipeline = () => {
     saveToLocalStorage('sortField', sortField);
     saveToLocalStorage('sortDirection', sortDirection);
     saveToLocalStorage('showTags', showTags);
-  }, [showTags]);
-
-  useEffect(() => {
-    if (showTags && viewMode === 'kanban' && kanbanViewJourneys.length > 0) {
-      const journeyIds = kanbanViewJourneys.map((j: any) => j.id.toString());
-      fetchJourneyTags(journeyIds).then(tagsMap => {
-        setJourneyTags(tagsMap);
-      });
-    }
-  }, [showTags, viewMode, kanbanViewJourneys]);
-
-  useEffect(() => {
     saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
   }, [searchTerm, filters, rsmFilter, rsmFilterDisplay, journeyStatusFilter, viewMode, sortField, sortDirection, showTags, kanbanBatchSize]);
 
@@ -1007,52 +790,11 @@ const Pipeline = () => {
     updateLocalState();
 
     try {
-      if (isLegacyData) {
-        const stageLabel = STAGES.find(s => s.id === newStage)?.label;
-        if (!stageLabel) {
-          console.error(`Invalid stage ID: ${newStage}`);
-          return;
-        }
-        const result = await stageUpdateApi.patch(`/legacy/base/Journey/${journeyId}`, {
-          Journey_Stage: stageLabel
-        });
-
-        if (result !== null) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-
-          if (viewMode === 'kanban') {
-            await fetchKanbanViewJourneys();
-          } else {
-            const refetchSuccess = await refetchLegacyJourneys();
-            if (!refetchSuccess) {
-              setLegacyJourneys((prev) =>
-                (prev ?? []).map((j) =>
-                  j.id.toString() === journeyId
-                    ? {
-                        ...j,
-                        stage: newStage,
-                        updatedAt: new Date().toISOString(),
-                      }
-                    : j
-                )
-              );
-            }
-          }
-        } else {
-          console.error("Failed to update journey stage on server");
-        }
-      } else {
-        const stageLabel = STAGES.find(s => s.id === newStage)?.label;
-        if (!stageLabel) {
-          console.error(`Invalid stage ID: ${newStage}`);
-          return;
-        }
-        await put(`/legacy/base/Journey/${journeyId}`, { Journey_Stage: stageLabel });
-      }
+      await patch(`/legacy/base/Journey/${journeyId}`, { Journey_Stage: stageLabel });
     } catch (error) {
       console.error("Error updating journey stage:", error);
     }
-  }, [isLegacyData, refetchLegacyJourneys, put, viewMode, fetchKanbanViewJourneys]);
+  }, [patch]);
 
   const handleSort = useCallback((field: string, order?: 'asc' | 'desc') => {
     if (order) {
