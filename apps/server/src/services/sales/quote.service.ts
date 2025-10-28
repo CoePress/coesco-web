@@ -19,6 +19,9 @@ export class QuoteService {
       priority: data.priority || "C",
       confidence: data.confidence || 0,
       legacy: data.legacy || {},
+      latestRevision: "A",
+      latestRevisionStatus: data.status || "DRAFT",
+      latestRevisionTotalAmount: data.totalAmount || 0,
     });
 
     if (!quoteResult.success) {
@@ -112,6 +115,13 @@ export class QuoteService {
       );
     }
 
+    // Update denormalized fields on quote
+    await quoteRepository.update(quoteId, {
+      latestRevision: nextRevision,
+      latestRevisionStatus: revisionResult.data.status,
+      latestRevisionTotalAmount: revisionResult.data.totalAmount || 0,
+    });
+
     return revisionResult.data;
   }
 
@@ -131,26 +141,13 @@ export class QuoteService {
       };
     }
 
-    const quotesWithRevisions = await Promise.all(
-      quotesResult.data.map(async (quote: Quote) => {
-        const latestRevisionResult = await quoteRevisionRepository.getAll({
-          filter: { quoteId: quote.id },
-          sort: "revision",
-          order: "desc",
-          limit: 1,
-        });
-
-        const latestRevision = latestRevisionResult.data?.[0] || null;
-
-        return {
-          ...quote,
-          revision: latestRevision?.revision || "A",
-          revisionStatus: latestRevision?.status || "DRAFT",
-          totalAmount: latestRevision?.totalAmount || 0,
-          latestRevision,
-        };
-      }),
-    );
+    // Map to match expected frontend format
+    const quotesWithRevisions = quotesResult.data.map((quote: any) => ({
+      ...quote,
+      revision: quote.latestRevision || "A",
+      revisionStatus: quote.latestRevisionStatus || "DRAFT",
+      totalAmount: quote.latestRevisionTotalAmount || 0,
+    }));
 
     return {
       success: true,
@@ -267,6 +264,14 @@ export class QuoteService {
       }
     }
 
+    // Update denormalized fields on quote
+    if (revisionResult.success) {
+      await quoteRepository.update(id, {
+        latestRevisionStatus: revisionResult.data.status,
+        latestRevisionTotalAmount: revisionResult.data.totalAmount,
+      });
+    }
+
     return revisionResult;
   }
 
@@ -337,6 +342,10 @@ export class QuoteService {
       throw new Error("Quote revision not found");
     }
 
+    // Check if this is the latest revision
+    const quoteResult = await quoteRepository.getById(quoteId);
+    const isLatestRevision = quoteResult.data?.latestRevision === revisionResult.data.revision;
+
     // Update revision
     const updatedRevisionResult = await quoteRevisionRepository.update(revisionId, data);
 
@@ -392,6 +401,14 @@ export class QuoteService {
       }
     }
 
+    // Update denormalized fields on quote if this is the latest revision
+    if (isLatestRevision && updatedRevisionResult.success) {
+      await quoteRepository.update(quoteId, {
+        latestRevisionStatus: updatedRevisionResult.data.status,
+        latestRevisionTotalAmount: updatedRevisionResult.data.totalAmount,
+      });
+    }
+
     return updatedRevisionResult;
   }
 
@@ -440,6 +457,12 @@ export class QuoteService {
       status: "APPROVED",
     });
 
+    if (result.success) {
+      await quoteRepository.update(id, {
+        latestRevisionStatus: "APPROVED",
+      });
+    }
+
     return result;
   }
 
@@ -452,6 +475,12 @@ export class QuoteService {
     const result = await quoteRevisionRepository.update(quoteResult.data.latestRevision.id, {
       status: "ACCEPTED",
     });
+
+    if (result.success) {
+      await quoteRepository.update(id, {
+        latestRevisionStatus: "ACCEPTED",
+      });
+    }
 
     return result;
   }
@@ -466,6 +495,12 @@ export class QuoteService {
       status: "REJECTED",
     });
 
+    if (result.success) {
+      await quoteRepository.update(id, {
+        latestRevisionStatus: "REJECTED",
+      });
+    }
+
     return result;
   }
 
@@ -479,6 +514,12 @@ export class QuoteService {
       status: "SENT",
       sentById: data.sentById,
     });
+
+    if (result.success) {
+      await quoteRepository.update(id, {
+        latestRevisionStatus: "SENT",
+      });
+    }
 
     return result;
   }

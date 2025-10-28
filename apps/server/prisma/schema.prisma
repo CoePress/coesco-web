@@ -465,26 +465,29 @@ enum JourneyInteractionType {
 
 // Quoting
 model Quote {
-  id                String      @id @default(uuid())
-  journeyId         String?
-  year              String
-  number            String
-  rsmId             String?
-  customerId        String?
-  customerContactId String?
-  customerAddressId String?
-  dealerId          String?
-  dealerContactId   String?
-  dealerAddressId   String?
-  priority          String      @default("C")
-  confidence        Int         @default(0)
-  status            QuoteStatus @default(OPEN)
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  deletedAt         DateTime?
-  createdById       String
-  updatedById       String
-  legacy            Json        @default("{}")
+  id                        String               @id @default(uuid())
+  journeyId                 String?
+  year                      String
+  number                    String
+  rsmId                     String?
+  customerId                String?
+  customerContactId         String?
+  customerAddressId         String?
+  dealerId                  String?
+  dealerContactId           String?
+  dealerAddressId           String?
+  priority                  String               @default("C")
+  confidence                Int                  @default(0)
+  status                    QuoteStatus          @default(OPEN)
+  latestRevision            String?
+  latestRevisionStatus      QuoteRevisionStatus?
+  latestRevisionTotalAmount Decimal?
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+  deletedAt                 DateTime?
+  createdById               String
+  updatedById               String
+  legacy                    Json                 @default("{}")
 
   revisions QuoteRevision[]
   /// @transform(quoteNumber: CONCAT(RIGHT(year, 2), '-', LPAD(number, 5, '0')))
