@@ -2,6 +2,7 @@
 Time utilities for physics-based calculations.
 
 """
+import sys
 from models import time_input
 from math import sqrt, floor
 
@@ -30,8 +31,18 @@ def calculate_init_values(data: time_input, feed_angle: int = 0):
         runtime = 0
     
     index_time = ((acceleration_time * 2) + runtime + data.settle_time)
-    if data.application.lower() == "press feed":
-        cycle_time = index_time * (360 / feed_angle)
+    
+    # Safe access to application field
+    application = getattr(data, 'application', 'Press Feed')
+    if isinstance(application, str):
+        application_str = application.lower()
+    else:
+        application_str = "press feed"  # Default fallback
+    
+    if application_str == "press feed":
+        # Ensure feed_angle is not zero to prevent division by zero
+        safe_feed_angle = feed_angle if feed_angle > 0 else 180.0
+        cycle_time = index_time * (360 / safe_feed_angle)
     else:
         cycle_time = index_time + feed_angle
 
@@ -60,7 +71,7 @@ def calculate_values(data: time_input, init_values: dict, feed_angle: int = 0, i
     """
     Calculate shorter values based on the initial values and input data.
     """
-    if index is 1:
+    if index == 1:
         length = data.min_length
     else:
         length = data.min_length + (data.increment * (index - 1))
@@ -76,8 +87,18 @@ def calculate_values(data: time_input, init_values: dict, feed_angle: int = 0, i
     peak_torque = acceleration_torque + data.frictional_torque + data.loop_torque
 
     index_time = (acceleration_time * 2) + runtime + data.settle_time
-    if data.application.lower() == "press feed":
-        cycle_time = index_time * (360 / feed_angle)
+    
+    # Safe access to application field
+    application = getattr(data, 'application', 'Press Feed')
+    if isinstance(application, str):
+        application_str = application.lower()
+    else:
+        application_str = "press feed"  # Default fallback
+    
+    if application_str == "press feed":
+        # Ensure feed_angle is not zero to prevent division by zero
+        safe_feed_angle = feed_angle if feed_angle > 0 else 180.0
+        cycle_time = index_time * (360 / safe_feed_angle)
     else:
         cycle_time = index_time + feed_angle
 
@@ -88,10 +109,20 @@ def calculate_values(data: time_input, init_values: dict, feed_angle: int = 0, i
                        ((data.settle_torque ** 2) * data.settle_time) + 
                        ((data.loop_torque ** 2) * dwell_time)) / cycle_time)
     
-    if (60 / cycle_time * length) < data.str_max_sp_inch:
-        strokes_per_minute = floor(60 / cycle_time)
-    else: 
-        strokes_per_minute = floor(data.str_max_sp_inch / length)
+    # Calculate SPM based on cycle time and straightener speed limits
+    natural_spm = 60 / cycle_time
+    
+    # Handle case when str_max_sp_inch is 0 or not set - use natural SPM
+    if data.str_max_sp_inch <= 0:
+        strokes_per_minute = natural_spm
+    else:
+        spm_at_max_speed = data.str_max_sp_inch / length
+        
+        if (natural_spm * length) < data.str_max_sp_inch:
+            # Use natural SPM
+            strokes_per_minute = natural_spm
+        else: 
+            strokes_per_minute = max(1, floor(spm_at_max_speed))
 
     return {
         "length": length,
@@ -167,5 +198,10 @@ def calculate_time(data: time_input):
             "feed_angle_1": feed_angle_1_values,
             "feed_angle_2": feed_angle_2_values
         }
-    except:
-        return "ERROR: Time calculations failed to save."
+    except Exception as e:
+        # Return a proper dictionary structure with error information
+        return {
+            "feed_angle_1": [],
+            "feed_angle_2": [],
+            "error": f"Time calculations failed: {str(e)}"
+        }

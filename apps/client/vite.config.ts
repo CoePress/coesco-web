@@ -1,8 +1,8 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
-import { VitePWA } from "vite-plugin-pwa";
 import viteImagemin from "vite-plugin-imagemin";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   plugins: [
@@ -26,11 +26,11 @@ export default defineConfig({
       svgo: {
         plugins: [
           {
-            name: 'removeViewBox',
+            name: "removeViewBox",
             active: false,
           },
           {
-            name: 'removeEmptyAttrs',
+            name: "removeEmptyAttrs",
             active: true,
           },
         ],
@@ -95,10 +95,10 @@ export default defineConfig({
     },
   },
   build: {
-    sourcemap: 'hidden'
+    sourcemap: "hidden",
   },
   esbuild: {
-    drop: ['console', 'debugger'],
+    drop: ["console", "debugger"],
   },
   resolve: {
     alias: {
