@@ -1,6 +1,7 @@
 from models import tddbhd_input
 from math import pi, sqrt
 import re
+import sys
 
 from utils.shared import (
     NUM_BRAKEPADS, BRAKE_DISTANCE, CYLINDER_ROD, STATIC_FRICTION, rfq_state
@@ -128,7 +129,7 @@ def calc_failsafe_holding_force(brake_model, friction, num_brakepads, brake_dist
 
 # --- Checks ---
 def check_min_material_width(min_material_width, width):
-    return "PASS" if min_material_width <= width else "FAIL"
+    return "PASS" if min_material_width < width else "FAIL"
 
 def check_air_pressure(air_pressure):
     return "PASS" if air_pressure <= 120 else "FAIL"
@@ -137,13 +138,13 @@ def check_rewind_torque(rewind_torque, torque_at_mandrel):
     return "PASS" if rewind_torque < torque_at_mandrel else "FAIL"
 
 def check_hold_down_force(hold_down_force_req, hold_down_force_available):
-    return "PASS" if hold_down_force_req < hold_down_force_available else "FAIL"
+    return "PASS" if hold_down_force_req <= hold_down_force_available else "FAIL"
 
 def check_brake_press(brake_press_required, air_pressure):
-    return "PASS" if brake_press_required < air_pressure else "FAIL"
+    return "PASS" if brake_press_required <= air_pressure else "FAIL"
 
 def check_torque_required(torque_required, failsafe_holding_force):
-    return "PASS" if torque_required < failsafe_holding_force or failsafe_holding_force == 0 else "FAIL"
+    return "PASS" if torque_required < failsafe_holding_force else "FAIL"
 
 def check_tddbhd(reel_type, min_material_width_check, confirmed_min_width, rewind_torque_check, hold_down_force_check, brake_press_check, torque_required_check, hold_down_force_available):
     if reel_type.upper() == "PULLOFF":
@@ -171,9 +172,23 @@ def calculate_tbdbhd(data: tddbhd_input):
         hold_down_force_available = lookup_hold_down_force(holddown_matrix_key, holddown_pressure)
         min_material_width = lookup_min_material_width(holddown_matrix_key)
         reel_type = lookup_reel_type(data.type_of_line)
-        air_clutch = "Yes" if data.air_clutch else "No"
+        # Fix: data.air_clutch is already a string ("Yes"/"No"), not a boolean
+        air_clutch = data.air_clutch if data.air_clutch in ["Yes", "No"] else "No"
+        
+        # Generate drive key and check if it exists, fallback to "No" if not found
         drive_key = lookup_drive_key(data.reel_model, air_clutch, data.hyd_threading_drive)
-        drive_torque = lookup_drive_torque(drive_key)
+        
+        # Check if drive key exists in lookup table, if not, try with air_clutch="No"
+        try:
+            drive_torque = lookup_drive_torque(drive_key)
+        except ValueError as e:
+            if "Unknown drive key" in str(e) and air_clutch == "Yes":
+                # Fallback: try with air_clutch="No" for models that don't support air clutch
+                air_clutch = "No"
+                drive_key = lookup_drive_key(data.reel_model, air_clutch, data.hyd_threading_drive)
+                drive_torque = lookup_drive_torque(drive_key)
+            else:
+                raise e
     except Exception as e:
         return f"ERROR: Lookup failed: {str(e)}"
 
