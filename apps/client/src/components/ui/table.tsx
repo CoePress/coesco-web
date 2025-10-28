@@ -7,6 +7,7 @@ export type TableColumn<T> = {
   render?: (value: T[keyof T], row: T) => React.ReactNode;
   className?: string;
   sortable?: boolean;
+  width?: string;
 };
 
 type TableProps<T> = {
@@ -110,6 +111,10 @@ const Table = <T extends Record<string, any>>({
                       onSortChange && isSortable
                         ? "cursor-pointer hover:bg-surface"
                         : ""
+                    } ${
+                      column.width || ""
+                    } ${
+                      column.className || ""
                     }`}
                     onClick={() =>
                       onSortChange &&
@@ -205,6 +210,8 @@ const Table = <T extends Record<string, any>>({
                         key={column.key}
                         className={`px-2 py-2 whitespace-nowrap ${
                           column.header.toLowerCase() === "actions" ? "w-1" : ""
+                        } ${
+                          column.width || ""
                         } ${
                           column.className || ""
                         }`}>

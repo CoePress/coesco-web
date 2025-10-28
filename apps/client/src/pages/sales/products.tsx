@@ -192,6 +192,7 @@ const Products = () => {
     {
       key: "modelNumber",
       header: "Model #",
+      width: "w-48",
       className: "text-primary hover:underline",
       render: (_, row) => (
         <Link to={`/sales/products/p/${row.id}`}>{row.modelNumber}</Link>
@@ -204,12 +205,14 @@ const Products = () => {
     {
       key: "price",
       header: "Price",
+      width: "w-32",
       render: (_, row) => formatCurrency(row.specifications.price),
     },
     {
       key: "actions",
       header: "",
-      className: "w-fit whitespace-nowrap",
+      width: "w-0",
+      className: "whitespace-nowrap",
       sortable: false,
       render: (_, row) => (
         <Button
