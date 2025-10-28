@@ -1077,83 +1077,199 @@ const FieldEditorModal = ({ field, onSave, onClose }: any) => {
     { value: '4', label: 'Span 4 Columns (Full Width)' }
   ];
 
+  const getDuplicateIndices = (options: { value: string; label: string }[]) => {
+    const duplicateValues = new Set<number>();
+    const duplicateLabels = new Set<number>();
+
+    options.forEach((option, index) => {
+      if (option.value && options.findIndex((o, i) => i !== index && o.value === option.value) !== -1) {
+        duplicateValues.add(index);
+      }
+      if (option.label && options.findIndex((o, i) => i !== index && o.label === option.label) !== -1) {
+        duplicateLabels.add(index);
+      }
+    });
+
+    return { duplicateValues, duplicateLabels };
+  };
+
+  const { duplicateValues, duplicateLabels } = getDuplicateIndices(editedField.options || []);
+
   return (
     <Modal isOpen={true} onClose={onClose} title="Edit Field" size="md">
-      <div className="space-y-4">
-        <Input
-          label="Field ID (dot notation)"
-          value={editedField.id}
-          onChange={(e) => setEditedField({ ...editedField, id: e.target.value })}
-          placeholder="e.g., rfq.dates.date"
-        />
-
-        <Input
-          label="Label"
-          value={editedField.label}
-          onChange={(e) => setEditedField({ ...editedField, label: e.target.value })}
-          placeholder="Field label"
-        />
-
-        <Select
-          label="Type"
-          value={editedField.type}
-          onChange={(e) => setEditedField({ ...editedField, type: e.target.value as FieldType })}
-          options={fieldTypes}
-        />
-
-        <Select
-          label="Size (Column Span)"
-          value={editedField.size.toString()}
-          onChange={(e) => setEditedField({ ...editedField, size: parseInt(e.target.value) })}
-          options={fieldSizes}
-        />
-
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="required"
-            checked={editedField.required}
-            onChange={(e) => setEditedField({ ...editedField, required: e.target.checked })}
-            className="rounded"
+      <>
+        <div className="space-y-2 overflow-y-auto flex-1 pb-2">
+          <Input
+            label="Field ID (dot notation)"
+            value={editedField.id}
+            onChange={(e) => setEditedField({ ...editedField, id: e.target.value })}
+            placeholder="e.g., rfq.dates.date"
           />
-          <label htmlFor="required" className="text-sm text-text">Required</label>
+
+          <Input
+            label="Label"
+            value={editedField.label}
+            onChange={(e) => setEditedField({ ...editedField, label: e.target.value })}
+            placeholder="Field label"
+          />
+
+          <Select
+            label="Type"
+            value={editedField.type}
+            onChange={(e) => setEditedField({ ...editedField, type: e.target.value as FieldType })}
+            options={fieldTypes}
+          />
+
+          <Select
+            label="Size (Column Span)"
+            value={editedField.size.toString()}
+            onChange={(e) => setEditedField({ ...editedField, size: parseInt(e.target.value) })}
+            options={fieldSizes}
+          />
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="required"
+              checked={editedField.required}
+              onChange={(e) => setEditedField({ ...editedField, required: e.target.checked })}
+              className="rounded"
+            />
+            <label htmlFor="required" className="text-sm text-text">Required</label>
+          </div>
+
+          {editedField.type === 'select' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-text-muted">Options</label>
+                <Button
+                  size="sm"
+                  variant="secondary-outline"
+                  onClick={() => {
+                    const options = editedField.options || [];
+                    setEditedField({
+                      ...editedField,
+                      options: [...options, { value: '', label: '' }]
+                    });
+                  }}
+                >
+                  <Plus size={14} />
+                  Add Option
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(editedField.options || []).map((option, index) => {
+                  const hasValueDuplicate = duplicateValues.has(index);
+                  const hasLabelDuplicate = duplicateLabels.has(index);
+
+                  return (
+                    <div key={index} className="flex gap-2 items-start p-2 border border-border rounded bg-surface">
+                      <div className="flex-1">
+                        <Input
+                          label="Value"
+                          value={option.value}
+                          onChange={(e) => {
+                            const options = [...(editedField.options || [])];
+                            options[index] = { ...options[index], value: e.target.value };
+                            setEditedField({ ...editedField, options });
+                          }}
+                          placeholder="option-value"
+                        />
+                        {hasValueDuplicate && (
+                          <div className="text-xs text-error mt-1">Duplicate value</div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <Input
+                          label="Label"
+                          value={option.label}
+                          onChange={(e) => {
+                            const options = [...(editedField.options || [])];
+                            options[index] = { ...options[index], label: e.target.value };
+                            setEditedField({ ...editedField, options });
+                          }}
+                          placeholder="Display Label"
+                        />
+                        {hasLabelDuplicate && (
+                          <div className="text-xs text-error mt-1">Duplicate label</div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => {
+                          const options = (editedField.options || []).filter((_, i) => i !== index);
+                          setEditedField({ ...editedField, options });
+                        }}
+                        className="p-2 bg-error/20 border border-error/50 rounded text-error hover:bg-error/30 transition-colors h-9 mt-6"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  );
+                })}
+                {(!editedField.options || editedField.options.length === 0) && (
+                  <div className="text-sm text-text-muted text-center py-4">
+                    No options added. Click "Add Option" to create one.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {editedField.type === 'select' ? (
+            <Select
+              label="Default Value"
+              value={editedField.default || ''}
+              onChange={(e) => setEditedField({ ...editedField, default: e.target.value })}
+              options={[
+                { value: '', label: 'None' },
+                ...(editedField.options || [])
+              ]}
+            />
+          ) : editedField.type === 'checkbox' ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="default-checkbox"
+                checked={editedField.default === true || editedField.default === 'true'}
+                onChange={(e) => setEditedField({ ...editedField, default: e.target.checked })}
+                className="rounded"
+              />
+              <label htmlFor="default-checkbox" className="text-sm text-text">Default checked</label>
+            </div>
+          ) : editedField.type === 'textarea' ? (
+            <div>
+              <label className="text-sm text-text-muted mb-2 block">Default Value</label>
+              <textarea
+                value={editedField.default || ''}
+                onChange={(e) => setEditedField({ ...editedField, default: e.target.value })}
+                placeholder="Optional default value"
+                className="w-full p-2 border border-border rounded bg-background text-text text-sm"
+                rows={3}
+              />
+            </div>
+          ) : (
+            <Input
+              label="Default Value"
+              type={editedField.type === 'number' ? 'number' : editedField.type === 'date' ? 'date' : 'text'}
+              value={editedField.default || ''}
+              onChange={(e) => setEditedField({ ...editedField, default: e.target.value })}
+              placeholder="Optional default value"
+            />
+          )}
         </div>
 
-        {editedField.type === 'select' && (
-          <div>
-            <label className="text-sm text-text-muted mb-2 block">Options (JSON)</label>
-            <textarea
-              value={JSON.stringify(editedField.options || [], null, 2)}
-              onChange={(e) => {
-                try {
-                  const options = JSON.parse(e.target.value);
-                  setEditedField({ ...editedField, options });
-                } catch (error) {
-                  // Invalid JSON, ignore
-                }
-              }}
-              className="w-full p-2 border border-border rounded bg-background text-text font-mono text-xs"
-              rows={8}
-            />
-          </div>
-        )}
-
-        <Input
-          label="Default Value"
-          value={editedField.default || ''}
-          onChange={(e) => setEditedField({ ...editedField, default: e.target.value })}
-          placeholder="Optional default value"
-        />
-
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-end sticky bottom-0 bg-foreground pt-2 border-t border-border">
           <Button variant="secondary-outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={() => onSave(editedField)}>
+          <Button
+            onClick={() => onSave(editedField)}
+            disabled={duplicateValues.size > 0 || duplicateLabels.size > 0}
+          >
             Save Field
           </Button>
         </div>
-      </div>
+      </>
     </Modal>
   );
 };
