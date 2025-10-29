@@ -234,7 +234,7 @@ const Quotes = () => {
 
   const filters: Filter[] = [
     {
-      key: 'quote-status',
+      key: 'status',
       label: 'Quote Status',
       options: [
         { value: '', label: 'All' },
@@ -243,7 +243,7 @@ const Quotes = () => {
       placeholder: 'Quote Status'
     },
     {
-      key: 'quote-revision-status',
+      key: 'latestRevisionStatus',
       label: 'Rev. Status',
       options: [
         { value: '', label: 'All' },

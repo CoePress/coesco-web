@@ -1262,6 +1262,7 @@ const ItemsTab = ({
             {
               key: "quantity",
               header: "Quantity",
+              sortable: false,
               render: (_, row) => (
                 <input
                   type="number"
@@ -1281,6 +1282,7 @@ const ItemsTab = ({
             {
               key: "actions",
               header: "",
+              sortable: false,
               render: (_, row) => (
                 <div className="flex justify-end">
                   <Button
