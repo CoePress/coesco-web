@@ -172,2956 +172,2956 @@ export const TOOLS: ITool[] = [
 ];
 
 export const SCHEMAS: ISchema[] = [
-  {
-    name: "address",
+  { 
+    name: "address", 
     description: "Schema for Address entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      companyId: {
-        type: "string",
-        required: true,
+      "companyId": {
+        "type": "string",
+        "required": true
       },
-      addressLine1: {
-        type: "string",
-        required: true,
+      "addressLine1": {
+        "type": "string",
+        "required": true
       },
-      addressLine2: {
-        type: "string",
-        required: false,
+      "addressLine2": {
+        "type": "string",
+        "required": false
       },
-      city: {
-        type: "string",
-        required: false,
+      "city": {
+        "type": "string",
+        "required": false
       },
-      state: {
-        type: "string",
-        required: false,
+      "state": {
+        "type": "string",
+        "required": false
       },
-      zip: {
-        type: "string",
-        required: false,
+      "zip": {
+        "type": "string",
+        "required": false
       },
-      country: {
-        type: "string",
-        required: false,
+      "country": {
+        "type": "string",
+        "required": false
       },
-      isPrimary: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isPrimary": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "audit-log",
+  { 
+    name: "audit-log", 
     description: "Schema for AuditLog entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      action: {
-        type: "auditaction",
-        required: true,
+      "action": {
+        "type": "auditaction",
+        "required": true
       },
-      model: {
-        type: "string",
-        required: true,
+      "model": {
+        "type": "string",
+        "required": true
       },
-      recordId: {
-        type: "string",
-        required: true,
+      "recordId": {
+        "type": "string",
+        "required": true
       },
-      changedBy: {
-        type: "string",
-        required: true,
+      "changedBy": {
+        "type": "string",
+        "required": true
       },
-      diff: {
-        type: "json",
-        required: true,
+      "diff": {
+        "type": "json",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
-      },
-    },
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
+      }
+    }
   },
-  {
-    name: "bug-report",
+  { 
+    name: "bug-report", 
     description: "Schema for BugReport entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      title: {
-        type: "string",
-        required: true,
+      "title": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: true,
+      "description": {
+        "type": "string",
+        "required": true
       },
-      userEmail: {
-        type: "string",
-        required: false,
+      "userEmail": {
+        "type": "string",
+        "required": false
       },
-      userName: {
-        type: "string",
-        required: false,
+      "userName": {
+        "type": "string",
+        "required": false
       },
-      url: {
-        type: "string",
-        required: false,
+      "url": {
+        "type": "string",
+        "required": false
       },
-      userAgent: {
-        type: "string",
-        required: false,
+      "userAgent": {
+        "type": "string",
+        "required": false
       },
-      issueKey: {
-        type: "string",
-        required: false,
+      "issueKey": {
+        "type": "string",
+        "required": false
       },
-      issueUrl: {
-        type: "string",
-        required: false,
+      "issueUrl": {
+        "type": "string",
+        "required": false
       },
-      status: {
-        type: "bugreportstatus",
-        required: true,
-        hasDefault: true,
+      "status": {
+        "type": "bugreportstatus",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      createdById: {
-        type: "string",
-        required: false,
-      },
-    },
+      "createdById": {
+        "type": "string",
+        "required": false
+      }
+    }
   },
-  {
-    name: "chat",
+  { 
+    name: "chat", 
     description: "Schema for Chat entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      employeeId: {
-        type: "string",
-        required: true,
+      "employeeId": {
+        "type": "string",
+        "required": true
       },
-      name: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "name": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "coil-type",
+  { 
+    name: "coil-type", 
     description: "Schema for CoilType entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      multiplier: {
-        type: "decimal",
-        required: true,
-        hasDefault: true,
+      "multiplier": {
+        "type": "decimal",
+        "required": true,
+        "hasDefault": true
       },
-      sortOrder: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "sortOrder": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      isArchived: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isArchived": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      legacyId: {
-        type: "string",
-        required: false,
-      },
-    },
+      "legacyId": {
+        "type": "string",
+        "required": false
+      }
+    }
   },
-  {
-    name: "company",
+  { 
+    name: "company", 
     description: "Schema for Company entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      website: {
-        type: "string",
-        required: false,
+      "website": {
+        "type": "string",
+        "required": false
       },
-      email: {
-        type: "string",
-        required: false,
+      "email": {
+        "type": "string",
+        "required": false
       },
-      phone: {
-        type: "string",
-        required: false,
+      "phone": {
+        "type": "string",
+        "required": false
       },
-      fax: {
-        type: "string",
-        required: false,
+      "fax": {
+        "type": "string",
+        "required": false
       },
-      industry: {
-        type: "industry",
-        required: false,
+      "industry": {
+        "type": "industry",
+        "required": false
       },
-      yearFounded: {
-        type: "int",
-        required: false,
+      "yearFounded": {
+        "type": "int",
+        "required": false
       },
-      revenue: {
-        type: "int",
-        required: false,
+      "revenue": {
+        "type": "int",
+        "required": false
       },
-      employeeCount: {
-        type: "string",
-        required: false,
+      "employeeCount": {
+        "type": "string",
+        "required": false
       },
-      customerSince: {
-        type: "datetime",
-        required: false,
+      "customerSince": {
+        "type": "datetime",
+        "required": false
       },
-      paymentTerms: {
-        type: "string",
-        required: false,
+      "paymentTerms": {
+        "type": "string",
+        "required": false
       },
-      creditLimit: {
-        type: "int",
-        required: false,
+      "creditLimit": {
+        "type": "int",
+        "required": false
       },
-      taxId: {
-        type: "string",
-        required: false,
+      "taxId": {
+        "type": "string",
+        "required": false
       },
-      logoUrl: {
-        type: "string",
-        required: false,
+      "logoUrl": {
+        "type": "string",
+        "required": false
       },
-      notes: {
-        type: "string",
-        required: false,
+      "notes": {
+        "type": "string",
+        "required": false
       },
-      tags: {
-        type: "string",
-        required: true,
-        isList: true,
+      "tags": {
+        "type": "string",
+        "required": true,
+        "isList": true
       },
-      status: {
-        type: "companystatus",
-        required: true,
-        hasDefault: true,
+      "status": {
+        "type": "companystatus",
+        "required": true,
+        "hasDefault": true
       },
-      legacy: {
-        type: "json",
-        required: true,
-        hasDefault: true,
+      "legacy": {
+        "type": "json",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "configuration",
+  { 
+    name: "configuration", 
     description: "Schema for Configuration entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      productClassId: {
-        type: "string",
-        required: true,
+      "productClassId": {
+        "type": "string",
+        "required": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      isTemplate: {
-        type: "boolean",
-        required: true,
+      "isTemplate": {
+        "type": "boolean",
+        "required": true
       },
-      isActive: {
-        type: "boolean",
-        required: true,
+      "isActive": {
+        "type": "boolean",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "configuration-option",
+  { 
+    name: "configuration-option", 
     description: "Schema for ConfigurationOption entity",
     schema: {
-      configurationId: {
-        type: "string",
-        required: true,
+      "configurationId": {
+        "type": "string",
+        "required": true
       },
-      optionId: {
-        type: "string",
-        required: true,
+      "optionId": {
+        "type": "string",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "contact",
+  { 
+    name: "contact", 
     description: "Schema for Contact entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      addressId: {
-        type: "string",
-        required: false,
+      "addressId": {
+        "type": "string",
+        "required": false
       },
-      companyId: {
-        type: "string",
-        required: true,
+      "companyId": {
+        "type": "string",
+        "required": true
       },
-      legacyCompanyId: {
-        type: "string",
-        required: false,
+      "legacyCompanyId": {
+        "type": "string",
+        "required": false
       },
-      firstName: {
-        type: "string",
-        required: true,
+      "firstName": {
+        "type": "string",
+        "required": true
       },
-      lastName: {
-        type: "string",
-        required: false,
+      "lastName": {
+        "type": "string",
+        "required": false
       },
-      email: {
-        type: "string",
-        required: false,
+      "email": {
+        "type": "string",
+        "required": false
       },
-      phone: {
-        type: "string",
-        required: false,
+      "phone": {
+        "type": "string",
+        "required": false
       },
-      phoneExtension: {
-        type: "string",
-        required: false,
+      "phoneExtension": {
+        "type": "string",
+        "required": false
       },
-      title: {
-        type: "string",
-        required: false,
+      "title": {
+        "type": "string",
+        "required": false
       },
-      type: {
-        type: "contacttype",
-        required: true,
-        hasDefault: true,
+      "type": {
+        "type": "contacttype",
+        "required": true,
+        "hasDefault": true
       },
-      isPrimary: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isPrimary": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "department",
+  { 
+    name: "department", 
     description: "Schema for Department entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      code: {
-        type: "string",
-        required: true,
+      "code": {
+        "type": "string",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "draft",
+  { 
+    name: "draft", 
     description: "Schema for Draft entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      entityType: {
-        type: "string",
-        required: true,
+      "entityType": {
+        "type": "string",
+        "required": true
       },
-      entityId: {
-        type: "string",
-        required: false,
+      "entityId": {
+        "type": "string",
+        "required": false
       },
-      data: {
-        type: "json",
-        required: true,
+      "data": {
+        "type": "json",
+        "required": true
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "email-log",
+  { 
+    name: "email-log", 
     description: "Schema for EmailLog entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      to: {
-        type: "string",
-        required: true,
+      "to": {
+        "type": "string",
+        "required": true
       },
-      subject: {
-        type: "string",
-        required: true,
+      "subject": {
+        "type": "string",
+        "required": true
       },
-      template: {
-        type: "string",
-        required: false,
+      "template": {
+        "type": "string",
+        "required": false
       },
-      status: {
-        type: "emailstatus",
-        required: true,
-        hasDefault: true,
+      "status": {
+        "type": "emailstatus",
+        "required": true,
+        "hasDefault": true
       },
-      sentAt: {
-        type: "datetime",
-        required: false,
+      "sentAt": {
+        "type": "datetime",
+        "required": false
       },
-      error: {
-        type: "string",
-        required: false,
+      "error": {
+        "type": "string",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "employee",
+  { 
+    name: "employee", 
     description: "Schema for Employee entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      userId: {
-        type: "string",
-        required: true,
+      "userId": {
+        "type": "string",
+        "required": true
       },
-      number: {
-        type: "string",
-        required: true,
+      "number": {
+        "type": "string",
+        "required": true
       },
-      firstName: {
-        type: "string",
-        required: true,
+      "firstName": {
+        "type": "string",
+        "required": true
       },
-      lastName: {
-        type: "string",
-        required: true,
+      "lastName": {
+        "type": "string",
+        "required": true
       },
-      initials: {
-        type: "string",
-        required: true,
+      "initials": {
+        "type": "string",
+        "required": true
       },
-      email: {
-        type: "string",
-        required: false,
+      "email": {
+        "type": "string",
+        "required": false
       },
-      phoneNumber: {
-        type: "string",
-        required: false,
+      "phoneNumber": {
+        "type": "string",
+        "required": false
       },
-      title: {
-        type: "string",
-        required: true,
+      "title": {
+        "type": "string",
+        "required": true
       },
-      hireDate: {
-        type: "datetime",
-        required: false,
+      "hireDate": {
+        "type": "datetime",
+        "required": false
       },
-      startDate: {
-        type: "datetime",
-        required: false,
+      "startDate": {
+        "type": "datetime",
+        "required": false
       },
-      terminationDate: {
-        type: "datetime",
-        required: false,
+      "terminationDate": {
+        "type": "datetime",
+        "required": false
       },
-      departmentId: {
-        type: "string",
-        required: false,
+      "departmentId": {
+        "type": "string",
+        "required": false
       },
-      managerId: {
-        type: "string",
-        required: false,
+      "managerId": {
+        "type": "string",
+        "required": false
       },
-      isSalaried: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isSalaried": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      isActive: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isActive": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "external-access-link",
+  { 
+    name: "external-access-link", 
     description: "Schema for ExternalAccessLink entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      token: {
-        type: "string",
-        required: true,
+      "token": {
+        "type": "string",
+        "required": true
       },
-      purpose: {
-        type: "accesspurpose",
-        required: true,
+      "purpose": {
+        "type": "accesspurpose",
+        "required": true
       },
-      resourceId: {
-        type: "string",
-        required: false,
+      "resourceId": {
+        "type": "string",
+        "required": false
       },
-      resourceType: {
-        type: "string",
-        required: false,
+      "resourceType": {
+        "type": "string",
+        "required": false
       },
-      expiresAt: {
-        type: "datetime",
-        required: false,
+      "expiresAt": {
+        "type": "datetime",
+        "required": false
       },
-      usedAt: {
-        type: "datetime",
-        required: false,
+      "usedAt": {
+        "type": "datetime",
+        "required": false
       },
-      revokedAt: {
-        type: "datetime",
-        required: false,
+      "revokedAt": {
+        "type": "datetime",
+        "required": false
       },
-      maxUses: {
-        type: "int",
-        required: false,
+      "maxUses": {
+        "type": "int",
+        "required": false
       },
-      useCount: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "useCount": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      metadata: {
-        type: "json",
-        required: false,
+      "metadata": {
+        "type": "json",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      createdById: {
-        type: "string",
-        required: false,
+      "createdById": {
+        "type": "string",
+        "required": false
       },
-      updatedById: {
-        type: "string",
-        required: false,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": false
+      }
+    }
   },
-  {
-    name: "form",
+  { 
+    name: "form", 
     description: "Schema for Form entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      status: {
-        type: "formstatus",
-        required: true,
-        hasDefault: true,
+      "status": {
+        "type": "formstatus",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "form-conditional-rule",
+  { 
+    name: "form-conditional-rule", 
     description: "Schema for FormConditionalRule entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      formId: {
-        type: "string",
-        required: true,
+      "formId": {
+        "type": "string",
+        "required": true
       },
-      name: {
-        type: "string",
-        required: false,
+      "name": {
+        "type": "string",
+        "required": false
       },
-      targetType: {
-        type: "conditionaltarget",
-        required: true,
+      "targetType": {
+        "type": "conditionaltarget",
+        "required": true
       },
-      targetId: {
-        type: "string",
-        required: true,
+      "targetId": {
+        "type": "string",
+        "required": true
       },
-      action: {
-        type: "conditionalaction",
-        required: true,
+      "action": {
+        "type": "conditionalaction",
+        "required": true
       },
-      conditions: {
-        type: "json",
-        required: true,
+      "conditions": {
+        "type": "json",
+        "required": true
       },
-      operator: {
-        type: "conditionaloperator",
-        required: true,
-        hasDefault: true,
+      "operator": {
+        "type": "conditionaloperator",
+        "required": true,
+        "hasDefault": true
       },
-      priority: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "priority": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      isActive: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isActive": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "form-field",
+  { 
+    name: "form-field", 
     description: "Schema for FormField entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      sectionId: {
-        type: "string",
-        required: true,
+      "sectionId": {
+        "type": "string",
+        "required": true
       },
-      label: {
-        type: "string",
-        required: true,
+      "label": {
+        "type": "string",
+        "required": true
       },
-      variable: {
-        type: "string",
-        required: true,
+      "variable": {
+        "type": "string",
+        "required": true
       },
-      controlType: {
-        type: "formfieldcontroltype",
-        required: true,
+      "controlType": {
+        "type": "formfieldcontroltype",
+        "required": true
       },
-      dataType: {
-        type: "formfielddatatype",
-        required: true,
+      "dataType": {
+        "type": "formfielddatatype",
+        "required": true
       },
-      options: {
-        type: "json",
-        required: true,
-        hasDefault: true,
+      "options": {
+        "type": "json",
+        "required": true,
+        "hasDefault": true
       },
-      isRequired: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isRequired": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      isReadOnly: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isReadOnly": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      isHiddenOnDevice: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isHiddenOnDevice": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      isHiddenOnReport: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isHiddenOnReport": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      sequence: {
-        type: "int",
-        required: true,
+      "sequence": {
+        "type": "int",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "form-page",
+  { 
+    name: "form-page", 
     description: "Schema for FormPage entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      formId: {
-        type: "string",
-        required: true,
+      "formId": {
+        "type": "string",
+        "required": true
       },
-      title: {
-        type: "string",
-        required: true,
+      "title": {
+        "type": "string",
+        "required": true
       },
-      sequence: {
-        type: "int",
-        required: true,
+      "sequence": {
+        "type": "int",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "form-section",
+  { 
+    name: "form-section", 
     description: "Schema for FormSection entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      pageId: {
-        type: "string",
-        required: true,
+      "pageId": {
+        "type": "string",
+        "required": true
       },
-      title: {
-        type: "string",
-        required: true,
+      "title": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      sequence: {
-        type: "int",
-        required: true,
+      "sequence": {
+        "type": "int",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "form-submission",
+  { 
+    name: "form-submission", 
     description: "Schema for FormSubmission entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      formId: {
-        type: "string",
-        required: true,
+      "formId": {
+        "type": "string",
+        "required": true
       },
-      status: {
-        type: "formsubmissionstatus",
-        required: true,
-        hasDefault: true,
+      "status": {
+        "type": "formsubmissionstatus",
+        "required": true,
+        "hasDefault": true
       },
-      answers: {
-        type: "json",
-        required: true,
-        hasDefault: true,
+      "answers": {
+        "type": "json",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "item",
+  { 
+    name: "item", 
     description: "Schema for Item entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      productClassId: {
-        type: "string",
-        required: false,
+      "productClassId": {
+        "type": "string",
+        "required": false
       },
-      modelNumber: {
-        type: "string",
-        required: false,
+      "modelNumber": {
+        "type": "string",
+        "required": false
       },
-      name: {
-        type: "string",
-        required: false,
+      "name": {
+        "type": "string",
+        "required": false
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      specifications: {
-        type: "json",
-        required: true,
-        hasDefault: true,
+      "specifications": {
+        "type": "json",
+        "required": true,
+        "hasDefault": true
       },
-      unitPrice: {
-        type: "float",
-        required: true,
-        hasDefault: true,
+      "unitPrice": {
+        "type": "float",
+        "required": true,
+        "hasDefault": true
       },
-      leadTime: {
-        type: "int",
-        required: false,
+      "leadTime": {
+        "type": "int",
+        "required": false
       },
-      type: {
-        type: "itemtype",
-        required: true,
+      "type": {
+        "type": "itemtype",
+        "required": true
       },
-      isActive: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isActive": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "journey",
+  { 
+    name: "journey", 
     description: "Schema for Journey entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      name: {
-        type: "string",
-        required: false,
+      "name": {
+        "type": "string",
+        "required": false
       },
-      rsmId: {
-        type: "string",
-        required: false,
+      "rsmId": {
+        "type": "string",
+        "required": false
       },
-      customerId: {
-        type: "string",
-        required: false,
+      "customerId": {
+        "type": "string",
+        "required": false
       },
-      customerAddressId: {
-        type: "string",
-        required: false,
+      "customerAddressId": {
+        "type": "string",
+        "required": false
       },
-      customerContactId: {
-        type: "string",
-        required: false,
+      "customerContactId": {
+        "type": "string",
+        "required": false
       },
-      dealerId: {
-        type: "string",
-        required: false,
+      "dealerId": {
+        "type": "string",
+        "required": false
       },
-      dealerAddressId: {
-        type: "string",
-        required: false,
+      "dealerAddressId": {
+        "type": "string",
+        "required": false
       },
-      dealerContactId: {
-        type: "string",
-        required: false,
+      "dealerContactId": {
+        "type": "string",
+        "required": false
       },
-      startDate: {
-        type: "datetime",
-        required: false,
+      "startDate": {
+        "type": "datetime",
+        "required": false
       },
-      status: {
-        type: "journeystatus",
-        required: false,
+      "status": {
+        "type": "journeystatus",
+        "required": false
       },
-      type: {
-        type: "journeytype",
-        required: false,
+      "type": {
+        "type": "journeytype",
+        "required": false
       },
-      source: {
-        type: "journeysource",
-        required: false,
+      "source": {
+        "type": "journeysource",
+        "required": false
       },
-      priority: {
-        type: "journeypriority",
-        required: false,
+      "priority": {
+        "type": "journeypriority",
+        "required": false
       },
-      confidence: {
-        type: "int",
-        required: false,
+      "confidence": {
+        "type": "int",
+        "required": false
       },
-      notes: {
-        type: "string",
-        required: false,
+      "notes": {
+        "type": "string",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "journey-contact",
+  { 
+    name: "journey-contact", 
     description: "Schema for JourneyContact entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      journeyId: {
-        type: "string",
-        required: true,
+      "journeyId": {
+        "type": "string",
+        "required": true
       },
-      contactId: {
-        type: "string",
-        required: true,
+      "contactId": {
+        "type": "string",
+        "required": true
       },
-      isPrimary: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isPrimary": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "journey-interaction",
+  { 
+    name: "journey-interaction", 
     description: "Schema for JourneyInteraction entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      journeyId: {
-        type: "string",
-        required: true,
+      "journeyId": {
+        "type": "string",
+        "required": true
       },
-      interactionType: {
-        type: "journeyinteractiontype",
-        required: true,
+      "interactionType": {
+        "type": "journeyinteractiontype",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "login-history",
+  { 
+    name: "login-history", 
     description: "Schema for LoginHistory entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      userId: {
-        type: "string",
-        required: false,
+      "userId": {
+        "type": "string",
+        "required": false
       },
-      username: {
-        type: "string",
-        required: false,
+      "username": {
+        "type": "string",
+        "required": false
       },
-      loginMethod: {
-        type: "loginmethod",
-        required: true,
+      "loginMethod": {
+        "type": "loginmethod",
+        "required": true
       },
-      success: {
-        type: "boolean",
-        required: true,
+      "success": {
+        "type": "boolean",
+        "required": true
       },
-      failureReason: {
-        type: "string",
-        required: false,
+      "failureReason": {
+        "type": "string",
+        "required": false
       },
-      ipAddress: {
-        type: "string",
-        required: false,
+      "ipAddress": {
+        "type": "string",
+        "required": false
       },
-      userAgent: {
-        type: "string",
-        required: false,
+      "userAgent": {
+        "type": "string",
+        "required": false
       },
-      location: {
-        type: "json",
-        required: false,
+      "location": {
+        "type": "json",
+        "required": false
       },
-      timestamp: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
-      },
-    },
+      "timestamp": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
+      }
+    }
   },
-  {
-    name: "machine",
+  { 
+    name: "machine", 
     description: "Schema for Machine entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      slug: {
-        type: "string",
-        required: true,
+      "slug": {
+        "type": "string",
+        "required": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      type: {
-        type: "machinetype",
-        required: true,
+      "type": {
+        "type": "machinetype",
+        "required": true
       },
-      controllerType: {
-        type: "machinecontrollertype",
-        required: true,
+      "controllerType": {
+        "type": "machinecontrollertype",
+        "required": true
       },
-      connectionUrl: {
-        type: "string",
-        required: false,
+      "connectionUrl": {
+        "type": "string",
+        "required": false
       },
-      enabled: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
+      "updatedById": {
+        "type": "string",
+        "required": true
       },
-      deletedById: {
-        type: "string",
-        required: false,
-      },
-    },
+      "deletedById": {
+        "type": "string",
+        "required": false
+      }
+    }
   },
-  {
-    name: "machine-status",
+  { 
+    name: "machine-status", 
     description: "Schema for MachineStatus entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      machineId: {
-        type: "string",
-        required: true,
+      "machineId": {
+        "type": "string",
+        "required": true
       },
-      state: {
-        type: "machinestate",
-        required: true,
+      "state": {
+        "type": "machinestate",
+        "required": true
       },
-      execution: {
-        type: "string",
-        required: true,
+      "execution": {
+        "type": "string",
+        "required": true
       },
-      controller: {
-        type: "string",
-        required: true,
+      "controller": {
+        "type": "string",
+        "required": true
       },
-      program: {
-        type: "string",
-        required: false,
+      "program": {
+        "type": "string",
+        "required": false
       },
-      tool: {
-        type: "string",
-        required: false,
+      "tool": {
+        "type": "string",
+        "required": false
       },
-      metrics: {
-        type: "json",
-        required: false,
+      "metrics": {
+        "type": "json",
+        "required": false
       },
-      alarmCode: {
-        type: "string",
-        required: false,
+      "alarmCode": {
+        "type": "string",
+        "required": false
       },
-      alarmMessage: {
-        type: "string",
-        required: false,
+      "alarmMessage": {
+        "type": "string",
+        "required": false
       },
-      startTime: {
-        type: "datetime",
-        required: true,
+      "startTime": {
+        "type": "datetime",
+        "required": true
       },
-      endTime: {
-        type: "datetime",
-        required: false,
+      "endTime": {
+        "type": "datetime",
+        "required": false
       },
-      duration: {
-        type: "int",
-        required: false,
+      "duration": {
+        "type": "int",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
-      },
-    },
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
+      }
+    }
   },
-  {
-    name: "message",
+  { 
+    name: "message", 
     description: "Schema for Message entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      chatId: {
-        type: "string",
-        required: true,
+      "chatId": {
+        "type": "string",
+        "required": true
       },
-      role: {
-        type: "string",
-        required: true,
+      "role": {
+        "type": "string",
+        "required": true
       },
-      content: {
-        type: "string",
-        required: true,
+      "content": {
+        "type": "string",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      fileUrl: {
-        type: "string",
-        required: false,
-      },
-    },
+      "fileUrl": {
+        "type": "string",
+        "required": false
+      }
+    }
   },
-  {
-    name: "note",
+  { 
+    name: "note", 
     description: "Schema for Note entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      entityId: {
-        type: "string",
-        required: true,
+      "entityId": {
+        "type": "string",
+        "required": true
       },
-      entityType: {
-        type: "string",
-        required: true,
+      "entityType": {
+        "type": "string",
+        "required": true
       },
-      type: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "type": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      body: {
-        type: "string",
-        required: true,
+      "body": {
+        "type": "string",
+        "required": true
       },
-      createdBy: {
-        type: "string",
-        required: false,
+      "createdBy": {
+        "type": "string",
+        "required": false
       },
-      updatedBy: {
-        type: "string",
-        required: false,
+      "updatedBy": {
+        "type": "string",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
-      },
-    },
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
+      }
+    }
   },
-  {
-    name: "ntfy-device",
+  { 
+    name: "ntfy-device", 
     description: "Schema for NtfyDevice entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      host: {
-        type: "string",
-        required: true,
+      "host": {
+        "type": "string",
+        "required": true
       },
-      pingIntervalSec: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "pingIntervalSec": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      maxMissedPings: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "maxMissedPings": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      currentMissedPings: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "currentMissedPings": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      enabled: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      lastPingTime: {
-        type: "datetime",
-        required: false,
+      "lastPingTime": {
+        "type": "datetime",
+        "required": false
       },
-      lastPingSuccess: {
-        type: "boolean",
-        required: false,
+      "lastPingSuccess": {
+        "type": "boolean",
+        "required": false
       },
-      isDown: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isDown": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "option-category",
+  { 
+    name: "option-category", 
     description: "Schema for OptionCategory entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      multiple: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "multiple": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      mandatory: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "mandatory": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      standard: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "standard": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      displayOrder: {
-        type: "int",
-        required: true,
+      "displayOrder": {
+        "type": "int",
+        "required": true
       },
-      legacyId: {
-        type: "string",
-        required: false,
-      },
-    },
+      "legacyId": {
+        "type": "string",
+        "required": false
+      }
+    }
   },
-  {
-    name: "option-details",
+  { 
+    name: "option-details", 
     description: "Schema for OptionDetails entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      optionHeaderId: {
-        type: "string",
-        required: true,
+      "optionHeaderId": {
+        "type": "string",
+        "required": true
       },
-      productClassId: {
-        type: "string",
-        required: false,
+      "productClassId": {
+        "type": "string",
+        "required": false
       },
-      itemId: {
-        type: "string",
-        required: false,
+      "itemId": {
+        "type": "string",
+        "required": false
       },
-      price: {
-        type: "decimal",
-        required: true,
+      "price": {
+        "type": "decimal",
+        "required": true
       },
-      isActive: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isActive": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "option-header",
+  { 
+    name: "option-header", 
     description: "Schema for OptionHeader entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      optionCategoryId: {
-        type: "string",
-        required: true,
+      "optionCategoryId": {
+        "type": "string",
+        "required": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      legacyId: {
-        type: "string",
-        required: false,
+      "legacyId": {
+        "type": "string",
+        "required": false
       },
-      displayOrder: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "displayOrder": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      isActive: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isActive": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "option-rule",
+  { 
+    name: "option-rule", 
     description: "Schema for OptionRule entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      action: {
-        type: "optionruleaction",
-        required: true,
+      "action": {
+        "type": "optionruleaction",
+        "required": true
       },
-      priority: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "priority": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      isActive: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isActive": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      condition: {
-        type: "json",
-        required: true,
+      "condition": {
+        "type": "json",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "option-rule-target",
+  { 
+    name: "option-rule-target", 
     description: "Schema for OptionRuleTarget entity",
     schema: {
-      ruleId: {
-        type: "string",
-        required: true,
+      "ruleId": {
+        "type": "string",
+        "required": true
       },
-      optionId: {
-        type: "string",
-        required: true,
+      "optionId": {
+        "type": "string",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "option-rule-trigger",
+  { 
+    name: "option-rule-trigger", 
     description: "Schema for OptionRuleTrigger entity",
     schema: {
-      ruleId: {
-        type: "string",
-        required: true,
+      "ruleId": {
+        "type": "string",
+        "required": true
       },
-      optionId: {
-        type: "string",
-        required: true,
+      "optionId": {
+        "type": "string",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "performance-sheet",
+  { 
+    name: "performance-sheet", 
     description: "Schema for PerformanceSheet entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      versionId: {
-        type: "string",
-        required: true,
+      "versionId": {
+        "type": "string",
+        "required": true
       },
-      name: {
-        type: "string",
-        required: false,
+      "name": {
+        "type": "string",
+        "required": false
       },
-      data: {
-        type: "json",
-        required: true,
-        hasDefault: true,
+      "data": {
+        "type": "json",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "performance-sheet-link",
+  { 
+    name: "performance-sheet-link", 
     description: "Schema for PerformanceSheetLink entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      performanceSheetId: {
-        type: "string",
-        required: true,
+      "performanceSheetId": {
+        "type": "string",
+        "required": true
       },
-      entityType: {
-        type: "string",
-        required: true,
+      "entityType": {
+        "type": "string",
+        "required": true
       },
-      entityId: {
-        type: "string",
-        required: true,
+      "entityId": {
+        "type": "string",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "performance-sheet-version",
+  { 
+    name: "performance-sheet-version", 
     description: "Schema for PerformanceSheetVersion entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      sections: {
-        type: "json",
-        required: true,
-        hasDefault: true,
+      "sections": {
+        "type": "json",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "permission",
+  { 
+    name: "permission", 
     description: "Schema for Permission entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      resource: {
-        type: "string",
-        required: true,
+      "resource": {
+        "type": "string",
+        "required": true
       },
-      action: {
-        type: "string",
-        required: true,
+      "action": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      condition: {
-        type: "json",
-        required: false,
+      "condition": {
+        "type": "json",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "permission-exception",
+  { 
+    name: "permission-exception", 
     description: "Schema for PermissionException entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      userId: {
-        type: "string",
-        required: true,
+      "userId": {
+        "type": "string",
+        "required": true
       },
-      permissionId: {
-        type: "string",
-        required: true,
+      "permissionId": {
+        "type": "string",
+        "required": true
       },
-      scope: {
-        type: "json",
-        required: true,
+      "scope": {
+        "type": "json",
+        "required": true
       },
-      scopeKey: {
-        type: "string",
-        required: true,
+      "scopeKey": {
+        "type": "string",
+        "required": true
       },
-      reason: {
-        type: "string",
-        required: false,
+      "reason": {
+        "type": "string",
+        "required": false
       },
-      expiresAt: {
-        type: "datetime",
-        required: false,
+      "expiresAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: false,
+      "createdById": {
+        "type": "string",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
-      },
-    },
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
+      }
+    }
   },
-  {
-    name: "postal-code",
+  { 
+    name: "postal-code", 
     description: "Schema for PostalCode entity",
     schema: {
-      countryCode: {
-        type: "string",
-        required: true,
+      "countryCode": {
+        "type": "string",
+        "required": true
       },
-      postalCode: {
-        type: "string",
-        required: true,
+      "postalCode": {
+        "type": "string",
+        "required": true
       },
-      latitude: {
-        type: "float",
-        required: true,
+      "latitude": {
+        "type": "float",
+        "required": true
       },
-      longitude: {
-        type: "float",
-        required: true,
-      },
-    },
+      "longitude": {
+        "type": "float",
+        "required": true
+      }
+    }
   },
-  {
-    name: "product-class",
+  { 
+    name: "product-class", 
     description: "Schema for ProductClass entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      code: {
-        type: "string",
-        required: true,
+      "code": {
+        "type": "string",
+        "required": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      parentId: {
-        type: "string",
-        required: false,
+      "parentId": {
+        "type": "string",
+        "required": false
       },
-      depth: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "depth": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      isActive: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
-      },
-    },
+      "isActive": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
+      }
+    }
   },
-  {
-    name: "product-class-option-category",
+  { 
+    name: "product-class-option-category", 
     description: "Schema for ProductClassOptionCategory entity",
     schema: {
-      productClassId: {
-        type: "string",
-        required: true,
+      "productClassId": {
+        "type": "string",
+        "required": true
       },
-      optionCategoryId: {
-        type: "string",
-        required: true,
+      "optionCategoryId": {
+        "type": "string",
+        "required": true
       },
-      displayOrder: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "displayOrder": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      isRequired: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isRequired": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "quote",
+  { 
+    name: "quote", 
     description: "Schema for Quote entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      journeyId: {
-        type: "string",
-        required: false,
+      "journeyId": {
+        "type": "string",
+        "required": false
       },
-      year: {
-        type: "string",
-        required: true,
+      "year": {
+        "type": "string",
+        "required": true
       },
-      number: {
-        type: "string",
-        required: true,
+      "number": {
+        "type": "string",
+        "required": true
       },
-      rsmId: {
-        type: "string",
-        required: false,
+      "rsmId": {
+        "type": "string",
+        "required": false
       },
-      customerId: {
-        type: "string",
-        required: false,
+      "customerId": {
+        "type": "string",
+        "required": false
       },
-      customerContactId: {
-        type: "string",
-        required: false,
+      "customerContactId": {
+        "type": "string",
+        "required": false
       },
-      customerAddressId: {
-        type: "string",
-        required: false,
+      "customerAddressId": {
+        "type": "string",
+        "required": false
       },
-      dealerId: {
-        type: "string",
-        required: false,
+      "dealerId": {
+        "type": "string",
+        "required": false
       },
-      dealerContactId: {
-        type: "string",
-        required: false,
+      "dealerContactId": {
+        "type": "string",
+        "required": false
       },
-      dealerAddressId: {
-        type: "string",
-        required: false,
+      "dealerAddressId": {
+        "type": "string",
+        "required": false
       },
-      priority: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "priority": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      confidence: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "confidence": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      status: {
-        type: "quotestatus",
-        required: true,
-        hasDefault: true,
+      "status": {
+        "type": "quotestatus",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
+      "updatedById": {
+        "type": "string",
+        "required": true
       },
-      legacy: {
-        type: "json",
-        required: true,
-        hasDefault: true,
-      },
-    },
+      "legacy": {
+        "type": "json",
+        "required": true,
+        "hasDefault": true
+      }
+    }
   },
-  {
-    name: "quote-item",
+  { 
+    name: "quote-item", 
     description: "Schema for QuoteItem entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      quoteRevisionId: {
-        type: "string",
-        required: true,
+      "quoteRevisionId": {
+        "type": "string",
+        "required": true
       },
-      configurationId: {
-        type: "string",
-        required: false,
+      "configurationId": {
+        "type": "string",
+        "required": false
       },
-      itemId: {
-        type: "string",
-        required: false,
+      "itemId": {
+        "type": "string",
+        "required": false
       },
-      model: {
-        type: "string",
-        required: false,
+      "model": {
+        "type": "string",
+        "required": false
       },
-      name: {
-        type: "string",
-        required: false,
+      "name": {
+        "type": "string",
+        "required": false
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      quantity: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "quantity": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      unitPrice: {
-        type: "decimal",
-        required: true,
+      "unitPrice": {
+        "type": "decimal",
+        "required": true
       },
-      lineNumber: {
-        type: "int",
-        required: true,
+      "lineNumber": {
+        "type": "int",
+        "required": true
       },
-      isCustom: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isCustom": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "quote-note",
+  { 
+    name: "quote-note", 
     description: "Schema for QuoteNote entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      quoteRevisionId: {
-        type: "string",
-        required: true,
+      "quoteRevisionId": {
+        "type": "string",
+        "required": true
       },
-      body: {
-        type: "string",
-        required: true,
+      "body": {
+        "type": "string",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "quote-revision",
+  { 
+    name: "quote-revision", 
     description: "Schema for QuoteRevision entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      quoteId: {
-        type: "string",
-        required: true,
+      "quoteId": {
+        "type": "string",
+        "required": true
       },
-      revision: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "revision": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      quoteDate: {
-        type: "datetime",
-        required: false,
+      "quoteDate": {
+        "type": "datetime",
+        "required": false
       },
-      status: {
-        type: "quoterevisionstatus",
-        required: true,
-        hasDefault: true,
+      "status": {
+        "type": "quoterevisionstatus",
+        "required": true,
+        "hasDefault": true
       },
-      approvedById: {
-        type: "string",
-        required: false,
+      "approvedById": {
+        "type": "string",
+        "required": false
       },
-      sentById: {
-        type: "string",
-        required: false,
+      "sentById": {
+        "type": "string",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
+      "deletedAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: true,
+      "createdById": {
+        "type": "string",
+        "required": true
       },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
+      "updatedById": {
+        "type": "string",
+        "required": true
+      }
+    }
   },
-  {
-    name: "quote-terms",
+  { 
+    name: "quote-terms", 
     description: "Schema for QuoteTerms entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      quoteRevisionId: {
-        type: "string",
-        required: true,
+      "quoteRevisionId": {
+        "type": "string",
+        "required": true
       },
-      percentage: {
-        type: "int",
-        required: false,
+      "percentage": {
+        "type": "int",
+        "required": false
       },
-      netDays: {
-        type: "int",
-        required: true,
-        hasDefault: true,
+      "netDays": {
+        "type": "int",
+        "required": true,
+        "hasDefault": true
       },
-      amount: {
-        type: "decimal",
-        required: false,
+      "amount": {
+        "type": "decimal",
+        "required": false
       },
-      verbiage: {
-        type: "string",
-        required: false,
+      "verbiage": {
+        "type": "string",
+        "required": false
       },
-      dueOrder: {
-        type: "int",
-        required: false,
+      "dueOrder": {
+        "type": "int",
+        "required": false
       },
-      customTerms: {
-        type: "string",
-        required: false,
+      "customTerms": {
+        "type": "string",
+        "required": false
       },
-      notToExceed: {
-        type: "decimal",
-        required: false,
+      "notToExceed": {
+        "type": "decimal",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "role",
+  { 
+    name: "role", 
     description: "Schema for Role entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      name: {
-        type: "string",
-        required: true,
+      "name": {
+        "type": "string",
+        "required": true
       },
-      description: {
-        type: "string",
-        required: false,
+      "description": {
+        "type": "string",
+        "required": false
       },
-      isSystem: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isSystem": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "role-assignment",
+  { 
+    name: "role-assignment", 
     description: "Schema for RoleAssignment entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      userId: {
-        type: "string",
-        required: true,
+      "userId": {
+        "type": "string",
+        "required": true
       },
-      roleId: {
-        type: "string",
-        required: true,
+      "roleId": {
+        "type": "string",
+        "required": true
       },
-      scope: {
-        type: "json",
-        required: true,
+      "scope": {
+        "type": "json",
+        "required": true
       },
-      scopeKey: {
-        type: "string",
-        required: true,
+      "scopeKey": {
+        "type": "string",
+        "required": true
       },
-      expiresAt: {
-        type: "datetime",
-        required: false,
+      "expiresAt": {
+        "type": "datetime",
+        "required": false
       },
-      createdById: {
-        type: "string",
-        required: false,
+      "createdById": {
+        "type": "string",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "role-permission",
+  { 
+    name: "role-permission", 
     description: "Schema for RolePermission entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      roleId: {
-        type: "string",
-        required: true,
+      "roleId": {
+        "type": "string",
+        "required": true
       },
-      permissionId: {
-        type: "string",
-        required: true,
+      "permissionId": {
+        "type": "string",
+        "required": true
       },
-      condition: {
-        type: "json",
-        required: false,
+      "condition": {
+        "type": "json",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
-      },
-    },
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
+      }
+    }
   },
-  {
-    name: "session",
+  { 
+    name: "session", 
     description: "Schema for Session entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      userId: {
-        type: "string",
-        required: true,
+      "userId": {
+        "type": "string",
+        "required": true
       },
-      token: {
-        type: "string",
-        required: true,
+      "token": {
+        "type": "string",
+        "required": true
       },
-      refreshToken: {
-        type: "string",
-        required: false,
+      "refreshToken": {
+        "type": "string",
+        "required": false
       },
-      ipAddress: {
-        type: "string",
-        required: false,
+      "ipAddress": {
+        "type": "string",
+        "required": false
       },
-      userAgent: {
-        type: "string",
-        required: false,
+      "userAgent": {
+        "type": "string",
+        "required": false
       },
-      deviceType: {
-        type: "string",
-        required: false,
+      "deviceType": {
+        "type": "string",
+        "required": false
       },
-      deviceName: {
-        type: "string",
-        required: false,
+      "deviceName": {
+        "type": "string",
+        "required": false
       },
-      location: {
-        type: "json",
-        required: false,
+      "location": {
+        "type": "json",
+        "required": false
       },
-      loginMethod: {
-        type: "loginmethod",
-        required: true,
+      "loginMethod": {
+        "type": "loginmethod",
+        "required": true
       },
-      loginAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "loginAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      lastActivityAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "lastActivityAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      expiresAt: {
-        type: "datetime",
-        required: true,
+      "expiresAt": {
+        "type": "datetime",
+        "required": true
       },
-      revokedAt: {
-        type: "datetime",
-        required: false,
+      "revokedAt": {
+        "type": "datetime",
+        "required": false
       },
-      revokedReason: {
-        type: "string",
-        required: false,
+      "revokedReason": {
+        "type": "string",
+        "required": false
       },
-      logoutAt: {
-        type: "datetime",
-        required: false,
+      "logoutAt": {
+        "type": "datetime",
+        "required": false
       },
-      isActive: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isActive": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      isSuspicious: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isSuspicious": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      suspiciousReason: {
-        type: "string",
-        required: false,
+      "suspiciousReason": {
+        "type": "string",
+        "required": false
       },
-      metadata: {
-        type: "json",
-        required: false,
+      "metadata": {
+        "type": "json",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "tag",
+  { 
+    name: "tag", 
     description: "Schema for Tag entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      description: {
-        type: "string",
-        required: true,
+      "description": {
+        "type": "string",
+        "required": true
       },
-      parentTable: {
-        type: "string",
-        required: true,
+      "parentTable": {
+        "type": "string",
+        "required": true
       },
-      parentId: {
-        type: "string",
-        required: true,
+      "parentId": {
+        "type": "string",
+        "required": true
       },
-      createdBy: {
-        type: "string",
-        required: true,
+      "createdBy": {
+        "type": "string",
+        "required": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "token",
+  { 
+    name: "token", 
     description: "Schema for Token entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      userId: {
-        type: "string",
-        required: true,
+      "userId": {
+        "type": "string",
+        "required": true
       },
-      type: {
-        type: "tokentype",
-        required: true,
+      "type": {
+        "type": "tokentype",
+        "required": true
       },
-      token: {
-        type: "string",
-        required: true,
+      "token": {
+        "type": "string",
+        "required": true
       },
-      expiresAt: {
-        type: "datetime",
-        required: true,
+      "expiresAt": {
+        "type": "datetime",
+        "required": true
       },
-      used: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "used": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "user",
+  { 
+    name: "user", 
     description: "Schema for User entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      username: {
-        type: "string",
-        required: true,
+      "username": {
+        "type": "string",
+        "required": true
       },
-      password: {
-        type: "string",
-        required: false,
+      "password": {
+        "type": "string",
+        "required": false
       },
-      microsoftId: {
-        type: "string",
-        required: false,
+      "microsoftId": {
+        "type": "string",
+        "required": false
       },
-      role: {
-        type: "userrole",
-        required: true,
-        hasDefault: true,
+      "role": {
+        "type": "userrole",
+        "required": true,
+        "hasDefault": true
       },
-      isActive: {
-        type: "boolean",
-        required: true,
-        hasDefault: true,
+      "isActive": {
+        "type": "boolean",
+        "required": true,
+        "hasDefault": true
       },
-      lastLogin: {
-        type: "datetime",
-        required: false,
+      "lastLogin": {
+        "type": "datetime",
+        "required": false
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
-  {
-    name: "user-settings",
+  { 
+    name: "user-settings", 
     description: "Schema for UserSettings entity",
     schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
+      "id": {
+        "type": "string",
+        "required": true,
+        "hasDefault": true
       },
-      userId: {
-        type: "string",
-        required: true,
+      "userId": {
+        "type": "string",
+        "required": true
       },
-      settings: {
-        type: "json",
-        required: true,
-        hasDefault: true,
+      "settings": {
+        "type": "json",
+        "required": true,
+        "hasDefault": true
       },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
+      "createdAt": {
+        "type": "datetime",
+        "required": true,
+        "hasDefault": true
       },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-    },
+      "updatedAt": {
+        "type": "datetime",
+        "required": true
+      }
+    }
   },
 ];

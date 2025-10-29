@@ -63,6 +63,15 @@
   }
 }
 
+@layer utilities {
+  .bg-error-light {
+    background-color: color-mix(in srgb, var(--error) 10%, transparent);
+  }
+  .bg-success-light {
+    background-color: color-mix(in srgb, var(--success) 10%, transparent);
+  }
+}
+
 /* Global scrollbar styles */
 ::-webkit-scrollbar {
   width: 12px;

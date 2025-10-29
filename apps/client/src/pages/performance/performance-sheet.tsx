@@ -83,6 +83,14 @@ const PerformanceSheet = () => {
     return result;
   };
 
+  const isFieldFilled = (value: any, fieldType: string): boolean => {
+    if (value === null || value === undefined) return false;
+    if (fieldType === 'checkbox') return true;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (typeof value === 'number') return true;
+    return false;
+  };
+
   const storageKey = useMemo(() => `performance-sheet-${performanceSheetId}`, [performanceSheetId]);
 
   const saveToLocalStorage = (values: Record<string, any>) => {
@@ -522,6 +530,10 @@ const PerformanceSheet = () => {
 
   const renderField = (field: any) => {
     const value = getNestedValue(formData, field.id) ?? "";
+    const isFilled = isFieldFilled(value, field.type);
+    const requiredBgClassName = field.required && isEditing
+      ? (isFilled ? 'bg-success-light' : 'bg-error-light')
+      : '';
     const commonProps = {
       id: field.id,
       name: field.id,
@@ -529,6 +541,7 @@ const PerformanceSheet = () => {
       required: field.required || false,
       disabled: !isEditing,
       autoComplete: "off",
+      requiredBgClassName,
     };
 
     const getSizeClass = () => {

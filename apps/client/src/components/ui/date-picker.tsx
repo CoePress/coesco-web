@@ -13,6 +13,7 @@ interface DatePickerProps {
   id?: string;
   name?: string;
   required?: boolean;
+  requiredBgClassName?: string;
 }
 
 const DatePicker = ({
@@ -26,7 +27,8 @@ const DatePicker = ({
   label,
   id,
   name,
-  required = false
+  required = false,
+  requiredBgClassName = ''
 }: DatePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -237,7 +239,8 @@ const DatePicker = ({
             text-text placeholder:text-text-muted
             focus:outline-none focus:border-primary
             disabled:bg-surface disabled:text-text-muted
-            transition-all duration-150
+            transition-colors duration-200
+            ${requiredBgClassName}
             ${className}
           `}
         />

@@ -18,6 +18,7 @@ type SelectProps = {
   label?: string;
   placeholder?: string;
   error?: string;
+  requiredBgClassName?: string;
 };
 
 const Select = ({
@@ -32,6 +33,7 @@ const Select = ({
   label,
   placeholder,
   error,
+  requiredBgClassName = "",
 }: SelectProps) => {
   return (
     <div>
@@ -55,7 +57,9 @@ const Select = ({
           bg-foreground text-text
           focus:outline-none focus:border-primary
           disabled:bg-surface disabled:text-text-muted
+          transition-colors duration-200
           ${error ? "border-error" : "border-border"}
+          ${requiredBgClassName}
           ${className}
         `}>
         {placeholder && (

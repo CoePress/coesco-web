@@ -9,6 +9,7 @@ interface CheckboxProps {
   error?: string;
   disabled?: boolean;
   className?: string;
+  requiredBgClassName?: string;
 }
 
 const Checkbox = ({
@@ -20,9 +21,10 @@ const Checkbox = ({
   error,
   disabled = false,
   className = "",
+  requiredBgClassName = "",
 }: CheckboxProps) => {
   return (
-    <div className={`w-full flex items-center ${className}`}>
+    <div className={`w-full flex items-center ${requiredBgClassName ? `rounded p-2 transition-colors duration-200 ${requiredBgClassName}` : ''} ${className}`}>
       <input
         type="checkbox"
         id={name}
