@@ -641,12 +641,14 @@ export class AuthService {
 
     const hashedPassword = await hash(newPassword, 12);
 
-    await prisma.user.update({
-      where: { id: tokenRecord.userId },
-      data: { password: hashedPassword },
-    });
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: tokenRecord.userId },
+        data: { password: hashedPassword },
+      });
 
-    await prisma.token.delete({ where: { id: tokenRecord.id } });
+      await tx.token.delete({ where: { id: tokenRecord.id } });
+    });
 
     return {
       success: true,
