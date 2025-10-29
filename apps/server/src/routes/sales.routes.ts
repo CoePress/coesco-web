@@ -49,6 +49,12 @@ router.get("/quotes/:quoteId", quoteController.getQuote);
 router.patch("/quotes/:quoteId", quoteController.updateQuote);
 router.delete("/quotes/:quoteId", quoteController.deleteQuote);
 
+// Quote Items
+router.post("/quotes/:quoteId/items", quoteController.createQuoteItem);
+router.patch("/quotes/items/:itemId", quoteController.updateQuoteItem);
+router.patch("/quotes/items/:itemId/line-number", quoteController.updateQuoteItemLineNumber);
+router.delete("/quotes/items/:itemId", quoteController.deleteQuoteItem);
+
 // Revisions
 router.post("/quotes/:quoteId/revisions", quoteController.createRevision);
 router.get("/quotes/:quoteId/revisions", quoteController.getRevisions);

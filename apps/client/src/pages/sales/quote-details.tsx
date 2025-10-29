@@ -192,7 +192,7 @@ const QuoteDetails = () => {
   const fetchQuoteOverview = async () => {
     if (!quoteId) return;
     setOverviewLoading(true);
-    const response = await getQuoteOverview(`/quotes/${quoteId}`);
+    const response = await getQuoteOverview(`/sales/quotes/${quoteId}`);
     if (response?.success) {
       setQuoteOverview(response.data);
     }
@@ -202,7 +202,7 @@ const QuoteDetails = () => {
   const fetchRevisionOverview = async (revisionId: string) => {
     if (!quoteId) return;
     setOverviewLoading(true);
-    const response = await getQuoteOverview(`/quotes/${quoteId}/revisions/${revisionId}`);
+    const response = await getQuoteOverview(`/sales/quotes/${quoteId}/revisions/${revisionId}`);
     if (response?.success) {
       setQuoteOverview(response.data);
     }
@@ -211,7 +211,7 @@ const QuoteDetails = () => {
 
   const fetchRevisions = async () => {
     if (!quoteId) return;
-    const response = await getRevisions(`/quotes/${quoteId}/revisions`);
+    const response = await getRevisions(`/sales/quotes/${quoteId}/revisions`);
     if (response?.success) {
       const fetchedRevisions = response.data || [];
       setRevisions(fetchedRevisions);
@@ -264,13 +264,13 @@ const QuoteDetails = () => {
   const { patch: updateLineNumberApi } = useApi<IApiResponse<any>>();
   
   const updateLineNumber = async (itemId: string, lineNumber: number) => {
-    const response = await updateLineNumberApi(`/quotes/items/${itemId}/line-number`, { lineNumber });
+    const response = await updateLineNumberApi(`/sales/quotes/items/${itemId}/line-number`, { lineNumber });
     return response?.success ? response.data : null;
   };
   const { patch: updateQuoteItemApi } = useApi<IApiResponse<any>>();
-  
+
   const updateQuoteItem = async (id: string, data: any) => {
-    const response = await updateQuoteItemApi(`/quotes/items/${id}`, data);
+    const response = await updateQuoteItemApi(`/sales/quotes/items/${id}`, data);
     return response?.success ? response.data : null;
   };
 
@@ -972,7 +972,7 @@ const AddItemModal = ({
   const createQuoteItem = async (data: any) => {
     setAddItemLoading(true);
     setAddItemError(null);
-    const response = await createQuoteItemApi(`/quotes/${quoteId}/items`, data);
+    const response = await createQuoteItemApi(`/sales/quotes/${quoteId}/items`, data);
     setAddItemLoading(false);
     if (response?.success) {
       return response.data;
@@ -1328,7 +1328,7 @@ const SelectCompanyModal = ({
   const { get: getCompanies } = useApi<IApiResponse<any[]>>();
   
   const fetchCompanies = async () => {
-    const response = await getCompanies("/companies");
+    const response = await getCompanies("/sales/companies");
     if (response?.success) {
       setCompanies(response.data || []);
     }
@@ -1455,7 +1455,7 @@ const ApproveQuoteModal = ({
   const approveQuote = async (quoteId: string) => {
     setApproveQuoteLoading(true);
     setApproveQuoteError(null);
-    const response = await approveQuoteApi(`/quotes/${quoteId}/approve`);
+    const response = await approveQuoteApi(`/sales/quotes/${quoteId}/approve`);
     setApproveQuoteLoading(false);
     if (response?.success) {
       return response.data;
@@ -1566,7 +1566,7 @@ const SendQuoteModal = ({
   const sendQuote = async (quoteId: string) => {
     setSendQuoteLoading(true);
     setSendQuoteError(null);
-    const response = await sendQuoteApi(`/quotes/${quoteId}/send`);
+    const response = await sendQuoteApi(`/sales/quotes/${quoteId}/send`);
     setSendQuoteLoading(false);
     if (response?.success) {
       return response.data;
@@ -1637,7 +1637,7 @@ const CreateRevisionModal = ({
   const createQuoteRevision = async (quoteId: string) => {
     setCreateRevisionLoading(true);
     setCreateRevisionError(null);
-    const response = await createRevisionApi(`/quotes/${quoteId}/revision`);
+    const response = await createRevisionApi(`/sales/quotes/${quoteId}/revisions`);
     setCreateRevisionLoading(false);
     if (response?.success) {
       return response.data;
@@ -1712,7 +1712,7 @@ const DeleteItemModal = ({
     setDeleteItemLoading(true);
     setDeleteItemError(null);
     setDeleteItemSuccess(false);
-    const response = await deleteQuoteItemApi(`/quotes/items/${id}`);
+    const response = await deleteQuoteItemApi(`/sales/quotes/items/${id}`);
     setDeleteItemLoading(false);
     if (response?.success) {
       setDeleteItemSuccess(true);

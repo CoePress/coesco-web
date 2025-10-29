@@ -716,4 +716,106 @@ export class QuoteService {
       },
     };
   }
+
+  async createQuoteItem(quoteId: string, data: any) {
+    return await prisma.$transaction(async (tx) => {
+      const quoteResult = await quoteRepository.getById(quoteId, undefined, tx);
+
+      if (!quoteResult.success || !quoteResult.data) {
+        throw new Error("Quote not found");
+      }
+
+      const latestRevisionResult = await quoteRevisionRepository.getAll({
+        filter: { quoteId },
+        sort: "revision",
+        order: "desc",
+        limit: 1,
+      });
+
+      const latestRevision = latestRevisionResult.data?.[0];
+      if (!latestRevision) {
+        throw new Error("No revisions found for quote");
+      }
+
+      const existingItemsResult = await quoteItemRepository.getAll({
+        filter: { quoteRevisionId: latestRevision.id },
+      });
+
+      const maxLineNumber = existingItemsResult.data?.reduce(
+        (max: number, item: QuoteItem) => Math.max(max, item.lineNumber),
+        0,
+      ) || 0;
+
+      const itemResult = await quoteItemRepository.create({
+        ...data,
+        quoteRevisionId: latestRevision.id,
+        lineNumber: maxLineNumber + 1,
+      }, tx);
+
+      return itemResult;
+    });
+  }
+
+  async updateQuoteItem(itemId: string, data: any) {
+    return await quoteItemRepository.update(itemId, data);
+  }
+
+  async updateQuoteItemLineNumber(itemId: string, newLineNumber: number) {
+    return await prisma.$transaction(async (tx) => {
+      const itemResult = await quoteItemRepository.getById(itemId, undefined, tx);
+      if (!itemResult.success || !itemResult.data) {
+        throw new Error("Quote item not found");
+      }
+
+      const item = itemResult.data;
+      const oldLineNumber = item.lineNumber;
+
+      const allItemsResult = await quoteItemRepository.getAll({
+        filter: { quoteRevisionId: item.quoteRevisionId },
+      });
+
+      if (!allItemsResult.success || !allItemsResult.data) {
+        throw new Error("Failed to fetch items");
+      }
+
+      const sortedItems = allItemsResult.data
+        .filter((i: QuoteItem) => i.id !== itemId)
+        .sort((a: QuoteItem, b: QuoteItem) => a.lineNumber - b.lineNumber);
+
+      const updatedItems: Array<{ id: string; lineNumber: number }> = [];
+
+      if (newLineNumber > oldLineNumber) {
+        for (const otherItem of sortedItems) {
+          if (otherItem.lineNumber > oldLineNumber && otherItem.lineNumber <= newLineNumber) {
+            updatedItems.push({
+              id: otherItem.id,
+              lineNumber: otherItem.lineNumber - 1,
+            });
+          }
+        }
+      }
+      else if (newLineNumber < oldLineNumber) {
+        for (const otherItem of sortedItems) {
+          if (otherItem.lineNumber >= newLineNumber && otherItem.lineNumber < oldLineNumber) {
+            updatedItems.push({
+              id: otherItem.id,
+              lineNumber: otherItem.lineNumber + 1,
+            });
+          }
+        }
+      }
+
+      for (const update of updatedItems) {
+        await quoteItemRepository.update(update.id, { lineNumber: update.lineNumber }, tx);
+      }
+
+      const result = await quoteItemRepository.update(itemId, { lineNumber: newLineNumber }, tx);
+
+      return result;
+    });
+  }
+
+  async deleteQuoteItem(itemId: string) {
+    return await quoteItemRepository.delete(itemId);
+  }
 }
