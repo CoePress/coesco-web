@@ -13,6 +13,7 @@ export { AddContactModal } from "./modals/add-contact-modal";
 export { CreateCompanyModal } from "./modals/create-company-modal";
 export { AddJourneyContactModal } from "./modals/create-journey-contact-modal";
 export { default as AdvancedDropdown } from "./ui/advanced-dropdown";
+export { default as BottomSheet } from "./ui/bottom-sheet";
 export { default as Button } from "./ui/button";
 export { CameraUpload } from "./ui/camera-upload";
 export { default as Card } from "./ui/card";

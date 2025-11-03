@@ -30,6 +30,7 @@ type TableProps<T> = {
   loading?: boolean;
   emptyMessage?: string;
   error?: string | null;
+  mobileCardView?: boolean;
 };
 
 const Table = <T extends Record<string, any>>({
@@ -52,6 +53,7 @@ const Table = <T extends Record<string, any>>({
   loading = false,
   emptyMessage = "No records found",
   error,
+  mobileCardView = false,
 }: TableProps<T>) => {
   const handleToggleAll = () => {
     if (!onSelectionChange) return;
@@ -78,9 +80,120 @@ const Table = <T extends Record<string, any>>({
     onSortChange(columnKey, newOrder);
   };
 
+  const renderMobileCards = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-96">
+          <Loader />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex items-center justify-center h-96">
+          <p className="text-error">{error}</p>
+        </div>
+      );
+    }
+
+    if (data.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-96">
+          <p className="text-text-muted">{emptyMessage}</p>
+        </div>
+      );
+    }
+
+    return data.map((row) => {
+      const isDivider = (row as any).isPage || (row as any).isSection;
+
+      if (isDivider) {
+        const dividerClass = (row as any).dividerClass || "bg-surface";
+        return (
+          <div
+            key={String(row[idField])}
+            className={`${dividerClass} px-4 py-2 rounded-lg`}>
+            <div className="font-semibold text-text">
+              {(row as any).title}
+              {(row as any).description && (
+                <span className="text-text-muted text-sm ml-2 font-normal">
+                  - {(row as any).description}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div
+          key={String(row[idField])}
+          className={`bg-foreground rounded-lg p-4 ${
+            onRowClick ? "cursor-pointer active:bg-surface" : ""
+          }`}
+          style={{ boxShadow: "0 1px 3px var(--shadow)" }}
+          onClick={() => onRowClick?.(row)}>
+          {selectable && (
+            <div className="flex items-center gap-3 mb-3 pb-3 border-b border-border">
+              <input
+                type="checkbox"
+                className="h-5 w-5 rounded border-border"
+                checked={selectedItems.includes(row[idField])}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handleToggleRow(row[idField]);
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <span className="text-sm text-text-muted">Select</span>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {columns
+              .filter((col) => col.header.toLowerCase() !== "actions")
+              .map((column) => (
+                <div key={column.key} className="flex flex-col">
+                  <span className="text-xs uppercase text-text-muted font-medium mb-1">
+                    {column.header}
+                  </span>
+                  <span className="text-sm text-text">
+                    {column.render
+                      ? column.render(row[column.key], row)
+                      : row[column.key] || "-"}
+                  </span>
+                </div>
+              ))}
+
+            {columns.find((col) => col.header.toLowerCase() === "actions") && (
+              <div className="flex gap-2 pt-2 border-t border-border mt-2">
+                {columns
+                  .filter((col) => col.header.toLowerCase() === "actions")
+                  .map((column) => (
+                    <div key={column.key} className="flex-1">
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key]}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    });
+  };
+
   return (
     <div className={`flex-1 flex flex-col h-full ${className}`}>
-      <div className="flex-1 overflow-auto relative">
+      {mobileCardView && (
+        <div className="flex-1 overflow-auto p-2 space-y-2 md:hidden">
+          {renderMobileCards()}
+        </div>
+      )}
+
+      <div className={`flex-1 overflow-auto relative ${mobileCardView ? "hidden md:block" : ""}`}>
         <table
           className={`min-w-full text-text-muted text-sm ${
             (loading || data.length === 0) ? 'h-full' : ''
