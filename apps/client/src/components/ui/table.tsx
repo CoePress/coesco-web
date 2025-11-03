@@ -1,6 +1,6 @@
 import { Button, Loader } from "@/components";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export type TableColumn<T> = {
   key: string;
@@ -53,7 +53,21 @@ const Table = <T extends Record<string, any>>({
   emptyMessage = "No records found",
   error,
 }: TableProps<T>) => {
-  const [pageInput, setPageInput] = useState<string>(String(currentPage));
+  const [pageInput, setPageInput] = useState(currentPage.toString());
+
+  useEffect(() => {
+    setPageInput(currentPage.toString());
+  }, [currentPage]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const page = parseInt(pageInput);
+      if (page >= 1 && page <= totalPages && page !== currentPage) {
+        onPageChange?.(page);
+      }
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [pageInput, totalPages, currentPage, onPageChange]);
 
   const handleToggleAll = () => {
     if (!onSelectionChange) return;
@@ -79,31 +93,6 @@ const Table = <T extends Record<string, any>>({
     const newOrder = sort === columnKey && order === "asc" ? "desc" : "asc";
     onSortChange(columnKey, newOrder);
   };
-
-  const handlePageInputChange = (value: string) => {
-    if (value === "" || /^\d+$/.test(value)) {
-      setPageInput(value);
-    }
-  };
-
-  const handlePageInputSubmit = () => {
-    const pageNum = parseInt(pageInput);
-    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
-      onPageChange?.(pageNum);
-    } else {
-      setPageInput(String(currentPage));
-    }
-  };
-
-  const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handlePageInputSubmit();
-    }
-  };
-
-  useEffect(() => {
-    setPageInput(String(currentPage));
-  }, [currentPage]);
 
   return (
     <div className={`flex-1 flex flex-col h-full ${className}`}>
@@ -265,17 +254,17 @@ const Table = <T extends Record<string, any>>({
               disabled={currentPage === 1 || data.length === 0}>
               <ArrowLeftIcon size={16} />
             </Button>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 text-sm text-text-muted">
               <input
-                type="text"
+                type="number"
+                min={1}
+                max={totalPages}
                 value={pageInput}
-                onChange={(e) => handlePageInputChange(e.target.value)}
-                onBlur={handlePageInputSubmit}
-                onKeyDown={handlePageInputKeyDown}
-                className="w-12 text-center text-sm text-text bg-background border border-border rounded px-1 py-1 focus:outline-none focus:border-primary"
+                onChange={(e) => setPageInput(e.target.value)}
                 disabled={data.length === 0}
+                className="w-14 h-8 px-2 text-center bg-foreground border border-border rounded text-text focus:outline-none focus:border-primary [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
-              <span className="text-text-muted text-sm">of {totalPages}</span>
+              <span>of {totalPages}</span>
             </div>
             <Button
               variant="secondary-outline"

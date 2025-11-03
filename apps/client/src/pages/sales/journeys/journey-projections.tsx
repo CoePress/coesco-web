@@ -13,7 +13,9 @@ export const ProjectionsView = ({ journeys }: ProjectionsViewProps) => {
     const monthMap = new Map<string, { journeys: any[], weightedValue: number, totalValue: number }>();
 
     journeys.forEach(journey => {
+      if (!journey.expectedDecisionDate) return;
       const expectedDecisionDate = new Date(journey.expectedDecisionDate);
+      if (isNaN(expectedDecisionDate.getTime())) return;
       const monthKey = `${expectedDecisionDate.getFullYear()}-${String(expectedDecisionDate.getMonth() + 1).padStart(2, '0')}`;
       const monthLabel = expectedDecisionDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
       
@@ -45,7 +47,11 @@ export const ProjectionsView = ({ journeys }: ProjectionsViewProps) => {
         ...data,
         avgValuePerDeal: data.journeys.length > 0 ? data.totalValue / data.journeys.length : 0,
         avgDealAge: data.journeys.length > 0 ? (() => {
-          const journeysWithDates = data.journeys.filter(j => j.CreateDT);
+          const journeysWithDates = data.journeys.filter(j => {
+            if (!j.CreateDT) return false;
+            const date = new Date(j.CreateDT);
+            return !isNaN(date.getTime());
+          });
           if (journeysWithDates.length === 0) return 0;
           const totalAge = journeysWithDates.reduce((sum, j) => {
             const createdDate = new Date(j.CreateDT);
@@ -61,7 +67,11 @@ export const ProjectionsView = ({ journeys }: ProjectionsViewProps) => {
   const totalDeals = journeys.length;
   const avgValuePerDeal = totalDeals > 0 ? journeys.reduce((sum, j) => sum + Number(j.value ?? 0), 0) / totalDeals : 0;
   const avgDealAge = (() => {
-    const journeysWithDates = journeys.filter(j => j.CreateDT);
+    const journeysWithDates = journeys.filter(j => {
+      if (!j.CreateDT) return false;
+      const date = new Date(j.CreateDT);
+      return !isNaN(date.getTime());
+    });
     if (journeysWithDates.length === 0) return 0;
     const totalAge = journeysWithDates.reduce((sum, j) => {
       const createdDate = new Date(j.CreateDT);
@@ -73,6 +83,13 @@ export const ProjectionsView = ({ journeys }: ProjectionsViewProps) => {
 
   return (
     <div className="flex-1 min-h-0 w-full overflow-hidden flex flex-col">
+      {/* Note Banner */}
+      <div className="border-b px-6 py-3 bg-blue-50 dark:bg-blue-900/20">
+        <p className="text-sm text-blue-700 dark:text-blue-300">
+          <span className="font-semibold">Note:</span> Projections are being incorporated into the Dashboard
+        </p>
+      </div>
+
       {/* Summary Cards */}
       <div className="border-b px-6 py-4 bg-foreground">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -237,7 +237,7 @@ export const ListView = ({
       key: "updatedAt",
       header: "Last Activity",
       render: (value: string) => (
-        <div className="text-sm text-neutral-400">{formatDate(value)}</div>
+        <div className="text-sm text-neutral-400">{value ? formatDate(value) : "N/A"}</div>
       ),
     },
     {

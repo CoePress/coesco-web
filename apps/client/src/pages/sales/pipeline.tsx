@@ -194,6 +194,7 @@ const Pipeline = () => {
       CreateDT: normalizeDate(raw.CreateDT),
       Journey_Start_Date: normalizeDate(raw.Journey_Start_Date),
       Action_Date: raw.Action_Date,
+      updatedAt: normalizeDate(raw.Action_Date) ?? normalizeDate(raw.CreateDT),
       Expected_Decision_Date: raw.Expected_Decision_Date,
       Chance_To_Secure_order: raw.Chance_To_Secure_order,
       Industry: raw.Industry,
