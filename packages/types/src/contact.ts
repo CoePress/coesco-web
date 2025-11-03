@@ -8,6 +8,7 @@ export interface Contact {
   legacyCompanyId?: string;
   firstName: string;
   lastName?: string;
+  owner?: string;
   email?: string;
   phone?: string;
   phoneExtension?: string;

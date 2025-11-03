@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, memo, useEffect } from "react";
-import { MoreHorizontal, Eye, Trash2, Tags } from "lucide-react";
+import { MoreHorizontal, Eye, Tags } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
@@ -144,9 +144,11 @@ const JourneyCard = memo(({
           {journey.priority}
         </div>
       </div>
-      <div className="text-xs text-neutral-400">
-        Close date: {formatDate(journey.closeDate)}
-      </div>
+      {journey.expectedDecisionDate && (
+        <div className="text-xs text-neutral-400">
+          Expected decision: {formatDate(journey.expectedDecisionDate)}
+        </div>
+      )}
       {showTags && (
         <div className="mt-2">
           {tags.length > 0 ? (
@@ -166,8 +168,12 @@ const JourneyCard = memo(({
         </div>
       )}
       <div className="flex justify-between items-center mt-2 pt-2 border-t">
-        <div className="text-xs text-neutral-400">
-          Last activity: {formatDate(journey.updatedAt)}
+        <div className="flex flex-col flex-1 mr-2">
+          {journey.CreateDT && (
+            <div className="text-xs text-neutral-400">
+              Created: {formatDate(journey.CreateDT)}
+            </div>
+          )}
         </div>
         {!isDragging && (
           <div className="relative" ref={menuRef}>
@@ -211,17 +217,6 @@ const JourneyCard = memo(({
                 >
                   <Tags size={14} />
                   Add Tags
-                </button>
-                <button
-                  className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsMenuOpen(false);
-                    setShowDeleteConfirm(true);
-                  }}
-                >
-                  <Trash2 size={14} />
-                  Delete Journey
                 </button>
               </div>
             )}
