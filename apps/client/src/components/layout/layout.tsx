@@ -315,14 +315,14 @@ const Layout = ({ children }: LayoutProps) => {
 
         {/* Mobile Footer Menu */}
         <div className="md:hidden bg-foreground border-t border-border">
-          <nav className="flex items-center justify-around h-16 px-2">
+          <nav className="flex items-center h-16 px-2">
             <Link
               to="/"
-              className={`flex flex-col items-center gap-1 p-2 rounded transition-colors ${
+              className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded transition-colors min-w-0 ${
                 location.pathname === "/" ? "text-primary" : "text-text-muted"
               }`}>
-              <Home size={20} />
-              <span className="text-xs">Home</span>
+              <Home size={20} className="flex-shrink-0" />
+              <span className="text-xs truncate w-full text-center">Home</span>
             </Link>
 
             {currentModule?.pages?.slice(0, 3).map((page) => {
@@ -334,20 +334,20 @@ const Layout = ({ children }: LayoutProps) => {
                 <Link
                   key={page.slug || "index"}
                   to={trimmedPath}
-                  className={`flex flex-col items-center gap-1 p-2 rounded transition-colors ${
+                  className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded transition-colors min-w-0 ${
                     isActive ? "text-primary" : "text-text-muted"
                   }`}>
-                  {page.icon && <page.icon size={20} />}
-                  <span className="text-xs">{page.label}</span>
+                  {page.icon && <page.icon size={20} className="flex-shrink-0" />}
+                  <span className="text-xs truncate w-full text-center">{page.label}</span>
                 </Link>
               );
             })}
 
             <button
               onClick={toggleTheme}
-              className="flex flex-col items-center gap-1 p-2 rounded text-text-muted transition-colors">
-              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-              <span className="text-xs">Theme</span>
+              className="flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded text-text-muted transition-colors min-w-0">
+              {theme === "dark" ? <Sun size={20} className="flex-shrink-0" /> : <Moon size={20} className="flex-shrink-0" />}
+              <span className="text-xs truncate w-full text-center">Theme</span>
             </button>
           </nav>
         </div>

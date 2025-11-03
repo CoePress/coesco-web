@@ -57,7 +57,7 @@ const Forms = () => {
       header: "Form Name",
       className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/service/forms/${row.id}`}>{row.name || `Form ${row.id.slice(-8)}`}</Link>
+        <Link to={`${row.id}`}>{row.name || `Form ${row.id.slice(-8)}`}</Link>
       ),
     },
     {
@@ -75,11 +75,9 @@ const Forms = () => {
       header: "Created By",
       render: (_, row) =>
         row.createdBy ? (
-          <Link
-            to={`/service/team/${row.createdBy.id}?tab=forms`}
-            className="hover:underline">
+          <span className="text-text">
             {`${row.createdBy.firstName} ${row.createdBy.lastName}`}
-          </Link>
+          </span>
         ) : (
           "-"
         ),
@@ -169,6 +167,7 @@ const Forms = () => {
           }}
           className="rounded border overflow-clip"
           emptyMessage="No forms found"
+          mobileCardView={true}
         />
       </div>
 
