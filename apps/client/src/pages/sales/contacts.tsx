@@ -16,6 +16,7 @@ import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
+import { fetchAvailableRsms, Employee } from "@/pages/sales/journeys/utils";
 
 const DEBOUNCE_MS = 200;
 
@@ -79,6 +80,8 @@ const Contacts = () => {
     phoneNumber: true,
     email: true,
   });
+  const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
+  const [selectedOwner, setSelectedOwner] = useState<string>("all");
 
   const api = useApi();
   const currentSearchRef = useRef<string>("");
@@ -241,6 +244,12 @@ const Contacts = () => {
         params.fuzzyThreshold = 0.25;
       }
 
+      if (selectedOwner !== "all") {
+        params.filter = JSON.stringify({
+          owner: selectedOwner
+        });
+      }
+
       const rawContacts = await api.get("/sales/contacts", params, signal ? { signal } : undefined);
 
       if (currentSearchRef.current !== searchSnapshot) return;
@@ -276,7 +285,7 @@ const Contacts = () => {
         setIsLoading(false);
       }
     }
-  }, [api, page, limit, sort, order, debouncedSearchTerm]);
+  }, [api, page, limit, sort, order, debouncedSearchTerm, selectedOwner]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -290,11 +299,22 @@ const Contacts = () => {
     const abortController = new AbortController();
     fetchAllContacts(abortController.signal);
     return () => abortController.abort();
-  }, [page, limit, sort, order, debouncedSearchTerm]);
+  }, [page, limit, sort, order, debouncedSearchTerm, selectedOwner]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, selectedOwner]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const rsms = await fetchAvailableRsms(api);
+      if (!cancelled) {
+        setAvailableRsms(rsms);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleContactAdded = () => {
     fetchAllContacts();
@@ -480,18 +500,33 @@ const Contacts = () => {
       {viewMode === "list" && (
         <>
           <div className="px-6 py-4 border-b flex-shrink-0">
-            <div className="relative max-w-md">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search contacts..."
-                className="w-full px-3 py-2 pr-9 text-sm text-text border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-text-muted"
-                autoComplete="no"
-              />
-              {isLoading && debouncedSearchTerm && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-text-muted" size={16} />
-              )}
+            <div className="flex gap-4 items-center">
+              <div className="relative flex-1 max-w-md">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Search contacts..."
+                  className="w-full px-3 py-2 pr-9 text-sm text-text border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-text-muted"
+                  autoComplete="no"
+                />
+                {isLoading && debouncedSearchTerm && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-text-muted" size={16} />
+                )}
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs text-text-muted mb-1">Contact Owner</label>
+                <select
+                  value={selectedOwner}
+                  onChange={(e) => setSelectedOwner(e.target.value)}
+                  className="px-3 py-2 text-sm text-text bg-foreground border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                >
+                  <option value="all">All Owners</option>
+                  {availableRsms.map(rsm => (
+                    <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 

@@ -22,13 +22,15 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ExcelJS from "exceljs";
 
-import { Button } from "@/components";
+import { Button, Select } from "@/components";
 import { formatCurrency } from "@/utils";
 import PageHeader from "@/components/layout/page-header";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
 import { useApi } from "@/hooks/use-api";
 import { STAGES } from "./journeys/constants";
 import DatePicker from "@/components/ui/date-picker";
+import { useAuth } from "@/contexts/auth.context";
+import { fetchAvailableRsms, Employee } from "./journeys/utils";
 
 type StageId = (typeof STAGES)[number]["id"];
 
@@ -52,6 +54,11 @@ const SalesDashboard = () => {
   const [showMetricInfo, setShowMetricInfo] = useState(false);
   const api = useApi();
   const navigate = useNavigate();
+  const { employee } = useAuth();
+  const [rsmFilter, setRsmFilter] = useState<string>("");
+  const [rsmFilterDisplay, setRsmFilterDisplay] = useState<string>("");
+  const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
+  const [rsmDisplayNames, setRsmDisplayNames] = useState<Map<string, string>>(new Map());
 
   const getDefaultStartDate = () => {
     const date = new Date();
@@ -91,6 +98,14 @@ const SalesDashboard = () => {
           });
         }
 
+        if (rsmFilter) {
+          filterConditions.push({
+            field: "RSM",
+            operator: "contains",
+            value: rsmFilter
+          });
+        }
+
         const params: any = {
           limit: 10000,
           sort: "Journey_Start_Date",
@@ -127,7 +142,22 @@ const SalesDashboard = () => {
     };
 
     fetchData();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, rsmFilter]);
+
+  useEffect(() => {
+    const loadRsms = async () => {
+      const rsms = await fetchAvailableRsms({ get: api.get });
+      if (rsms.length > 0) {
+        setAvailableRsms(rsms);
+        const displayNamesMap = new Map<string, string>();
+        rsms.forEach(rsm => {
+          displayNamesMap.set(rsm.initials, `${rsm.name} (${rsm.initials})`);
+        });
+        setRsmDisplayNames(displayNamesMap);
+      }
+    };
+    loadRsms();
+  }, []);
 
   const companiesById = new Map(companies.map(c => [c.Company_ID, c]));
 
@@ -147,7 +177,14 @@ const SalesDashboard = () => {
   const conversionRate = closedJourneys.length > 0 ? (wonJourneys.length / (wonJourneys.length + lostJourneys.length)) * 100 : 0;
 
   // Calculate performance data based on selected timeframe
-  const monthlyData = [];
+  const monthlyData: Array<{
+    month: string;
+    sales: number;
+    quotes: number;
+    conversion: number;
+    journeys: number;
+    year: number;
+  }> = [];
 
   if (timeframe === 'daily') {
     const start = new Date(startDate);
@@ -198,7 +235,8 @@ const SalesDashboard = () => {
         sales: daySales,
         quotes: dayQuotes * 1000,
         conversion: Math.round(dayConversion),
-        journeys: dayJourneysWithValue
+        journeys: dayJourneysWithValue,
+        year: d.getFullYear()
       });
     }
   } else if (timeframe === 'weekly') {
@@ -245,7 +283,8 @@ const SalesDashboard = () => {
         sales: weekSales,
         quotes: weekQuotes * 1000,
         conversion: Math.round(weekConversion),
-        journeys: weekJourneysWithValue
+        journeys: weekJourneysWithValue,
+        year: weekStart.getFullYear()
       });
 
       weekStart.setDate(weekStart.getDate() + 7);
@@ -291,7 +330,8 @@ const SalesDashboard = () => {
         sales: monthSales,
         quotes: monthQuotes * 1000,
         conversion: Math.round(monthConversion),
-        journeys: monthJourneysWithValue
+        journeys: monthJourneysWithValue,
+        year: currentMonth.getFullYear()
       });
 
       currentMonth.setMonth(currentMonth.getMonth() + 1);
@@ -340,9 +380,9 @@ const SalesDashboard = () => {
   
   const kpis = [
     {
-      title: "Total Revenue",
+      title: "Order Intake",
       value: formatCurrency(totalRevenue, false),
-      description: "Revenue from won journeys in range",
+      description: "Total value of won journeys in range",
       icon: <DollarSign size={16} />,
     },
     {
@@ -383,6 +423,14 @@ const SalesDashboard = () => {
           field: "Journey_Start_Date",
           operator: "lte",
           value: endDate
+        });
+      }
+
+      if (rsmFilter) {
+        filterConditions.push({
+          field: "RSM",
+          operator: "contains",
+          value: rsmFilter
         });
       }
 
@@ -440,7 +488,7 @@ const SalesDashboard = () => {
         { name: "Value", filterButton: false },
       ],
       rows: [
-        ["Total Revenue", formatCurrency(totalRevenue, false)],
+        ["Order Intake", formatCurrency(totalRevenue, false)],
         ["Conversion Rate", `${Math.round(conversionRate)}%`],
         ["Active Journeys", totalJourneysWithValue],
       ],
@@ -542,6 +590,44 @@ const SalesDashboard = () => {
   const Actions = () => {
     return (
       <div className="flex gap-2 items-center">
+        <Select
+          value={(() => {
+            if (rsmFilterDisplay === 'my-journeys' || rsmFilterDisplay === "") return rsmFilterDisplay;
+
+            if (rsmDisplayNames) {
+              for (const [initials, displayName] of rsmDisplayNames) {
+                if (displayName === rsmFilterDisplay) return initials;
+              }
+            }
+            return rsmFilterDisplay;
+          })()}
+          onChange={(e) => {
+            if (e.target.value === 'my-journeys') {
+              const userInitials = employee?.number;
+              setRsmFilter(userInitials || "");
+              setRsmFilterDisplay('my-journeys');
+            } else if (e.target.value === "") {
+              setRsmFilter("");
+              setRsmFilterDisplay("");
+            } else {
+              const initials = e.target.value;
+              setRsmFilter(initials);
+              setRsmFilterDisplay(rsmDisplayNames?.get(initials) || initials);
+            }
+          }}
+          options={(() => {
+            const baseOptions = [
+              { value: "", label: "All RSMs" },
+              { value: "my-journeys", label: "My Journeys" }
+            ];
+            const rsmOptions = availableRsms.map((rsm: Employee) => ({
+              value: rsm.initials,
+              label: rsmDisplayNames?.get(rsm.initials) || rsm.name
+            }));
+            return [...baseOptions, ...rsmOptions];
+          })()}
+          className="w-48"
+        />
         <div className="flex gap-2 items-center">
           <span className="text-sm text-text-muted">Start:</span>
           <DatePicker
@@ -732,6 +818,13 @@ const SalesDashboard = () => {
                     color: "var(--text-muted)",
                     border: "1px solid var(--border)",
                     borderRadius: "4px",
+                  }}
+                  labelFormatter={(label) => {
+                    const dataPoint = monthlyData.find(d => d.month === label);
+                    if (dataPoint?.year) {
+                      return `${label} ${dataPoint.year}`;
+                    }
+                    return label;
                   }}
                   formatter={(value, name) => {
                     const numValue = Number(value);

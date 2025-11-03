@@ -50,6 +50,7 @@ const CreateContactSchema = z.object({
   legacyCompanyId: z.string().nullable().optional(),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().nullable().optional(),
+  owner: z.string().nullable().optional(),
   email: z.union([z.string().email(), z.literal(""), z.null()]).optional(),
   phone: z.string().nullable().optional(),
   phoneExtension: z.string().nullable().optional(),
