@@ -1,4 +1,5 @@
 import { Button, Loader } from "@/components";
+import Input from "@/components/ui/input";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -65,7 +66,7 @@ const Table = <T extends Record<string, any>>({
       if (page >= 1 && page <= totalPages && page !== currentPage) {
         onPageChange?.(page);
       }
-    }, 350);
+    }, 400);
     return () => clearTimeout(timeout);
   }, [pageInput, totalPages, currentPage, onPageChange]);
 
@@ -255,15 +256,17 @@ const Table = <T extends Record<string, any>>({
               <ArrowLeftIcon size={16} />
             </Button>
             <div className="flex items-center gap-1 text-sm text-text-muted">
-              <input
-                type="number"
-                min={1}
-                max={totalPages}
-                value={pageInput}
-                onChange={(e) => setPageInput(e.target.value)}
-                disabled={data.length === 0}
-                className="w-14 h-8 px-2 text-center bg-foreground border border-border rounded text-text focus:outline-none focus:border-primary [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
+              <div className="w-15">
+                <Input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  disabled={data.length === 0}
+                  className="text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              </div>
               <span>of {totalPages}</span>
             </div>
             <Button
