@@ -18,6 +18,8 @@ type InputProps = {
   max?: number;
   autoComplete?: string;
   requiredBgClassName?: string;
+  checkBorderClassName?: string;
+  checkIconPrefix?: string;
 };
 
 const Input = ({
@@ -38,6 +40,8 @@ const Input = ({
   max,
   autoComplete,
   requiredBgClassName = "",
+  checkBorderClassName = "",
+  checkIconPrefix = "",
 }: InputProps) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (type === "number") {
@@ -70,7 +74,7 @@ const Input = ({
       <input
         type={type}
         placeholder={placeholder}
-        value={value}
+        value={checkIconPrefix && value ? `${checkIconPrefix}${value}` : value}
         onChange={onChange}
         onBlur={onBlur}
         onKeyDown={handleKeyDown}
@@ -91,6 +95,7 @@ const Input = ({
           transition-colors duration-200
           ${error ? "border-error" : "border-border"}
           ${requiredBgClassName}
+          ${checkBorderClassName}
           ${className}
         `}
       />

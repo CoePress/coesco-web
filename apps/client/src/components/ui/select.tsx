@@ -19,6 +19,8 @@ type SelectProps = {
   placeholder?: string;
   error?: string;
   requiredBgClassName?: string;
+  checkBorderClassName?: string;
+  checkIconPrefix?: string;
 };
 
 const Select = ({
@@ -34,6 +36,8 @@ const Select = ({
   placeholder,
   error,
   requiredBgClassName = "",
+  checkBorderClassName = "",
+  checkIconPrefix = "",
 }: SelectProps) => {
   return (
     <div>
@@ -60,12 +64,14 @@ const Select = ({
           transition-colors duration-200
           ${error ? "border-error" : "border-border"}
           ${requiredBgClassName}
+          ${checkBorderClassName}
           ${className}
         `}>
         {placeholder && (
           <option
             value=""
-            disabled>
+            disabled
+            className="bg-foreground text-text-muted">
             {placeholder}
           </option>
         )}
@@ -73,7 +79,8 @@ const Select = ({
           <option
             key={option.value}
             value={option.value}
-            disabled={option.disabled}>
+            disabled={option.disabled}
+            className="bg-foreground text-text">
             {option.label}
           </option>
         ))}

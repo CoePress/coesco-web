@@ -58,6 +58,7 @@
     @apply border-border;
     font-family: "Roboto Mono", monospace;
   }
+
   body {
     @apply bg-background text-text;
   }
@@ -67,8 +68,13 @@
   .bg-error-light {
     background-color: color-mix(in srgb, var(--error) 10%, transparent);
   }
+
   .bg-success-light {
     background-color: color-mix(in srgb, var(--success) 10%, transparent);
+  }
+
+  .bg-warning-light {
+    background-color: color-mix(in srgb, var(--warning) 10%, transparent);
   }
 }
 
@@ -126,4 +132,22 @@ div[style*="overflow"],
 .scrollable-element {
   scrollbar-width: thin;
   scrollbar-color: var(--border) var(--background);
+}
+
+/* Select dropdown option styling */
+select option {
+  background-color: var(--foreground);
+  color: var(--text);
+  padding: 8px 12px;
+}
+
+select option:checked,
+select option:hover {
+  background-color: var(--primary);
+  color: var(--foreground);
+}
+
+select option:disabled {
+  background-color: var(--surface);
+  color: var(--text-muted);
 }

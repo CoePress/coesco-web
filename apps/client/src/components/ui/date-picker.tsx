@@ -14,6 +14,8 @@ interface DatePickerProps {
   name?: string;
   required?: boolean;
   requiredBgClassName?: string;
+  checkBorderClassName?: string;
+  checkIconPrefix?: string;
 }
 
 const DatePicker = ({
@@ -28,7 +30,9 @@ const DatePicker = ({
   id,
   name,
   required = false,
-  requiredBgClassName = ''
+  requiredBgClassName = '',
+  checkBorderClassName = '',
+  checkIconPrefix = ''
 }: DatePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -241,6 +245,7 @@ const DatePicker = ({
             disabled:bg-surface disabled:text-text-muted
             transition-colors duration-200
             ${requiredBgClassName}
+            ${checkBorderClassName}
             ${className}
           `}
         />

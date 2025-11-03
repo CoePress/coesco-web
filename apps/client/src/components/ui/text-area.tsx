@@ -13,6 +13,8 @@ interface TextareaProps {
   placeholder?: string;
   autoComplete?: string;
   requiredBgClassName?: string;
+  checkBorderClassName?: string;
+  checkIconPrefix?: string;
 }
 
 const Textarea = ({
@@ -30,6 +32,8 @@ const Textarea = ({
   placeholder = "",
   autoComplete,
   requiredBgClassName = "",
+  checkBorderClassName = "",
+  checkIconPrefix = "",
 }: TextareaProps) => {
   return (
     <div className="w-full">
@@ -45,7 +49,7 @@ const Textarea = ({
       <textarea
         name={name}
         id={id || name}
-        value={value}
+        value={checkIconPrefix && value ? `${checkIconPrefix}${value}` : value}
         onChange={onChange}
         onBlur={onBlur}
         required={required}
@@ -53,7 +57,7 @@ const Textarea = ({
         rows={rows}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className={`w-full text-sm px-3 py-1.5 rounded border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-foreground text-text disabled:bg-surface disabled:text-text-muted transition-colors duration-200 ${error ? "border-error" : "border-border"} ${requiredBgClassName} ${className}`}
+        className={`w-full text-sm px-3 py-1.5 rounded border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-foreground text-text disabled:bg-surface disabled:text-text-muted transition-colors duration-200 ${error ? "border-error" : "border-border"} ${requiredBgClassName} ${checkBorderClassName} ${className}`}
       />
       {error && <p className="mt-1 text-sm text-error">{error}</p>}
     </div>

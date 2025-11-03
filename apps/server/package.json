@@ -14,6 +14,7 @@
     "db:migrate:status": "npx prisma migrate status",
     "db:reset": "npx prisma migrate reset",
     "pipeline": "tsx src/scripts/data-pipeline.ts",
+    "update-performance-template": "tsx src/scripts/update-performance-template.ts",
     "swagger": "tsx src/utils/swagger.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",

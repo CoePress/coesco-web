@@ -8,6 +8,7 @@ import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, C
 import { useToast } from "@/hooks/use-toast";
 import { ms } from "@/utils";
 import Loader from "@/components/ui/loader";
+import { getVisibleTabs } from "@/utils/tab-visibility";
 
 type PerformanceTabValue = string;
 type ModalType = 'links' | 'save-confirmation' | 'cancel-confirmation' | 'continue' | 'delete-link' | 'create-link' | null;
@@ -91,6 +92,67 @@ const PerformanceSheet = () => {
     return false;
   };
 
+  const isCheckField = (fieldId: string): boolean => {
+    const lowerFieldId = fieldId.toLowerCase();
+    return lowerFieldId.includes('check') || lowerFieldId.endsWith('ok');
+  };
+
+  const getCheckStatus = (value: any): 'pass' | 'fail' | 'pending' => {
+    if (!value || value === '') return 'pending';
+    const strValue = String(value).trim().toLowerCase();
+
+    if (strValue === 'ok' || strValue === 'pass' || strValue === 'yes' ||
+      strValue === 'true' || strValue === '✓' || strValue === 'valid') {
+      return 'pass';
+    }
+
+    if (strValue === 'fail' || strValue === 'no' || strValue === 'false' ||
+      strValue === '✗' || strValue === 'error' || strValue === 'not ok' ||
+      strValue === 'too small' || strValue === 'too large' || strValue === 'invalid') {
+      return 'fail';
+    }
+
+    return 'pending';
+  };
+
+  const getSectionCheckStats = (section: any) => {
+    const checkFields = section.fields?.filter((f: any) => isCheckField(f.id)) || [];
+    if (checkFields.length === 0) return null;
+
+    let passed = 0, failed = 0, pending = 0;
+
+    checkFields.forEach((field: any) => {
+      const value = getNestedValue(formData, field.id);
+      const status = getCheckStatus(value);
+      if (status === 'pass') passed++;
+      else if (status === 'fail') failed++;
+      else pending++;
+    });
+
+    return { total: checkFields.length, passed, failed, pending };
+  };
+
+  const getTabCheckStats = (tabValue: string) => {
+    const tab = performanceSheet?.data?.version?.sections?.find((t: any) => t.value === tabValue);
+    if (!tab) return null;
+
+    let totalPassed = 0, totalFailed = 0, totalPending = 0;
+
+    tab.sections?.forEach((section: any) => {
+      const stats = getSectionCheckStats(section);
+      if (stats) {
+        totalPassed += stats.passed;
+        totalFailed += stats.failed;
+        totalPending += stats.pending;
+      }
+    });
+
+    const total = totalPassed + totalFailed + totalPending;
+    if (total === 0) return null;
+
+    return { total, passed: totalPassed, failed: totalFailed, pending: totalPending };
+  };
+
   const storageKey = useMemo(() => `performance-sheet-${performanceSheetId}`, [performanceSheetId]);
 
   const saveToLocalStorage = (values: Record<string, any>) => {
@@ -124,13 +186,46 @@ const PerformanceSheet = () => {
 
   const visibleTabs = useMemo(() => {
     if (!performanceSheet?.data?.version?.sections) return [];
+
+    const allowedTabs = getVisibleTabs(formData);
+    const allowedTabValues = new Set(allowedTabs.map(t => t.value));
+
     return performanceSheet.data.version.sections
+      .filter((tab: any) => allowedTabValues.has(tab.value))
       .sort((a: any, b: any) => a.sequence - b.sequence)
-      .map((tab: any) => ({
-        label: tab.label,
-        value: tab.value,
-      }));
-  }, [performanceSheet]);
+      .map((tab: any) => {
+        const stats = getTabCheckStats(tab.value);
+        let badge = undefined;
+
+        if (stats && stats.total > 0) {
+          if (stats.failed > 0) {
+            badge = { type: 'fail' as const, text: `${stats.failed} ✗` };
+          } else if (stats.pending > 0) {
+            badge = { type: 'partial' as const, text: `${stats.passed}/${stats.total}` };
+          } else {
+            badge = { type: 'pass' as const, text: '✓' };
+          }
+        }
+
+        const allowedTab = allowedTabs.find(t => t.value === tab.value);
+        const displayLabel = allowedTab?.dynamicLabel || tab.label;
+
+        return {
+          label: displayLabel,
+          value: tab.value,
+          badge,
+        };
+      });
+  }, [
+    performanceSheet,
+    formData,
+    formData?.feed?.feed?.application,
+    formData?.common?.equipment?.feed?.lineType,
+    formData?.feed?.feed?.pullThru?.isPullThru,
+    formData?.common?.equipment?.feed?.typeOfLine,
+    formData?.materialSpecs?.straightener?.selectRoll,
+    formData?.rollStrBackbend?.straightener?.rolls?.typeOfRoll
+  ]);
 
   const activeTabData = useMemo(() => {
     if (!performanceSheet?.data?.version?.sections || !activeTab) return null;
@@ -220,6 +315,15 @@ const PerformanceSheet = () => {
     }
   }, [performanceSheet]);
 
+  useEffect(() => {
+    if (activeTab && visibleTabs.length > 0) {
+      const isActiveTabVisible = visibleTabs.some((tab: any) => tab.value === activeTab);
+      if (!isActiveTabVisible) {
+        setActiveTab(visibleTabs[0].value);
+      }
+    }
+  }, [activeTab, visibleTabs]);
+
   const hasChanges = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(originalData);
   }, [formData, originalData]);
@@ -293,8 +397,139 @@ const PerformanceSheet = () => {
     return unsubscribe;
   }, [onLockChanged, performanceSheetId, user?.id, isEditing]);
 
+  const getDynamicOptions = (fieldId: string, field: any) => {
+    // Return static options if no dynamic logic needed
+    if (fieldId !== "common.equipment.feed.lineType" && fieldId !== "feed.feed.pullThru.isPullThru") {
+      return field.options || [];
+    }
+
+    const applicationValue = getNestedValue(formData, "feed.feed.application");
+    const lineTypeValue = getNestedValue(formData, "common.equipment.feed.lineType");
+
+    // Dynamic Line Type Options
+    if (fieldId === "common.equipment.feed.lineType") {
+      if (applicationValue === "Standalone") {
+        // Use standalone options when application is Standalone
+        return [
+          { value: "Feed", label: "Feed" },
+          { value: "Straightener", label: "Straightener" },
+          { value: "Reel-Motorized", label: "Reel-Motorized" },
+          { value: "Reel-Pull Off", label: "Reel-Pull Off" },
+          { value: "Straightener-Reel Combination", label: "Straightener-Reel Combination" },
+          { value: "Other", label: "Other" },
+          { value: "Feed-Shear", label: "Feed-Shear" },
+          { value: "Threading Table", label: "Threading Table" },
+        ];
+      } else if (applicationValue === "Press Feed" || applicationValue === "Cut to Length") {
+        // Use conventional/compact options for Press Feed and Cut to Length
+        return [
+          { value: "Conventional", label: "Conventional" },
+          { value: "Compact", label: "Compact" },
+        ];
+      }
+      return field.options || [];
+    }
+
+    // Dynamic Pull Through Options
+    if (fieldId === "feed.feed.pullThru.isPullThru") {
+      if (applicationValue === "Press Feed" || applicationValue === "Cut to Length") {
+        // For Press Feed and Cut to Length
+        if (lineTypeValue === "Compact") {
+          return [
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+          ];
+        } else if (lineTypeValue === "Conventional") {
+          return [
+            { value: "no", label: "No" },
+          ];
+        }
+      } else if (applicationValue === "Standalone") {
+        // For Standalone, only show Yes/No for specific line types
+        if (lineTypeValue === "Feed" || lineTypeValue === "Feed-Shear" || lineTypeValue === "Other") {
+          return [
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+          ];
+        } else {
+          // For other standalone line types, no pull through options
+          return [];
+        }
+      }
+      return field.options || [];
+    }
+
+    return field.options || [];
+  };
+
   const handleFieldChange = (fieldId: string, value: any) => {
-    const updatedData = setNestedValue(formData, fieldId, value);
+    let updatedData = setNestedValue(formData, fieldId, value);
+
+    // Handle dependent field logic when application changes
+    if (fieldId === "feed.feed.application") {
+      const currentLineType = getNestedValue(updatedData, "common.equipment.feed.lineType");
+      const currentPullThru = getNestedValue(updatedData, "feed.feed.pullThru.isPullThru");
+
+      // Clear line type if it's not valid for the new application
+      if (value === "Standalone") {
+        // For Standalone, check if current line type is valid
+        const validStandaloneTypes = ["Feed", "Straightener", "Reel-Motorized", "Reel-Pull Off", "Straightener-Reel Combination", "Other", "Feed-Shear", "Threading Table"];
+        if (currentLineType && !validStandaloneTypes.includes(currentLineType)) {
+          updatedData = setNestedValue(updatedData, "common.equipment.feed.lineType", "");
+        }
+      } else if (value === "Press Feed" || value === "Cut to Length") {
+        // For Press Feed/Cut to Length, check if current line type is valid
+        const validConventionalTypes = ["Conventional", "Compact"];
+        if (currentLineType && !validConventionalTypes.includes(currentLineType)) {
+          updatedData = setNestedValue(updatedData, "common.equipment.feed.lineType", "");
+        }
+      }
+
+      // Clear pull through if it's not valid for the new application/line type combination
+      if (currentPullThru) {
+        // This will be validated in the next field change when line type is processed
+        updatedData = setNestedValue(updatedData, "feed.feed.pullThru.isPullThru", "no");
+      }
+    }
+
+    // Handle dependent field logic when line type changes
+    if (fieldId === "common.equipment.feed.lineType") {
+      const applicationValue = getNestedValue(updatedData, "feed.feed.application");
+      const currentPullThru = getNestedValue(updatedData, "feed.feed.pullThru.isPullThru");
+
+      if (currentPullThru) {
+        let shouldClearPullThru = false;
+
+        if (applicationValue === "Press Feed" || applicationValue === "Cut to Length") {
+          // For Press Feed/Cut to Length with Conventional, only "no" is allowed
+          if (value === "Conventional" && currentPullThru === "yes") {
+            shouldClearPullThru = true;
+          }
+        } else if (applicationValue === "Standalone") {
+          // For Standalone, only specific line types allow pull through
+          const allowedPullThruTypes = ["Feed", "Feed-Shear", "Other"];
+          if (!allowedPullThruTypes.includes(value)) {
+            shouldClearPullThru = true;
+          }
+        }
+
+        if (shouldClearPullThru) {
+          // For standalone types that don't support pull through, clear the field
+          if (applicationValue === "Standalone") {
+            const allowedPullThruTypes = ["Feed", "Feed-Shear", "Other"];
+            if (!allowedPullThruTypes.includes(value)) {
+              updatedData = setNestedValue(updatedData, "feed.feed.pullThru.isPullThru", "");
+            } else {
+              updatedData = setNestedValue(updatedData, "feed.feed.pullThru.isPullThru", "no");
+            }
+          } else {
+            // For Press Feed/Cut to Length with Conventional, set to "no"
+            updatedData = setNestedValue(updatedData, "feed.feed.pullThru.isPullThru", "no");
+          }
+        }
+      }
+    }
+
     setFormData(updatedData);
 
     if (isPerformanceConnected && performanceSheet?.data?.version?.sections) {
@@ -531,17 +766,31 @@ const PerformanceSheet = () => {
   const renderField = (field: any) => {
     const value = getNestedValue(formData, field.id) ?? "";
     const isFilled = isFieldFilled(value, field.type);
-    const requiredBgClassName = field.required && isEditing
+    const isCheck = isCheckField(field.id);
+    const checkStatus = isCheck ? getCheckStatus(value) : null;
+
+    const requiredBgClassName = field.required && isEditing && !isCheck
       ? (isFilled ? 'bg-success-light' : 'bg-error-light')
       : '';
+
+    const checkBorderClassName = isCheck && checkStatus !== 'pending'
+      ? (checkStatus === 'pass' ? 'border-l-4 border-l-success' : 'border-l-4 border-l-error')
+      : '';
+
+    const checkIconPrefix = isCheck && checkStatus !== 'pending'
+      ? (checkStatus === 'pass' ? '✓ ' : '✗ ')
+      : '';
+
     const commonProps = {
       id: field.id,
       name: field.id,
       label: field.label,
       required: field.required || false,
-      disabled: !isEditing,
+      disabled: !isEditing || isCheck,
       autoComplete: "off",
       requiredBgClassName,
+      checkBorderClassName,
+      checkIconPrefix,
     };
 
     const getSizeClass = () => {
@@ -588,12 +837,13 @@ const PerformanceSheet = () => {
             />
           );
         case "select":
+          const dynamicOptions = getDynamicOptions(field.id, field);
           return (
             <Select
               {...commonProps}
               value={value}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              options={field.options || []}
+              options={dynamicOptions}
             />
           );
         case "checkbox":
@@ -1036,6 +1286,23 @@ const PerformanceSheet = () => {
                       <span className={`text-sm ${filledFields === totalFields ? 'text-success' : 'text-error'}`}>
                         {filledFields}/{totalFields}
                       </span>
+                      {(() => {
+                        const checkStats = getSectionCheckStats(section);
+                        if (!checkStats) return null;
+
+                        return (
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium border ${checkStats.failed > 0
+                            ? 'bg-error/10 text-error border-error/30'
+                            : checkStats.pending > 0
+                              ? 'bg-warning/10 text-warning border-warning/30'
+                              : 'bg-success/10 text-success border-success/30'
+                            }`}>
+                            {checkStats.failed > 0 ? `${checkStats.failed} ✗` :
+                              checkStats.pending > 0 ? `${checkStats.passed}/${checkStats.total} ✓` :
+                                `${checkStats.total} ✓`}
+                          </span>
+                        );
+                      })()}
                       <button
                         type="button"
                         onClick={() => toggleSection(section.id)}
@@ -1069,7 +1336,7 @@ const PerformanceSheet = () => {
 
       <Modal
         isOpen={modalType !== null}
-        onClose={modalType === 'continue' ? () => {} : closeModal}
+        onClose={modalType === 'continue' ? () => { } : closeModal}
         title={getModalConfig().title}
         size={getModalConfig().size}
         overflow={getModalConfig().overflow}>
