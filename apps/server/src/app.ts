@@ -28,7 +28,7 @@ const corsOptions = {
   origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-File-Name"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-File-Name", "Idempotency-Key"],
   exposedHeaders: ["Content-Range", "X-Content-Range", "Content-Length", "Content-Disposition"],
 };
 
