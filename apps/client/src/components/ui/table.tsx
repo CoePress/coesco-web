@@ -1,5 +1,6 @@
 import { Button, Loader } from "@/components";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export type TableColumn<T> = {
   key: string;
@@ -52,6 +53,8 @@ const Table = <T extends Record<string, any>>({
   emptyMessage = "No records found",
   error,
 }: TableProps<T>) => {
+  const [pageInput, setPageInput] = useState<string>(String(currentPage));
+
   const handleToggleAll = () => {
     if (!onSelectionChange) return;
     if (selectedItems.length === data.length) {
@@ -76,6 +79,31 @@ const Table = <T extends Record<string, any>>({
     const newOrder = sort === columnKey && order === "asc" ? "desc" : "asc";
     onSortChange(columnKey, newOrder);
   };
+
+  const handlePageInputChange = (value: string) => {
+    if (value === "" || /^\d+$/.test(value)) {
+      setPageInput(value);
+    }
+  };
+
+  const handlePageInputSubmit = () => {
+    const pageNum = parseInt(pageInput);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      onPageChange?.(pageNum);
+    } else {
+      setPageInput(String(currentPage));
+    }
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handlePageInputSubmit();
+    }
+  };
+
+  useEffect(() => {
+    setPageInput(String(currentPage));
+  }, [currentPage]);
 
   return (
     <div className={`flex-1 flex flex-col h-full ${className}`}>
@@ -237,9 +265,18 @@ const Table = <T extends Record<string, any>>({
               disabled={currentPage === 1 || data.length === 0}>
               <ArrowLeftIcon size={16} />
             </Button>
-            <span className="text-text-muted text-sm">
-              {currentPage} of {totalPages}
-            </span>
+            <div className="flex items-center gap-1">
+              <input
+                type="text"
+                value={pageInput}
+                onChange={(e) => handlePageInputChange(e.target.value)}
+                onBlur={handlePageInputSubmit}
+                onKeyDown={handlePageInputKeyDown}
+                className="w-12 text-center text-sm text-text bg-background border border-border rounded px-1 py-1 focus:outline-none focus:border-primary"
+                disabled={data.length === 0}
+              />
+              <span className="text-text-muted text-sm">of {totalPages}</span>
+            </div>
             <Button
               variant="secondary-outline"
               onClick={() => onPageChange?.(currentPage + 1)}

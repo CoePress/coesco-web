@@ -7,9 +7,9 @@ import { PageHeader, Modal, Button, Select, Input } from "@/components";
 import { CreateJourneyModal } from "@/components/modals/create-journey-modal";
 import { ImportExcelModal } from "@/components/modals/import-excel-modal";
 import { ExportExcelModal } from "@/components/modals/export-excel-modal";
-import { KanbanView } from "./journeys/KanbanView";
-import { ListView } from "./journeys/ListView";
-import { ProjectionsView } from "./journeys/ProjectionsView";
+import { KanbanView } from "./journeys/journey-kanban";
+import { ListView } from "./journeys/journey-list";
+import { ProjectionsView } from "./journeys/journey-projections";
 import { PipelineHeader } from "./journeys/pipeline-header";
 import { STAGES } from "./journeys/constants";
 import { fuzzyMatch, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
@@ -77,6 +77,7 @@ const Pipeline = () => {
 
     return tagsMap;
   };
+
   useEffect(() => {
     const fetchData = async () => {
       const [journeysData, customersData] = await Promise.all([
@@ -120,8 +121,20 @@ const Pipeline = () => {
   const normalizeDate = (d: any) => {
     if (!d) return undefined;
     const s = String(d);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00`;
-    return s.includes(" ") ? s.replace(" ", "T") : s;
+
+    if (s.startsWith("0000-00-00") || s === "0000-00-00") return undefined;
+
+    let normalized = s;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      normalized = `${s}T00:00:00`;
+    } else if (s.includes(" ")) {
+      normalized = s.replace(" ", "T");
+    }
+
+    const testDate = new Date(normalized);
+    if (isNaN(testDate.getTime())) return undefined;
+
+    return normalized;
   };
 
   const parseConfidence = (v: any) => {
@@ -152,18 +165,9 @@ const Pipeline = () => {
     const value = Number(raw.Journey_Value ?? 0);
     const priority = normalizePriority(raw.Priority);
 
-    const closeDate =
+    const expectedDecisionDate =
       normalizeDate(raw.Expected_Decision_Date) ??
-      normalizeDate(raw.Quote_Presentation_Date) ??
-      normalizeDate(raw.Date_PO_Received) ??
-      normalizeDate(raw.Journey_Start_Date) ??
-      normalizeDate(raw.CreateDT) ??
-      new Date().toISOString();
-
-    const updatedAt =
-      normalizeDate(raw.Action_Date) ??
-      normalizeDate(raw.CreateDT) ??
-      new Date().toISOString();
+      null
 
     const customerId = String(raw.Company_ID ?? "");
     const companyName = raw.Target_Account || undefined;
@@ -175,8 +179,7 @@ const Pipeline = () => {
       stage,
       value,
       priority,
-      closeDate,
-      updatedAt,
+      expectedDecisionDate,
       customerId,
       companyName,
       confidence,
@@ -188,7 +191,8 @@ const Pipeline = () => {
       Project_Name: raw.Project_Name,
       Target_Account: raw.Target_Account,
       Company_ID: raw.Company_ID,
-      CreateDT: raw.CreateDT,
+      CreateDT: normalizeDate(raw.CreateDT),
+      Journey_Start_Date: normalizeDate(raw.Journey_Start_Date),
       Action_Date: raw.Action_Date,
       Expected_Decision_Date: raw.Expected_Decision_Date,
       Chance_To_Secure_order: raw.Chance_To_Secure_order,
@@ -281,7 +285,7 @@ const Pipeline = () => {
   const [filters, setFilters] = useState(() => getFromLocalStorage('filters', {
     confidenceLevels: [] as number[],
     dateRange: ["", ""] as [string, string],
-    dateField: "closeDate" as string,
+    dateField: "expectedDecisionDate" as string,
     priority: "" as string,
     minValue: "" as string,
     maxValue: "" as string,
@@ -373,17 +377,17 @@ const Pipeline = () => {
           const dateStr = journey[field];
           return dateStr ? new Date(dateStr) : null;
         };
-        
-        const dateValue = getDateValue(filters.dateField === 'closeDate' ? 'closeDate' : filters.dateField, j);
-        
+
+        const dateValue = getDateValue(filters.dateField === 'expectedDecisionDate' ? 'expectedDecisionDate' : filters.dateField, j);
+
         if (!dateValue) return false;
-        
+
         const startDate = filters.dateRange[0] ? new Date(filters.dateRange[0]) : null;
         const endDate = filters.dateRange[1] ? new Date(filters.dateRange[1]) : null;
-        
+
         if (startDate && dateValue < startDate) return false;
         if (endDate && dateValue > endDate) return false;
-        
+
         return true;
       });
     }
@@ -494,7 +498,7 @@ const Pipeline = () => {
 
     if (filters.dateRange[0] || filters.dateRange[1]) {
       const fieldMap: Record<string, string> = {
-        'closeDate': 'Expected_Decision_Date',
+        'expectedDecisionDate': 'Expected_Decision_Date',
         'Action_Date': 'Action_Date',
         'Journey_Start_Date': 'Journey_Start_Date',
         'Quote_Presentation_Date': 'Quote_Presentation_Date',
@@ -605,7 +609,7 @@ const Pipeline = () => {
       const params: any = {
         page: 1,
         limit: kanbanBatchSize,
-        sort: 'Action_Date',
+        sort: 'CreateDT',
         order: 'desc',
         fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
       };
@@ -1285,7 +1289,7 @@ const FilterModal = ({
     setLocalFilters({
       confidenceLevels: [],
       dateRange: ["", ""],
-      dateField: "closeDate",
+      dateField: "expectedDecisionDate",
       priority: "",
       minValue: "",
       maxValue: "",
@@ -1340,11 +1344,11 @@ const FilterModal = ({
             value={localFilters.dateField}
             onChange={(e) => setLocalFilters(prev => ({ ...prev, dateField: e.target.value }))}
             options={[
-              { value: "closeDate", label: "Close Date" },
+              { value: "expectedDecisionDate", label: "Expected Decision Date" },
               { value: "Action_Date", label: "Action Date" },
               { value: "Journey_Start_Date", label: "Journey Start Date" },
               { value: "Quote_Presentation_Date", label: "Quote Presentation Date" },
-              { value: "Expected_Decision_Date", label: "Expected Decision Date" },
+              { value: "Expected_Decision_Date", label: "Expected Decision Date (Raw)" },
               { value: "Date_PO_Received", label: "PO Received Date" },
               { value: "Date_Lost", label: "Date Lost" }
             ]}

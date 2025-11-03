@@ -11,11 +11,11 @@ interface ProjectionsViewProps {
 export const ProjectionsView = ({ journeys }: ProjectionsViewProps) => {
   const monthlyProjections = useMemo(() => {
     const monthMap = new Map<string, { journeys: any[], weightedValue: number, totalValue: number }>();
-    
+
     journeys.forEach(journey => {
-      const closeDate = new Date(journey.closeDate);
-      const monthKey = `${closeDate.getFullYear()}-${String(closeDate.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = closeDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+      const expectedDecisionDate = new Date(journey.expectedDecisionDate);
+      const monthKey = `${expectedDecisionDate.getFullYear()}-${String(expectedDecisionDate.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = expectedDecisionDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
       
       const stage = STAGES.find(s => s.id === journey.stage);
       const weight = stage?.weight ?? 0;

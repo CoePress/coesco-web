@@ -6,6 +6,7 @@ import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
+import { fetchAvailableRsms, Employee } from "@/pages/sales/journeys/utils";
 
 interface EditFormData {
   firstName: string;
@@ -16,6 +17,7 @@ interface EditFormData {
   phoneExtension: string;
   email: string;
   addressId: string;
+  owner: string;
 }
 
 const ContactDetails = () => {
@@ -44,6 +46,7 @@ const ContactDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [copiedContactId, setCopiedContactId] = useState(false);
   const [editForm, setEditForm] = useState<EditFormData>({
     firstName: "",
     lastName: "",
@@ -52,8 +55,11 @@ const ContactDetails = () => {
     phone: "",
     phoneExtension: "",
     email: "",
-    addressId: ""
+    addressId: "",
+    owner: ""
   });
+
+  const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
 
   const getContactTypeName = (type: ContactType | string | null | undefined): string => {
     switch (type) {
@@ -79,6 +85,22 @@ const ContactDetails = () => {
     }
   };
 
+  const getValidRSM = (value: string) => {
+    if (!value) return "";
+    const normalized = availableRsms.find(rsm =>
+      rsm.initials.toLowerCase() === value.toLowerCase()
+    );
+    return normalized ? normalized.initials : value;
+  };
+
+  const getRsmDisplayName = (value: string) => {
+    if (!value) return "-";
+    const rsm = availableRsms.find(r =>
+      r.initials.toLowerCase() === value.toLowerCase()
+    );
+    return rsm ? `${rsm.name} (${rsm.initials})` : value;
+  };
+
   const initializeEditForm = (contact: any) => {
     setEditForm({
       firstName: contact?.firstName || "",
@@ -88,7 +110,8 @@ const ContactDetails = () => {
       phone: contact?.phone || "",
       phoneExtension: contact?.phoneExtension || "",
       email: contact?.email || "",
-      addressId: contact?.addressId || ""
+      addressId: contact?.addressId || "",
+      owner: getValidRSM(contact?.owner || "")
     });
   };
 
@@ -106,6 +129,7 @@ const ContactDetails = () => {
         phoneExtension: editForm.phoneExtension,
         email: editForm.email,
         addressId: editForm.addressId || null,
+        owner: editForm.owner || null,
         companyId: contactData.companyId,
         isPrimary: contactData.isPrimary,
         legacyCompanyId: contactData.legacyCompanyId,
@@ -115,11 +139,8 @@ const ContactDetails = () => {
 
       const result = await api.patch(`/sales/contacts/${contactData.id}`, trimmedData);
       if (result !== null) {
-        // Update local contact data with new values
         const updatedContactData = { ...contactData, ...trimmedData };
         setContactData(updatedContactData);
-
-        // Update address data based on the new addressId
         if (trimmedData.addressId) {
           const selectedAddress = availableAddresses.find((addr: any) =>
             addr.Address_ID == trimmedData.addressId
@@ -141,8 +162,6 @@ const ContactDetails = () => {
   const handleCancel = () => {
     setIsEditing(false);
     initializeEditForm(contactData);
-
-    // Reset address data to original
     if (contactData.addressId) {
       const originalAddress = availableAddresses.find((addr: any) => addr.Address_ID == contactData.addressId);
       setAddressData(originalAddress || null);
@@ -187,8 +206,6 @@ const ContactDetails = () => {
 
       if (rawContactResponse) {
         const rawContact = rawContactResponse.data || rawContactResponse;
-
-        // Handle null/undefined contact data
         if (!rawContact) {
           setError('Contact data is null or undefined');
           return;
@@ -196,8 +213,6 @@ const ContactDetails = () => {
 
         setContactData(rawContact);
         initializeEditForm(rawContact);
-
-        // Fetch company name from legacy database
         if (rawContact?.legacyCompanyId) {
           try {
             const companyResponse = await api.get('/legacy/base/Company', {
@@ -220,52 +235,27 @@ const ContactDetails = () => {
           } catch (companyError) {
             console.warn("Could not fetch company data:", companyError);
           }
-
-          // Fetch all addresses for the company
           try {
             const addressResponse = await api.get('/legacy/base/Address/filter/custom', {
               Company_ID: rawContact.legacyCompanyId
             });
 
-            console.log('=== ADDRESS DEBUG ===');
-            console.log('Raw address response:', addressResponse);
-
             const addresses = addressResponse?.data
               ? (Array.isArray(addressResponse.data) ? addressResponse.data : [])
               : (Array.isArray(addressResponse) ? addressResponse : []);
 
-            console.log('Extracted addresses array:', addresses);
-            console.log('Number of addresses:', addresses.length);
-
             if (addresses.length > 0) {
-              console.log('First address sample:', addresses[0]);
-              console.log('Address_ID values:', addresses.map((a: any) => a.Address_ID));
-
               setAvailableAddresses(addresses);
-
-              // Set the current address data if addressId exists
-              console.log('rawContact.addressId:', rawContact.addressId);
-              console.log('rawContact.addressId type:', typeof rawContact.addressId);
 
               if (rawContact.addressId) {
                 const currentAddress = addresses.find((addr: any) => {
-                  console.log(`Comparing addr.Address_ID (${addr.Address_ID}, type: ${typeof addr.Address_ID}) === rawContact.addressId (${rawContact.addressId}, type: ${typeof rawContact.addressId})`);
                   return addr.Address_ID == rawContact.addressId;
                 });
-                console.log('Found matching address:', currentAddress);
                 if (currentAddress) {
                   setAddressData(currentAddress);
-                  console.log('Set addressData to:', currentAddress);
-                } else {
-                  console.log('No matching address found');
                 }
-              } else {
-                console.log('No addressId on contact');
               }
-            } else {
-              console.log('No addresses returned from API');
             }
-            console.log('=== END ADDRESS DEBUG ===');
           } catch (addressError) {
             console.warn("Could not fetch address data:", addressError);
           }
@@ -326,6 +316,17 @@ const ContactDetails = () => {
   useEffect(() => {
     fetchContactData();
   }, [contactId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const rsms = await fetchAvailableRsms(api);
+      if (!cancelled) {
+        setAvailableRsms(rsms);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'journeys' && journeysData.length === 0 && !journeysLoading) {
@@ -630,8 +631,24 @@ const ContactDetails = () => {
               </div>
 
               <div>
-                <div className="text-sm text-text-muted">Contact ID</div>
-                <div className="text-text font-mono">{contactData.id}</div>
+                <div className="text-sm text-text-muted">Contact Owner</div>
+                {isEditing ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={editForm.owner}
+                    onChange={(e) => setEditForm(s => ({ ...s, owner: e.target.value }))}
+                  >
+                    <option value="">No Value Selected</option>
+                    {editForm.owner && !availableRsms.find(r => r.initials === editForm.owner) && (
+                      <option key={editForm.owner} value={editForm.owner}>{editForm.owner}</option>
+                    )}
+                    {availableRsms.map(rsm => (
+                      <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-text">{getRsmDisplayName(contactData.owner)}</div>
+                )}
               </div>
 
               <div>
@@ -643,8 +660,6 @@ const ContactDetails = () => {
                     onChange={(e) => {
                       const newAddressId = e.target.value;
                       setEditForm(s => ({ ...s, addressId: newAddressId }));
-
-                      // Update addressData preview
                       const selectedAddress = availableAddresses.find((addr: any) => addr.Address_ID == newAddressId);
                       if (selectedAddress) {
                         setAddressData(selectedAddress);
@@ -920,6 +935,26 @@ const ContactDetails = () => {
                 </div>
               </div>
             )}
+
+            <div className="flex items-center gap-3">
+              <User size={16} className="text-text-muted" />
+              <div>
+                <div className="text-sm text-text-muted">
+                  {copiedContactId ? "Copied to clipboard!" : "Contact ID (click to copy)"}
+                </div>
+                <div
+                  className="text-text font-mono cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => {
+                    navigator.clipboard.writeText(contactData.id);
+                    setCopiedContactId(true);
+                    setTimeout(() => setCopiedContactId(false), 2000);
+                  }}
+                  title="Click to copy"
+                >
+                  {contactData.id}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         </div>
@@ -957,7 +992,7 @@ const ContactDetails = () => {
                       const journeyStage = journey?.Journey_Stage || '-';
                       const journeyStatus = journey?.Journey_Status || 'Active';
                       const priority = journey?.Priority || '-';
-                      const startDate = journey?.Journey_Start_Date || journey?.Expected_Decision_Date || journey?.CreateDT;
+                      const startDate = journey?.Journey_Start_Date || journey?.CreateDT;
 
                       return (
                         <tr key={journey?.ID || Math.random()} className="border-b border-border last:border-b-0 hover:bg-background/50">

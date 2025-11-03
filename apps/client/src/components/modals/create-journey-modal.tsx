@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Modal, Button, Input, Select } from "@/components";
+import { AddContactModal } from "@/components/modals/add-contact-modal";
 import { useApi } from "@/hooks/use-api";
+import { useAuth } from "@/contexts/auth.context";
 import { Employee } from "@/pages/sales/journeys/utils";
 
 interface CreateJourneyModalProps {
@@ -32,11 +34,173 @@ export const CreateJourneyModal = ({
   const [notes, setNotes] = useState<string>("");
   const [actionDate, setActionDate] = useState<string>("");
   const [equipmentType, setEquipmentType] = useState<string>("");
+  const [companySearch, setCompanySearch] = useState<string>(companyName || "");
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | undefined>(companyId);
+  const [companyResults, setCompanyResults] = useState<any[]>([]);
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState<boolean>(false);
+  const [isSearchingCompanies, setIsSearchingCompanies] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
+  const [contactSearch, setContactSearch] = useState<string>("");
+  const [selectedContactId, setSelectedContactId] = useState<string | undefined>(undefined);
+  const [contactResults, setContactResults] = useState<any[]>([]);
+  const [showContactDropdown, setShowContactDropdown] = useState<boolean>(false);
+  const [isSearchingContacts, setIsSearchingContacts] = useState<boolean>(false);
+  const [hasSearchedContacts, setHasSearchedContacts] = useState<boolean>(false);
+  const [isAddContactModalOpen, setIsAddContactModalOpen] = useState<boolean>(false);
 
-  const { post, loading, error } = useApi();
+  const { post, loading, error, get } = useApi();
+  const { employee } = useAuth();
+
+  const searchCompanies = async (query: string) => {
+    if (query.length < 2) {
+      setCompanyResults([]);
+      setShowCompanyDropdown(false);
+      setHasSearched(false);
+      return;
+    }
+
+    setIsSearchingCompanies(true);
+    setShowCompanyDropdown(true);
+    try {
+      const params: any = {
+        page: 1,
+        limit: 5,
+        fields: "Company_ID,CustDlrName",
+        filter: JSON.stringify({
+          filters: [
+            { field: "CustDlrName", operator: "contains", value: query }
+          ]
+        })
+      };
+
+      const results = await get(`/legacy/base/Company`, params);
+
+      if (results) {
+        const isApiResponse = results && typeof results === 'object' && 'data' in results;
+
+        if (isApiResponse) {
+          const companiesArray = Array.isArray(results.data) ? results.data : [];
+          const mapped = companiesArray.map((company: any) => ({
+            ID: company.Company_ID,
+            Name: company.CustDlrName
+          }));
+          setCompanyResults(mapped);
+        } else {
+          const companiesArray = Array.isArray(results) ? results : [];
+          const mapped = companiesArray.map((company: any) => ({
+            ID: company.Company_ID,
+            Name: company.CustDlrName
+          }));
+          setCompanyResults(mapped);
+        }
+      }
+      setHasSearched(true);
+    } catch (error) {
+      console.error("Error searching companies:", error);
+      setCompanyResults([]);
+      setHasSearched(true);
+    } finally {
+      setIsSearchingCompanies(false);
+    }
+  };
+
+  const handleCompanySearchChange = (value: string) => {
+    setCompanySearch(value);
+    setSelectedCompanyId(undefined);
+    searchCompanies(value);
+  };
+
+  const handleCompanySelect = (company: any) => {
+    setCompanySearch(company.Name);
+    setSelectedCompanyId(company.ID?.toString());
+    setShowCompanyDropdown(false);
+    setHasSearched(false);
+  };
+
+  const searchContacts = async (query: string) => {
+    if (query.length < 2) {
+      setContactResults([]);
+      setShowContactDropdown(false);
+      setHasSearchedContacts(false);
+      return;
+    }
+
+    setIsSearchingContacts(true);
+    setShowContactDropdown(true);
+    try {
+      const results = await get(`/sales/contacts`, {
+        filter: JSON.stringify({
+          OR: [
+            { firstName: { contains: query, mode: "insensitive" } },
+            { lastName: { contains: query, mode: "insensitive" } }
+          ]
+        }),
+        limit: 5
+      });
+
+      if (results?.success && Array.isArray(results.data)) {
+        setContactResults(results.data);
+      } else if (Array.isArray(results)) {
+        setContactResults(results);
+      } else {
+        setContactResults([]);
+      }
+      setHasSearchedContacts(true);
+    } catch (error) {
+      console.error("Error searching contacts:", error);
+      setContactResults([]);
+      setHasSearchedContacts(true);
+    } finally {
+      setIsSearchingContacts(false);
+    }
+  };
+
+  const handleContactSearchChange = (value: string) => {
+    setContactSearch(value);
+    setSelectedContactId(undefined);
+    searchContacts(value);
+  };
+
+  const handleContactSelect = (contact: any) => {
+    setContactSearch(`${contact.firstName} ${contact.lastName}`);
+    setSelectedContactId(contact.id);
+    setShowContactDropdown(false);
+    setHasSearchedContacts(false);
+  };
+
+  const handleContactAdded = (contact: any) => {
+    const firstName = contact?.firstName || contact?.data?.firstName || "";
+    const lastName = contact?.lastName || contact?.data?.lastName || "";
+    const contactId = contact?.id || contact?.data?.id;
+
+    setContactSearch(`${firstName} ${lastName}`.trim());
+    setSelectedContactId(contactId);
+    setIsAddContactModalOpen(false);
+  };
+
+  const createJourneyContact = async (journeyId: string, contactId: string) => {
+    if (!employee?.id) {
+      console.error("Employee ID not found, skipping journey contact creation");
+      return;
+    }
+
+    try {
+      const journeyContactData = {
+        journeyId,
+        contactId,
+        isPrimary: true,
+        createdById: employee.id,
+        updatedById: employee.id,
+      };
+
+      await post("/sales/journey-contacts", journeyContactData);
+    } catch (error) {
+      console.error("Error creating journey contact:", error);
+      // Don't throw - we still want the journey creation to succeed
+    }
+  };
 
   const handleCreate = async () => {
-    // Validate required fields
     if (!name || !journeyType || !rsm || !city || !stateProv || !country || !industry || !leadSource) {
       alert("Please fill in all required fields: Journey Name, Journey Type, RSM, City, State, Country, Industry, and Lead Source");
       return;
@@ -54,20 +218,22 @@ export const CreateJourneyModal = ({
         Industry: industry,
         Lead_Source: leadSource,
         Journey_Stage: "Lead",
-        Target_Account: companyName || '',
+        Target_Account: companySearch || '',
       };
 
       if (startDate) payload.Journey_Start_Date = startDate;
       if (notes) payload.Notes = notes;
       if (actionDate) payload.Action_Date = actionDate;
       if (equipmentType) payload.Equipment_Type = equipmentType;
-      if (companyId) payload.Company_ID = parseInt(companyId);
-
-      console.log("Journey payload:", payload);
+      if (selectedCompanyId) payload.Company_ID = parseInt(selectedCompanyId);
 
       const result = await post("/legacy/std/Journey", payload);
 
       if (result && result.ID) {
+        // If a contact was selected, create the JourneyContact association
+        if (selectedContactId) {
+          await createJourneyContact(result.ID.toString(), selectedContactId);
+        }
         const today = new Date().toISOString().split('T')[0];
         const newJourney = {
           ...result,
@@ -105,6 +271,18 @@ export const CreateJourneyModal = ({
         setNotes("");
         setActionDate("");
         setEquipmentType("");
+        setCompanySearch("");
+        setSelectedCompanyId(undefined);
+        setCompanyResults([]);
+        setShowCompanyDropdown(false);
+        setHasSearched(false);
+        setIsSearchingCompanies(false);
+        setContactSearch("");
+        setSelectedContactId(undefined);
+        setContactResults([]);
+        setShowContactDropdown(false);
+        setHasSearchedContacts(false);
+        setIsSearchingContacts(false);
       } else {
         console.error("Journey creation failed:", error);
       }
@@ -115,6 +293,7 @@ export const CreateJourneyModal = ({
   };
 
   return (
+    <>
     <Modal isOpen={isOpen} onClose={onClose} title="Create New Journey" size="md">
       <div className="flex flex-col max-h-[60vh]">
         <div className="overflow-y-auto pr-2 space-y-3 mb-2">
@@ -127,6 +306,88 @@ export const CreateJourneyModal = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-1 relative">
+            <label className="text-sm font-medium text-text">Company</label>
+            <input
+              type="text"
+              className="w-full rounded border border-border px-3 py-2 text-sm"
+              placeholder="Search for company or enter new name"
+              value={companySearch}
+              onChange={(e) => handleCompanySearchChange(e.target.value)}
+              onFocus={() => (companyResults.length > 0 || hasSearched) && setShowCompanyDropdown(true)}
+              onBlur={() => setTimeout(() => setShowCompanyDropdown(false), 200)}
+            />
+            {showCompanyDropdown && (
+              <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded shadow-lg max-h-48 overflow-y-auto">
+                {isSearchingCompanies ? (
+                  <div className="px-3 py-2 text-sm text-text-muted">
+                    Searching...
+                  </div>
+                ) : companyResults.length > 0 ? (
+                  companyResults.map((company) => (
+                    <div
+                      key={company.ID}
+                      className="px-3 py-2 hover:bg-surface cursor-pointer text-sm"
+                      onClick={() => handleCompanySelect(company)}
+                    >
+                      {company.Name}
+                    </div>
+                  ))
+                ) : hasSearched ? (
+                  <div className="px-3 py-2 text-sm text-text-muted">
+                    No companies found
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1 relative">
+            <div className="flex justify-between items-center">
+              <label className="text-sm font-medium text-text">Primary Contact</label>
+              <button
+                type="button"
+                onClick={() => setIsAddContactModalOpen(true)}
+                className="text-xs text-primary hover:underline"
+              >
+                Create New
+              </button>
+            </div>
+            <input
+              type="text"
+              className="w-full rounded border border-border px-3 py-2 text-sm"
+              placeholder="Search for contact by name"
+              value={contactSearch}
+              onChange={(e) => handleContactSearchChange(e.target.value)}
+              onFocus={() => (contactResults.length > 0 || hasSearchedContacts) && setShowContactDropdown(true)}
+              onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
+            />
+            {showContactDropdown && (
+              <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded shadow-lg max-h-48 overflow-y-auto">
+                {isSearchingContacts ? (
+                  <div className="px-3 py-2 text-sm text-text-muted">
+                    Searching...
+                  </div>
+                ) : contactResults.length > 0 ? (
+                  contactResults.map((contact) => (
+                    <div
+                      key={contact.id}
+                      className="px-3 py-2 hover:bg-surface cursor-pointer text-sm"
+                      onClick={() => handleContactSelect(contact)}
+                    >
+                      <div className="font-medium">{contact.firstName} {contact.lastName}</div>
+                      {contact.email && <div className="text-xs text-text-muted">{contact.email}</div>}
+                    </div>
+                  ))
+                ) : hasSearchedContacts ? (
+                  <div className="px-3 py-2 text-sm text-text-muted">
+                    No contacts found
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -313,5 +574,13 @@ export const CreateJourneyModal = ({
         </div>
       </div>
     </Modal>
+
+    <AddContactModal
+      isOpen={isAddContactModalOpen}
+      onClose={() => setIsAddContactModalOpen(false)}
+      onContactAdded={handleContactAdded}
+      companyId={selectedCompanyId}
+    />
+  </>
   );
 };
