@@ -185,12 +185,6 @@ const salesModule: Module = {
       component: Forms,
       children: [
         {
-          slug: ":id",
-          label: "Form Details",
-          icon: FileCogIcon,
-          component: FormDetails,
-        },
-        {
           slug: ":id/submit",
           label: "Form Submit",
           icon: FileCheck2Icon,

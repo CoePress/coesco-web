@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
 import { TableColumn } from "@/components/ui/table";
@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { FormStatus } from "@coesco/types";
 
 const Forms = () => {
+  const location = useLocation();
+  const isAdminContext = location.pathname.startsWith("/admin");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { get: getForms, response: forms, loading: formsLoading, error: formsError } = useApi<IApiResponse<any[]>>();
   const { post: createForm, loading: createFormLoading } = useApi<IApiResponse<any[]>>();
@@ -56,9 +58,10 @@ const Forms = () => {
       key: "name",
       header: "Form Name",
       className: "text-primary hover:underline",
-      render: (_, row) => (
-        <Link to={`${row.id}`}>{row.name || `Form ${row.id.slice(-8)}`}</Link>
-      ),
+      render: (_, row) => {
+        const linkPath = isAdminContext ? `${row.id}` : `${row.id}/submit`;
+        return <Link to={linkPath}>{row.name || `Form ${row.id.slice(-8)}`}</Link>;
+      },
     },
     {
       key: "status",
