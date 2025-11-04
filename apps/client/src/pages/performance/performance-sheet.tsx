@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ms } from "@/utils";
 import Loader from "@/components/ui/loader";
 import { getVisibleTabs } from "@/utils/tab-visibility";
+import { getReelWidthOptionsForModel, getBackplateDiameterOptionsForModel, getStrWidthOptionsForModel, getStrHorsepowerOptionsForModel, getStrFeedRateOptionsForModelAndHorsepower, getFeedMachineWidthOptionsForModel } from "@/utils/performance-sheet";
 
 type PerformanceTabValue = string;
 type ModalType = 'links' | 'save-confirmation' | 'cancel-confirmation' | 'continue' | 'delete-link' | 'create-link' | null;
@@ -187,7 +188,13 @@ const PerformanceSheet = () => {
   const visibleTabs = useMemo(() => {
     if (!performanceSheet?.data?.version?.sections) return [];
 
-    const allowedTabs = getVisibleTabs(formData);
+    // Use performanceSheet.data.data as fallback when formData is empty/incomplete
+    // This ensures that tab visibility works correctly when the sheet is first loaded
+    const dataForVisibility = formData && Object.keys(formData).length > 0
+      ? formData
+      : performanceSheet.data.data || {};
+
+    const allowedTabs = getVisibleTabs(dataForVisibility);
     const allowedTabValues = new Set(allowedTabs.map(t => t.value));
 
     return performanceSheet.data.version.sections
@@ -399,12 +406,72 @@ const PerformanceSheet = () => {
 
   const getDynamicOptions = (fieldId: string, field: any) => {
     // Return static options if no dynamic logic needed
-    if (fieldId !== "common.equipment.feed.lineType" && fieldId !== "feed.feed.pullThru.isPullThru") {
+    if (fieldId !== "common.equipment.feed.lineType" &&
+      fieldId !== "feed.feed.pullThru.isPullThru" &&
+      fieldId !== "common.equipment.reel.width" &&
+      fieldId !== "common.equipment.reel.backplate.diameter" &&
+      fieldId !== "common.equipment.straightener.width" &&
+      fieldId !== "strUtility.straightener.horsepower" &&
+      fieldId !== "strUtility.straightener.feedRate" &&
+      fieldId !== "feed.feed.machineWidth") {
       return field.options || [];
     }
 
     const applicationValue = getNestedValue(formData, "feed.feed.application");
     const lineTypeValue = getNestedValue(formData, "common.equipment.feed.lineType");
+    const reelModelValue = getNestedValue(formData, "common.equipment.reel.model");
+    const strModelValue = getNestedValue(formData, "common.equipment.straightener.model");
+    const strHorsepowerValue = getNestedValue(formData, "strUtility.straightener.horsepower");
+    const feedModelValue = getNestedValue(formData, "common.equipment.feed.model");
+
+    // Dynamic Reel Width Options based on selected model
+    if (fieldId === "common.equipment.reel.width") {
+      if (reelModelValue) {
+        return getReelWidthOptionsForModel(reelModelValue);
+      }
+      return field.options || [];
+    }
+
+    // Dynamic Backplate Diameter Options based on selected model
+    if (fieldId === "common.equipment.reel.backplate.diameter") {
+      if (reelModelValue) {
+        return getBackplateDiameterOptionsForModel(reelModelValue);
+      }
+      return field.options || [];
+    }
+
+    // Dynamic STR Width Options based on selected model
+    if (fieldId === "common.equipment.straightener.width") {
+      if (strModelValue) {
+        return getStrWidthOptionsForModel(strModelValue);
+      }
+      return field.options || [];
+    }
+
+    // Dynamic STR Horsepower Options based on selected model
+    if (fieldId === "strUtility.straightener.horsepower") {
+      if (strModelValue) {
+        return getStrHorsepowerOptionsForModel(strModelValue);
+      }
+      return field.options || [];
+    }
+
+    // Dynamic STR Feed Rate Options based on selected model and horsepower
+    if (fieldId === "strUtility.straightener.feedRate") {
+      if (strModelValue && strHorsepowerValue) {
+        return getStrFeedRateOptionsForModelAndHorsepower(strModelValue, strHorsepowerValue);
+      }
+      // If either model or horsepower is missing, show no options
+      return [];
+    }
+
+    // Dynamic Feed Machine Width Options based on selected model
+    if (fieldId === "feed.feed.machineWidth") {
+      if (feedModelValue) {
+        return getFeedMachineWidthOptionsForModel(feedModelValue);
+      }
+      return field.options || [];
+    }
 
     // Dynamic Line Type Options
     if (fieldId === "common.equipment.feed.lineType") {
@@ -526,6 +593,91 @@ const PerformanceSheet = () => {
             // For Press Feed/Cut to Length with Conventional, set to "no"
             updatedData = setNestedValue(updatedData, "feed.feed.pullThru.isPullThru", "no");
           }
+        }
+      }
+    }
+
+    // Handle dependent field logic when reel model changes
+    if (fieldId === "common.equipment.reel.model") {
+      const currentWidth = getNestedValue(updatedData, "common.equipment.reel.width");
+      const currentBackplate = getNestedValue(updatedData, "common.equipment.reel.backplate.diameter");
+
+      // Clear width if it's not valid for the new model
+      if (currentWidth && value) {
+        const validWidths = getReelWidthOptionsForModel(value).map(option => option.value);
+        if (!validWidths.includes(currentWidth)) {
+          updatedData = setNestedValue(updatedData, "common.equipment.reel.width", "");
+        }
+      }
+
+      // Clear backplate diameter if it's not valid for the new model
+      if (currentBackplate && value) {
+        const validBackplates = getBackplateDiameterOptionsForModel(value).map(option => option.value);
+        if (!validBackplates.includes(currentBackplate)) {
+          updatedData = setNestedValue(updatedData, "common.equipment.reel.backplate.diameter", "");
+        }
+      }
+    }
+
+    // Handle dependent field logic when STR model changes
+    if (fieldId === "common.equipment.straightener.model") {
+      const currentStrWidth = getNestedValue(updatedData, "common.equipment.straightener.width");
+      const currentStrHorsepower = getNestedValue(updatedData, "strUtility.straightener.horsepower");
+      const currentStrFeedRate = getNestedValue(updatedData, "strUtility.straightener.feedRate");
+
+      // Clear width if it's not valid for the new model
+      if (currentStrWidth && value) {
+        const validWidths = getStrWidthOptionsForModel(value).map(option => option.value);
+        if (!validWidths.includes(currentStrWidth)) {
+          updatedData = setNestedValue(updatedData, "common.equipment.straightener.width", "");
+        }
+      }
+
+      // Clear horsepower if it's not valid for the new model
+      if (currentStrHorsepower && value) {
+        const validHorsepowers = getStrHorsepowerOptionsForModel(value).map(option => option.value);
+        if (!validHorsepowers.includes(currentStrHorsepower)) {
+          updatedData = setNestedValue(updatedData, "strUtility.straightener.horsepower", "");
+          // Also clear feed rate since horsepower changed
+          updatedData = setNestedValue(updatedData, "strUtility.straightener.feedRate", "");
+        } else {
+          // Check if current feed rate is still valid for the new model and existing horsepower
+          if (currentStrFeedRate) {
+            const validFeedRates = getStrFeedRateOptionsForModelAndHorsepower(value, currentStrHorsepower).map(option => option.value);
+            if (!validFeedRates.includes(currentStrFeedRate)) {
+              updatedData = setNestedValue(updatedData, "strUtility.straightener.feedRate", "");
+            }
+          }
+        }
+      } else if (currentStrFeedRate) {
+        // Clear feed rate if no horsepower is selected
+        updatedData = setNestedValue(updatedData, "strUtility.straightener.feedRate", "");
+      }
+    }
+
+    // Handle dependent field logic when STR horsepower changes
+    if (fieldId === "strUtility.straightener.horsepower") {
+      const currentStrFeedRate = getNestedValue(updatedData, "strUtility.straightener.feedRate");
+      const strModel = getNestedValue(updatedData, "common.equipment.straightener.model");
+
+      // Clear feed rate if it's not valid for the new horsepower
+      if (currentStrFeedRate && value && strModel) {
+        const validFeedRates = getStrFeedRateOptionsForModelAndHorsepower(strModel, value).map(option => option.value);
+        if (!validFeedRates.includes(currentStrFeedRate)) {
+          updatedData = setNestedValue(updatedData, "strUtility.straightener.feedRate", "");
+        }
+      }
+    }
+
+    // Handle dependent field logic when Feed model changes
+    if (fieldId === "common.equipment.feed.model") {
+      const currentMachineWidth = getNestedValue(updatedData, "feed.feed.machineWidth");
+
+      // Clear machine width if it's not valid for the new model
+      if (currentMachineWidth && value) {
+        const validWidths = getFeedMachineWidthOptionsForModel(value).map(option => option.value);
+        if (!validWidths.includes(currentMachineWidth)) {
+          updatedData = setNestedValue(updatedData, "feed.feed.machineWidth", "");
         }
       }
     }

@@ -228,19 +228,84 @@ export const REEL_MODEL_OPTIONS = [
 ];
 
 export const REEL_WIDTH_OPTIONS = [
-  { value: "24", Label: "24" },
-  { value: "30", Label: "30" },
-  { value: "36", Label: "36" },
-  { value: "42", Label: "42" },
-  { value: "48", Label: "48" },
-  { value: "54", Label: "54" },
-  { value: "60", Label: "60" },
+  { value: "12", label: "12" },
+  { value: "18", label: "18" },
+  { value: "24", label: "24" },
+  { value: "30", label: "30" },
+  { value: "36", label: "36" },
+  { value: "42", label: "42" },
+  { value: "48", label: "48" },
+  { value: "54", label: "54" },
+  { value: "60", label: "60" },
+  { value: "66", label: "66" },
+  { value: "72", label: "72" },
+  { value: "78", label: "78" },
 ];
 
 export const BACKPLATE_DIAMETER_OPTIONS = [
-  { value: "27", Label: "27" },
-  { value: "72", Label: "72" },
+  { value: "23", label: "23" },
+  { value: "27", label: "27" },
+  { value: "72", label: "72" },
 ];
+
+// Reel model dependency mappings
+export const REEL_MODEL_DEPENDENCIES = {
+  "CPR-040": {
+    widths: ["12", "18", "24", "30", "36"],
+    backplateDiameters: ["23"]
+  },
+  "CPR-060": {
+    widths: ["18", "24", "30", "36"],
+    backplateDiameters: ["23"]
+  },
+  "CPR-080": {
+    widths: ["18", "24", "30", "36"],
+    backplateDiameters: ["23"]
+  },
+  "CPR-100": {
+    widths: ["24", "30", "36", "42", "48", "54", "60"],
+    backplateDiameters: ["27", "72"]
+  },
+  "CPR-150": {
+    widths: ["24", "30", "36", "42", "48", "54", "60"],
+    backplateDiameters: ["27", "72"]
+  },
+  "CPR-200": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
+    backplateDiameters: ["27", "72"]
+  },
+  "CPR-300": {
+    widths: ["30", "36", "42", "48", "54", "60", "66", "72"],
+    backplateDiameters: ["27", "72"]
+  },
+  "CPR-400": {
+    widths: ["36", "42", "48", "54", "60", "66", "72"],
+    backplateDiameters: ["27", "72"]
+  },
+  "CPR-500": {
+    widths: ["42", "48", "54", "60", "66", "72", "78"],
+    backplateDiameters: ["27", "72"]
+  },
+  "CPR-600": {
+    widths: ["48", "54", "60", "66", "72", "78"],
+    backplateDiameters: ["27", "72"]
+  }
+};
+
+// Helper functions to get dependent options
+export const getReelWidthOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return REEL_WIDTH_OPTIONS;
+
+  return dependencies.widths.map(width => ({ value: width, label: width }));
+};
+
+export const getBackplateDiameterOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return BACKPLATE_DIAMETER_OPTIONS;
+
+  return dependencies.backplateDiameters.map(diameter => ({ value: diameter, label: diameter }));
+};
 
 export const HYDRAULIC_THREADING_DRIVE_OPTIONS = [
   { value: "22 cu in (D-12689)", label: "22 cu in (D-12689)" },
@@ -278,8 +343,8 @@ export const BRAKE_QUANTITY_OPTIONS = [
 ];
 
 export const PAYOFF_OPTIONS = [
-  { value: "TOP", label: "TOP" },
-  { value: "BOTTOM", label: "BOTTOM" },
+  { value: "top", label: "Top" },
+  { value: "bottom", label: "Bottom" },
 ];
 
 export const STR_MODEL_OPTIONS = [
@@ -292,6 +357,9 @@ export const STR_MODEL_OPTIONS = [
 ];
 
 export const STR_WIDTH_OPTIONS = [
+  { value: "6", label: "6\"" },
+  { value: "12", label: "12\"" },
+  { value: "18", label: "18\"" },
   { value: "24", label: "24\"" },
   { value: "30", label: "30\"" },
   { value: "36", label: "36\"" },
@@ -301,29 +369,166 @@ export const STR_WIDTH_OPTIONS = [
   { value: "60", label: "60\"" },
   { value: "66", label: "66\"" },
   { value: "72", label: "72\"" },
+  { value: "78", label: "78\"" },
 ];
 
 export const STR_HORSEPOWER_OPTIONS = [
+  { value: "3", label: "3 HP" },
+  { value: "5", label: "5 HP" },
+  { value: "7.5", label: "7.5 HP" },
+  { value: "10", label: "10 HP" },
+  { value: "15", label: "15 HP" },
   { value: "20", label: "20 HP" },
   { value: "25", label: "25 HP" },
   { value: "30", label: "30 HP" },
   { value: "40", label: "40 HP" },
   { value: "50", label: "50 HP" },
+  { value: "60", label: "60 HP" },
+  { value: "75", label: "75 HP" },
+  { value: "100", label: "100 HP" },
+  { value: "125", label: "125 HP" },
 ];
 
 export const STR_FEED_RATE_OPTIONS = [
-  { value: "80", label: "80 FPM" },
-  { value: "100", label: "100 FPM" },
-  { value: "120", label: "120 FPM" },
-  { value: "140", label: "140 FPM" },
-  { value: "160", label: "160 FPM" },
-  { value: "200", label: "200 FPM" },
+  { value: "42", label: "42 ft/min" },
+  { value: "57", label: "57 ft/min" },
+  { value: "60", label: "60 ft/min" },
+  { value: "65", label: "65 ft/min" },
+  { value: "69", label: "69 ft/min" },
+  { value: "72", label: "72 ft/min" },
+  { value: "73", label: "73 ft/min" },
+  { value: "76", label: "76 ft/min" },
+  { value: "79", label: "79 ft/min" },
+  { value: "80", label: "80 ft/min" },
+  { value: "84", label: "84 ft/min" },
+  { value: "85", label: "85 ft/min" },
+  { value: "92", label: "92 ft/min" },
+  { value: "95", label: "95 ft/min" },
+  { value: "96", label: "96 ft/min" },
+  { value: "100", label: "100 ft/min" },
+  { value: "101", label: "101 ft/min" },
+  { value: "105", label: "105 ft/min" },
+  { value: "115", label: "115 ft/min" },
+  { value: "116", label: "116 ft/min" },
+  { value: "120", label: "120 ft/min" },
+  { value: "122", label: "122 ft/min" },
+  { value: "140", label: "140 ft/min" },
+  { value: "146", label: "146 ft/min" },
+  { value: "150", label: "150 ft/min" },
+  { value: "153", label: "153 ft/min" },
+  { value: "157", label: "157 ft/min" },
+  { value: "160", label: "160 ft/min" },
+  { value: "165", label: "165 ft/min" },
+  { value: "177", label: "177 ft/min" },
+  { value: "180", label: "180 ft/min" },
+  { value: "200", label: "200 ft/min" },
+  { value: "224", label: "224 ft/min" },
 ];
 
+// STR model dependency mappings
+export const STR_MODEL_DEPENDENCIES = {
+  "CPPS-250": {
+    widths: ["6", "12", "18", "24", "30", "36", "42", "48", "54"],
+    horsepowers: ["3", "5", "7.5"]
+  },
+  "CPPS-306": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
+    horsepowers: ["20", "25", "30", "40", "50"]
+  },
+  "CPPS-350": {
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54", "60"],
+    horsepowers: ["5", "7.5", "10", "15", "20"]
+  },
+  "CPPS-406": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+    horsepowers: ["20", "25", "30", "40", "50", "60", "75"]
+  },
+  "CPPS-507": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+    horsepowers: ["40", "50", "60", "75", "100", "125"]
+  },
+  "SPGPS-810": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+    horsepowers: ["40", "50", "60", "75", "100", "125"]
+  }
+};
+
+// Helper functions to get STR dependent options
+export const getStrWidthOptionsForModel = (model: string) => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies) return STR_WIDTH_OPTIONS;
+
+  return dependencies.widths.map(width => ({ value: width, label: `${width}"` }));
+};
+
+export const getStrHorsepowerOptionsForModel = (model: string) => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies) return STR_HORSEPOWER_OPTIONS;
+
+  return dependencies.horsepowers.map(hp => ({ value: hp, label: `${hp} HP` }));
+};
+
+export const getStrFeedRateOptionsForModelAndHorsepower = (model: string, horsepower: string) => {
+  // Find the feed rates for the specific model and horsepower
+  switch (model) {
+    case "CPPS-250":
+      if (["3", "5", "7.5"].includes(horsepower)) {
+        return ["42", "65", "85", "105", "165"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+    case "CPPS-306":
+      if (["20", "25", "30", "40", "50"].includes(horsepower)) {
+        return ["80", "100", "120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+    case "CPPS-350":
+      if (horsepower === "5") return ["57", "76", "92", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "7.5") return ["65", "72", "96", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "10") return ["65", "79", "95", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "15") return ["69", "84", "95", "122", "157", "177"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "20") return ["73", "101", "116", "146", "224"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      break;
+    case "CPPS-406":
+      if (["20", "25", "30", "40", "50", "60"].includes(horsepower)) {
+        return ["80", "100", "120", "140", "160", "180", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      if (horsepower === "75") {
+        return ["100", "120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+    case "CPPS-507":
+    case "SPGPS-810":
+      if (["40", "50", "60", "75"].includes(horsepower)) {
+        return ["80", "100", "120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      if (["100", "125"].includes(horsepower)) {
+        return ["120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+  }
+
+  return STR_FEED_RATE_OPTIONS;
+};
+
 export const FEED_MODEL_OPTIONS = [
-  { value: "sigma-v-feed", label: "Sigma 5 Feed" },
-  { value: "sigma-v-straightener", label: "Sigma 5 Feed Pull Thru" },
-  { value: "allen-bradley", label: "Allen Bradley" },
+  { value: "CPRF-S1", label: "CPRF-S1" },
+  { value: "CPRF-S1 PLUS", label: "CPRF-S1 PLUS" },
+  { value: "CPRF-S2", label: "CPRF-S2" },
+  { value: "CPRF-S2 PLUS", label: "CPRF-S2 PLUS" },
+  { value: "CPRF-S3", label: "CPRF-S3" },
+  { value: "CPRF-S3 PLUS", label: "CPRF-S3 PLUS" },
+  { value: "CPRF-S4", label: "CPRF-S4" },
+  { value: "CPRF-S4 PLUS", label: "CPRF-S4 PLUS" },
+  { value: "CPRF-S5", label: "CPRF-S5" },
+  { value: "CPRF-S6", label: "CPRF-S6" },
+  { value: "CPRF-S7", label: "CPRF-S7" },
+  { value: "CPRF-S8", label: "CPRF-S8" },
+];
+
+export const FEED_TYPE_OPTIONS = [
+  { value: "Sigma 5", label: "Sigma 5" },
+  { value: "Sigma 5 w/ Pull Through", label: "Sigma 5 w/ Pull Through" },
+  { value: "Allen Bradley MPL - Feed", label: "Allen Bradley MPL - Feed" },
 ];
 
 export const SIGMA_5_FEED_MODEL_OPTIONS = [
@@ -374,6 +579,8 @@ export const ALLEN_BRADLEY_FEED_MODEL_OPTIONS = [
 ];
 
 export const MACHINE_WIDTH_OPTIONS = [
+  { value: "6", label: "6" },
+  { value: "12", label: "12" },
   { value: "18", label: "18" },
   { value: "24", label: "24" },
   { value: "30", label: "30" },
@@ -382,7 +589,58 @@ export const MACHINE_WIDTH_OPTIONS = [
   { value: "48", label: "48" },
   { value: "54", label: "54" },
   { value: "60", label: "60" },
+  { value: "66", label: "66" },
+  { value: "72", label: "72" },
+  { value: "78", label: "78" },
 ];
+
+// Feed model dependency mappings
+export const FEED_MODEL_DEPENDENCIES = {
+  "CPRF-S1": {
+    widths: ["6", "12", "18", "24"]
+  },
+  "CPRF-S1 PLUS": {
+    widths: ["6", "12", "18", "24"]
+  },
+  "CPRF-S2": {
+    widths: ["6", "12", "18", "24", "30"]
+  },
+  "CPRF-S2 PLUS": {
+    widths: ["6", "12", "18", "24", "30"]
+  },
+  "CPRF-S3": {
+    widths: ["12", "18", "24", "30", "36", "42"]
+  },
+  "CPRF-S3 PLUS": {
+    widths: ["12", "18", "24", "30", "36", "42"]
+  },
+  "CPRF-S4": {
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54"]
+  },
+  "CPRF-S4 PLUS": {
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54"]
+  },
+  "CPRF-S5": {
+    widths: ["18", "24", "30", "36", "42", "48", "54", "60"]
+  },
+  "CPRF-S6": {
+    widths: ["18", "24", "30", "36", "42", "48", "54", "60", "66", "72"]
+  },
+  "CPRF-S7": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"]
+  },
+  "CPRF-S8": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"]
+  }
+};
+
+// Helper function to get feed machine width options for model
+export const getFeedMachineWidthOptionsForModel = (model: string) => {
+  const dependencies = FEED_MODEL_DEPENDENCIES[model as keyof typeof FEED_MODEL_DEPENDENCIES];
+  if (!dependencies) return MACHINE_WIDTH_OPTIONS;
+
+  return dependencies.widths.map(width => ({ value: width, label: `${width}"` }));
+};
 
 export const STRAIGHTENER_ROLLS_OPTIONS = [
   { value: "5", label: "5 Rolls" },

@@ -43,6 +43,20 @@ export class PerformanceService {
     current[keys[keys.length - 1]] = value;
   }
 
+  private hasNestedValue(obj: Record<string, any>, path: string): boolean {
+    const keys = path.split(".");
+    let current = obj;
+
+    for (const key of keys) {
+      if (!current || typeof current !== "object" || !(key in current)) {
+        return false;
+      }
+      current = current[key];
+    }
+
+    return true;
+  }
+
   // Sheets
   async createPerformanceSheet(data: Partial<PerformanceSheet>) {
     const { versionId, data: sheetData, ...rest } = data;
@@ -72,8 +86,13 @@ export class PerformanceService {
           section.sections.forEach((subsection: any) => {
             if (subsection.fields && Array.isArray(subsection.fields)) {
               subsection.fields.forEach((field: any) => {
-                const value = field.default !== undefined ? field.default : null;
-                this.setNestedValue(initializedData, field.id, value);
+                // Only set the value if it hasn't been set already and has a default
+                if (field.default !== undefined && !this.hasNestedValue(initializedData, field.id)) {
+                  this.setNestedValue(initializedData, field.id, field.default);
+                } else if (field.default === undefined && !this.hasNestedValue(initializedData, field.id)) {
+                  // Only set null if no value exists yet
+                  this.setNestedValue(initializedData, field.id, null);
+                }
               });
             }
           });

@@ -113,13 +113,13 @@
       "shearDieApplication": false,
       "straightSidePress": false,
       "other": false,
-      "tonnageOfPress": "0",
-      "strokeLength": "0",
-      "maxSPM": "60",
-      "bedWidth": "0",
-      "bedLength": "0",
-      "windowSize": "0",
-      "cycleTime": "0"
+      "tonnageOfPress": 0,
+      "strokeLength": 0,
+      "maxSPM": 60,
+      "bedWidth": 0,
+      "windowSize": 0,
+      "feedWindowDegrees": 0,
+      "cycleTime": 0
     },
     "dies": {
       "transferDies": false,

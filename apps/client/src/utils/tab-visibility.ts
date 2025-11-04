@@ -47,8 +47,8 @@ function extractConfiguration(data: any): TabVisibilityConfig {
     typeOfLine: data?.common?.equipment?.feed?.typeOfLine,
     feedControls: data?.materialSpecs?.feed?.controls,
     selectRoll: data?.materialSpecs?.straightener?.rolls?.typeOfRoll ||
-                data?.rollStrBackbend?.straightener?.rolls?.typeOfRoll ||
-                (data?.materialSpecs?.straightener as any)?.selectRoll
+      data?.rollStrBackbend?.straightener?.rolls?.typeOfRoll ||
+      (data?.materialSpecs?.straightener as any)?.selectRoll
   };
 }
 
@@ -66,7 +66,7 @@ function determineAdditionalTabs(config: TabVisibilityConfig): VisibleTab[] {
   if (shouldShowRollStrBackbend(config)) {
     const rollLabel = getRollStrBackbendLabel(config.selectRoll);
     tabs.push({
-      label: "Roll Straightener",
+      label: "Roll Str Backbend",
       value: "roll-str-backbend",
       dynamicLabel: rollLabel
     });
@@ -141,10 +141,11 @@ function shouldShowStrUtility(config: TabVisibilityConfig): boolean {
 }
 
 function shouldShowRollStrBackbend(config: TabVisibilityConfig): boolean {
-  const { selectRoll, lineApplication, lineType } = config;
+  const { lineApplication, lineType } = config;
 
   if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
-    return Boolean(selectRoll && selectRoll.length > 0);
+    // Always show for Press Feed/Cut to Length applications
+    return true;
   }
 
   if (lineApplication === "standalone") {
@@ -184,8 +185,7 @@ function shouldShowShear(config: TabVisibilityConfig): boolean {
     false;
 }
 
-function getRollStrBackbendLabel(selectRoll?: string): string {
-  if (!selectRoll) return "Roll Straightener";
+function getRollStrBackbendLabel(_selectRoll?: string): string {
   return "Roll Str Backbend";
 }
 
