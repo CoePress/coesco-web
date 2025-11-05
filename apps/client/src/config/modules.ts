@@ -282,6 +282,18 @@ const adminModule: Module = {
           icon: FileCogIcon,
           component: FormBuilder,
         },
+        {
+          slug: ":id/submissions",
+          label: "Form Submissions",
+          icon: FileCheck2Icon,
+          component: FormSubmissions,
+        },
+        {
+          slug: ":formId/submissions/:id",
+          label: "Submission View",
+          icon: FileTextIcon,
+          component: FormSubmissionView,
+        },
       ],
     },
   ],

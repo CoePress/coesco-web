@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Camera, PenTool, Download, Printer } from 'lucide-react';
 import { Button, Card, PageHeader } from '@/components';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,9 @@ interface FormSubmissionData {
 const FormSubmissionView = () => {
   const { id, formId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAdminContext = location.pathname.startsWith("/admin");
+  const basePath = isAdminContext ? "/admin/forms" : "/service/forms";
   const { get } = useApi<IApiResponse<FormSubmissionData>>();
   const toast = useToast();
 
@@ -341,7 +344,7 @@ const FormSubmissionView = () => {
 
   const Actions = () => (
     <div className="flex gap-2">
-      <Button onClick={() => navigate(`/service/forms/${formId}/submissions`)} variant="secondary-outline">
+      <Button onClick={() => navigate(`${basePath}/${formId}/submissions`)} variant="secondary-outline">
         <ArrowLeft size={16} />
         <span>Back</span>
       </Button>
@@ -368,7 +371,7 @@ const FormSubmissionView = () => {
     return (
       <div className="w-full flex-1 flex flex-col items-center justify-center">
         <div className="text-error text-lg mb-4">{error || "Submission not found"}</div>
-        <Button onClick={() => navigate(`/service/forms/${formId}/submissions`)}>
+        <Button onClick={() => navigate(`${basePath}/${formId}/submissions`)}>
           Back to Submissions
         </Button>
       </div>
