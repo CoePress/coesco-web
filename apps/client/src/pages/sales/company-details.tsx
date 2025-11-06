@@ -71,7 +71,7 @@ const CompanyDetails = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [tempNotes, setTempNotes] = useState<string>('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'addresses' | 'credit' | 'interactions' | 'purchase-history' | 'notes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'addresses' | 'credit' | 'interactions' | 'purchase-history' | 'notes' | 'relationships'>('overview');
   
   const [editingCallId, setEditingCallId] = useState<number | null>(null);
   const [editingCallData, setEditingCallData] = useState<any>({});
@@ -104,6 +104,13 @@ const CompanyDetails = () => {
 
   const [companyAddresses, setCompanyAddresses] = useState<any[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  const [companyRelationships, setCompanyRelationships] = useState<any[]>([]);
+  const [isAddingRelationship, setIsAddingRelationship] = useState(false);
+  const [newRelationshipData, setNewRelationshipData] = useState<any>({});
+  const [companySearchTerm, setCompanySearchTerm] = useState("");
+  const [companySearchResults, setCompanySearchResults] = useState<any[]>([]);
+  const [isSearchingCompanies, setIsSearchingCompanies] = useState(false);
 
   const getContactName = (contact: any) => `${contact.firstName || ""} ${contact.lastName || ""}`.trim();
   const getContactInitial = (name: string) => name ? name.charAt(0).toUpperCase() : 'C';
@@ -353,6 +360,87 @@ const CompanyDetails = () => {
     };
 
     fetchCompanyData();
+    return () => { cancelled = true; };
+  }, [id]);
+
+  useEffect(() => {
+    if (!id || id === "undefined" || id === "null") {
+      return;
+    }
+
+    let cancelled = false;
+    const fetchRelationships = async () => {
+      try {
+        const [asParent, asChild] = await Promise.all([
+          api.get(`/sales/company-relationships`, {
+            filter: JSON.stringify({
+              parentId: String(id)
+            }),
+            limit: 100
+          }),
+          api.get(`/sales/company-relationships`, {
+            filter: JSON.stringify({
+              childId: String(id)
+            }),
+            limit: 100
+          })
+        ]);
+
+        if (!cancelled) {
+          const parentRelationships = Array.isArray(asParent) ? asParent : (asParent?.data || []);
+          const childRelationships = Array.isArray(asChild) ? asChild : (asChild?.data || []);
+
+          const allRelationships = [
+            ...parentRelationships.map((rel: any) => ({ ...rel, direction: 'parent' })),
+            ...childRelationships.map((rel: any) => ({ ...rel, direction: 'child' }))
+          ];
+
+          // Fetch company names for all related companies
+          const relatedCompanyIds = allRelationships.map((rel: any) =>
+            rel.direction === 'parent' ? rel.childId : rel.parentId
+          );
+
+          const uniqueCompanyIds = [...new Set(relatedCompanyIds)];
+
+          const companyNamePromises = uniqueCompanyIds.map(async (companyId: string) => {
+            try {
+              const companyData = await api.get(`/legacy/std/Company/filter/custom`, {
+                filterField: 'Company_ID',
+                filterValue: companyId,
+                limit: 1,
+                fields: 'CustDlrName'
+              });
+              const company = Array.isArray(companyData) ? companyData[0] : companyData;
+              return { id: companyId, name: company?.CustDlrName || `Company ${companyId}` };
+            } catch (error) {
+              console.error(`Error fetching company ${companyId}:`, error);
+              return { id: companyId, name: `Company ${companyId}` };
+            }
+          });
+
+          const companyNames = await Promise.all(companyNamePromises);
+          const companyNameMap = Object.fromEntries(companyNames.map(c => [c.id, c.name]));
+
+          // Add company names to relationships
+          const relationshipsWithNames = allRelationships.map((rel: any) => {
+            const relatedCompanyId = rel.direction === 'parent' ? rel.childId : rel.parentId;
+            return {
+              ...rel,
+              relatedCompanyName: companyNameMap[relatedCompanyId]
+            };
+          });
+
+          setCompanyRelationships(relationshipsWithNames);
+        }
+      } catch (error) {
+        console.error('Error fetching company relationships:', error);
+        if (!cancelled) {
+          setCompanyRelationships([]);
+        }
+      }
+    };
+
+    fetchRelationships();
     return () => { cancelled = true; };
   }, [id]);
 
@@ -982,12 +1070,12 @@ const CompanyDetails = () => {
   const refreshAddresses = async () => {
     try {
       console.log('Refreshing address data...');
-      const addressesData = await api.get(`/legacy/std/Address/filter/custom`, { 
-        filterField: 'Company_ID', 
+      const addressesData = await api.get(`/legacy/std/Address/filter/custom`, {
+        filterField: 'Company_ID',
         filterValue: id,
         limit: 100
       });
-      
+
       if (addressesData) {
         const processedAddresses = Array.isArray(addressesData) ? addressesData : [];
         setCompanyAddresses(processedAddresses);
@@ -995,6 +1083,186 @@ const CompanyDetails = () => {
       }
     } catch (error) {
       console.error('Error refreshing addresses:', error);
+    }
+  };
+
+  const handleSearchCompanies = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.trim().length < 2) {
+      setCompanySearchResults([]);
+      return;
+    }
+
+    try {
+      setIsSearchingCompanies(true);
+
+      const params: any = {
+        page: 1,
+        limit: 5,
+        fields: "Company_ID,CustDlrName,Active",
+        filter: JSON.stringify({
+          filters: [
+            {
+              operator: "contains",
+              field: "CustDlrName",
+              value: searchTerm
+            }
+          ]
+        })
+      };
+
+      const response = await api.get(`/legacy/base/Company`, params);
+
+      const isApiResponse = response && typeof response === 'object' && 'data' in response;
+      const rawResults = isApiResponse ? (Array.isArray(response.data) ? response.data : []) : (Array.isArray(response) ? response : []);
+
+      setCompanySearchResults(rawResults.filter((c: any) => String(c.Company_ID) !== String(id)));
+    } catch (error) {
+      console.error('Error searching companies:', error);
+      setCompanySearchResults([]);
+    } finally {
+      setIsSearchingCompanies(false);
+    }
+  };
+
+  const handleAddRelationship = () => {
+    setNewRelationshipData({
+      relatedCompanyId: '',
+      relatedCompanyName: '',
+      relationshipType: '',
+      direction: 'parent'
+    });
+    setCompanySearchTerm('');
+    setCompanySearchResults([]);
+    setIsAddingRelationship(true);
+  };
+
+  const handleSelectCompanyForRelationship = (selectedCompany: any) => {
+    setNewRelationshipData({
+      ...newRelationshipData,
+      relatedCompanyId: selectedCompany.Company_ID,
+      relatedCompanyName: selectedCompany.CustDlrName
+    });
+    setCompanySearchTerm('');
+    setCompanySearchResults([]);
+  };
+
+  const handleSaveRelationship = async () => {
+    if (!newRelationshipData.relatedCompanyId || !newRelationshipData.relationshipType) {
+      alert('Please select a company and enter a relationship type');
+      return;
+    }
+
+    try {
+      const relationshipData = newRelationshipData.direction === 'parent'
+        ? {
+            parentId: String(id),
+            childId: String(newRelationshipData.relatedCompanyId),
+            relationshipType: newRelationshipData.relationshipType
+          }
+        : {
+            parentId: String(newRelationshipData.relatedCompanyId),
+            childId: String(id),
+            relationshipType: newRelationshipData.relationshipType
+          };
+
+      const result = await api.post('/sales/company-relationships', relationshipData);
+
+      if (result) {
+        await refreshRelationships();
+        setIsAddingRelationship(false);
+        setNewRelationshipData({});
+        setCompanySearchTerm('');
+        setCompanySearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error creating relationship:', error);
+      alert('Error creating relationship. Please try again.');
+    }
+  };
+
+  const handleCancelRelationship = () => {
+    setIsAddingRelationship(false);
+    setNewRelationshipData({});
+    setCompanySearchTerm('');
+    setCompanySearchResults([]);
+  };
+
+  const handleDeleteRelationship = async (relationship: any) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete this relationship?`);
+    if (!confirmDelete) return;
+
+    try {
+      await api.delete(`/sales/company-relationships/${relationship.id}`);
+      await refreshRelationships();
+    } catch (error) {
+      console.error('Error deleting relationship:', error);
+      alert('Error deleting relationship. Please try again.');
+    }
+  };
+
+  const refreshRelationships = async () => {
+    try {
+      const [asParent, asChild] = await Promise.all([
+        api.get(`/sales/company-relationships`, {
+          filter: JSON.stringify({
+            parentId: String(id)
+          }),
+          limit: 100
+        }),
+        api.get(`/sales/company-relationships`, {
+          filter: JSON.stringify({
+            childId: String(id)
+          }),
+          limit: 100
+        })
+      ]);
+
+      const parentRelationships = Array.isArray(asParent) ? asParent : (asParent?.data || []);
+      const childRelationships = Array.isArray(asChild) ? asChild : (asChild?.data || []);
+
+      const allRelationships = [
+        ...parentRelationships.map((rel: any) => ({ ...rel, direction: 'parent' })),
+        ...childRelationships.map((rel: any) => ({ ...rel, direction: 'child' }))
+      ];
+
+      // Fetch company names for all related companies
+      const relatedCompanyIds = allRelationships.map((rel: any) =>
+        rel.direction === 'parent' ? rel.childId : rel.parentId
+      );
+
+      const uniqueCompanyIds = [...new Set(relatedCompanyIds)];
+
+      const companyNamePromises = uniqueCompanyIds.map(async (companyId: string) => {
+        try {
+          const companyData = await api.get(`/legacy/std/Company/filter/custom`, {
+            filterField: 'Company_ID',
+            filterValue: companyId,
+            limit: 1,
+            fields: 'CustDlrName'
+          });
+          const company = Array.isArray(companyData) ? companyData[0] : companyData;
+          return { id: companyId, name: company?.CustDlrName || `Company ${companyId}` };
+        } catch (error) {
+          console.error(`Error fetching company ${companyId}:`, error);
+          return { id: companyId, name: `Company ${companyId}` };
+        }
+      });
+
+      const companyNames = await Promise.all(companyNamePromises);
+      const companyNameMap = Object.fromEntries(companyNames.map(c => [c.id, c.name]));
+
+      // Add company names to relationships
+      const relationshipsWithNames = allRelationships.map((rel: any) => {
+        const relatedCompanyId = rel.direction === 'parent' ? rel.childId : rel.parentId;
+        return {
+          ...rel,
+          relatedCompanyName: companyNameMap[relatedCompanyId]
+        };
+      });
+
+      setCompanyRelationships(relationshipsWithNames);
+    } catch (error) {
+      console.error('Error refreshing relationships:', error);
     }
   };
 
@@ -1299,6 +1567,15 @@ const CompanyDetails = () => {
                   : 'border-transparent text-text-muted hover:text-primary'
               }`}>
               Notes
+            </button>
+            <button
+              onClick={() => setActiveTab('relationships')}
+              className={`pb-2 border-b-2 font-semibold cursor-pointer ${
+                activeTab === 'relationships'
+                  ? 'border-primary/50 text-primary'
+                  : 'border-transparent text-text-muted hover:text-primary'
+              }`}>
+              Relationships
             </button>
           </div>
         </div>
@@ -2943,6 +3220,227 @@ const CompanyDetails = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            </section>
+          ) : activeTab === 'relationships' ? (
+            <section className="flex-1 space-y-2">
+              <div
+                className="bg-foreground rounded-lg border border-border p-4"
+                style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-text">Company Relationships ({companyRelationships.length})</h4>
+                  <button
+                    type="button"
+                    onClick={handleAddRelationship}
+                    className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
+                    + Add Relationship
+                  </button>
+                </div>
+
+                {isAddingRelationship && (
+                  <div className="bg-surface p-4 rounded border border-primary mb-4">
+                    <h5 className="text-sm font-semibold text-text mb-3">Add New Relationship</h5>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-text-muted mb-1">Direction</label>
+                        <select
+                          value={newRelationshipData.direction || 'parent'}
+                          onChange={(e) => setNewRelationshipData({ ...newRelationshipData, direction: e.target.value })}
+                          className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary">
+                          <option value="parent">{company.name} is parent of...</option>
+                          <option value="child">{company.name} is child of...</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-text-muted mb-1">Related Company</label>
+                        {newRelationshipData.relatedCompanyName ? (
+                          <div className="flex items-center justify-between bg-background border border-border rounded px-2 py-1">
+                            <span className="text-sm text-text">{newRelationshipData.relatedCompanyName}</span>
+                            <button
+                              type="button"
+                              onClick={() => setNewRelationshipData({ ...newRelationshipData, relatedCompanyId: '', relatedCompanyName: '' })}
+                              className="text-xs text-error hover:underline">
+                              Change
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={companySearchTerm}
+                              onChange={(e) => {
+                                setCompanySearchTerm(e.target.value);
+                                handleSearchCompanies(e.target.value);
+                              }}
+                              className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                              placeholder="Search for company by name..."
+                            />
+                            {isSearchingCompanies && (
+                              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                                <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
+                              </div>
+                            )}
+                            {companySearchResults.length > 0 && (
+                              <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded shadow-lg max-h-48 overflow-y-auto">
+                                {companySearchResults.map((result) => (
+                                  <button
+                                    key={result.Company_ID}
+                                    type="button"
+                                    onClick={() => handleSelectCompanyForRelationship(result)}
+                                    className="w-full text-left px-3 py-2 text-sm text-text hover:bg-surface border-b border-border last:border-b-0">
+                                    {result.CustDlrName} (ID: {result.Company_ID})
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-text-muted mb-1">Relationship Type</label>
+                        <select
+                          value={newRelationshipData.relationshipType || ''}
+                          onChange={(e) => setNewRelationshipData({ ...newRelationshipData, relationshipType: e.target.value })}
+                          className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary">
+                          <option value="">Select type...</option>
+                          <option value="Subsidiary">Subsidiary</option>
+                          <option value="Partner">Partner</option>
+                          <option value="Branch">Branch</option>
+                        </select>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={handleSaveRelationship}>
+                          Save Relationship
+                        </Button>
+                        <Button
+                          variant="secondary-outline"
+                          size="sm"
+                          onClick={handleCancelRelationship}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {companyRelationships.length > 0 ? (
+                  <div className="max-h-96 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-foreground z-10">
+                        <tr className="text-text-muted border-b border-border">
+                          <th className="text-left py-2">RELATIONSHIP</th>
+                          <th className="text-left py-2">TYPE</th>
+                          <th className="text-left py-2 w-24">ACTIONS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {companyRelationships.map((relationship, index) => {
+                          const relatedCompanyId = relationship.direction === 'parent'
+                            ? relationship.childId
+                            : relationship.parentId;
+                          const relatedCompanyName = relationship.relatedCompanyName || `Company ${relatedCompanyId}`;
+
+                          let relationshipLabel;
+                          if (relationship.relationshipType === 'Partner') {
+                            relationshipLabel = (
+                              <>
+                                Partnership with{' '}
+                                <Link
+                                  to={`/sales/companies/${relatedCompanyId}`}
+                                  className="text-primary hover:underline">
+                                  {relatedCompanyName}
+                                </Link>
+                              </>
+                            );
+                          } else if (relationship.relationshipType === 'Subsidiary') {
+                            relationshipLabel = relationship.direction === 'parent' ? (
+                              <>
+                                {company.name} owns:{' '}
+                                <Link
+                                  to={`/sales/companies/${relatedCompanyId}`}
+                                  className="text-primary hover:underline">
+                                  {relatedCompanyName}
+                                </Link>
+                              </>
+                            ) : (
+                              <>
+                                {company.name} is child to:{' '}
+                                <Link
+                                  to={`/sales/companies/${relatedCompanyId}`}
+                                  className="text-primary hover:underline">
+                                  {relatedCompanyName}
+                                </Link>
+                              </>
+                            );
+                          } else if (relationship.relationshipType === 'Branch') {
+                            relationshipLabel = relationship.direction === 'parent' ? (
+                              <>
+                                {company.name} has branch:{' '}
+                                <Link
+                                  to={`/sales/companies/${relatedCompanyId}`}
+                                  className="text-primary hover:underline">
+                                  {relatedCompanyName}
+                                </Link>
+                              </>
+                            ) : (
+                              <>
+                                {company.name} is branch of:{' '}
+                                <Link
+                                  to={`/sales/companies/${relatedCompanyId}`}
+                                  className="text-primary hover:underline">
+                                  {relatedCompanyName}
+                                </Link>
+                              </>
+                            );
+                          } else {
+                            relationshipLabel = (
+                              <>
+                                Related to{' '}
+                                <Link
+                                  to={`/sales/companies/${relatedCompanyId}`}
+                                  className="text-primary hover:underline">
+                                  {relatedCompanyName}
+                                </Link>
+                              </>
+                            );
+                          }
+
+                          return (
+                            <tr key={`relationship-${relationship.id}-${index}`} className="border-b border-border">
+                              <td className="py-2 text-text">
+                                {relationshipLabel}
+                              </td>
+                              <td className="py-2">
+                                <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                                  {relationship.relationshipType || 'Not specified'}
+                                </span>
+                              </td>
+                              <td className="py-2">
+                                <Button
+                                  variant="secondary-outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteRelationship(relationship)}
+                                  className="border-red-300 hover:bg-red-50 hover:border-red-400">
+                                  <Trash2 size={12} className="text-red-600" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-text-muted">
+                    No relationships found for this company
+                  </div>
+                )}
               </div>
             </section>
           ) : null

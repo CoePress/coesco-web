@@ -258,6 +258,21 @@ enum CompanyStatus {
   ARCHIVE
 }
 
+model CompanyRelationship {
+  id               String   @id @default(uuid())
+  parentId         String
+  childId          String
+  relationshipType String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdById      String
+  updatedById      String
+
+  @@unique([parentId, childId])
+  @@index([createdById])
+  @@map("company_relationships")
+}
+
 model Contact {
   id              String      @id @default(uuid())
   addressId       String?
@@ -272,6 +287,8 @@ model Contact {
   title           String?
   type            ContactType @default(Sales)
   isPrimary       Boolean     @default(false)
+  imageId         Int?
+  profileUrl      String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   deletedAt       DateTime?
@@ -279,11 +296,12 @@ model Contact {
   updatedById     String
 
   company          Company          @relation(fields: [companyId], references: [id])
+  image            Image?           @relation(fields: [imageId], references: [id])
   customerJourneys Journey[]        @relation("JourneyCustomerContact")
   dealerJourneys   Journey[]        @relation("JourneyDealerContact")
   journeyContacts  JourneyContact[]
 
-  /// @searchFields(firstName: 4, lastName: 3, email: 2, title: 1)
+  /// @searchFields(firstName: 2, lastName: 2)
 
   @@index([createdById])
   @@index([companyId])
@@ -466,26 +484,29 @@ enum JourneyInteractionType {
 
 // Quoting
 model Quote {
-  id                String      @id @default(uuid())
-  journeyId         String?
-  year              String
-  number            String
-  rsmId             String?
-  customerId        String?
-  customerContactId String?
-  customerAddressId String?
-  dealerId          String?
-  dealerContactId   String?
-  dealerAddressId   String?
-  priority          String      @default("C")
-  confidence        Int         @default(0)
-  status            QuoteStatus @default(OPEN)
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  deletedAt         DateTime?
-  createdById       String
-  updatedById       String
-  legacy            Json        @default("{}")
+  id                        String               @id @default(uuid())
+  journeyId                 String?
+  year                      String
+  number                    String
+  rsmId                     String?
+  customerId                String?
+  customerContactId         String?
+  customerAddressId         String?
+  dealerId                  String?
+  dealerContactId           String?
+  dealerAddressId           String?
+  priority                  String               @default("C")
+  confidence                Int                  @default(0)
+  status                    QuoteStatus          @default(OPEN)
+  latestRevision            String?
+  latestRevisionStatus      QuoteRevisionStatus?
+  latestRevisionTotalAmount Decimal?
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+  deletedAt                 DateTime?
+  createdById               String
+  updatedById               String
+  legacy                    Json                 @default("{}")
 
   revisions QuoteRevision[]
   /// @transform(quoteNumber: CONCAT(RIGHT(year, 2), '-', LPAD(number, 5, '0')))
@@ -1203,6 +1224,16 @@ model Message {
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@map("messages")
+}
+
+model Image {
+  id         Int      @id @default(autoincrement())
+  path       String   @unique
+  uploadedAt DateTime @default(now())
+
+  contacts Contact[]
+
+  @@map("images")
 }
 
 model Draft {

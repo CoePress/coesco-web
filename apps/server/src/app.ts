@@ -28,7 +28,7 @@ const corsOptions = {
   origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-File-Name"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-File-Name", "Idempotency-Key"],
   exposedHeaders: ["Content-Range", "X-Content-Range", "Content-Length", "Content-Disposition"],
 };
 
@@ -60,6 +60,13 @@ const swaggerDoc = JSON.parse(readFileSync(swaggerPath, "utf-8"));
 
 app.set("trust proxy", true);
 
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads"), {
+  setHeaders: (res) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  },
+}));
+
 app.use("/api", limiter);
 app.use(morgan("dev", { stream }));
 
@@ -73,6 +80,7 @@ app.use(helmet({
     },
   },
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false,
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
@@ -84,10 +92,11 @@ app.use(helmet({
 }));
 
 app.use(preventDirectoryTraversal);
-app.use(preventStaticFileServing);
 app.use(compression());
 app.use(cookieParser());
 app.use(cors(corsOptions));
+
+app.use(preventStaticFileServing);
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use("/api/files/upload", express.raw({ type: "*/*", limit: "100mb" }));

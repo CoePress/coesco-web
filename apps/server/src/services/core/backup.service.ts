@@ -1,12 +1,11 @@
-import { exec } from "node:child_process";
+import { spawn } from "node:child_process";
+import { createReadStream, createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
+import { createGunzip, createGzip } from "node:zlib";
 
 import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
-
-const execAsync = promisify(exec);
 
 export class BackupService {
   private backupDir: string;
@@ -50,9 +49,36 @@ export class BackupService {
       logger.info("Starting database backup...");
 
       const databaseUrl = env.DATABASE_URL;
-      const backupCommand = `pg_dump "${databaseUrl}" | gzip > "${filepath}"`;
 
-      await execAsync(backupCommand);
+      await new Promise<void>((resolve, reject) => {
+        const pgDump = spawn("pg_dump", [databaseUrl]);
+        const gzip = createGzip();
+        const output = createWriteStream(filepath);
+
+        pgDump.stdout.pipe(gzip).pipe(output);
+
+        pgDump.stderr.on("data", (data) => {
+          logger.warn(`pg_dump stderr: ${data}`);
+        });
+
+        pgDump.on("error", (error) => {
+          reject(new Error(`pg_dump process error: ${error.message}`));
+        });
+
+        output.on("error", (error) => {
+          reject(new Error(`Write stream error: ${error.message}`));
+        });
+
+        output.on("finish", () => {
+          resolve();
+        });
+
+        pgDump.on("exit", (code) => {
+          if (code !== 0) {
+            reject(new Error(`pg_dump exited with code ${code}`));
+          }
+        });
+      });
 
       const stats = await fs.stat(filepath);
       const sizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
@@ -163,8 +189,24 @@ export class BackupService {
         return false;
       }
 
-      const testCommand = `gzip -t "${filepath}"`;
-      await execAsync(testCommand);
+      await new Promise<void>((resolve, reject) => {
+        const readStream = createReadStream(filepath);
+        const gunzip = createGunzip();
+
+        gunzip.on("error", (error) => {
+          reject(new Error(`Gzip verification error: ${error.message}`));
+        });
+
+        readStream.on("error", (error) => {
+          reject(new Error(`Read stream error: ${error.message}`));
+        });
+
+        gunzip.on("end", () => {
+          resolve();
+        });
+
+        readStream.pipe(gunzip).on("data", () => {});
+      });
 
       logger.info(`Backup verified: ${filename}`);
       return true;
@@ -194,9 +236,31 @@ export class BackupService {
       logger.warn(`Starting database restore from: ${filename}`);
 
       const databaseUrl = env.DATABASE_URL;
-      const restoreCommand = `gunzip -c "${filepath}" | psql "${databaseUrl}"`;
 
-      await execAsync(restoreCommand);
+      await new Promise<void>((resolve, reject) => {
+        const gunzip = createGunzip();
+        const readStream = createReadStream(filepath);
+        const psql = spawn("psql", [databaseUrl]);
+
+        readStream.pipe(gunzip).pipe(psql.stdin);
+
+        psql.stderr.on("data", (data) => {
+          logger.warn(`psql stderr: ${data}`);
+        });
+
+        psql.on("error", (error) => {
+          reject(new Error(`psql process error: ${error.message}`));
+        });
+
+        psql.on("exit", (code) => {
+          if (code !== 0) {
+            reject(new Error(`psql exited with code ${code}`));
+          }
+          else {
+            resolve();
+          }
+        });
+      });
 
       logger.info(`Database restored successfully from: ${filename}`);
       return { success: true };

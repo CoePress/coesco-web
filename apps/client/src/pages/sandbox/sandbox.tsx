@@ -1,8 +1,9 @@
-import { Button } from "@/components";
+import { Button, BottomSheet, Table } from "@/components";
 import AddressAutocomplete from "@/components/feature/address-input";
 import { useState, useEffect, useRef } from "react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useToast } from "@/hooks/use-toast";
+import type { TableColumn } from "@/components/ui/table";
 
 // Type definitions
 interface Location {
@@ -59,6 +60,60 @@ const Sandbox = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const { notify } = useNotifications();
   const { success, error, warning, info } = useToast();
+
+  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [bottomSheetSize, setBottomSheetSize] = useState<"small" | "medium" | "large" | "full">("medium");
+  const [bottomSheetContent, setBottomSheetContent] = useState("basic");
+
+  interface SampleData {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+  }
+
+  const sampleTableData: SampleData[] = [
+    { id: 1, name: "John Doe", email: "john@example.com", role: "Admin", status: "Active" },
+    { id: 2, name: "Jane Smith", email: "jane@example.com", role: "User", status: "Active" },
+    { id: 3, name: "Bob Johnson", email: "bob@example.com", role: "Manager", status: "Inactive" },
+    { id: 4, name: "Alice Williams", email: "alice@example.com", role: "User", status: "Active" },
+    { id: 5, name: "Charlie Brown", email: "charlie@example.com", role: "Admin", status: "Active" },
+  ];
+
+  const tableColumns: TableColumn<SampleData>[] = [
+    { key: "name", header: "Name" },
+    { key: "email", header: "Email" },
+    { key: "role", header: "Role" },
+    {
+      key: "status",
+      header: "Status",
+      render: (value) => (
+        <span className={`px-2 py-1 rounded text-xs ${
+          value === "Active"
+            ? "bg-success/20 text-success"
+            : "bg-error/20 text-error"
+        }`}>
+          {value as string}
+        </span>
+      )
+    },
+    {
+      key: "id",
+      header: "Actions",
+      render: (_, row) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={(e) => {
+            e?.stopPropagation();
+            info(`Editing ${row.name}`);
+          }}>
+          Edit
+        </Button>
+      )
+    }
+  ];
 
   const GOOGLE_API_KEY = "AIzaSyAggNUxlA-WkP5yvP_l3kCIQckeQBPEyOU";
 
@@ -392,6 +447,105 @@ const Sandbox = () => {
           </div>
         </div>
 
+        {/* Bottom Sheet Testing Section */}
+        <div
+          className="bg-foreground rounded-lg p-4"
+          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+          <h3 className="text-lg font-semibold text-text mb-4">
+            Bottom Sheet Testing
+          </h3>
+          <p className="text-sm text-text-muted mb-4">
+            Mobile-optimized modal alternative with drag-to-dismiss
+          </p>
+
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <Button
+              onClick={() => {
+                setBottomSheetSize("small");
+                setBottomSheetContent("basic");
+                setBottomSheetOpen(true);
+              }}
+              variant="primary"
+              size="sm">
+              Small
+            </Button>
+            <Button
+              onClick={() => {
+                setBottomSheetSize("medium");
+                setBottomSheetContent("basic");
+                setBottomSheetOpen(true);
+              }}
+              variant="primary"
+              size="sm">
+              Medium
+            </Button>
+            <Button
+              onClick={() => {
+                setBottomSheetSize("large");
+                setBottomSheetContent("basic");
+                setBottomSheetOpen(true);
+              }}
+              variant="primary"
+              size="sm">
+              Large
+            </Button>
+            <Button
+              onClick={() => {
+                setBottomSheetSize("full");
+                setBottomSheetContent("basic");
+                setBottomSheetOpen(true);
+              }}
+              variant="primary"
+              size="sm">
+              Full
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={() => {
+                setBottomSheetSize("medium");
+                setBottomSheetContent("form");
+                setBottomSheetOpen(true);
+              }}
+              variant="secondary"
+              size="sm">
+              Form Example
+            </Button>
+            <Button
+              onClick={() => {
+                setBottomSheetSize("large");
+                setBottomSheetContent("list");
+                setBottomSheetOpen(true);
+              }}
+              variant="ghost"
+              size="sm">
+              List Example
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Table View Testing Section */}
+        <div
+          className="bg-foreground rounded-lg p-4"
+          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+          <h3 className="text-lg font-semibold text-text mb-4">
+            Mobile Table View
+          </h3>
+          <p className="text-sm text-text-muted mb-4">
+            Resize window to mobile to see card view (or use dev tools)
+          </p>
+          <div className="h-[400px] bg-background rounded-lg overflow-hidden">
+            <Table
+              columns={tableColumns}
+              data={sampleTableData}
+              total={sampleTableData.length}
+              onRowClick={(row) => info(`Clicked: ${row.name}`)}
+              mobileCardView={true}
+            />
+          </div>
+        </div>
+
         {/* Location Tracking Section */}
         <div
           className="bg-foreground rounded-lg p-4"
@@ -539,6 +693,119 @@ const Sandbox = () => {
           ref={mapRef}
           className="w-full h-full min-h-[600px]"></div>
       </div>
+
+      {/* Bottom Sheet Component */}
+      <BottomSheet
+        isOpen={bottomSheetOpen}
+        onClose={() => setBottomSheetOpen(false)}
+        title={
+          bottomSheetContent === "basic"
+            ? "Bottom Sheet Example"
+            : bottomSheetContent === "form"
+            ? "Quick Form"
+            : "Select an Option"
+        }
+        snapPoint={bottomSheetSize}
+        footer={
+          bottomSheetContent === "form" ? (
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setBottomSheetOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={() => {
+                  success("Form submitted!");
+                  setBottomSheetOpen(false);
+                }}>
+                Submit
+              </Button>
+            </div>
+          ) : null
+        }>
+        {bottomSheetContent === "basic" && (
+          <div className="space-y-3">
+            <p className="text-text">
+              This is a mobile-optimized bottom sheet component. Try dragging it down to dismiss!
+            </p>
+            <div className="bg-surface p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Features:</h4>
+              <ul className="text-sm text-text-muted space-y-1 list-disc list-inside">
+                <li>Drag to dismiss gesture</li>
+                <li>Multiple size options (snap points)</li>
+                <li>Backdrop click to close</li>
+                <li>Smooth animations</li>
+                <li>Touch-friendly interface</li>
+                <li>z-index: 60 (doesn't conflict with Modal at 50)</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {bottomSheetContent === "form" && (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-text-muted mb-1">
+                Name
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text"
+                placeholder="Enter your name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-muted mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text"
+                placeholder="Enter your email"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-muted mb-1">
+                Message
+              </label>
+              <textarea
+                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text min-h-[100px]"
+                placeholder="Enter your message"
+              />
+            </div>
+          </div>
+        )}
+
+        {bottomSheetContent === "list" && (
+          <div className="space-y-2">
+            {[
+              { label: "Dashboard", icon: "📊" },
+              { label: "Profile", icon: "👤" },
+              { label: "Settings", icon: "⚙️" },
+              { label: "Notifications", icon: "🔔" },
+              { label: "Messages", icon: "💬" },
+              { label: "Calendar", icon: "📅" },
+              { label: "Reports", icon: "📈" },
+              { label: "Help", icon: "❓" },
+            ].map((item, index) => (
+              <button
+                key={index}
+                className="w-full flex items-center gap-3 p-3 bg-surface hover:bg-surface/80 rounded-lg transition-colors"
+                onClick={() => {
+                  info(`Selected: ${item.label}`);
+                  setBottomSheetOpen(false);
+                }}>
+                <span className="text-2xl">{item.icon}</span>
+                <span className="text-text font-medium">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </BottomSheet>
     </div>
   );
 };

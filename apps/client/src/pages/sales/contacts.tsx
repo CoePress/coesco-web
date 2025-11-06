@@ -241,7 +241,7 @@ const Contacts = () => {
       if (debouncedSearchTerm) {
         params.search = debouncedSearchTerm;
         params.fuzzy = true;
-        params.fuzzyThreshold = 0.25;
+        params.fuzzyThreshold = 0.35;
       }
 
       if (selectedOwner !== "all") {
@@ -703,7 +703,7 @@ const ContactsMapView = ({
         if (debouncedMapSearch) {
           params.search = debouncedMapSearch;
           params.fuzzy = true;
-          params.fuzzyThreshold = 0.25;
+          params.fuzzyThreshold = 0.35;
         }
 
         if (selectedContactType !== 'all') {

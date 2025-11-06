@@ -48,14 +48,14 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-base-100">
-          <div className="card bg-base-200 shadow-xl max-w-md">
-            <div className="card-body">
-              <h2 className="card-title text-error">Something went wrong</h2>
-              <p>We're sorry for the inconvenience. Please try refreshing the page.</p>
-              <div className="card-actions justify-end">
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="bg-foreground border border-border rounded-lg shadow-xl max-w-md p-6">
+            <div className="space-y-4">
+              <h2 className="font-semibold text-error">Something went wrong</h2>
+              <p className="text-sm text-text">We're sorry for the inconvenience. Please try refreshing the page.</p>
+              <div className="flex justify-end">
                 <button
-                  className="btn btn-primary"
+                  className="px-3 py-1.5 bg-primary text-background rounded hover:opacity-90 transition-opacity text-sm"
                   onClick={() => window.location.reload()}
                 >
                   Refresh Page
@@ -63,8 +63,8 @@ class ErrorBoundary extends Component<Props, State> {
               </div>
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="mt-4">
-                  <summary className="cursor-pointer text-sm">Error Details</summary>
-                  <pre className="text-xs mt-2 overflow-auto">
+                  <summary className="cursor-pointer text-sm text-text-muted hover:text-text">Error Details</summary>
+                  <pre className="text-xs mt-2 overflow-auto bg-surface p-3 rounded border border-border text-text">
                     {this.state.error.toString()}
                     {this.state.errorInfo?.componentStack}
                   </pre>

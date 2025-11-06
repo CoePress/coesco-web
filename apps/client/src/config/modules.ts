@@ -9,6 +9,7 @@ import {
   Building2,
   ChartNoAxesCombined,
   CodeIcon,
+  Database,
   DollarSignIcon,
   FactoryIcon,
   FileCheck2Icon,
@@ -23,11 +24,11 @@ import {
   SearchIcon,
   ShieldIcon,
   UsersIcon,
-  WrenchIcon,
 } from "lucide-react";
 
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
+import ImageManager from "@/pages/sandbox/image-manager";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
 import FormSubmissionView from "@/pages/service/form-submission-view";
@@ -177,55 +178,32 @@ const salesModule: Module = {
         },
       ],
     },
-  ],
-};
-
-const serviceModule: Module = {
-  sequence: 3,
-  slug: "service",
-  label: "Service",
-  icon: WrenchIcon,
-  status: "development",
-  pages: [
     {
-      slug: null,
+      slug: "forms",
       label: "Forms",
       icon: FileIcon,
       component: Forms,
       children: [
         {
-          slug: "forms/:id",
-          label: "Form Details",
-          icon: FileCogIcon,
-          component: FormDetails,
-        },
-        {
-          slug: "forms/:id/build",
-          label: "Form Details",
-          icon: FileCogIcon,
-          component: FormBuilder,
-        },
-        {
-          slug: "forms/:id/submissions",
-          label: "Form Submissions",
-          icon: FileCheck2Icon,
-          component: FormSubmissions,
-        },
-        {
-          slug: "forms/:id/submit",
+          slug: ":id/submit",
           label: "Form Submit",
           icon: FileCheck2Icon,
           component: FormSubmission,
         },
         {
-          slug: "forms/:formId/submissions/:id",
+          slug: ":id/submissions",
+          label: "Form Submissions",
+          icon: FileCheck2Icon,
+          component: FormSubmissions,
+        },
+        {
+          slug: ":formId/submissions/:id",
           label: "Submission View",
           icon: FileTextIcon,
           component: FormSubmissionView,
         },
       ],
     },
-
   ],
 };
 
@@ -280,6 +258,44 @@ const adminModule: Module = {
       icon: LogsIcon,
       component: Logs,
     },
+    {
+      slug: "data-pipeline",
+      label: "Data Pipeline",
+      icon: Database,
+      component: DataPipeline,
+    },
+    {
+      slug: "forms",
+      label: "Form Management",
+      icon: FileCogIcon,
+      component: Forms,
+      children: [
+        {
+          slug: ":id",
+          label: "Form Details",
+          icon: FileCogIcon,
+          component: FormDetails,
+        },
+        {
+          slug: ":id/build",
+          label: "Form Builder",
+          icon: FileCogIcon,
+          component: FormBuilder,
+        },
+        {
+          slug: ":id/submissions",
+          label: "Form Submissions",
+          icon: FileCheck2Icon,
+          component: FormSubmissions,
+        },
+        {
+          slug: ":formId/submissions/:id",
+          label: "Submission View",
+          icon: FileTextIcon,
+          component: FormSubmissionView,
+        },
+      ],
+    },
   ],
 };
 
@@ -309,6 +325,12 @@ const sandboxModule: Module = {
       component: Design,
     },
     {
+      slug: "image-manager",
+      label: "Image Manager",
+      icon: FileIcon,
+      component: ImageManager,
+    },
+    {
       slug: "legacy-explorer",
       label: "Legacy Explorer",
       icon: SearchIcon,
@@ -326,7 +348,6 @@ const sandboxModule: Module = {
 const modules: Module[] = [
   salesModule,
   productionModule,
-  serviceModule,
   adminModule,
   sandboxModule,
 ]

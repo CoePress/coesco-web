@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Building2, Mail, Phone, Calendar, User, MapPin, Edit, UserX, Briefcase, Trash2 } from "lucide-react";
+import { Building2, Mail, Phone, Calendar, User, MapPin, Edit, UserX, Briefcase, Trash2, Camera, Upload, X, ExternalLink } from "lucide-react";
 import { PageHeader, Button } from "@/components";
 import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
 import { ContactType } from "@/types/enums";
 import { fetchAvailableRsms, Employee } from "@/pages/sales/journeys/utils";
 
@@ -18,11 +19,21 @@ interface EditFormData {
   email: string;
   addressId: string;
   owner: string;
+  imageId: number | null;
+  profileUrl: string;
+}
+
+interface Image {
+  id: number;
+  url: string;
+  uploadedAt: string;
 }
 
 const ContactDetails = () => {
   const { id: contactId } = useParams<{ id: string }>();
   const api = useApi();
+  const { success, error: toastError } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [contactData, setContactData] = useState<any>(null);
   const [companyData, setCompanyData] = useState<any>(null);
@@ -56,10 +67,18 @@ const ContactDetails = () => {
     phoneExtension: "",
     email: "",
     addressId: "",
-    owner: ""
+    owner: "",
+    imageId: null,
+    profileUrl: ""
   });
 
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
+
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [availableImages, setAvailableImages] = useState<Image[]>([]);
+  const [loadingImages, setLoadingImages] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageSearchTerm, setImageSearchTerm] = useState("");
 
   const getContactTypeName = (type: ContactType | string | null | undefined): string => {
     switch (type) {
@@ -111,7 +130,9 @@ const ContactDetails = () => {
       phoneExtension: contact?.phoneExtension || "",
       email: contact?.email || "",
       addressId: contact?.addressId || "",
-      owner: getValidRSM(contact?.owner || "")
+      owner: getValidRSM(contact?.owner || ""),
+      imageId: contact?.imageId || null,
+      profileUrl: contact?.profileUrl || ""
     });
   };
 
@@ -130,6 +151,8 @@ const ContactDetails = () => {
         email: editForm.email,
         addressId: editForm.addressId || null,
         owner: editForm.owner || null,
+        imageId: editForm.imageId,
+        profileUrl: editForm.profileUrl?.trim() || null,
         companyId: contactData.companyId,
         isPrimary: contactData.isPrimary,
         legacyCompanyId: contactData.legacyCompanyId,
@@ -139,7 +162,15 @@ const ContactDetails = () => {
 
       const result = await api.patch(`/sales/contacts/${contactData.id}`, trimmedData);
       if (result !== null) {
-        const updatedContactData = { ...contactData, ...trimmedData };
+        const selectedImage = trimmedData.imageId
+          ? availableImages.find(img => img.id === trimmedData.imageId) || contactData.image
+          : null;
+
+        const updatedContactData = {
+          ...contactData,
+          ...trimmedData,
+          image: selectedImage ? (selectedImage.path ? selectedImage : { path: selectedImage.url }) : null
+        };
         setContactData(updatedContactData);
         if (trimmedData.addressId) {
           const selectedAddress = availableAddresses.find((addr: any) =>
@@ -233,7 +264,7 @@ const ContactDetails = () => {
               setCompanyData({ name: companies[0].CustDlrName });
             }
           } catch (companyError) {
-            console.warn("Could not fetch company data:", companyError);
+            console.error("Could not fetch company data:", companyError);
           }
           try {
             const addressResponse = await api.get('/legacy/base/Address/filter/custom', {
@@ -257,7 +288,7 @@ const ContactDetails = () => {
               }
             }
           } catch (addressError) {
-            console.warn("Could not fetch address data:", addressError);
+            console.error("Could not fetch address data:", addressError);
           }
         }
       } else {
@@ -430,12 +461,88 @@ const ContactDetails = () => {
         setNoteToDelete(null);
       }
     } catch (error) {
-      console.error('Error deleting note:', error);
       alert('Failed to delete note. Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
+
+  const fetchAvailableImages = async () => {
+    setLoadingImages(true);
+    try {
+      const result = await api.get("/core/images");
+      if (result) {
+        setAvailableImages(result);
+      }
+    } catch (error) {
+      toastError("Failed to load images");
+    } finally {
+      setLoadingImages(false);
+    }
+  };
+
+  const handleImageModalOpen = () => {
+    setShowImageModal(true);
+    fetchAvailableImages();
+  };
+
+  const handleSelectImage = (imageId: number) => {
+    setEditForm(prev => ({ ...prev, imageId }));
+    setShowImageModal(false);
+    success("Image selected");
+  };
+
+  const handleRemoveImage = () => {
+    setEditForm(prev => ({ ...prev, imageId: null }));
+    success("Image removed");
+  };
+
+  const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    const formData = new FormData();
+    Array.from(files).forEach((file) => {
+      formData.append("images", file);
+    });
+
+    try {
+      const result = await api.post("/core/images", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (result) {
+        success("Image uploaded successfully");
+        fetchAvailableImages();
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } else {
+        toastError("Failed to upload image");
+      }
+    } catch (error) {
+      toastError("An error occurred during upload");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const getSelectedImage = () => {
+    if (!editForm.imageId) return null;
+    return availableImages.find(img => img.id === editForm.imageId);
+  };
+
+  const getContactImage = () => {
+    if (!contactData?.imageId) return null;
+    return contactData.image;
+  };
+
+  const filteredImages = availableImages.filter(img =>
+    img.id.toString().includes(imageSearchTerm)
+  );
 
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading contact details...</div>;
@@ -555,6 +662,63 @@ const ContactDetails = () => {
           <div className="bg-foreground rounded shadow-sm border p-4">
             <h3 className="text-lg font-semibold text-text mb-4">Personal Information</h3>
             <div className="space-y-3">
+              {/* Contact Photo */}
+              <div>
+                <div className="text-sm text-text-muted mb-2">Photo</div>
+                <div className="flex items-center gap-3">
+                  {isEditing ? (
+                    <>
+                      <div className="w-20 h-20 rounded-full overflow-hidden bg-surface border border-border flex items-center justify-center">
+                        {getSelectedImage() || (editForm.imageId && contactData?.image) ? (
+                          <img
+                            src={`${import.meta.env.VITE_API_URL.replace('/v1', '')}${
+                              getSelectedImage()?.url || contactData?.image?.path
+                            }`}
+                            alt="Contact"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User size={32} className="text-text-muted" />
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          variant="secondary-outline"
+                          size="sm"
+                          onClick={handleImageModalOpen}
+                        >
+                          <Camera size={14} className="mr-1" />
+                          {editForm.imageId ? "Change Photo" : "Select Photo"}
+                        </Button>
+                        {editForm.imageId && (
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={handleRemoveImage}
+                            className="text-error border-error hover:bg-error/10"
+                          >
+                            <X size={14} className="mr-1" />
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-surface border border-border flex items-center justify-center">
+                      {getContactImage() ? (
+                        <img
+                          src={`${import.meta.env.VITE_API_URL.replace('/v1', '')}${getContactImage().path}`}
+                          alt="Contact"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User size={32} className="text-text-muted" />
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex items-start gap-3">
                 <User size={16} className="text-text-muted mt-1" />
                 <div className="flex-1">
@@ -677,6 +841,35 @@ const ContactDetails = () => {
                   </select>
                 ) : (
                   <div className="text-text font-mono">{contactData.addressId || "-"}</div>
+                )}
+              </div>
+
+              <div>
+                <div className="text-sm text-text-muted">Profile URL</div>
+                {isEditing ? (
+                  <input
+                    type="url"
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={editForm.profileUrl}
+                    onChange={(e) => setEditForm(s => ({ ...s, profileUrl: e.target.value }))}
+                    placeholder="https://linkedin.com/in/..."
+                  />
+                ) : contactData.profileUrl ? (
+                  <a
+                    href={
+                      contactData.profileUrl.startsWith('http://') || contactData.profileUrl.startsWith('https://')
+                        ? contactData.profileUrl
+                        : `https://${contactData.profileUrl}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline flex items-center gap-1 text-sm break-all"
+                  >
+                    {contactData.profileUrl}
+                    <ExternalLink size={12} className="flex-shrink-0" />
+                  </a>
+                ) : (
+                  <div className="text-text">-</div>
                 )}
               </div>
             </div>
@@ -1087,6 +1280,112 @@ const ContactDetails = () => {
                 className="bg-error hover:bg-error/90"
               >
                 {isSaving ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Selection Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-foreground rounded shadow-lg border max-w-4xl w-full max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-text">Select Contact Photo</h3>
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="text-text-muted hover:text-text"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+              {/* Upload Section */}
+              <div className="border border-border rounded p-4 bg-surface">
+                <h4 className="text-sm font-semibold text-text mb-3">Upload New Image</h4>
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadImage}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImage}
+                  >
+                    <Upload size={14} className="mr-1" />
+                    {uploadingImage ? "Uploading..." : "Upload Image"}
+                  </Button>
+                </div>
+                <p className="text-xs text-text-muted mt-2">
+                  Images will be converted to WebP format and compressed
+                </p>
+              </div>
+
+              {/* Search */}
+              <div>
+                <input
+                  type="text"
+                  placeholder="Search by image ID..."
+                  value={imageSearchTerm}
+                  onChange={(e) => setImageSearchTerm(e.target.value)}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                />
+              </div>
+
+              {/* Image Grid */}
+              <div>
+                <h4 className="text-sm font-semibold text-text mb-3">Available Images</h4>
+                {loadingImages ? (
+                  <div className="text-center py-8 text-text-muted">Loading images...</div>
+                ) : filteredImages.length === 0 ? (
+                  <div className="text-center py-8 text-text-muted">No images found</div>
+                ) : (
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {filteredImages.map((image) => (
+                      <button
+                        key={image.id}
+                        onClick={() => handleSelectImage(image.id)}
+                        className={`group relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                          editForm.imageId === image.id
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={`${import.meta.env.VITE_API_URL.replace('/v1', '')}${image.url}`}
+                          alt={`Image ${image.id}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <div className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                            ID: {image.id}
+                          </div>
+                        </div>
+                        {editForm.imageId === image.id && (
+                          <div className="absolute top-1 right-1 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center">
+                            ✓
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-border flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => setShowImageModal(false)}
+              >
+                Cancel
               </Button>
             </div>
           </div>

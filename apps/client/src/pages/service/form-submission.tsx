@@ -6,6 +6,7 @@ import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
 import { useToast } from '@/hooks/use-toast';
 import { __dev__ } from '@/config/env';
+import { FormSubmissionStatus } from '@coesco/types';
 
 interface GPSLocation {
   latitude: number;
@@ -500,7 +501,7 @@ const FormSubmission = () => {
 
       const submissionData = {
         formId: id,
-        status: 'submitted',
+        status: FormSubmissionStatus.SUBMITTED,
         answers: {
           ...filteredFormValues,
           _gpsLocation: userLocation || null
