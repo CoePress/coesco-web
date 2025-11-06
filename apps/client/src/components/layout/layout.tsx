@@ -384,14 +384,19 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
               <Button
                 onClick={async () => {
-                  const result = await post("/system/bugs", {
+                  const payload: any = {
                     description: formData.description.trim(),
-                    screenshot: formData.includeScreenshot ? (formData.annotatedScreenshot || screenshot) : null,
                     url: window.location.href,
                     userAgent: navigator.userAgent,
-                    userEmail: employee?.email,
-                    userName: employee ? `${employee.firstName} ${employee.lastName}` : undefined,
-                  });
+                  };
+
+                  if (employee?.email) payload.userEmail = employee.email;
+                  if (employee) payload.userName = `${employee.firstName} ${employee.lastName}`;
+                  if (formData.includeScreenshot && (formData.annotatedScreenshot || screenshot)) {
+                    payload.screenshot = formData.annotatedScreenshot || screenshot;
+                  }
+
+                  const result = await post("/system/bugs", payload);
 
                   if (result) {
                     addToast({
