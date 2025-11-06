@@ -1,7 +1,7 @@
 import { Button, Input, Select } from "@/components";
-import { Filter, Tags, Info } from "lucide-react";
+import { Filter, Tags, Info, ChevronDown } from "lucide-react";
 import { Employee } from "./utils";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface PipelineHeaderProps {
   searchTerm: string;
@@ -11,8 +11,8 @@ interface PipelineHeaderProps {
   setRsmFilterDisplay: (display: string) => void;
   availableRsms: Employee[];
   rsmDisplayNames?: Map<string, string>;
-  journeyStatusFilter: string;
-  setJourneyStatusFilter: (status: string) => void;
+  journeyStatusFilter: string[];
+  setJourneyStatusFilter: (statuses: string[]) => void;
   employee: any;
   setIsFilterModalOpen: (open: boolean) => void;
   showTags?: boolean;
@@ -43,6 +43,32 @@ export const PipelineHeader = ({
   validJourneyStatuses
 }: PipelineHeaderProps) => {
   const [showSearchHelp, setShowSearchHelp] = useState(false);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+        setIsStatusDropdownOpen(false);
+      }
+    };
+
+    if (isStatusDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isStatusDropdownOpen]);
+
+  const handleStatusToggle = (status: string) => {
+    if (journeyStatusFilter.includes(status)) {
+      setJourneyStatusFilter(journeyStatusFilter.filter(s => s !== status));
+    } else {
+      setJourneyStatusFilter([...journeyStatusFilter, status]);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-foreground">
@@ -94,13 +120,13 @@ export const PipelineHeader = ({
         <Select
           value={(() => {
             if (rsmFilterDisplay === 'my-journeys' || rsmFilterDisplay === "") return rsmFilterDisplay;
-            
+
             if (rsmDisplayNames) {
               for (const [initials, displayName] of rsmDisplayNames) {
                 if (displayName === rsmFilterDisplay) return initials;
               }
             }
-            return rsmFilterDisplay; 
+            return rsmFilterDisplay;
           })()}
           onChange={(e) => {
             if (e.target.value === 'my-journeys') {
@@ -119,7 +145,7 @@ export const PipelineHeader = ({
           options={(() => {
             const baseOptions = [
               { value: "", label: "All" },
-              { value: "my-journeys", label: "Me    " }
+              { value: "my-journeys", label: "Me    " }
             ];
             const rsmOptions = availableRsms.map((rsm: Employee) => ({
               value: rsm.initials,
@@ -132,15 +158,51 @@ export const PipelineHeader = ({
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-text-muted">Status</label>
-        <Select
-          value={journeyStatusFilter}
-          onChange={(e) => setJourneyStatusFilter(e.target.value)}
-          options={[
-            { value: "", label: "All" },
-            ...validJourneyStatuses.map((status: string) => ({ value: status, label: status + " " }))
-          ]}
-          className="w-48"
-        />
+        <div className="relative" ref={statusDropdownRef}>
+          <button
+            type="button"
+            onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+            className="w-48 text-sm px-3 py-1.5 rounded border focus:outline-none focus:border-primary bg-foreground text-text border-border flex items-center justify-between"
+          >
+            <span className="truncate">
+              {journeyStatusFilter.length === 0
+                ? "All"
+                : journeyStatusFilter.length === 1
+                ? journeyStatusFilter[0]
+                : `${journeyStatusFilter.length} selected`}
+            </span>
+            <ChevronDown size={16} className="ml-2 flex-shrink-0" />
+          </button>
+          {isStatusDropdownOpen && (
+            <div className="absolute top-full left-0 mt-1 w-48 bg-background border border-border rounded shadow-lg z-50 max-h-64 overflow-y-auto">
+              <div className="py-1">
+                <label className="flex items-center gap-2 px-3 py-2 hover:bg-surface cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={journeyStatusFilter.length === 0}
+                    onChange={() => setJourneyStatusFilter([])}
+                    className="rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-text">All</span>
+                </label>
+                {validJourneyStatuses.map((status: string) => (
+                  <label
+                    key={status}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-surface cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={journeyStatusFilter.includes(status)}
+                      onChange={() => handleStatusToggle(status)}
+                      className="rounded border-border text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm text-text">{status}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
     <div className="flex items-center gap-2">

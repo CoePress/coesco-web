@@ -57,6 +57,8 @@ const CreateContactSchema = z.object({
   title: z.string().nullable().optional(),
   type: z.nativeEnum(ContactType).optional(),
   isPrimary: z.boolean().optional(),
+  imageId: z.number().int().nullable().optional(),
+  profileUrl: z.string().nullable().optional(),
   createdById: z.string().optional(),
   updatedById: z.string().optional(),
 });
@@ -146,7 +148,9 @@ export class CustomerController {
   });
 
   getContact = asyncWrapper(async (req: Request, res: Response) => {
-    const result = await contactService.getContactById(req.params.contactId);
+    const result = await contactService.getContactById(req.params.contactId, {
+      include: { image: true },
+    });
     res.status(HTTP_STATUS.OK).json(result);
   });
 

@@ -49,6 +49,7 @@ export * from './form-field';
 export * from './form-page';
 export * from './form-section';
 export * from './form-submission';
+export * from './image';
 export * from './item';
 export * from './journey';
 export * from './journey-contact';

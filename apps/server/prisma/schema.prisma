@@ -272,6 +272,8 @@ model Contact {
   title           String?
   type            ContactType @default(Sales)
   isPrimary       Boolean     @default(false)
+  imageId         Int?
+  profileUrl      String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   deletedAt       DateTime?
@@ -279,6 +281,7 @@ model Contact {
   updatedById     String
 
   company          Company          @relation(fields: [companyId], references: [id])
+  image            Image?           @relation(fields: [imageId], references: [id])
   customerJourneys Journey[]        @relation("JourneyCustomerContact")
   dealerJourneys   Journey[]        @relation("JourneyDealerContact")
   journeyContacts  JourneyContact[]
@@ -1203,6 +1206,16 @@ model Message {
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@map("messages")
+}
+
+model Image {
+  id         Int       @id @default(autoincrement())
+  path       String    @unique
+  uploadedAt DateTime  @default(now())
+
+  contacts Contact[]
+
+  @@map("images")
 }
 
 model Draft {

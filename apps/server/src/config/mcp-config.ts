@@ -658,6 +658,14 @@ export const SCHEMAS: ISchema[] = [
         required: true,
         hasDefault: true,
       },
+      imageId: {
+        type: "int",
+        required: false,
+      },
+      profileUrl: {
+        type: "string",
+        required: false,
+      },
       createdAt: {
         type: "datetime",
         required: true,
@@ -1281,6 +1289,26 @@ export const SCHEMAS: ISchema[] = [
       updatedById: {
         type: "string",
         required: true,
+      },
+    },
+  },
+  {
+    name: "image",
+    description: "Schema for Image entity",
+    schema: {
+      id: {
+        type: "int",
+        required: true,
+        hasDefault: true,
+      },
+      path: {
+        type: "string",
+        required: true,
+      },
+      uploadedAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
       },
     },
   },
