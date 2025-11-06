@@ -1,4 +1,4 @@
-import { Download, Plus, Layout, List as ListIcon, BarChart3, Upload } from "lucide-react";
+import { Download, Plus, Layout, List as ListIcon, BarChart3, Upload, Save, Bookmark, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ExcelJS from 'exceljs';
@@ -41,12 +41,10 @@ const Pipeline = () => {
   const [journeyTags, setJourneyTags] = useState<Map<string, any[]>>(new Map());
 
   const [legacyJourneys, setLegacyJourneys] = useState<any[] | null>(null);
+
   const fetchJourneyTags = async (journeyIds: string[]) => {
     const tagsMap = new Map<string, any[]>();
-
-    if (journeyIds.length === 0) {
-      return tagsMap;
-    }
+    if (journeyIds.length === 0) return tagsMap;
 
     try {
       const response = await get('/core/tags', {
@@ -77,34 +75,6 @@ const Pipeline = () => {
 
     return tagsMap;
   };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const [journeysData, customersData] = await Promise.all([
-        get('/legacy/base/Journey', {
-          page: 1,
-          limit: 200,
-          sort: 'CreateDT',
-          order: 'desc',
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
-        }),
-        get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
-      ]);
-
-      if (journeysData) {
-        const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
-        const mappedJourneys = journeysArray.map(adaptLegacyJourney);
-        setJourneys(mappedJourneys);
-      }
-
-      if (customersData) {
-        const customersArray = customersData.data ? customersData.data : (Array.isArray(customersData) ? customersData : []);
-        setCustomers(customersArray);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   const mapLegacyStageToId = (stage: any): StageId => {
     const s = String(stage ?? "").toLowerCase();
@@ -211,40 +181,45 @@ const Pipeline = () => {
     let cancelled = false;
     (async () => {
       try {
-        const raw = await get('/legacy/base/Journey', {
-          page: 1,
-          limit: 200,
-          sort: 'CreateDT',
-          order: 'desc',
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
-        });
+        const [journeysData, customersData, rsms, statuses] = await Promise.all([
+          get('/legacy/base/Journey', {
+            page: 1,
+            limit: 200,
+            sort: 'CreateDT',
+            order: 'desc',
+            fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+          }),
+          get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' }),
+          fetchAvailableRsms({ get }),
+          fetchDemographicCategory({ get }, 'Journey_status')
+        ]);
 
-        if (!cancelled && raw !== null) {
-          const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
+        if (!cancelled && journeysData) {
+          const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
           const mapped = journeysArray.map(adaptLegacyJourney);
           setLegacyJourneys(mapped);
+          setJourneys(mapped);
+        }
+
+        if (!cancelled && customersData) {
+          const customersArray = customersData.data ? customersData.data : (Array.isArray(customersData) ? customersData : []);
+          setCustomers(customersArray);
+        }
+
+        if (!cancelled && rsms.length > 0) {
+          setAvailableRsms(rsms);
+          const displayNamesMap = new Map<string, string>();
+          rsms.forEach(rsm => {
+            displayNamesMap.set(rsm.initials, `${rsm.name} (${rsm.initials})`);
+          });
+          setRsmDisplayNames(displayNamesMap);
+        }
+
+        if (!cancelled && statuses.length > 0) {
+          setValidJourneyStatuses(statuses);
         }
       } catch (error) {
-        console.error("Error fetching Journeys:", error);
-      }
-
-      const [rsms, statuses] = await Promise.all([
-        fetchAvailableRsms({ get }),
-        fetchDemographicCategory({ get }, 'Journey_status')
-      ]);
-
-      if (!cancelled && rsms.length > 0) {
-        setAvailableRsms(rsms);
-
-        const displayNamesMap = new Map<string, string>();
-        rsms.forEach(rsm => {
-          displayNamesMap.set(rsm.initials, `${rsm.name} (${rsm.initials})`);
-        });
-        setRsmDisplayNames(displayNamesMap);
-      }
-
-      if (!cancelled && statuses.length > 0) {
-        setValidJourneyStatuses(statuses);
+        console.error("Error fetching data:", error);
       }
     })();
     return () => { cancelled = true; };
@@ -299,7 +274,8 @@ const Pipeline = () => {
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
   const [rsmDisplayNames, setRsmDisplayNames] = useState<Map<string, string>>(new Map());
   const [validJourneyStatuses, setValidJourneyStatuses] = useState<string[]>([]);
-  const [journeyStatusFilter, setJourneyStatusFilter] = useState<string>(() => getFromLocalStorage('journeyStatusFilter', ''));
+  const [journeyStatusFilter, setJourneyStatusFilter] = useState<string[]>(() => getFromLocalStorage('journeyStatusFilter', []));
+  const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
   const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => getFromLocalStorage('sortDirection', 'asc'));
   const [showTags, setShowTags] = useState<boolean>(() => getFromLocalStorage('showTags', false));
@@ -307,80 +283,55 @@ const Pipeline = () => {
   const [listPage, setListPage] = useState(1);
   const [listPageSize] = useState(25);
   const [listViewJourneys, setListViewJourneys] = useState<any[]>([]);
-  const [listViewPagination, setListViewPagination] = useState({
-    page: 1,
-    totalPages: 0,
-    total: 0,
-    limit: 25
-  });
+  const [listViewPagination, setListViewPagination] = useState({ page: 1, totalPages: 0, total: 0, limit: 25 });
   const [isLoadingListView, setIsLoadingListView] = useState(false);
   const [kanbanViewJourneys, setKanbanViewJourneys] = useState<any[]>([]);
   const [isLoadingKanbanView, setIsLoadingKanbanView] = useState(false);
-
+  const [savedPresets, setSavedPresets] = useState<any[]>(() => getFromLocalStorage('savedPresets', []));
+  const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
 
   const filteredJourneys = useMemo(() => {
     let results = baseJourneys ?? [];
     const q = searchTerm.trim();
     if (q) {
       if (q.toLowerCase() === 'tag:') {
-        results = results.filter(j => {
-          const tags = journeyTags.get(j.id.toString()) || [];
-          return tags.length > 0;
-        });
+        results = results.filter(j => (journeyTags.get(j.id.toString()) || []).length > 0);
       } else {
         const tagMatch = q.match(/tag:(\S+)/i);
-
         if (tagMatch) {
           const tagSearch = tagMatch[1].toUpperCase();
           const remainingSearch = q.replace(tagMatch[0], '').trim();
+
           if (tagSearch) {
             results = results.filter(j => {
               const tags = journeyTags.get(j.id.toString()) || [];
-              return tags.some(tag =>
-                tag.description &&
-                tag.description.toUpperCase().includes(tagSearch)
-              );
+              return tags.some(tag => tag.description?.toUpperCase().includes(tagSearch));
             });
           }
+
           if (remainingSearch) {
             results = results.filter(j => {
-              const searchableText = [
-                j.name ?? '',
-                j.companyName ?? '',
-                customersById?.get(String(j.customerId))?.name ?? ''
-              ].join(' ');
-
+              const searchableText = [j.companyName ?? '', customersById?.get(String(j.customerId))?.name ?? ''].join(' ');
               return fuzzyMatch(searchableText, remainingSearch);
             });
           }
         } else {
           results = results.filter(j => {
-            const searchableText = [
-              j.name ?? '',
-              j.companyName ?? '',
-              customersById?.get(String(j.customerId))?.name ?? ''
-            ].join(' ');
-
+            const searchableText = [j.companyName ?? '', customersById?.get(String(j.customerId))?.name ?? ''].join(' ');
             return fuzzyMatch(searchableText, q);
           });
         }
       }
     }
+
     if (filters.confidenceLevels.length > 0) {
-      results = results.filter(j => {
-        const confidence = j.confidence ?? 0;
-        return filters.confidenceLevels.includes(confidence);
-      });
+      results = results.filter(j => filters.confidenceLevels.includes(j.confidence ?? 0));
     }
+
     if (filters.dateRange[0] || filters.dateRange[1]) {
       results = results.filter(j => {
-        const getDateValue = (field: string, journey: any): Date | null => {
-          const dateStr = journey[field];
-          return dateStr ? new Date(dateStr) : null;
-        };
-
-        const dateValue = getDateValue(filters.dateField === 'expectedDecisionDate' ? 'expectedDecisionDate' : filters.dateField, j);
-
+        const dateValue = j[filters.dateField] ? new Date(j[filters.dateField]) : null;
         if (!dateValue) return false;
 
         const startDate = filters.dateRange[0] ? new Date(filters.dateRange[0]) : null;
@@ -388,43 +339,38 @@ const Pipeline = () => {
 
         if (startDate && dateValue < startDate) return false;
         if (endDate && dateValue > endDate) return false;
-
         return true;
       });
     }
+
     if (filters.priority) {
       results = results.filter(j => j.priority === filters.priority);
     }
+
     if (filters.minValue) {
       const minVal = parseFloat(filters.minValue);
-      if (!isNaN(minVal)) {
-        results = results.filter(j => (j.value ?? 0) >= minVal);
-      }
+      if (!isNaN(minVal)) results = results.filter(j => (j.value ?? 0) >= minVal);
     }
-    
+
     if (filters.maxValue) {
       const maxVal = parseFloat(filters.maxValue);
-      if (!isNaN(maxVal)) {
-        results = results.filter(j => (j.value ?? 0) <= maxVal);
-      }
+      if (!isNaN(maxVal)) results = results.filter(j => (j.value ?? 0) <= maxVal);
     }
+
     results = results.filter(j => filters.visibleStages.includes(j.stage ?? 1));
+
     if (rsmFilter) {
-      const filterValue = rsmFilter.toLowerCase();
-      results = results.filter(j => 
-        (j.RSM ?? "").toLowerCase().includes(filterValue)
+      results = results.filter(j => (j.RSM ?? "").toLowerCase().includes(rsmFilter.toLowerCase()));
+    }
+
+    if (journeyStatusFilter.length > 0) {
+      results = results.filter(j =>
+        journeyStatusFilter.some(status => (j.Journey_Status ?? "").toLowerCase() === status.toLowerCase())
       );
     }
-    if (journeyStatusFilter) {
-      results = results.filter(j => 
-        (j.Journey_Status ?? "").toLowerCase() === journeyStatusFilter.toLowerCase()
-      );
-    }
-    
+
     return results;
   }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter, journeyTags]);
-  const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
-
   const buildStageConditions = (stageId: number) => {
     const stageMap: Record<number, any> = {
       1: { operator: "or", conditions: [
@@ -468,11 +414,9 @@ const Pipeline = () => {
 
     if (includeSearch && searchTerm && trimmedSearch.toLowerCase() !== 'tag:') {
       filterConditions.push({
-        operator: "or",
-        conditions: [
-          { field: "Project_Name", operator: "contains", value: trimmedSearch },
-          { field: "Target_Account", operator: "contains", value: trimmedSearch }
-        ]
+        field: "Target_Account",
+        operator: "contains",
+        value: trimmedSearch
       });
     }
 
@@ -480,8 +424,8 @@ const Pipeline = () => {
       filterConditions.push({ field: "RSM", operator: "contains", value: rsmFilter });
     }
 
-    if (journeyStatusFilter) {
-      filterConditions.push({ field: "Journey_Status", operator: "equals", value: journeyStatusFilter });
+    if (journeyStatusFilter.length > 0) {
+      filterConditions.push({ field: "Journey_Status", operator: "in", values: journeyStatusFilter });
     }
 
     if (filters.priority) {
@@ -541,8 +485,7 @@ const Pipeline = () => {
     setIsLoadingListView(true);
     try {
       const sortFieldMap: Record<string, string> = {
-        'name': 'Project_Name',
-        'customerId': 'Company_ID',
+        'customerId': 'Target_Account',
         'stage': 'Journey_Stage',
         'value': 'Journey_Value',
         'confidence': `CASE
@@ -813,6 +756,59 @@ const Pipeline = () => {
     }
   }, [sortField, sortDirection]);
 
+  const getCurrentFilterState = () => ({
+    searchTerm,
+    filters,
+    rsmFilter,
+    rsmFilterDisplay,
+    journeyStatusFilter,
+    sortField,
+    sortDirection,
+    viewMode
+  });
+
+  const handleSavePreset = () => {
+    if (!newPresetName.trim()) return;
+
+    const newPreset = {
+      id: Date.now().toString(),
+      name: newPresetName.trim(),
+      createdAt: new Date().toISOString(),
+      ...getCurrentFilterState()
+    };
+
+    const updatedPresets = [...savedPresets, newPreset];
+    setSavedPresets(updatedPresets);
+    saveToLocalStorage('savedPresets', updatedPresets);
+    setNewPresetName('');
+  };
+
+  const handleLoadPreset = (preset: any) => {
+    setSearchTerm(preset.searchTerm || '');
+    setFilters(preset.filters || {
+      confidenceLevels: [],
+      dateRange: ["", ""],
+      dateField: "expectedDecisionDate",
+      priority: "",
+      minValue: "",
+      maxValue: "",
+      visibleStages: STAGES.map(s => s.id),
+    });
+    setRsmFilter(preset.rsmFilter || '');
+    setRsmFilterDisplay(preset.rsmFilterDisplay || '');
+    setJourneyStatusFilter(preset.journeyStatusFilter || []);
+    setSortField(preset.sortField || '');
+    setSortDirection(preset.sortDirection || 'asc');
+    setViewMode(preset.viewMode || 'kanban');
+    setIsPresetModalOpen(false);
+  };
+
+  const handleDeletePreset = (presetId: string) => {
+    const updatedPresets = savedPresets.filter(p => p.id !== presetId);
+    setSavedPresets(updatedPresets);
+    saveToLocalStorage('savedPresets', updatedPresets);
+  };
+
   const totalPipelineValue = filteredJourneys.reduce((sum, j) => sum + Number(j.value ?? 0), 0);
 
   const weightedPipelineValue = useMemo(() => {
@@ -1008,6 +1004,14 @@ const Pipeline = () => {
       >
         <BarChart3 size={16} />
         Projections
+      </Button>
+      <Button
+        variant="secondary-outline"
+        size="sm"
+        onClick={() => setIsPresetModalOpen(true)}
+      >
+        <Bookmark size={16} />
+        Presets
       </Button>
       <Button
         variant="secondary-outline"
@@ -1256,6 +1260,96 @@ const Pipeline = () => {
           onClose={toggleExportModal}
           onExport={exportToExcel}
         />
+      )}
+      {isPresetModalOpen && (
+        <Modal
+          isOpen={isPresetModalOpen}
+          onClose={() => {
+            setIsPresetModalOpen(false);
+            setNewPresetName('');
+          }}
+          title="Search Presets"
+          size="md"
+        >
+          <div className="space-y-6">
+            <div className="pb-4 border-b border-border">
+              <h3 className="text-sm font-semibold text-text mb-3">Save Current Search</h3>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g., High Priority Open Journeys"
+                  value={newPresetName}
+                  onChange={(e) => setNewPresetName(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  variant="primary"
+                  onClick={handleSavePreset}
+                  disabled={!newPresetName.trim()}
+                >
+                  <Save size={16} />
+                  Save
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-text mb-3">Saved Presets</h3>
+              {savedPresets.length > 0 ? (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {savedPresets.map((preset) => (
+                    <div
+                      key={preset.id}
+                      className="flex items-center justify-between p-3 bg-surface rounded border border-border hover:bg-background transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-text">{preset.name}</div>
+                        <div className="text-xs text-text-muted">
+                          Saved on {new Date(preset.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleLoadPreset(preset)}
+                        >
+                          Load
+                        </Button>
+                        <Button
+                          variant="secondary-outline"
+                          size="sm"
+                          onClick={() => {
+                            if (confirm(`Delete preset "${preset.name}"?`)) {
+                              handleDeletePreset(preset.id);
+                            }
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-text-muted">
+                  No saved presets yet. Save your current search configuration above.
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-border">
+              <Button
+                variant="secondary-outline"
+                onClick={() => {
+                  setIsPresetModalOpen(false);
+                  setNewPresetName('');
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

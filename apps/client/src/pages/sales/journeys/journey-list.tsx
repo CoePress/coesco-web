@@ -149,25 +149,12 @@ export const ListView = ({
 
   const tableColumns = [
     {
-      key: "name",
-      header: "Journey Name",
-      render: (_: string, row: any) => (
-        <Link
-          to={`/sales/pipeline/${row.id}`}
-          className="text-sm font-medium text-primary hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {row.name}
-        </Link>
-      ),
-    },
-    {
       key: "customerId",
       header: "Company",
       render: (value: string, row: any) => {
         const customer = customersById.get(String(value));
         let companyDisplay = "";
-        
+
         if (value && value !== "0" && customer?.name) {
           companyDisplay = customer.name;
         } else if (row.companyName) {
@@ -177,14 +164,18 @@ export const ListView = ({
         } else {
           companyDisplay = "NA";
         }
-        
+
         return (
-          <div>
-            <div className="text-sm text-neutral-400">
+          <Link
+            to={`/sales/pipeline/${row.id}`}
+            className="hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-sm font-medium text-primary">
               {companyDisplay}
             </div>
             <div className="text-xs text-neutral-400">{row.contact}</div>
-          </div>
+          </Link>
         );
       }
     },

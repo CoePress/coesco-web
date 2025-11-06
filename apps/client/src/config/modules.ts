@@ -28,6 +28,7 @@ import {
 
 import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
+import ImageManager from "@/pages/sandbox/image-manager";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
 import FormSubmissionView from "@/pages/service/form-submission-view";
@@ -322,6 +323,12 @@ const sandboxModule: Module = {
       label: "Design Elements",
       icon: PaintBucketIcon,
       component: Design,
+    },
+    {
+      slug: "image-manager",
+      label: "Image Manager",
+      icon: FileIcon,
+      component: ImageManager,
     },
     {
       slug: "legacy-explorer",

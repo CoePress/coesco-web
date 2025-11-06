@@ -15,6 +15,8 @@ export interface Contact {
   title?: string;
   type?: ContactType;
   isPrimary?: boolean;
+  imageId?: number;
+  profileUrl?: string;
   createdAt?: Date | string;
   updatedAt: Date | string;
   deletedAt?: Date | string;

@@ -513,6 +513,46 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "company-relationship",
+    description: "Schema for CompanyRelationship entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      parentId: {
+        type: "string",
+        required: true,
+      },
+      childId: {
+        type: "string",
+        required: true,
+      },
+      relationshipType: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
+    },
+  },
+  {
     name: "configuration",
     description: "Schema for Configuration entity",
     schema: {
@@ -657,6 +697,14 @@ export const SCHEMAS: ISchema[] = [
         type: "boolean",
         required: true,
         hasDefault: true,
+      },
+      imageId: {
+        type: "int",
+        required: false,
+      },
+      profileUrl: {
+        type: "string",
+        required: false,
       },
       createdAt: {
         type: "datetime",
@@ -1281,6 +1329,26 @@ export const SCHEMAS: ISchema[] = [
       updatedById: {
         type: "string",
         required: true,
+      },
+    },
+  },
+  {
+    name: "image",
+    description: "Schema for Image entity",
+    schema: {
+      id: {
+        type: "int",
+        required: true,
+        hasDefault: true,
+      },
+      path: {
+        type: "string",
+        required: true,
+      },
+      uploadedAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
       },
     },
   },
