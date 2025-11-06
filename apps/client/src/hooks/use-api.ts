@@ -15,6 +15,7 @@ type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 interface ExtendedAxiosConfig extends AxiosRequestConfig {
   queue?: QueueConfig;
+  _isRetry?: boolean;
 }
 
 export const instance = axios.create({
@@ -24,6 +25,73 @@ export const instance = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: any) => void;
+  reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: any = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    }
+    else {
+      prom.resolve();
+    }
+  });
+
+  failedQueue = [];
+};
+
+instance.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as ExtendedAxiosConfig;
+
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    if (error.response?.status === 401 && !originalRequest._isRetry) {
+      if (originalRequest.url?.includes("/auth/refresh") || originalRequest.url?.includes("/auth/login")) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return instance(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._isRetry = true;
+      isRefreshing = true;
+
+      try {
+        await instance.post("/auth/refresh");
+        processQueue();
+        return instance(originalRequest);
+      }
+      catch (refreshError) {
+        processQueue(refreshError);
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
+      }
+      finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export function useApi<T = any>() {
   const [loading, setLoading] = useState(false);

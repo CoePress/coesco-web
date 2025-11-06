@@ -477,6 +477,70 @@ export class AuthService {
     };
   }
 
+  async refreshAccessToken(refreshToken: string, req?: Request): Promise<any> {
+    if (!refreshToken) {
+      throw new UnauthorizedError("Refresh token is required");
+    }
+
+    let decoded: { userId: string; role: string };
+    try {
+      decoded = verify(refreshToken, env.JWT_SECRET) as {
+        userId: string;
+        role: string;
+      };
+    }
+    catch {
+      throw new UnauthorizedError("Invalid or expired refresh token");
+    }
+
+    const session = await sessionService.findByRefreshToken(refreshToken);
+    if (!session) {
+      throw new UnauthorizedError("Invalid or expired session");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: { employee: true },
+    });
+
+    if (!user || !user.employee || !user.isActive) {
+      throw new UnauthorizedError("User not found or inactive");
+    }
+
+    const { token: newAccessToken, refreshToken: newRefreshToken } = this.generateTokens(user.id);
+
+    await sessionService.updateTokens(session.id, newAccessToken, newRefreshToken, this.parseExpiresIn(env.JWT_EXPIRES_IN));
+
+    if (req) {
+      await this.safeLogAttempt({
+        userId: user.id,
+        username: user.username || user.employee.email || "unknown",
+        loginMethod: session.loginMethod,
+        success: true,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers["user-agent"],
+      });
+    }
+
+    return {
+      token: newAccessToken,
+      refreshToken: newRefreshToken,
+      sessionId: session.id,
+      user: {
+        id: user.id,
+        role: user.role,
+      },
+      employee: {
+        id: user.employee.id,
+        number: user.employee.number,
+        firstName: user.employee.firstName,
+        lastName: user.employee.lastName,
+        email: user.employee.email,
+        title: user.employee.title,
+      },
+    };
+  }
+
   private async getMicrosoftUserInfo(accessToken: string) {
     const response = await fetch("https://graph.microsoft.com/v1.0/me", {
       headers: {
