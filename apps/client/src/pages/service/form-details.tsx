@@ -60,14 +60,14 @@ const FormDetails = () => {
       <div className="flex gap-2">
         <>
           <Button
-            onClick={() => navigate(`/service/forms/${id}/build`)}
+            onClick={() => navigate(`/admin/forms/${id}/build`)}
             variant='secondary-outline'
           >
             <Edit size={16} />
             <span>Edit Form</span>
           </Button>
           <Button
-            onClick={() => navigate(`/service/forms/${id}/submissions`)}
+            onClick={() => navigate(`/admin/forms/${id}/submissions`)}
             variant='secondary-outline'
           >
             <FileText size={16} />
@@ -98,7 +98,7 @@ const FormDetails = () => {
     return (
       <div className="w-full flex-1 flex flex-col items-center justify-center">
         <div className="text-error text-lg mb-4">Form not found</div>
-        <Button onClick={() => navigate('/service/forms')}>
+        <Button onClick={() => navigate('/admin/forms')}>
           Back to Forms
         </Button>
       </div>
@@ -112,7 +112,7 @@ const FormDetails = () => {
         description={formData.description || "-"}
         actions={<Actions />}
         goBack
-        goBackTo='/service'
+        goBackTo='/admin'
       />
 
       {error && (

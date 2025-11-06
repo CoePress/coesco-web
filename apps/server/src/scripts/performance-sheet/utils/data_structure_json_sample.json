@@ -1,483 +1,483 @@
 {
-    "referenceNumber": "REF-2024-001",
-    "customer": "Acme Corp",
-    "customerInfo": {
-      "streetAddress": "123 Main St",
-      "city": "Metropolis",
-      "state": "NY",
-      "zip": "10001",
-      "country": "USA",
-      "contactName": "John Doe",
-      "position": "Purchasing Manager",
-      "phoneNumber": "555-1234",
-      "email": "john.doe@acme.com",
-      "dealerName": "Best Machines Inc.",
-      "dealerSalesman": "Jane Smith",
-      "daysPerWeek": "5",
-      "shiftsPerDay": "2"
-    },
-    "dates": {
-      "date": "2024-06-01",
-      "decisionDate": "2024-06-15",
-      "idealDeliveryDate": "2024-07-01",
-      "earliestDeliveryDate": "2024-06-20",
-      "latestDeliveryDate": "2024-07-10"
-    },
-    "coil": {
-      "density": "7.85",
-      "weight": "2000",
-      "maxCoilWidth": "1200",
-      "minCoilWidth": "800",
-      "maxCoilOD": "1500",
-      "coilID": "508",
-      "maxCoilWeight": "2500",
-      "maxCoilHandlingCap": "3000",
-      "slitEdge": "Yes",
-      "millEdge": "No",
-      "requireCoilCar": "Yes",
-      "runningOffBackplate": "No",
-      "requireRewinding": "No",
-      "changeTimeConcern": "Yes",
-      "timeChangeGoal": "10",
-      "loading": "Manual",
-      "inertia": "500",
-      "reflInertia": "450"
-    },
-    "material": {
-      "materialThickness": "2.0",
-      "materialDensity": "7.85",
-      "coilWidth": "1000",
-      "materialType": "Steel",
-      "maxYieldStrength": "350",
-      "maxTensileStrength": "450",
-      "minBendRadius": "5",
-      "minLoopLength": "100",
-      "calculatedCoilOD": "1400"
-    },
-    "runningCosmeticMaterial": "No",
-    "brandOfFeed": "FeedMaster",
-    "press": {
-      "gapFramePress": "Yes",
-      "hydraulicPress": "No",
-      "obi": "No",
-      "servoPress": "Yes",
-      "shearDieApplication": "No",
-      "straightSidePress": "No",
-      "other": "No",
-      "tonnageOfPress": "200",
-      "strokeLength": "150",
-      "maxSPM": "60",
-      "bedWidth": "1000",
-      "bedLength": "2000",
-      "windowSize": "500",
-      "cycleTime": "2"
-    },
-    "dies": {
-      "transferDies": "Yes",
-      "progressiveDies": "No",
-      "blankingDies": "Yes"
-    },
-    "feed": {
-      "application": "Blanking",
-      "model": "FM-200",
-      "machineWidth": "1200",
-      "loopPit": "Yes",
-      "fullWidthRolls": "Yes",
-      "motor": "Servo",
-      "amp": "20",
-      "frictionInDie": "Low",
-      "accelerationRate": "5",
-      "defaultAcceleration": "3",
-      "chartMinLength": "100",
-      "lengthIncrement": "10",
-      "feedAngle1": "30",
-      "feedAngle2": "45",
-      "maximunVelocity": "100",
-      "acceleration": "5",
-      "ratio": "2:1",
-      "typeOfLine": "Conventional",
-      "match": "Yes",
-      "reflInertia": "400",
-      "regen": "No",
-      "torque": {
-        "motorPeak": "50",
-        "peak": "60",
-        "frictional": "10",
-        "loop": "5",
-        "settle": "2",
-        "rms": {
-          "motor": "40",
-          "feedAngle1": "20",
-          "feedAngle2": "25"
-        },
-        "acceleration": "5"
+  "referenceNumber": "REF-2024-001",
+  "customer": "Acme Corp",
+  "customerInfo": {
+    "streetAddress": "123 Main St",
+    "city": "Metropolis",
+    "state": "NY",
+    "zip": "10001",
+    "country": "USA",
+    "contactName": "John Doe",
+    "position": "Purchasing Manager",
+    "phoneNumber": "555-1234",
+    "email": "john.doe@acme.com",
+    "dealerName": "Best Machines Inc.",
+    "dealerSalesman": "Jane Smith",
+    "daysPerWeek": "5",
+    "shiftsPerDay": "2"
+  },
+  "dates": {
+    "date": "2024-06-01",
+    "decisionDate": "2024-06-15",
+    "idealDeliveryDate": "2024-07-01",
+    "earliestDeliveryDate": "2024-06-20",
+    "latestDeliveryDate": "2024-07-10"
+  },
+  "coil": {
+    "density": "7.85",
+    "weight": "2000",
+    "maxCoilWidth": "1200",
+    "minCoilWidth": "800",
+    "maxCoilOD": "1500",
+    "coilID": "508",
+    "maxCoilWeight": "2500",
+    "maxCoilHandlingCap": "3000",
+    "slitEdge": "Yes",
+    "millEdge": "No",
+    "requireCoilCar": "Yes",
+    "runningOffBackplate": "No",
+    "requireRewinding": "No",
+    "changeTimeConcern": "Yes",
+    "timeChangeGoal": "10",
+    "loading": "Manual",
+    "inertia": "500",
+    "reflInertia": "450"
+  },
+  "material": {
+    "materialThickness": "2.0",
+    "materialDensity": "7.85",
+    "coilWidth": "1000",
+    "materialType": "Steel",
+    "maxYieldStrength": "350",
+    "maxTensileStrength": "450",
+    "minBendRadius": "5",
+    "minLoopLength": "100",
+    "calculatedCoilOD": "1400"
+  },
+  "runningCosmeticMaterial": "No",
+  "brandOfFeed": "FeedMaster",
+  "press": {
+    "gapFramePress": "Yes",
+    "hydraulicPress": "No",
+    "obi": "No",
+    "servoPress": "Yes",
+    "shearDieApplication": "No",
+    "straightSidePress": "No",
+    "other": "No",
+    "tonnageOfPress": "200",
+    "strokeLength": "150",
+    "maxSPM": "60",
+    "bedWidth": "1000",
+    "bedLength": "2000",
+    "windowSize": "500",
+    "cycleTime": "2"
+  },
+  "dies": {
+    "transferDies": "Yes",
+    "progressiveDies": "No",
+    "blankingDies": "Yes"
+  },
+  "feed": {
+    "application": "Blanking",
+    "model": "FM-200",
+    "machineWidth": "1200",
+    "loopPit": "Yes",
+    "fullWidthRolls": "Yes",
+    "motor": "Servo",
+    "amp": "20",
+    "frictionInDie": "Low",
+    "accelerationRate": "5",
+    "defaultAcceleration": "3",
+    "chartMinLength": "100",
+    "lengthIncrement": "10",
+    "feedAngle1": "30",
+    "feedAngle2": "45",
+    "maximunVelocity": "100",
+    "acceleration": "5",
+    "ratio": "2:1",
+    "typeOfLine": "Conventional",
+    "match": "Yes",
+    "reflInertia": "400",
+    "regen": "No",
+    "torque": {
+      "motorPeak": "50",
+      "peak": "60",
+      "frictional": "10",
+      "loop": "5",
+      "settle": "2",
+      "rms": {
+        "motor": "40",
+        "feedAngle1": "20",
+        "feedAngle2": "25"
       },
-      "tableData": {},
-      "pullThru": {
-        "isPullThru": "No",
-        "straightenerRolls": "5",
-        "pinchRolls": "2",
-        "kConst": "1.2",
-        "straightenerTorque": "15"
-      },
-      "average": {
-        "length": "120",
-        "spm": "40",
-        "fpm": "80"
-      },
-      "max": {
-        "length": "150",
-        "spm": "60",
-        "fpm": "100"
-      },
-      "min": {
-        "length": "100",
-        "spm": "30",
-        "fpm": "60"
-      },
-      "windowDegrees": "180",
-      "direction": "Left",
-      "controls": "Auto",
-      "controlsLevel": "Advanced",
-      "passline": "900",
-      "lightGuageNonMarking": "No",
-      "nonMarking": "No"
+      "acceleration": "5"
     },
-    "straightener": {
-      "model": "STR-100",
-      "rolls": {
-        "straighteningRolls": "7",
-        "numberOfRolls": "7",
-        "backupRolls": "3",
-        "depth": {
-          "withoutMaterial": "10",
-          "withMaterial": "8"
-        },
-        "straightener": {
-          "diameter": "50",
-          "requiredGearTorque": "20",
-          "ratedTorque": "25",
-          "check": "OK"
-        },
-        "pinch": {
-          "diameter": "40",
-          "requiredGearTorque": "15",
-          "ratedTorque": "18",
-          "check": "OK"
-        },
-        "backbend": {
-          "hiddenValue": "N/A",
-          "rollers": {
-            "depthRequired": "5",
-            "forceRequired": "100",
-            "first": {
-              "height": "10",
-              "forceRequired": "20",
-              "numberOfYieldStrainAtSurface": "",
-              "up": {
-                "resultingRadius": "",
-                "curvatureDifference": "",
-                "bendingMoment": "",
-                "springback": "",
-                "percentOfThicknessYielded": "",
-                "radiusAfterSpringback": ""
-              },
-              "down": {
-                "resultingRadius": "",
-                "curvatureDifference": "",
-                "bendingMoment": "",
-                "springback": "",
-                "percentOfThicknessYielded": "",
-                "radiusAfterSpringback": ""
-              }
+    "tableData": {},
+    "pullThru": {
+      "isPullThru": "No",
+      "straightenerRolls": "5",
+      "pinchRolls": "2",
+      "kConst": "1.2",
+      "straightenerTorque": "15"
+    },
+    "average": {
+      "length": "120",
+      "spm": "40",
+      "fpm": "80"
+    },
+    "max": {
+      "length": "150",
+      "spm": "60",
+      "fpm": "100"
+    },
+    "min": {
+      "length": "100",
+      "spm": "30",
+      "fpm": "60"
+    },
+    "windowDegrees": "180",
+    "direction": "Left",
+    "controls": "Auto",
+    "controlsLevel": "Advanced",
+    "passline": "900",
+    "lightGuageNonMarking": "No",
+    "nonMarking": "No"
+  },
+  "straightener": {
+    "model": "STR-100",
+    "rolls": {
+      "straighteningRolls": "7",
+      "numberOfRolls": "7",
+      "backupRolls": "3",
+      "depth": {
+        "withoutMaterial": "10",
+        "withMaterial": "8"
+      },
+      "straightener": {
+        "diameter": "50",
+        "requiredGearTorque": "20",
+        "ratedTorque": "25",
+        "check": "OK"
+      },
+      "pinch": {
+        "diameter": "40",
+        "requiredGearTorque": "15",
+        "ratedTorque": "18",
+        "check": "OK"
+      },
+      "backbend": {
+        "hiddenValue": "N/A",
+        "rollers": {
+          "depthRequired": "5",
+          "forceRequired": "100",
+          "first": {
+            "height": "10",
+            "forceRequired": "20",
+            "numberOfYieldStrainAtSurface": "",
+            "up": {
+              "resultingRadius": "",
+              "curvatureDifference": "",
+              "bendingMoment": "",
+              "springback": "",
+              "percentOfThicknessYielded": "",
+              "radiusAfterSpringback": ""
             },
-            "middle": {
-              "height": "12",
-              "forceRequired": "22",
-              "numberOfYieldStrainAtSurface": "",
-              "up": {
-                "resultingRadius": "",
-                "curvatureDifference": "",
-                "bendingMoment": "",
-                "springback": "",
-                "percentOfThicknessYielded": "",
-                "radiusAfterSpringback": ""
-              },
-              "down": {
-                "resultingRadius": "",
-                "curvatureDifference": "",
-                "bendingMoment": "",
-                "springback": "",
-                "percentOfThicknessYielded": "",
-                "radiusAfterSpringback": ""
-              }
-            },
-            "last": {
-              "height": "11",
-              "forceRequired": "21",
-              "numberOfYieldStrainAtSurface": "",
-              "up": {
-                "resultingRadius": "",
-                "curvatureDifference": "",
-                "bendingMoment": "",
-                "springback": "",
-                "percentOfThicknessYielded": "",
-                "radiusAfterSpringback": ""
-              }
+            "down": {
+              "resultingRadius": "",
+              "curvatureDifference": "",
+              "bendingMoment": "",
+              "springback": "",
+              "percentOfThicknessYielded": "",
+              "radiusAfterSpringback": ""
             }
           },
-          "yieldMet": "Yes",
-          "radius": {
-            "comingOffCoil": "15",
-            "offCoilAfterSpringback": "16",
-            "requiredToYieldSkinOfFlatMaterial": "14"
+          "middle": {
+            "height": "12",
+            "forceRequired": "22",
+            "numberOfYieldStrainAtSurface": "",
+            "up": {
+              "resultingRadius": "",
+              "curvatureDifference": "",
+              "bendingMoment": "",
+              "springback": "",
+              "percentOfThicknessYielded": "",
+              "radiusAfterSpringback": ""
+            },
+            "down": {
+              "resultingRadius": "",
+              "curvatureDifference": "",
+              "bendingMoment": "",
+              "springback": "",
+              "percentOfThicknessYielded": "",
+              "radiusAfterSpringback": ""
+            }
           },
-          "bendingMomentToYieldSkin": "200"
-        }
-      },
-      "payoff": "Auto",
-      "width": "1200",
-      "feedRate": "80",
-      "acceleration": "5",
-      "horsepower": "30",
-      "autoBrakeCompensation": "Yes",
-      "centerDistance": "100",
-      "jackForceAvailable": "500",
-      "modulus": "210000",
-      "actualCoilWeight": "2000",
-      "coilOD": "1400",
-      "check": "OK",
-      "torque": {
-        "straightener": "20",
-        "acceleration": "5",
-        "brake": "2"
-      },
-      "required": {
-        "horsepower": "30",
-        "horsepowerCheck": "OK",
-        "force": "1000",
-        "ratedForce": "1200",
-        "jackForceCheck": "OK",
-        "backupRollsCheck": "OK"
-      },
-      "gear": {
-        "faceWidth": "50",
-        "contAngle": "20",
-        "straightenerRoll": {
-          "numberOfTeeth": "30",
-          "dp": "2"
-        },
-        "pinchRoll": {
-          "numberOfTeeth": "25",
-          "dp": "2.5"
-        }
-      }
-    },
-    "reel": {
-      "model": "REEL-500",
-      "horsepower": "40",
-      "width": "1200",
-      "ratio": "3:1",
-      "reelDriveOK": "Yes",
-      "bearing": {
-        "diameter": {
-          "front": "100",
-          "rear": "100"
-        },
-        "distance": "200"
-      },
-      "totalReflInertia": {
-        "empty": "300",
-        "full": "350"
-      },
-      "mandrel": {
-        "diameter": "500",
-        "length": "1200",
-        "maxRPM": "1500",
-        "RpmFull": "1200",
-        "weight": "400",
-        "intertia": "50",
-        "reflInertia": "45"
-      },
-      "backplate": {
-        "diameter": "600",
-        "thickness": "20",
-        "weight": "50",
-        "inertia": "10",
-        "reflInertia": "9"
-      },
-      "reducer": {
-        "ratio": "4:1",
-        "efficiency": "95",
-        "driving": "Yes",
-        "backdriving": "No",
-        "inertia": "8",
-        "reflInertia": "7"
-      },
-      "chain": {
-        "ratio": "2:1",
-        "sprktOD": "80",
-        "sprktThickness": "10",
-        "weight": "5",
-        "inertia": "2",
-        "reflInertia": "1.8"
-      },
-      "motor": {
-        "inertia": "6",
-        "rpm": {
-          "base": "1500",
-          "full": "1200"
-        }
-      },
-      "friction": {
-        "bearing": {
-          "mandrel": {
-            "rear": "0.5",
-            "front": "0.5"
-          },
-          "coil": {
-            "rear": "0.6",
-            "front": "0.6"
-          },
-          "total": {
-            "empty": "1.1",
-            "full": "1.2"
-          },
-          "refl": {
-            "empty": "1.0",
-            "full": "1.1"
+          "last": {
+            "height": "11",
+            "forceRequired": "21",
+            "numberOfYieldStrainAtSurface": "",
+            "up": {
+              "resultingRadius": "",
+              "curvatureDifference": "",
+              "bendingMoment": "",
+              "springback": "",
+              "percentOfThicknessYielded": "",
+              "radiusAfterSpringback": ""
+            }
           }
-        }
-      },
-      "motorization": {
-        "isMotorized": "Yes",
-        "driveHorsepower": "40",
-        "speed": "100",
-        "accelRate": "5",
-        "regenRequired": "No"
-      },
-      "style": "Standard",
-      "threadingDrive": {
-        "airClutch": "Yes",
-        "hydThreadingDrive": "No"
-      },
-      "holddown": {
-        "assy": "Yes",
-        "cylinder": "Hydraulic",
-        "cylinderPressure": "100",
-        "force": {
-          "required": "200",
-          "available": "250"
-        }
-      },
-      "dragBrake": {
-        "model": "DB-100",
-        "quantity": "2",
-        "psiAirRequired": "80",
-        "holdingForce": "300"
-      },
-      "airPressureAvailable": "100",
-      "requiredDecelRate": "5",
+        },
+        "yieldMet": "Yes",
+        "radius": {
+          "comingOffCoil": "15",
+          "offCoilAfterSpringback": "16",
+          "requiredToYieldSkinOfFlatMaterial": "14"
+        },
+        "bendingMomentToYieldSkin": "200"
+      }
+    },
+    "payoff": "Auto",
+    "width": "1200",
+    "feedRate": "80",
+    "acceleration": "5",
+    "horsepower": "30",
+    "autoBrakeCompensation": "Yes",
+    "centerDistance": "100",
+    "jackForceAvailable": "500",
+    "modulus": "210000",
+    "actualCoilWeight": "2000",
+    "coilOD": "1400",
+    "check": "OK",
+    "torque": {
+      "straightener": "20",
       "acceleration": "5",
+      "brake": "2"
+    },
+    "required": {
+      "horsepower": "30",
+      "horsepowerCheck": "OK",
+      "force": "1000",
+      "ratedForce": "1200",
+      "jackForceCheck": "OK",
+      "backupRollsCheck": "OK"
+    },
+    "gear": {
+      "faceWidth": "50",
+      "contAngle": "20",
+      "straightenerRoll": {
+        "numberOfTeeth": "30",
+        "dp": "2"
+      },
+      "pinchRoll": {
+        "numberOfTeeth": "25",
+        "dp": "2.5"
+      }
+    }
+  },
+  "reel": {
+    "model": "REEL-500",
+    "horsepower": "40",
+    "width": "1200",
+    "ratio": "3:1",
+    "reelDriveOK": "Yes",
+    "bearing": {
+      "diameter": {
+        "front": "100",
+        "rear": "100"
+      },
+      "distance": "200"
+    },
+    "totalReflInertia": {
+      "empty": "300",
+      "full": "350"
+    },
+    "mandrel": {
+      "diameter": "500",
+      "length": "1200",
+      "maxRPM": "1500",
+      "RpmFull": "1200",
+      "weight": "400",
+      "intertia": "50",
+      "reflInertia": "45"
+    },
+    "backplate": {
+      "diameter": "600",
+      "thickness": "20",
+      "weight": "50",
+      "inertia": "10",
+      "reflInertia": "9"
+    },
+    "reducer": {
+      "ratio": "4:1",
+      "efficiency": "95",
+      "driving": "Yes",
+      "backdriving": "No",
+      "inertia": "8",
+      "reflInertia": "7"
+    },
+    "chain": {
+      "ratio": "2:1",
+      "sprktOD": "80",
+      "sprktThickness": "10",
+      "weight": "5",
+      "inertia": "2",
+      "reflInertia": "1.8"
+    },
+    "motor": {
+      "inertia": "6",
+      "rpm": {
+        "base": "1500",
+        "full": "1200"
+      }
+    },
+    "friction": {
+      "bearing": {
+        "mandrel": {
+          "rear": "0.5",
+          "front": "0.5"
+        },
+        "coil": {
+          "rear": "0.6",
+          "front": "0.6"
+        },
+        "total": {
+          "empty": "1.1",
+          "full": "1.2"
+        },
+        "refl": {
+          "empty": "1.0",
+          "full": "1.1"
+        }
+      }
+    },
+    "motorization": {
+      "isMotorized": "Yes",
+      "driveHorsepower": "40",
       "speed": "100",
-      "accelerationTime": "2",
-      "coilWeight": "2000",
-      "coilOD": "1400",
-      "dispReelMtr": "Yes",
-      "webTension": {
-        "psi": "50",
-        "lbs": "1000"
-      },
-      "brakePadDiameter": "200",
-      "cylinderBore": "50",
-      "coefficientOfFriction": "0.3",
-      "minMaterialWidth": "800",
-      "torque": {
-        "atMandrel": "60",
-        "rewindRequired": "55",
-        "required": "65",
-        "empty": {
-          "torque": "30",
-          "horsepowerRequired": "20",
-          "horsepowerCheck": "OK",
-          "regen": "No",
-          "regenCheck": "OK"
-        },
-        "full": {
-          "torque": "35",
-          "horsepowerRequired": "25",
-          "horsepowerCheck": "OK",
-          "regen": "No",
-          "regenCheck": "OK"
-        }
+      "accelRate": "5",
+      "regenRequired": "No"
+    },
+    "style": "Standard",
+    "threadingDrive": {
+      "airClutch": "Yes",
+      "hydThreadingDrive": "No"
+    },
+    "holddown": {
+      "assy": "Yes",
+      "cylinder": "Hydraulic",
+      "cylinderPressure": "100",
+      "force": {
+        "required": "200",
+        "available": "250"
       }
     },
-    "shear": {
-      "model": "",
-      "strength": "400",
-      "blade": {
-        "rakeOfBladePerFoot": "2",
-        "overlap": "1",
-        "bladeOpening": "5",
-        "percentOfPenetration": "80",
-        "angleOfBlade": "15",
-        "initialCut": {
-          "length": "10",
-          "area": "20"
-        }
+    "dragBrake": {
+      "model": "DB-100",
+      "quantity": "2",
+      "psiAirRequired": "80",
+      "holdingForce": "300"
+    },
+    "airPressureAvailable": "100",
+    "requiredDecelRate": "5",
+    "acceleration": "5",
+    "speed": "100",
+    "accelerationTime": "2",
+    "coilWeight": "2000",
+    "coilOD": "1400",
+    "dispReelMtr": "Yes",
+    "webTension": {
+      "psi": "50",
+      "lbs": "1000"
+    },
+    "brakePadDiameter": "200",
+    "cylinderBore": "50",
+    "coefficientOfFriction": "0.3",
+    "minMaterialWidth": "800",
+    "torque": {
+      "atMandrel": "60",
+      "rewindRequired": "55",
+      "required": "65",
+      "empty": {
+        "torque": "30",
+        "horsepowerRequired": "20",
+        "horsepowerCheck": "OK",
+        "regen": "No",
+        "regenCheck": "OK"
       },
+      "full": {
+        "torque": "35",
+        "horsepowerRequired": "25",
+        "horsepowerCheck": "OK",
+        "regen": "No",
+        "regenCheck": "OK"
+      }
+    }
+  },
+  "shear": {
+    "model": "",
+    "strength": "400",
+    "blade": {
+      "rakeOfBladePerFoot": "2",
+      "overlap": "1",
+      "bladeOpening": "5",
+      "percentOfPenetration": "80",
+      "angleOfBlade": "15",
+      "initialCut": {
+        "length": "10",
+        "area": "20"
+      }
+    },
+    "cylinder": {
+      "boreSize": "100",
+      "rodDiameter": "20",
+      "stroke": "200",
+      "minStroke": {
+        "forBlade": "50",
+        "requiredForOpening": "60"
+      },
+      "actualOpeningAboveMaxMaterial": "10"
+    },
+    "hydraulic": {
+      "pressure": "1500",
       "cylinder": {
-        "boreSize": "100",
-        "rodDiameter": "20",
-        "stroke": "200",
-        "minStroke": {
-          "forBlade": "50",
-          "requiredForOpening": "60"
-        },
-        "actualOpeningAboveMaxMaterial": "10"
+        "area": "100",
+        "volume": "200"
       },
-      "hydraulic": {
-        "pressure": "1500",
-        "cylinder": {
-          "area": "100",
-          "volume": "200"
+      "fluidVelocity": "5"
+    },
+    "time": {
+      "forDownwardStroke": "1",
+      "dwellTime": "0.5"
+    },
+    "conclusions": {
+      "force": {
+        "perCylinder": "500",
+        "totalApplied": {
+          "lbs": "1000",
+          "tons": "0.5"
         },
-        "fluidVelocity": "5"
+        "requiredToShear": "800"
       },
-      "time": {
-        "forDownwardStroke": "1",
-        "dwellTime": "0.5"
-      },
-      "conclusions": {
-        "force": {
-          "perCylinder": "500",
-          "totalApplied": {
-            "lbs": "1000",
-            "tons": "0.5"
-          },
-          "requiredToShear": "800"
+      "safetyFactor": "1.5",
+      "perMinute": {
+        "gallons": {
+          "instantaneous": "10",
+          "averaged": "8"
         },
-        "safetyFactor": "1.5",
-        "perMinute": {
-          "gallons": {
-            "instantaneous": "10",
-            "averaged": "8"
-          },
-          "shearStrokes": "30",
-          "parts": "60"
-        }
+        "shearStrokes": "30",
+        "parts": "60"
       }
-    },
-    "voltageRequired": "480",
-    "equipmentSpaceLength": "10000",
-    "equipmentSpaceWidth": "3000",
-    "obstructions": "None",
-    "mount": {
-      "feederMountedToPress": "Yes",
-      "adequateSupport": "Yes",
-      "customMounting": "No"
-    },
-    "loopPit": "Yes",
-    "requireGuarding": "Yes",
-    "specialConsiderations": "None"
-  }
+    }
+  },
+  "voltageRequired": "480",
+  "equipmentSpaceLength": "10000",
+  "equipmentSpaceWidth": "3000",
+  "obstructions": "None",
+  "mount": {
+    "feederMountedToPress": "Yes",
+    "adequateSupport": "Yes",
+    "customMounting": "No"
+  },
+  "loopPit": "Yes",
+  "requireGuarding": "Yes",
+  "specialConsiderations": "None"
+}
