@@ -264,7 +264,7 @@ const ContactDetails = () => {
               setCompanyData({ name: companies[0].CustDlrName });
             }
           } catch (companyError) {
-            console.warn("Could not fetch company data:", companyError);
+            console.error("Could not fetch company data:", companyError);
           }
           try {
             const addressResponse = await api.get('/legacy/base/Address/filter/custom', {
@@ -288,7 +288,7 @@ const ContactDetails = () => {
               }
             }
           } catch (addressError) {
-            console.warn("Could not fetch address data:", addressError);
+            console.error("Could not fetch address data:", addressError);
           }
         }
       } else {
@@ -461,7 +461,6 @@ const ContactDetails = () => {
         setNoteToDelete(null);
       }
     } catch (error) {
-      console.error('Error deleting note:', error);
       alert('Failed to delete note. Please try again.');
     } finally {
       setIsSaving(false);
@@ -476,7 +475,6 @@ const ContactDetails = () => {
         setAvailableImages(result);
       }
     } catch (error) {
-      console.error("Error fetching images:", error);
       toastError("Failed to load images");
     } finally {
       setLoadingImages(false);
