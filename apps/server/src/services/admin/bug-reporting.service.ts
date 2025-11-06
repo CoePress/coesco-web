@@ -86,6 +86,14 @@ export class BugReportingService {
     return jiraResult;
   }
 
+  async getUserBugReports(userId: string) {
+    return await bugReportRepository.getAll({
+      where: { createdById: userId },
+      sort: "createdAt",
+      order: "desc",
+    } as any);
+  }
+
   private async createJiraIssue(options: CreateJiraIssueOptions): Promise<BugReportResponse> {
     try {
       const { title, description, userEmail, userName, screenshot, url, userAgent } = options;
