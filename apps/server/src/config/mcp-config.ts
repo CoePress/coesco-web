@@ -2586,6 +2586,18 @@ export const SCHEMAS: ISchema[] = [
         required: true,
         hasDefault: true,
       },
+      latestRevision: {
+        type: "string",
+        required: false,
+      },
+      latestRevisionStatus: {
+        type: "quoterevisionstatus",
+        required: false,
+      },
+      latestRevisionTotalAmount: {
+        type: "decimal",
+        required: false,
+      },
       createdAt: {
         type: "datetime",
         required: true,

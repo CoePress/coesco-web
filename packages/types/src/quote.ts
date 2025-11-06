@@ -1,5 +1,6 @@
 // Auto-generated from Prisma schema
 import { QuoteStatus } from './quote-status';
+import { QuoteRevisionStatus } from './quote-revision-status';
 
 export interface Quote {
   id?: string;
@@ -16,6 +17,9 @@ export interface Quote {
   priority?: string;
   confidence?: number;
   status?: QuoteStatus;
+  latestRevision?: string;
+  latestRevisionStatus?: QuoteRevisionStatus;
+  latestRevisionTotalAmount?: number;
   createdAt?: Date | string;
   updatedAt: Date | string;
   deletedAt?: Date | string;
