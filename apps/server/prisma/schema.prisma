@@ -265,6 +265,7 @@ model Contact {
   legacyCompanyId String?
   firstName       String
   lastName        String?
+  owner           String?
   email           String?
   phone           String?
   phoneExtension  String?

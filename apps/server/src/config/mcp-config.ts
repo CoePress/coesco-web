@@ -628,6 +628,10 @@ export const SCHEMAS: ISchema[] = [
         type: "string",
         required: false,
       },
+      owner: {
+        type: "string",
+        required: false,
+      },
       email: {
         type: "string",
         required: false,

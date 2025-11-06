@@ -2,6 +2,7 @@ import {
   Edit,
   Lock,
   Trash2,
+  UserX,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
@@ -59,6 +60,7 @@ const CompanyDetails = () => {
   const [companyContacts, setCompanyContacts] = useState<any[]>([]);
   const [companyJourneys, setCompanyJourneys] = useState<any[]>([]);
   const [callHistory, setCallHistory] = useState<any[]>([]);
+  const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
 
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const [navigationModal, setNavigationModal] = useState<{ isOpen: boolean; journeyName: string; journeyId: string }>({ isOpen: false, journeyName: '', journeyId: '' });
@@ -69,7 +71,7 @@ const CompanyDetails = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [tempNotes, setTempNotes] = useState<string>('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'addresses' | 'credit' | 'interactions' | 'notes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'addresses' | 'credit' | 'interactions' | 'purchase-history' | 'notes'>('overview');
   
   const [editingCallId, setEditingCallId] = useState<number | null>(null);
   const [editingCallData, setEditingCallData] = useState<any>({});
@@ -121,8 +123,20 @@ const CompanyDetails = () => {
   const normalizeDate = (d: any) => {
     if (!d) return undefined;
     const s = String(d);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00`;
-    return s.includes(" ") ? s.replace(" ", "T") : s;
+
+    if (s.startsWith("0000-00-00") || s === "0000-00-00") return undefined;
+
+    let normalized = s;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      normalized = `${s}T00:00:00`;
+    } else if (s.includes(" ")) {
+      normalized = s.replace(" ", "T");
+    }
+
+    const testDate = new Date(normalized);
+    if (isNaN(testDate.getTime())) return undefined;
+
+    return normalized;
   };
 
   const parseConfidence = (v: any) => {
@@ -150,18 +164,13 @@ const CompanyDetails = () => {
     const value = Number(raw.Journey_Value ?? 0);
     const priority = normalizePriority(raw.Priority);
 
-    const closeDate =
+    const expectedDecisionDate =
       normalizeDate(raw.Expected_Decision_Date) ??
-      normalizeDate(raw.Quote_Presentation_Date) ??
-      normalizeDate(raw.Date_PO_Received) ??
-      normalizeDate(raw.Journey_Start_Date) ??
-      normalizeDate(raw.CreateDT) ??
-      new Date().toISOString();
-
+      null;
     const updatedAt =
       normalizeDate(raw.Action_Date) ??
       normalizeDate(raw.CreateDT) ??
-      new Date().toISOString();
+      undefined;
 
     const customerId = String(raw.Company_ID ?? "");
     const companyName = raw.Target_Account || undefined;
@@ -173,7 +182,7 @@ const CompanyDetails = () => {
       stage,
       value,
       priority,
-      closeDate,
+      expectedDecisionDate,
       updatedAt,
       customerId,
       companyName,
@@ -212,7 +221,7 @@ const CompanyDetails = () => {
     const fetchCompanyData = async () => {
       try {
         setIsInitialLoading(true);
-        const [companyData, contactsData, journeysData, callHistoryData, addressesData] = await Promise.all([
+        const [companyData, contactsData, journeysData, callHistoryData, addressesData, jobsData] = await Promise.all([
           api.get(`/legacy/std/Company/filter/custom`, {
             filterField: 'Company_ID',
             filterValue: id,
@@ -224,20 +233,25 @@ const CompanyDetails = () => {
             }),
             limit: 100
           }),
-          api.get(`/legacy/std/Journey/filter/custom`, { 
-            filterField: 'Company_ID', 
-            filterValue: id, 
-            limit: 100 
+          api.get(`/legacy/std/Journey/filter/custom`, {
+            filterField: 'Company_ID',
+            filterValue: id,
+            limit: 100
           }),
-          api.get(`/legacy/std/CallHistory/filter/custom`, { 
-            filterField: 'Company_ID', 
+          api.get(`/legacy/std/CallHistory/filter/custom`, {
+            filterField: 'Company_ID',
             filterValue: id,
             limit: 200
           }),
-          api.get(`/legacy/std/Address/filter/custom`, { 
-            filterField: 'Company_ID', 
+          api.get(`/legacy/std/Address/filter/custom`, {
+            filterField: 'Company_ID',
             filterValue: id,
             limit: 100
+          }),
+          api.get(`/legacy/job/JobOrder/filter/custom`, {
+            filterField: 'BillToNum',
+            filterValue: id,
+            limit: 200
           })
         ]);
 
@@ -253,6 +267,54 @@ const CompanyDetails = () => {
 
           const processedAddresses = Array.isArray(addressesData) ? addressesData : [];
           setCompanyAddresses(processedAddresses);
+
+          const processedJobs = Array.isArray(jobsData) ? jobsData : [];
+
+          if (processedJobs.length > 0) {
+            try {
+              const jobNumbers = processedJobs.map((job: any) => job.JobNumber);
+
+              const allSuffixData = await api.get(`/legacy/job/JobSuffix`, {
+                filter: JSON.stringify({
+                  filters: [
+                    { field: 'JobNumber', operator: 'in', values: jobNumbers }
+                  ]
+                }),
+                limit: 1000
+              });
+
+              const suffixesByJobNumber = new Map<string, any[]>();
+              const suffixArray = Array.isArray(allSuffixData) ? allSuffixData : (allSuffixData?.data || []);
+
+              suffixArray.forEach((suffix: any) => {
+                const jobNum = suffix.JobNumber;
+                if (!suffixesByJobNumber.has(jobNum)) {
+                  suffixesByJobNumber.set(jobNum, []);
+                }
+                suffixesByJobNumber.get(jobNum)?.push(suffix);
+              });
+
+              const jobsWithDetails = processedJobs.map((job: any) => ({
+                jobNumber: job.JobNumber,
+                jobStatus: job.JobStatus,
+                suffixes: (suffixesByJobNumber.get(job.JobNumber) || []).map((suffix: any) => ({
+                  description: suffix.ShortDescr,
+                  cost: suffix.QuoteCost
+                }))
+              }));
+
+              if (!cancelled) {
+                setPurchaseHistory(jobsWithDetails);
+              }
+            } catch (error) {
+              console.error('Error fetching suffix data:', error);
+              if (!cancelled) {
+                setPurchaseHistory([]);
+              }
+            }
+          } else {
+            setPurchaseHistory([]);
+          }
 
           const processedCompanyData = Array.isArray(companyData) ? companyData[0] : companyData;
 
@@ -282,6 +344,7 @@ const CompanyDetails = () => {
         console.error('Error fetching company data:', error);
         setCallHistory([]);
         setCompanyAddresses([]);
+        setPurchaseHistory([]);
       } finally {
         if (!cancelled) {
           setIsInitialLoading(false);
@@ -956,12 +1019,12 @@ const CompanyDetails = () => {
   
   return (
     <div className="flex flex-1 bg-background">
-      <aside className="w-max bg-foreground flex flex-col border-r border-border">
+      <aside className="w-80 bg-foreground flex flex-col border-r border-border">
         <div className="flex flex-col items-center py-4 border-b border-border">
           <div className="w-16 h-16 rounded-lg flex items-center justify-center mb-2 border border-border">
             <span className="text-primary text-2xl font-bold">{companyInitial}</span>
           </div>
-          <h2 className="text-xl font-bold text-text px-2">{company.name}</h2>
+          <h2 className="text-xl font-bold text-text px-2 text-center break-words max-w-full">{company.name}</h2>
           {company.website && (
             <a
               href={company.website}
@@ -1201,14 +1264,23 @@ const CompanyDetails = () => {
               }`}>
               Addresses
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('interactions')}
               className={`pb-2 border-b-2 font-semibold cursor-pointer ${
-                activeTab === 'interactions' 
-                  ? 'border-primary/50 text-primary' 
+                activeTab === 'interactions'
+                  ? 'border-primary/50 text-primary'
                   : 'border-transparent text-text-muted hover:text-primary'
               }`}>
               Interaction History
+            </button>
+            <button
+              onClick={() => setActiveTab('purchase-history')}
+              className={`pb-2 border-b-2 font-semibold cursor-pointer ${
+                activeTab === 'purchase-history'
+                  ? 'border-primary/50 text-primary'
+                  : 'border-transparent text-text-muted hover:text-primary'
+              }`}>
+              Purchase History
             </button>
             <button
               onClick={() => setActiveTab('credit')}
@@ -1582,7 +1654,7 @@ const CompanyDetails = () => {
                                     onClick={() => setMarkInactiveContact(contact)}
                                     className="border-red-300 hover:bg-red-50 hover:border-red-400"
                                   >
-                                    <Trash2 size={12} className="text-red-600" />
+                                    <UserX size={12} className="text-red-600" />
                                   </Button>
                                 </div>
                               )}
@@ -1634,9 +1706,11 @@ const CompanyDetails = () => {
                         <div className="text-xs text-text-muted mb-1">
                           Amount: {formatCurrency(journey.value)}
                         </div>
-                        <div className="text-xs text-text-muted mb-1">
-                          Close date: {formatDate(journey.closeDate)}
-                        </div>
+                        {journey.expectedDecisionDate && (
+                          <div className="text-xs text-text-muted mb-1">
+                            Expected decision: {formatDate(journey.expectedDecisionDate)}
+                          </div>
+                        )}
                         <div className="text-xs text-text-muted mb-1">
                           Stage: {journey.Journey_Stage || `Stage ${journey.stage}`}
                         </div>
@@ -2560,6 +2634,101 @@ const CompanyDetails = () => {
                       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                     </svg>
                     <div className="text-text-muted">No call history found.</div>
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : activeTab === 'purchase-history' ? (
+            <section className="flex-1 flex flex-col overflow-hidden">
+              <div
+                className="bg-foreground rounded-lg border border-border p-4 flex-1 flex flex-col overflow-hidden"
+                style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-text">Purchase History ({purchaseHistory.length} jobs)</h4>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  {purchaseHistory.length > 0 ? (
+                    <div className="space-y-4">
+                      {purchaseHistory.map((job, index) => (
+                        <div key={`job-${job.jobNumber}-${index}`} className="bg-surface p-4 rounded border">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="text-sm font-semibold text-text">
+                                  Job #{job.jobNumber}
+                                </span>
+                                <span className={`text-xs px-2 py-0.5 rounded ${
+                                  job.jobStatus === 'A' ? 'bg-blue-100 text-blue-800' :
+                                  job.jobStatus === 'C' ? 'bg-green-100 text-green-800' :
+                                  job.jobStatus === 'S' ? 'bg-yellow-100 text-yellow-800' :
+                                  job.jobStatus === 'X' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {job.jobStatus === 'A' ? 'Active' :
+                                   job.jobStatus === 'C' ? 'Closed' :
+                                   job.jobStatus === 'S' ? 'Suggested' :
+                                   job.jobStatus === 'X' ? 'Cancelled' :
+                                   job.jobStatus || 'Unknown'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {job.suffixes && job.suffixes.length > 0 ? (
+                            <div className="space-y-2">
+                              <div className="text-xs font-medium text-text-muted mb-2">Items:</div>
+                              <div className="space-y-2">
+                                {job.suffixes.map((suffix: any, suffixIndex: number) => (
+                                  <div key={`suffix-${index}-${suffixIndex}`} className="bg-background p-3 rounded border border-border">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <div className="text-sm text-text mb-1">
+                                          {suffix.description || 'No description'}
+                                        </div>
+                                      </div>
+                                      <div className="text-sm font-medium text-text ml-4">
+                                        {suffix.cost ? formatCurrency(suffix.cost) : '-'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="pt-2 mt-2 border-t border-border">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs font-medium text-text-muted">Total:</span>
+                                  <span className="text-sm font-semibold text-text">
+                                    {formatCurrency(job.suffixes.reduce((sum: number, suffix: any) => sum + (suffix.cost || 0), 0))}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-text-muted">No items found for this job</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center py-8">
+                      <div className="text-4xl text-text-muted/50 mb-4">📦</div>
+                      <div className="text-text-muted">No purchase history found for this company</div>
+                    </div>
+                  )}
+                </div>
+
+                {purchaseHistory.length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-border flex-shrink-0">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-text-muted">Grand Total:</span>
+                      <span className="text-lg font-bold text-text">
+                        {formatCurrency(
+                          purchaseHistory.reduce((total, job) =>
+                            total + (job.suffixes?.reduce((sum: number, suffix: any) => sum + (suffix.cost || 0), 0) || 0),
+                          0)
+                        )}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>

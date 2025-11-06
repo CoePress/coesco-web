@@ -225,6 +225,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const [lastActivityDate, setLastActivityDate] = useState<string | null>(null);
   const [newNoteBody, setNewNoteBody] = useState("");
   const [newNextStepBody, setNewNextStepBody] = useState("");
+  const [newNextStepDate, setNewNextStepDate] = useState("");
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [isCreatingNextStep, setIsCreatingNextStep] = useState(false);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
@@ -327,7 +328,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         entityId: journeyId,
         entityType: "journey",
         type: "note",
-        createdBy: employee?.initials
+        createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
       if (newNote?.success && newNote.data) {
         setJourneyNotes(prev => [newNote.data, ...prev]);
@@ -342,20 +343,24 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   };
 
   const handleCreateNextStep = async () => {
-    if (!newNextStepBody.trim() || !journey?.ID && !journey?.id) return;
+    if (!newNextStepBody.trim() || !newNextStepDate || !journey?.ID && !journey?.id) return;
     setIsCreatingNextStep(true);
     try {
       const journeyId = journey.ID || journey.id;
+      const [year, month, day] = newNextStepDate.split('-');
+      const formattedDate = `${month}/${day}/${year}`;
+      const bodyWithDate = `${formattedDate}: ${newNextStepBody.trim()}`;
       const newNextStep = await api.post('/core/notes', {
-        body: newNextStepBody.trim(),
+        body: bodyWithDate,
         entityId: journeyId,
         entityType: "journey",
         type: "next_step",
-        createdBy: employee?.initials
+        createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
       if (newNextStep?.success && newNextStep.data) {
         setJourneyNextSteps(prev => [newNextStep.data, ...prev]);
         setNewNextStepBody("");
+        setNewNextStepDate("");
       }
     } catch (error) {
       console.error('Error creating next step:', error);
@@ -590,7 +595,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         entityId: journeyId,
         entityType: "journey",
         type: "LastActivity",
-        createdBy: employee?.initials
+        createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
       setLastActivityDate(now);
     } catch (error) {
@@ -1179,8 +1184,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                           <div className="flex items-center gap-2">
                             {editingContactId !== contact.ID && (
                               <>
-                                {isPrimary && <span className="text-xs bg-gray text-white px-2 py-1 rounded">Primary</span>}
-                                {!contact.Contact_ID && !contact.Cont_Id && <span className="text-xs bg-gray text-white px-2 py-1 rounded" title="Some features will not function with this Contact as the legacy database needs to be updated">Legacy</span>}
+                                {isPrimary && <span className="text-xs bg-primary text-background px-2 py-1 rounded font-medium">Primary</span>}
+                                {!contact.Contact_ID && !contact.Cont_Id && <span className="text-xs bg-primary text-background px-2 py-1 rounded font-medium" title="Some features will not function with this Contact as the legacy database needs to be updated">Legacy</span>}
                                 <Button
                                   variant="secondary-outline"
                                   size="sm"
@@ -1822,22 +1827,35 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ maxHeight: '400px' }}>
             <h2 className="font-semibold text-text-muted text-sm mb-2">Next Steps</h2>
 
-            <div className="flex gap-2 mb-3">
-              <textarea
-                className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-                value={newNextStepBody}
-                onChange={(e) => setNewNextStepBody(e.target.value)}
-                placeholder="Enter a new next step..."
-                rows={2}
-              />
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleCreateNextStep}
-                disabled={isCreatingNextStep || !newNextStepBody.trim()}
-              >
-                {isCreatingNextStep ? "Adding..." : "Add Next Step"}
-              </Button>
+            <div className="flex flex-col gap-2 mb-3">
+              <div className="flex gap-2 items-center">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-text-muted">Next Action Date *</label>
+                  <input
+                    type="date"
+                    className="rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={newNextStepDate}
+                    onChange={(e) => setNewNextStepDate(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <textarea
+                  className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                  value={newNextStepBody}
+                  onChange={(e) => setNewNextStepBody(e.target.value)}
+                  placeholder="Enter a new next step..."
+                  rows={2}
+                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCreateNextStep}
+                  disabled={isCreatingNextStep || !newNextStepBody.trim() || !newNextStepDate}
+                >
+                  {isCreatingNextStep ? "Adding..." : "Add Next Step"}
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
@@ -2115,7 +2133,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               size="sm"
               onClick={confirmDeleteNote}
               disabled={isSaving}
-              className="!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700"
+              className="!bg-red-400 !border-red-400 hover:!bg-red-500 hover:!border-red-500"
             >
               {isSaving ? "Deleting..." : "Delete Note"}
             </Button>
@@ -2150,7 +2168,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               size="sm"
               onClick={confirmDeleteNextStep}
               disabled={isSaving}
-              className="!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700"
+              className="!bg-red-400 !border-red-400 hover:!bg-red-500 hover:!border-red-500"
             >
               {isSaving ? "Deleting..." : "Delete Next Step"}
             </Button>
@@ -2560,7 +2578,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
         description: tagDescription,
         parentTable: 'journeys',
         parentId: journeyId,
-        createdBy: employee?.initials || 'unknown'
+        createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
       
       if (newTag?.success && newTag.data) {
@@ -2871,6 +2889,7 @@ const JourneyDetailsPage = () => {
   const [validJourneyStatuses, setValidJourneyStatuses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copiedJourneyId, setCopiedJourneyId] = useState(false);
   const api = useApi();
   const { employee } = useAuth();
 
@@ -2878,7 +2897,20 @@ const JourneyDetailsPage = () => {
     const normalizeDate = (d: any) => {
       if (!d) return undefined;
       const s = String(d);
-      return /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s}T00:00:00` : s.includes(" ") ? s.replace(" ", "T") : s;
+
+      if (s.startsWith("0000-00-00") || s === "0000-00-00") return undefined;
+
+      let normalized = s;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        normalized = `${s}T00:00:00`;
+      } else if (s.includes(" ")) {
+        normalized = s.replace(" ", "T");
+      }
+
+      const testDate = new Date(normalized);
+      if (isNaN(testDate.getTime())) return undefined;
+
+      return normalized;
     };
     const normalizePriority = (v: any): string => {
       const s = String(v ?? "").toUpperCase().trim();
@@ -2893,8 +2925,8 @@ const JourneyDetailsPage = () => {
       stage: mapLegacyStageToId(raw.Journey_Stage),
       value: Number(raw.Journey_Value ?? 0),
       priority: normalizePriority(raw.Priority),
-      closeDate: normalizeDate(raw.Expected_Decision_Date) ?? normalizeDate(raw.Quote_Presentation_Date) ?? normalizeDate(raw.Date_PO_Received) ?? normalizeDate(raw.Journey_Start_Date) ?? normalizeDate(raw.CreateDT) ?? new Date().toISOString(),
-      updatedAt: normalizeDate(raw.Action_Date) ?? normalizeDate(raw.CreateDT) ?? new Date().toISOString(),
+      expectedDecisionDate: normalizeDate(raw.Expected_Decision_Date) ?? normalizeDate(raw.Quote_Presentation_Date) ?? normalizeDate(raw.Date_PO_Received) ?? normalizeDate(raw.Journey_Start_Date) ?? normalizeDate(raw.CreateDT) ?? new Date().toISOString(),
+      updatedAt: normalizeDate(raw.Action_Date) ?? normalizeDate(raw.CreateDT) ?? undefined,
       customerId: String(raw.Company_ID ?? ""),
       companyName: raw.Target_Account,
       ...raw
@@ -2982,6 +3014,15 @@ const JourneyDetailsPage = () => {
 
   const updateJourney = (updates: Record<string, any>) => setJourneyData((prev: any) => ({ ...prev, ...updates }));
 
+  const handleCopyJourneyId = () => {
+    const id = journeyData?.ID || journeyData?.id;
+    if (id) {
+      navigator.clipboard.writeText(String(id));
+      setCopiedJourneyId(true);
+      setTimeout(() => setCopiedJourneyId(false), 2000);
+    }
+  };
+
   useEffect(() => {
     fetchJourneyData();
   }, [journeyId]);
@@ -3025,6 +3066,21 @@ const JourneyDetailsPage = () => {
       {activeTab === "tags" && <JourneyTagsTab journey={journeyData} employee={employee} />}
       {activeTab === "legacy" && <JourneyLegacyTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
       {activeTab === "actions" && <JourneyActionsTab journey={journeyData} />}
+
+      <div className="px-4 py-2 border-t border-border bg-foreground">
+        <div className="text-xs text-text-muted">
+          Journey ID: <span
+            onClick={handleCopyJourneyId}
+            className="font-mono text-text bg-surface px-2 py-1 rounded border border-border cursor-pointer hover:bg-gray transition-colors"
+            title="Click to copy"
+          >
+            {journeyData?.ID || journeyData?.id}
+          </span>
+          <span className="ml-2 text-text-muted italic">
+            {copiedJourneyId ? "Copied!" : "(click to copy)"}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import { Button, Loader } from "@/components";
+import Input from "@/components/ui/input";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export type TableColumn<T> = {
   key: string;
@@ -55,6 +57,22 @@ const Table = <T extends Record<string, any>>({
   error,
   mobileCardView = false,
 }: TableProps<T>) => {
+  const [pageInput, setPageInput] = useState(currentPage.toString());
+
+  useEffect(() => {
+    setPageInput(currentPage.toString());
+  }, [currentPage]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const page = parseInt(pageInput);
+      if (page >= 1 && page <= totalPages && page !== currentPage) {
+        onPageChange?.(page);
+      }
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [pageInput, totalPages, currentPage, onPageChange]);
+
   const handleToggleAll = () => {
     if (!onSelectionChange) return;
     if (selectedItems.length === data.length) {
@@ -357,9 +375,20 @@ const Table = <T extends Record<string, any>>({
               disabled={currentPage === 1 || data.length === 0}>
               <ArrowLeftIcon size={16} />
             </Button>
-            <span className="text-text-muted text-sm">
-              {currentPage} of {totalPages}
-            </span>
+            <div className="flex items-center gap-1 text-sm text-text-muted">
+              <div className="w-15">
+                <Input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  disabled={data.length === 0}
+                  className="text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              </div>
+              <span>of {totalPages}</span>
+            </div>
             <Button
               variant="secondary-outline"
               onClick={() => onPageChange?.(currentPage + 1)}
