@@ -180,9 +180,9 @@ ${fieldMappingsCode}
             onChange={importConfig}
             className="hidden"
           />
-          <Button variant="secondary-outline" className="px-2" as="span">
+          <span className="inline-flex items-center justify-center px-2 py-1.5 text-sm font-medium text-text bg-surface border border-border rounded hover:bg-surface-hover cursor-pointer transition-colors">
             <Upload size={16} />
-          </Button>
+          </span>
         </label>
         <Button onClick={exportConfig} variant="secondary-outline" className="px-2">
           <Download size={16} />
@@ -332,8 +332,8 @@ ${fieldMappingsCode}
                     <Checkbox
                       label="Skip Duplicates"
                       checked={mapping.skipDuplicates || false}
-                      onChange={(checked) =>
-                        updateMapping(mapping.id, { skipDuplicates: checked })
+                      onChange={(e) =>
+                        updateMapping(mapping.id, { skipDuplicates: e.target.checked })
                       }
                     />
                   </div>
@@ -447,9 +447,9 @@ ${fieldMappingsCode}
                                 <Checkbox
                                   label="Required"
                                   checked={field.required || false}
-                                  onChange={(checked) =>
+                                  onChange={(e) =>
                                     updateFieldMapping(mapping.id, idx, {
-                                      required: checked,
+                                      required: e.target.checked,
                                     })
                                   }
                                 />

@@ -120,14 +120,14 @@ class OutboxReplayerService {
         id: record.id,
         method: record.method,
         url: record.url,
-        error: axiosError.response?.data?.message || "Client error",
+        error: (axiosError.response?.data as { message?: string })?.message || "Client error",
         statusCode,
       });
       return;
     }
 
     record.attempts += 1;
-    record.lastError = axiosError.response?.data?.message || axiosError.message || "Unknown error";
+    record.lastError = (axiosError.response?.data as { message?: string })?.message || axiosError.message || "Unknown error";
 
     if (record.attempts >= record.maxAttempts) {
       console.error(`[outbox] Max attempts reached: ${record.method} ${record.url}`);

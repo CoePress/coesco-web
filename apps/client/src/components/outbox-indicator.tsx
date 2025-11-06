@@ -5,7 +5,7 @@ import { useOutbox } from "@/hooks/use-outbox";
 import { isOnline } from "@/utils/network";
 
 export default function OutboxIndicator() {
-  const { stats, queuedItems, refreshQueue, clearQueue, forceReplay } = useOutbox();
+  const { stats, queuedItems, clearQueue, forceReplay } = useOutbox();
   const [isExpanded, setIsExpanded] = useState(false);
   const online = isOnline();
 

@@ -106,7 +106,7 @@ const Sandbox = () => {
           size="sm"
           variant="ghost"
           onClick={(e) => {
-            e.stopPropagation();
+            e?.stopPropagation();
             info(`Editing ${row.name}`);
           }}>
           Edit
