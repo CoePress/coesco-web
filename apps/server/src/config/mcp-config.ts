@@ -513,6 +513,46 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "company-relationship",
+    description: "Schema for CompanyRelationship entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      parentId: {
+        type: "string",
+        required: true,
+      },
+      childId: {
+        type: "string",
+        required: true,
+      },
+      relationshipType: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
+    },
+  },
+  {
     name: "configuration",
     description: "Schema for Configuration entity",
     schema: {

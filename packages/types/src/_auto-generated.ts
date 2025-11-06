@@ -35,6 +35,7 @@ export * from './bug-report';
 export * from './chat';
 export * from './coil-type';
 export * from './company';
+export * from './company-relationship';
 export * from './configuration';
 export * from './configuration-option';
 export * from './contact';

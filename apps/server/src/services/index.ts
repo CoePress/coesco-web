@@ -34,6 +34,7 @@ import { MachineMonitorService } from "./production/machining.service";
 import { ResourceMonitoringService } from "./production/resource-monitoring.service";
 import { ResourceService } from "./production/resource.service";
 import { AddressService } from "./sales/address.service";
+import { CompanyRelationshipService } from "./sales/company-relationship.service";
 import { ContactService } from "./sales/contact.service";
 import { CustomerService } from "./sales/customer.service";
 import { JourneyContactService } from "./sales/journey-contact.service";
@@ -83,6 +84,7 @@ export const resourceService = new ResourceService();
 
 // Sales
 export const addressService = new AddressService();
+export const companyRelationshipService = new CompanyRelationshipService();
 export const contactService = new ContactService();
 export const customerService = new CustomerService();
 export const journeyContactService = new JourneyContactService();

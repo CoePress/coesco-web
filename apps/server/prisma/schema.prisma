@@ -258,6 +258,21 @@ enum CompanyStatus {
   ARCHIVE
 }
 
+model CompanyRelationship {
+  id               String   @id @default(uuid())
+  parentId         String
+  childId          String
+  relationshipType String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdById      String
+  updatedById      String
+
+  @@unique([parentId, childId])
+  @@index([createdById])
+  @@map("company_relationships")
+}
+
 model Contact {
   id              String      @id @default(uuid())
   addressId       String?
@@ -286,7 +301,7 @@ model Contact {
   dealerJourneys   Journey[]        @relation("JourneyDealerContact")
   journeyContacts  JourneyContact[]
 
-  /// @searchFields(firstName: 4, lastName: 3, email: 2, title: 1)
+  /// @searchFields(firstName: 2, lastName: 2)
 
   @@index([createdById])
   @@index([companyId])
@@ -1209,9 +1224,9 @@ model Message {
 }
 
 model Image {
-  id         Int       @id @default(autoincrement())
-  path       String    @unique
-  uploadedAt DateTime  @default(now())
+  id         Int      @id @default(autoincrement())
+  path       String   @unique
+  uploadedAt DateTime @default(now())
 
   contacts Contact[]
 
