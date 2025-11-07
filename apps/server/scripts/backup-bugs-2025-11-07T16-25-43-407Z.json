@@ -1,0 +1,3878 @@
+[
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13649",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13649",
+    "key": "CSP-220",
+    "fields": {
+      "summary": "Lindsay Sawyer - In our next meeting can we talk about possibl",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "In our next meeting can we talk about possibly re-organizing this?Journey Stage should be at the top. Journey Type, Equipment Type and number of items should all be on the same line. Priority, status, and confidence can be with Journey Stage at the top. RSM, RSM territory, Dealer, Dealer contact, as well as competition can all be on a line together or close to each other. Presentation Date, Expected close date can be together on a line (at the bottom) - for example"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/fefbd4be-10e6-4083-e114-030d00b3345e"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13648",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13648",
+    "key": "CSP-219",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When the lead source is Coe Service, the RSM is suppose to select who from the service department is the referral (currently via a drop down box)."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/fefbd4be-10e6-4083-e114-030d00b3345e"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13647",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13647",
+    "key": "CSP-218",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "In the current journeys there is a drop down for OEM Partner"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/fefbd4be-10e6-4083-e114-030d00b3345e"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13646",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13646",
+    "key": "CSP-217",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "My apologies! I do see that RSM Territory is here :) ...the field that is actually missing is RSM Assist for an RSM that helps another close a deal"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/fefbd4be-10e6-4083-e114-030d00b3345e"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13645",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13645",
+    "key": "CSP-216",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "There should also be a drop down for \"RSM Territory\" this field in the current journeys is used to indicate a project that is shipping into another RSMs territory. This is essential to make sure commission pay if fair."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/fefbd4be-10e6-4083-e114-030d00b3345e"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13644",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13644",
+    "key": "CSP-215",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Because the sale cycle is so long, this needs to be adjusted too view quarter, year (probably up to 3 years). Also, Can we discuss what these numbers reflect? They look super cool, but I am thinking about, how is this a tool for the RSM?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13641",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13641",
+    "key": "CSP-214",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When I added a note it says \"system.\" This should identify who added the note"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts/b6f35a1e-cc61-4d0b-9c90-0692978d036b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13640",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13640",
+    "key": "CSP-213",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When I tried to edit this contact and hit save. It did not save my changes."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts/b6f35a1e-cc61-4d0b-9c90-0692978d036b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13639",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13639",
+    "key": "CSP-212",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "No ability to merge contacts that are duplicate."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts/86e7eb5d-f277-4fed-a795-872e1362ca09"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13638",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13638",
+    "key": "CSP-211",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Search bar seems to only search names, not other properties. I searched for a known company name and fuzzy search brought up a last name only."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13637",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13637",
+    "key": "CSP-210",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "No ability to add start or end times"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/forms/98476bd0-712b-4e53-854a-26f555bfb531/submit"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13636",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13636",
+    "key": "CSP-209",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Can't upload photos"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/forms/98476bd0-712b-4e53-854a-26f555bfb531/submit"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13635",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13635",
+    "key": "CSP-208",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Sketch: Can't save sketch"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/forms/98476bd0-712b-4e53-854a-26f555bfb531/submit"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13633",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13633",
+    "key": "CSP-206",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "No results for filtering contacts by their RSM"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13632",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13632",
+    "key": "CSP-205",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When you search, you're not able to narrow by RSM filter."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13631",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13631",
+    "key": "CSP-204",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "In the current journeys this is a drop-down. I believe we want to keep the drop down. That will allow us to sort contacts for targeting marketing campaigns"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts/b6f35a1e-cc61-4d0b-9c90-0692978d036b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13630",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13630",
+    "key": "CSP-203",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Column sorting doesn't work properly with companies. Sorting doesn't work at all if you search for anything."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13629",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13629",
+    "key": "CSP-202",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "We'll need an activity log for all activities ever assigned to this contact from projects and company profiles."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts/9dc29276-4a00-41e2-aed8-789e10a00f9b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13628",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13628",
+    "key": "CSP-201",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Once advanced filters are done, we need the ability to export the active shown list with all properties (or the ability to select the properties we want exported)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13627",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13627",
+    "key": "CSP-200",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Same as companies, we need the option to show/hide every property for the contact as a column and to filter for each."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13626",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13626",
+    "key": "CSP-199",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "I submitted a visit log and it is not showing up in the history tab"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/cc36a039-53d5-1987-e114-8a98e461c932"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13625",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13625",
+    "key": "CSP-198",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Purchase history not populating. This example has 1 service and 1 new equipment sale back in the 90's."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/8776"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13624",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13624",
+    "key": "CSP-197",
+    "fields": {
+      "summary": "Bug Report - John Kwiatkowski - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Wish list... It would be nice if there was a state drop down based on country selected."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: John Kwiatkowski (jmk@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/performance-sheets/74530c95-02ce-4acd-93b2-6ed57665efe4"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13623",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13623",
+    "key": "CSP-196",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "I'm sorry I can't report a bug in a pop up window. For industries, we also need an \"other\" option at the bottom of the drop down. If an RSM selects other, there should be a box where they can manually enter the industry."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13622",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13622",
+    "key": "CSP-195",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "The account balance and date need to be auto filled by looking at our data."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/2030"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13621",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13621",
+    "key": "CSP-194",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Cant find a way to edit the name of the company."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/2030"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13620",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13620",
+    "key": "CSP-193",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "is there a way these can auto fill based on the first few letters you type? if the customer is already in the system?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/performance-sheets/2a806e46-25bd-40cd-b805-9dbfa4c02ae3"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13619",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13619",
+    "key": "CSP-192",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Link to company profile"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/c03374ef-3350-799c-b514-bbf708b04d46"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13618",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13618",
+    "key": "CSP-191",
+    "fields": {
+      "summary": "Bug Report - John Kwiatkowski - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Full Journey should not be able to be erased.  Make inactive, flag as duplicate, flag as error entry, etc. but do not erase."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: John Kwiatkowski (jmk@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d55ce614-d5b4-7fa8-e114-64d7e8e6532e"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13617",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13617",
+    "key": "CSP-190",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "I am unable to enter an address without a zip code. This may be problematic if the facility is out of the USA.. is this the official address (that is to be entered by Kim only?) -"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/8958"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13616",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13616",
+    "key": "CSP-189",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "For the activity log section, we'll need the ability to input WHO we spoke to and link to their contact profiles."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/03cced5b-4ae4-470a-ba58-ed5fe477d66a"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13615",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13615",
+    "key": "CSP-188",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "This area should include all activity with anyone attached to the company and include all the activity options shared before. If creating activities in the company page - will need option to select the person or create a contact. We'd need to be able to add multiple contacts."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/3299"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13614",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13614",
+    "key": "CSP-187",
+    "fields": {
+      "summary": "Bug Report - John Kwiatkowski - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Only RSMs with active assigned territories should be in this list."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: John Kwiatkowski (jmk@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d55ce614-d5b4-7fa8-e114-64d7e8e6532e"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13613",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13613",
+    "key": "CSP-186",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Similar to the contact section, can we get a map option?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13612",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13612",
+    "key": "CSP-185",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When creating anew journey, it will not allow me to advance w/out filling in all required fields. There may be instances (early in the sale cycle) where an RSM doesn't have all these answers. A warning should pop up (like in the current journeys) alerting RSM to missing fields, but should not prevent them from starting the journey"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13611",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13611",
+    "key": "CSP-184",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Can we get a link to the company profile?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/8ede2ad8-af76-47e0-91a2-2d1c10f8d98f"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13610",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13610",
+    "key": "CSP-183",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Can we get a linkedin page url and domain?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/3917"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13609",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13609",
+    "key": "CSP-182",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When I moved this journey from one stage to another. It did not record the action in the history tab. In journeys, anytime a field is updated/modified, it records it in the history. This should also happen in the Journeys"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/cc36a039-53d5-1987-e114-8a98e461c932"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13608",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13608",
+    "key": "CSP-181",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Once advanced filters are implemented, we need an export option to export the filtered lists. This should by default include every property for the company as columns."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13607",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13607",
+    "key": "CSP-180",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "We need more robust filtering capabilities for Companies with the option to choose any property to both display as a column in the list or to use as a filter."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13606",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13606",
+    "key": "CSP-179",
+    "fields": {
+      "summary": "Bug Report - John Kwiatkowski - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "You should not be able to delete a contact, just make inactive."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: John Kwiatkowski (jmk@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d55ce614-d5b4-7fa8-e114-64d7e8e6532e"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13605",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13605",
+    "key": "CSP-178",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "I see you have a journey ID on this page, Awesome! can you explain the purpose of this page in our next meeting please?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/bd94d015-6405-b7b5-e114-5cc8609faecd"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13604",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13604",
+    "key": "CSP-177",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Is there a way a tag can be a person (like a fellow employee at Coe Press)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/bd94d015-6405-b7b5-e114-5cc8609faecd"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13603",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13603",
+    "key": "CSP-176",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Is there a way to also have a unique identify for each new journey that is created? this would help when reporting"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/bd94d015-6405-b7b5-e114-5cc8609faecd"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13602",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13602",
+    "key": "CSP-175",
+    "fields": {
+      "summary": "Bug Report - Lindsay Sawyer - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Is the purpose of this field to show past notes?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Lindsay Sawyer (lss@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/bd94d015-6405-b7b5-e114-5cc8609faecd"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13601",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13601",
+    "key": "CSP-174",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Can we get a filter by territory option? This would be easy for state territories but would need to be split by county for split territories and be easily editable for changes."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13599",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13599",
+    "key": "CSP-173",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When trying to edit a contact in contact profile, the save button doesn't let me click through."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts/undefined"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13598",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13598",
+    "key": "CSP-172",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When trying to disconnect a contact from a company there is no unassign option other than mark as left company, but the button doesn't work."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/4506"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13597",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13597",
+    "key": "CSP-171",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When adding a new contact in company profile, it didn't transfer the name and the edit and save doesn't work."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/4506"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13596",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13596",
+    "key": "CSP-170",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When adding new contacts to a company profile, there search function doesn't work"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/4506"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13595",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13595",
+    "key": "CSP-169",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "We don't need the ability to edit a contact in a company profile. We should just be able to click through to their contact profile and edit there. Either way, it's not letting me save a contact edit in the company profile."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/4506"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13593",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13593",
+    "key": "CSP-167",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When tapping to remove contact from a company, the dialog box renames them \"unnamed contact\""
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/companies/4506"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13592",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13592",
+    "key": "CSP-166",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Quote number should be a dropdown menu of actual quotes, otherwise there is potential for typos"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d7d83458-d80f-b08a-e114-bed5182b893b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13591",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13591",
+    "key": "CSP-165",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "We should not have permanent deletion be a thing. This should be archived, not deleted."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d7d83458-d80f-b08a-e114-bed5182b893b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13590",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13590",
+    "key": "CSP-164",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When trying to create a new contact, it failed and didn't let it process."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d7d83458-d80f-b08a-e114-bed5182b893b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13589",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13589",
+    "key": "CSP-163",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When trying to delete a legacy contact the dialog box says it would be permanent. Can we not find a way to take legacy contacts into our contact database?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d7d83458-d80f-b08a-e114-bed5182b893b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13588",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13588",
+    "key": "CSP-162",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "For the Activity Log section of the CRM, include the following activity types in a dropdown: Call, Email, Meeting, Text/Chat, Quote Sent, Quote Presentation, Event, Form Submission, Website Activity, and Content Downloaded. Each activity entry should include a timestamp field that automatically defaults to the current date and time but can be manually edited to record past interactions or backdate historical activity when needed. The Activity Type should be a dropdown menu to ensure consistency in reporting, and a Sentiment dropdown should be required for every entry, with three selectable options: Negative, Neutral, and Positive. This setup ensures accurate activity tracking, proper categorization, and a quick view of customer relationship health."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d7d83458-d80f-b08a-e114-bed5182b893b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13587",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13587",
+    "key": "CSP-161",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "In the contact profile there is no way to edit the address."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts/0c763272-89e3-4fea-a367-12bab80a65fe"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13586",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13586",
+    "key": "CSP-160",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "I just added this contact to a project, but theres no indication in the contact profile of the association. Add a new section similar to companies that show all projects this person associated with (past and present)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/contacts/0c763272-89e3-4fea-a367-12bab80a65fe"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13585",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13585",
+    "key": "CSP-159",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When adding a new contact > search existing: This shows the entire database of contacts but doesn't include their company affiliation, which could be confusing for people with similar names."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d7d83458-d80f-b08a-e114-bed5182b893b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13584",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13584",
+    "key": "CSP-158",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "portal has booted me twice in the last 20 minutes prompting me to sign in again. Then I lose my place in the crm."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13583",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13583",
+    "key": "CSP-157",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "This value should be pulled from the quote module for accuracy."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/bd94d015-6405-b7b5-e114-4ec7247ab7df"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13582",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13582",
+    "key": "CSP-156",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "I added a tag to this project and it's not displaying when you select show tags"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13581",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13581",
+    "key": "CSP-155",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "test"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13580",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13580",
+    "key": "CSP-154",
+    "fields": {
+      "summary": "Bug Report - Alex Kyrtsos - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "test"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Alex Kyrtsos (atk@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13579",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13579",
+    "key": "CSP-153",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Where can I see these tags?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/bd94d015-6405-b7b5-e114-4ec7247ab7df"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13577",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13577",
+    "key": "CSP-151",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "I put in a different quote number in the quote overview and the quote value did not change"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/bd94d015-6405-b7b5-e114-4ec7247ab7df"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13575",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13575",
+    "key": "CSP-150",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "In projects > quote info > quote status, there are two percentage symbols."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/bd94d015-6405-b7b5-e114-4ec7247ab7df"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13574",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13574",
+    "key": "CSP-149",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Bug reporter tool doesn't let me scroll down for the screenshot"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/d7d83458-d80f-b08a-e114-bed5182b893b"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13573",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13573",
+    "key": "CSP-148",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Can't click through to Contact profile"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/a5533b0c-f23f-5d8e-e114-dbd8f48a9a8c"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13572",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13572",
+    "key": "CSP-147",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Should Company ID be editable?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/ffca5485-f43e-0a8b-e114-17d66cc8caae"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13571",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13571",
+    "key": "CSP-146",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Revenue should be changed to order intake"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13570",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13570",
+    "key": "CSP-145",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Conversion rate doesn't seem to be accurate. Nobody should have 100% conversion rate."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13569",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13569",
+    "key": "CSP-144",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "When hovering on the graph, the word \"revenue\" should be \"order intake\""
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13568",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13568",
+    "key": "CSP-143",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Nov 6, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Order intake is not accurate. If this is based purely on RSM updating of quote data, it will never be accurate. This will need to be connected to another source."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "13504",
+    "self": "https://coe-press.atlassian.net/rest/api/3/issue/13504",
+    "key": "CSP-129",
+    "fields": {
+      "summary": "Bug Report - Hugh Little - Oct 29, 2025",
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Replace all \"Journey\" titles with \"Project\""
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Reported by: Hugh Little (hcl@cpec.com)"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Page URL: https://portal.cpec.com/sales/pipeline/1034975b-0119-487b-a2be-70ba3f55f21a"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+]
