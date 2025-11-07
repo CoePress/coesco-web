@@ -70,9 +70,9 @@ async function updateIssueTitle(issueKey: string, newTitle: string): Promise<voi
   const response = await fetch(`${apiUrl}/issue/${issueKey}`, {
     method: "PUT",
     headers: {
-      Authorization: authHeader,
+      "Authorization": authHeader,
       "Content-Type": "application/json",
-      Accept: "application/json",
+      "Accept": "application/json",
     },
     body: JSON.stringify({
       fields: {
