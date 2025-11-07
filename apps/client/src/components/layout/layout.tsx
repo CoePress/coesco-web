@@ -372,6 +372,7 @@ const Layout = ({ children }: LayoutProps) => {
             setIsBugModalOpen(false);
             setScreenshot(null);
             setShowConfirmation(false);
+            setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
           }}
           title="Confirm Bug Report"
           size="xs"
@@ -407,6 +408,7 @@ const Layout = ({ children }: LayoutProps) => {
                     setIsBugModalOpen(false);
                     setScreenshot(null);
                     setShowConfirmation(false);
+                    setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
                   } else {
                     addToast({
                       title: "Failed to submit bug report",
@@ -444,6 +446,7 @@ const Layout = ({ children }: LayoutProps) => {
             setIsBugModalOpen(false);
             setScreenshot(null);
             setShowConfirmation(false);
+            setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
           }}
           title="Report Bug"
           size="md"
@@ -455,6 +458,7 @@ const Layout = ({ children }: LayoutProps) => {
                   setIsBugModalOpen(false);
                   setScreenshot(null);
                   setShowConfirmation(false);
+                  setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
                 }}>
                 Cancel
               </Button>

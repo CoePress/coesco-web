@@ -19,9 +19,11 @@ const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportForm
 
   return (
     <>
+      <div className="mb-2">
+        <label className="text-sm font-medium text-text">Description</label>
+      </div>
       <Textarea
         id="bug-description"
-        label="Description"
         value={formData.description}
         onChange={(e) => onFormDataChange({ ...formData, description: e.target.value })}
         placeholder="Detailed description of the bug, including steps to reproduce"

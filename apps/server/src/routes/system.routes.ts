@@ -50,5 +50,6 @@ router.get("/health/status", async (_req, res) => {
 });
 
 router.post("/bugs", bugReportingController.sendBugReport);
+router.get("/bugs/my-reports", bugReportingController.getMyBugReports);
 
 export default router;
