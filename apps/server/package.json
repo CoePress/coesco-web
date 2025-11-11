@@ -11,6 +11,7 @@
     "db:generate": "npx prisma generate && tsx src/scripts/service-generator.ts && npm run lint:fix",
     "db:migrate": "npx prisma migrate dev",
     "db:migrate:deploy": "npx prisma migrate deploy",
+    "db:migrate:scripts": "tsx src/scripts/run-migration-scripts.ts",
     "db:migrate:status": "npx prisma migrate status",
     "db:reset": "npx prisma migrate reset",
     "pipeline": "tsx src/scripts/data-pipeline.ts",
