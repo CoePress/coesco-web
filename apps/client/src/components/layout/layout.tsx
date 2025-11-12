@@ -325,7 +325,7 @@ const Layout = ({ children }: LayoutProps) => {
               <span className="text-xs truncate w-full text-center">Home</span>
             </Link>
 
-            {currentModule?.pages?.slice(0, 3).map((page) => {
+            {currentModule?.pages?.slice(0, 4).map((page) => {
               const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
               const trimmedPath = fullPath.replace(/\/$/, "");
               const isActive = location.pathname.replace(/\/$/, "") === trimmedPath;
