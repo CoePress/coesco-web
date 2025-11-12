@@ -419,11 +419,12 @@ const Contacts = () => {
   );
 
   const HeaderActions = () => (
-    <div className="flex gap-2">
+    <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
       <Button
         variant={viewMode === "list" ? "secondary" : "secondary-outline"}
         size="sm"
         onClick={() => setViewMode("list")}
+        className="w-full md:w-auto"
       >
         <ListIcon size={16} />
         List
@@ -432,16 +433,18 @@ const Contacts = () => {
         variant={viewMode === "map" ? "secondary" : "secondary-outline"}
         size="sm"
         onClick={() => setViewMode("map")}
+        className="w-full md:w-auto"
       >
         <MapPin size={16} />
         Map
       </Button>
       {viewMode === "list" && (
-        <div className="relative">
+        <div className="relative w-full md:w-auto">
           <Button
             variant="secondary-outline"
             size="sm"
             onClick={() => setShowColumnMenu(!showColumnMenu)}
+            className="w-full md:w-auto"
           >
             <Settings size={16} />
             Columns
@@ -482,6 +485,7 @@ const Contacts = () => {
         variant="primary"
         size="sm"
         onClick={() => setShowAddContactModal(true)}
+        className="w-full md:w-auto"
       >
         <PlusCircleIcon size={16} />
         Create New

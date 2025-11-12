@@ -6,6 +6,7 @@ import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth.context";
 import { ContactType } from "@/types/enums";
 import { fetchAvailableRsms, Employee } from "@/pages/sales/journeys/utils";
 
@@ -33,6 +34,7 @@ const ContactDetails = () => {
   const { id: contactId } = useParams<{ id: string }>();
   const api = useApi();
   const { success, error: toastError } = useToast();
+  const { employee } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [contactData, setContactData] = useState<any>(null);
@@ -79,6 +81,13 @@ const ContactDetails = () => {
   const [loadingImages, setLoadingImages] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageSearchTerm, setImageSearchTerm] = useState("");
+
+  const [showAddJourneyModal, setShowAddJourneyModal] = useState(false);
+  const [availableJourneys, setAvailableJourneys] = useState<any[]>([]);
+  const [loadingAvailableJourneys, setLoadingAvailableJourneys] = useState(false);
+  const [journeySearchTerm, setJourneySearchTerm] = useState("");
+  const [linkingJourney, setLinkingJourney] = useState(false);
+  const [journeyToUnlink, setJourneyToUnlink] = useState<any>(null);
 
   const getContactTypeName = (type: ContactType | string | null | undefined): string => {
     switch (type) {
@@ -140,54 +149,52 @@ const ContactDetails = () => {
     if (!contactData?.id) return;
 
     setIsSaving(true);
-    try {
-      const trimmedData = {
-        firstName: editForm.firstName.trim(),
-        lastName: editForm.lastName.trim(),
-        title: editForm.title,
-        type: editForm.type,
-        phone: editForm.phone,
-        phoneExtension: editForm.phoneExtension,
-        email: editForm.email,
-        addressId: editForm.addressId || null,
-        owner: editForm.owner || null,
-        imageId: editForm.imageId,
-        profileUrl: editForm.profileUrl?.trim() || null,
-        companyId: contactData.companyId,
-        isPrimary: contactData.isPrimary,
-        legacyCompanyId: contactData.legacyCompanyId,
-        createdById: contactData.createdById,
-        updatedById: contactData.updatedById,
+    const trimmedData = {
+      firstName: editForm.firstName.trim(),
+      lastName: editForm.lastName.trim(),
+      title: editForm.title,
+      type: editForm.type,
+      phone: editForm.phone,
+      phoneExtension: editForm.phoneExtension,
+      email: editForm.email,
+      addressId: editForm.addressId || null,
+      owner: editForm.owner || null,
+      imageId: editForm.imageId,
+      profileUrl: editForm.profileUrl?.trim() || null,
+      companyId: contactData.companyId,
+      isPrimary: contactData.isPrimary,
+      legacyCompanyId: contactData.legacyCompanyId,
+      createdById: contactData.createdById,
+      updatedById: contactData.updatedById,
+    };
+
+    const result = await api.patch(`/sales/contacts/${contactData.id}`, trimmedData);
+    if (result !== null) {
+      const selectedImage = trimmedData.imageId
+        ? availableImages.find(img => img.id === trimmedData.imageId) || contactData.image
+        : null;
+
+      const updatedContactData = {
+        ...contactData,
+        ...trimmedData,
+        image: selectedImage ? (selectedImage.path ? selectedImage : { path: selectedImage.url }) : null
       };
-
-      const result = await api.patch(`/sales/contacts/${contactData.id}`, trimmedData);
-      if (result !== null) {
-        const selectedImage = trimmedData.imageId
-          ? availableImages.find(img => img.id === trimmedData.imageId) || contactData.image
-          : null;
-
-        const updatedContactData = {
-          ...contactData,
-          ...trimmedData,
-          image: selectedImage ? (selectedImage.path ? selectedImage : { path: selectedImage.url }) : null
-        };
-        setContactData(updatedContactData);
-        if (trimmedData.addressId) {
-          const selectedAddress = availableAddresses.find((addr: any) =>
-            addr.Address_ID == trimmedData.addressId
-          );
-          setAddressData(selectedAddress || null);
-        } else {
-          setAddressData(null);
-        }
-
-        setIsEditing(false);
+      setContactData(updatedContactData);
+      if (trimmedData.addressId) {
+        const selectedAddress = availableAddresses.find((addr: any) =>
+          addr.Address_ID == trimmedData.addressId
+        );
+        setAddressData(selectedAddress || null);
+      } else {
+        setAddressData(null);
       }
-    } catch (error: any) {
-      console.error("Error updating contact:", error);
-    } finally {
-      setIsSaving(false);
+
+      setIsEditing(false);
+      success("Contact updated successfully");
+    } else {
+      toastError("Failed to update contact. Please check email format and try again.");
     }
+    setIsSaving(false);
   };
 
   const handleCancel = () => {
@@ -328,14 +335,22 @@ const ContactDetails = () => {
           operator: 'in',
           values: journeyIds
         }),
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Status,Journey_Start_Date,Expected_Decision_Date,CreateDT,Priority'
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Status,Journey_Start_Date,Expected_Decision_Date,CreateDT'
       });
 
       const journeysArray = journeysResponse?.data
         ? journeysResponse.data
         : (Array.isArray(journeysResponse) ? journeysResponse : []);
 
-      setJourneysData(journeysArray);
+      const journeysWithLinkIds = journeysArray.map((journey: any) => {
+        const linkData = journeyContacts.find((jc: any) => jc.journeyId === journey.ID);
+        return {
+          ...journey,
+          linkId: linkData?.id
+        };
+      });
+
+      setJourneysData(journeysWithLinkIds);
     } catch (error) {
       console.error('Error fetching journeys:', error);
       setJourneysData([]);
@@ -401,7 +416,7 @@ const ContactDetails = () => {
         entityId: contactId,
         entityType: "contact",
         type: "note",
-        createdBy: "system"
+        createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
       if (newNote?.success && newNote.data) {
         setContactNotes(prev => [newNote.data, ...prev]);
@@ -544,6 +559,120 @@ const ContactDetails = () => {
     img.id.toString().includes(imageSearchTerm)
   );
 
+  useEffect(() => {
+    if (!journeySearchTerm.trim() || !showAddJourneyModal) {
+      setAvailableJourneys([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setLoadingAvailableJourneys(true);
+      try {
+        const searchTrimmed = journeySearchTerm.trim();
+        const searchLower = searchTrimmed.toLowerCase();
+        const isUuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(searchTrimmed);
+
+        const linkedJourneyIds = journeysData.map(j => j.ID);
+        let filteredJourneys = [];
+
+        if (isUuidFormat) {
+          try {
+            const journeyResponse = await api.get(`/legacy/base/Journey/${searchTrimmed}`, {
+              fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Status,Journey_Start_Date'
+            });
+
+            if (journeyResponse && !linkedJourneyIds.includes(journeyResponse.ID)) {
+              filteredJourneys = [journeyResponse];
+            }
+          } catch (error) {
+            // Journey not found by ID
+          }
+        } else {
+          const journeysResponse = await api.get('/legacy/base/Journey', {
+            fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Status,Journey_Start_Date',
+            limit: 1000
+          });
+
+          const allJourneys = journeysResponse?.data
+            ? journeysResponse.data
+            : (Array.isArray(journeysResponse) ? journeysResponse : []);
+
+          filteredJourneys = allJourneys.filter((j: any) => {
+            const isNotLinked = !linkedJourneyIds.includes(j.ID);
+            const matchesSearch =
+              j.Project_Name?.toLowerCase().includes(searchLower) ||
+              j.Target_Account?.toLowerCase().includes(searchLower);
+
+            return isNotLinked && matchesSearch;
+          }).slice(0, 5);
+        }
+
+        setAvailableJourneys(filteredJourneys);
+      } catch (error) {
+        console.error('Error fetching available journeys:', error);
+        setAvailableJourneys([]);
+      } finally {
+        setLoadingAvailableJourneys(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [journeySearchTerm, showAddJourneyModal, journeysData]);
+
+  const handleLinkJourney = async (journeyId: string) => {
+    if (!contactId || !employee?.id) return;
+
+    setLinkingJourney(true);
+    try {
+      const payload = {
+        journeyId: journeyId,
+        contactId: contactId,
+        isPrimary: false,
+        createdById: employee.id,
+        updatedById: employee.id
+      };
+
+      const result = await api.post('/sales/journey-contacts', payload);
+
+      if (result) {
+        success('Journey linked successfully');
+        setShowAddJourneyModal(false);
+        setJourneySearchTerm("");
+        setAvailableJourneys([]);
+        await fetchJourneys();
+      } else {
+        toastError('Failed to link journey');
+      }
+    } catch (error: any) {
+      console.error('Error linking journey:', error);
+      toastError(error.response?.data?.message || 'Failed to link journey');
+    } finally {
+      setLinkingJourney(false);
+    }
+  };
+
+  const handleUnlinkJourney = async () => {
+    if (!journeyToUnlink) return;
+
+    setIsSaving(true);
+    try {
+      const result = await api.delete(`/sales/journey-contacts/${journeyToUnlink.linkId}`);
+
+      if (result !== null) {
+        success('Journey unlinked successfully');
+        setJourneyToUnlink(null);
+        await fetchJourneys();
+      } else {
+        toastError('Failed to unlink journey');
+      }
+    } catch (error: any) {
+      console.error('Error unlinking journey:', error);
+      toastError(error.response?.data?.message || 'Failed to unlink journey');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading contact details...</div>;
   }
@@ -583,7 +712,7 @@ const ContactDetails = () => {
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={fullName}
-        description={`Contact ID: ${contactData.id} • ${getContactTypeName(contactData.type)} • ${companyName}`}
+        description="View and manage contact details"
         goBack
         actions={
           <div className="flex gap-2">
@@ -1155,6 +1284,15 @@ const ContactDetails = () => {
 
       {activeTab === "journeys" && (
         <div className="p-4 flex flex-1 flex-col gap-6">
+          <div className="flex justify-end">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowAddJourneyModal(true)}
+            >
+              Link Journey
+            </Button>
+          </div>
           {journeysLoading ? (
             <div className="flex justify-center items-center h-64">Loading journeys...</div>
           ) : journeysData.length === 0 ? (
@@ -1172,8 +1310,8 @@ const ContactDetails = () => {
                       <th className="text-left p-4 text-sm font-semibold text-text">Journey</th>
                       <th className="text-left p-4 text-sm font-semibold text-text">Stage</th>
                       <th className="text-left p-4 text-sm font-semibold text-text">Status</th>
-                      <th className="text-left p-4 text-sm font-semibold text-text">Priority</th>
                       <th className="text-left p-4 text-sm font-semibold text-text">Date</th>
+                      <th className="text-right p-4 text-sm font-semibold text-text w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1184,7 +1322,6 @@ const ContactDetails = () => {
 
                       const journeyStage = journey?.Journey_Stage || '-';
                       const journeyStatus = journey?.Journey_Status || 'Active';
-                      const priority = journey?.Priority || '-';
                       const startDate = journey?.Journey_Start_Date || journey?.CreateDT;
 
                       return (
@@ -1222,19 +1359,21 @@ const ContactDetails = () => {
                             </span>
                           </td>
                           <td className="p-4">
-                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                              priority === 'A' ? 'bg-error/20 text-error' :
-                              priority === 'B' ? 'bg-warning/20 text-warning' :
-                              priority === 'C' ? 'bg-info/20 text-info' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {priority}
-                            </span>
-                          </td>
-                          <td className="p-4">
                             <span className="text-sm text-text-muted">
                               {startDate ? formatDate(startDate) : '-'}
                             </span>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex justify-end">
+                              <Button
+                                variant="secondary-outline"
+                                size="sm"
+                                onClick={() => setJourneyToUnlink(journey)}
+                                disabled={isSaving}
+                              >
+                                Unlink
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1386,6 +1525,149 @@ const ContactDetails = () => {
                 onClick={() => setShowImageModal(false)}
               >
                 Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Journey Modal */}
+      {showAddJourneyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-foreground rounded shadow-lg border max-w-4xl w-full max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-text">Link Journey to Contact</h3>
+              <button
+                onClick={() => {
+                  setShowAddJourneyModal(false);
+                  setJourneySearchTerm("");
+                  setAvailableJourneys([]);
+                }}
+                className="text-text-muted hover:text-text"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+              {/* Search */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search journeys by name, account, or ID..."
+                  value={journeySearchTerm}
+                  onChange={(e) => setJourneySearchTerm(e.target.value)}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                />
+                {loadingAvailableJourneys && (
+                  <div className="absolute right-3 top-2.5">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  </div>
+                )}
+              </div>
+
+              {/* Journey List */}
+              <div>
+                <h4 className="text-sm font-semibold text-text mb-3">Available Journeys</h4>
+                {!journeySearchTerm.trim() ? (
+                  <div className="text-center py-8 text-text-muted">
+                    Start typing to search for journeys...
+                  </div>
+                ) : loadingAvailableJourneys ? (
+                  <div className="text-center py-8 text-text-muted">Searching...</div>
+                ) : availableJourneys.length === 0 ? (
+                  <div className="text-center py-8 text-text-muted">
+                    No unlinked journeys found
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {availableJourneys.map((journey) => (
+                      <div
+                        key={journey.ID}
+                        className="p-3 border border-border rounded hover:bg-surface transition-colors cursor-pointer"
+                        onClick={() => handleLinkJourney(journey.ID)}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-text truncate">
+                              {journey.Project_Name || journey.Target_Account || `Journey #${journey.ID}`}
+                            </div>
+                            {journey.Target_Account && journey.Project_Name && (
+                              <div className="text-xs text-text-muted mt-1 truncate">
+                                {journey.Target_Account}
+                              </div>
+                            )}
+                            <div className="flex gap-2 mt-2">
+                              <span className="text-xs px-2 py-1 rounded bg-primary/20 text-primary border border-primary/30">
+                                {journey.Journey_Stage || 'N/A'}
+                              </span>
+                              <span className="text-xs text-text-muted">
+                                ID: {journey.ID}
+                              </span>
+                              {journey.Journey_Start_Date && (
+                                <span className="text-xs text-text-muted">
+                                  Started: {new Date(journey.Journey_Start_Date).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            disabled={linkingJourney}
+                          >
+                            {linkingJourney ? "Linking..." : "Link"}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-border flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => {
+                  setShowAddJourneyModal(false);
+                  setJourneySearchTerm("");
+                  setAvailableJourneys([]);
+                }}
+                disabled={linkingJourney}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unlink Journey Confirmation Modal */}
+      {journeyToUnlink && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-foreground rounded shadow-lg border max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-text mb-4">Unlink Journey</h3>
+            <p className="text-sm text-text-muted mb-6">
+              Are you sure you want to unlink this contact from the journey "{journeyToUnlink.Project_Name || journeyToUnlink.Target_Account || `Journey #${journeyToUnlink.ID}`}"? You can relink them at any time.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => setJourneyToUnlink(null)}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleUnlinkJourney}
+                disabled={isSaving}
+              >
+                {isSaving ? "Unlinking..." : "Confirm Unlink"}
               </Button>
             </div>
           </div>

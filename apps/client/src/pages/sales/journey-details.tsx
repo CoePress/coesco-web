@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit, Plus, User, Trash2, Search } from "lucide-react";
 import { PageHeader, Tabs, Table, Button, Modal, AddContactModal } from "@/components";
-import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
@@ -165,7 +164,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     equipmentType: getValidEquipmentType(journey?.Equipment_Type),
     rsm: getValidRSM(journey?.RSM),
     rsmTerritory: journey?.RSM_Territory ?? "",
-    qtyItems: journey?.Qty_of_Items ?? "",
+    rsmAssist: getValidRSM(journey?.RSM_Helped),
     value: journey?.Journey_Value ?? journey?.value ?? "",
     dealer: getValidDealer(journey?.Dealer ?? journey?.Dealer_Name ?? ""),
     dealerContact: getValidDealerContact(journey?.Dealer_Contact ?? ""),
@@ -236,6 +235,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const [editingNextStepBody, setEditingNextStepBody] = useState("");
   const [noteToDelete, setNoteToDelete] = useState<any>(null);
   const [nextStepToDelete, setNextStepToDelete] = useState<any>(null);
+  const [quoteValue, setQuoteValue] = useState<number>(0);
+  const [isLoadingQuoteValue, setIsLoadingQuoteValue] = useState(false);
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -317,6 +318,31 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     };
     fetchLastActivity();
   }, [journey?.ID, journey?.id]);
+
+  useEffect(() => {
+    const fetchQuoteValue = async () => {
+      if (!journey?.Quote_Key_Value) {
+        setQuoteValue(0);
+        return;
+      }
+      setIsLoadingQuoteValue(true);
+      try {
+        const result = await api.get('/legacy/quote-value', {
+          quoteKeyValue: journey.Quote_Key_Value
+        });
+        if (result && typeof result.quoteValue === 'number') {
+          setQuoteValue(result.quoteValue);
+        } else {
+          setQuoteValue(0);
+        }
+      } catch (error) {
+        setQuoteValue(0);
+      } finally {
+        setIsLoadingQuoteValue(false);
+      }
+    };
+    fetchQuoteValue();
+  }, [journey?.Quote_Key_Value]);
 
   const handleCreateNote = async () => {
     if (!newNoteBody.trim() || !journey?.ID && !journey?.id) return;
@@ -606,7 +632,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const handleSaveDetails = async () => {
     const baseUpdates = {
       Journey_Type: detailsForm.type, Lead_Source: detailsForm.source, Equipment_Type: detailsForm.equipmentType,
-      RSM: detailsForm.rsm, RSM_Territory: detailsForm.rsmTerritory, Qty_of_Items: detailsForm.qtyItems,
+      RSM: detailsForm.rsm, RSM_Territory: detailsForm.rsmTerritory, RSM_Helped: detailsForm.rsmAssist,
       Journey_Value: detailsForm.value, Dealer: detailsForm.dealer, Dealer_Contact: detailsForm.dealerContact,
       Journey_Stage: detailsForm.stage, Priority: detailsForm.priority, Journey_Status: detailsForm.status,
       Chance_To_Secure_order: detailsForm.confidence, Reason_Won: detailsForm.reasonWon, Reason_Lost: detailsForm.reasonLost,
@@ -862,21 +888,18 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     try {
       const journeyId = journey.ID || journey.id;
 
-      console.log('[DEBUG] Refreshing journey contacts for journey:', journeyId);
-
       const [legacyContacts, prismaContacts] = await Promise.all([
         api.get('/legacy/std/Journey_Contact/filter/custom', {
           filterField: 'Jrn_ID',
           filterValue: journeyId
         }).catch(err => {
-          console.error('[DEBUG] Error fetching legacy contacts:', err);
+          console.error('Error fetching legacy contacts:', err);
           return [];
         }),
         api.get('/sales/journey-contacts', {
           filter: JSON.stringify({ journeyId }),
           include: JSON.stringify({ contact: true })
         }).then(result => {
-          console.log('[DEBUG] Prisma journey-contacts result:', result);
           const contacts = result?.success && Array.isArray(result.data) ? result.data : [];
           return contacts.map((jc: any) => ({
             ID: jc.id,
@@ -892,22 +915,17 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
             _isPrisma: true
           }));
         }).catch(err => {
-          console.error('[DEBUG] Error fetching prisma contacts:', err);
+          console.error('Error fetching prisma contacts:', err);
           return [];
         })
       ]);
 
       const legacyArray = Array.isArray(legacyContacts) ? legacyContacts : [];
-
-      console.log('[DEBUG] Legacy contacts count:', legacyArray.length);
-      console.log('[DEBUG] Prisma contacts count:', prismaContacts.length);
-
       const mergedContacts = [...legacyArray, ...prismaContacts];
-      console.log('[DEBUG] Total merged contacts:', mergedContacts.length);
 
       setJourneyContacts(mergedContacts);
     } catch (error) {
-      console.error("[DEBUG] Error refreshing journey contacts:", error);
+      console.error("Error refreshing journey contacts:", error);
     }
   };
 
@@ -918,7 +936,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   return (
     <div className="p-2 flex flex-1 flex-col">
       <div className="flex flex-col gap-2 flex-1">
-        <div className="grid grid-cols-[1fr_2fr] gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-2">
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted text-sm">Customer Details</h2>
@@ -1071,8 +1089,10 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                     size="sm"
                     onClick={() => setShowAddContactModal(true)}
                     disabled={isSaving}
+                    className="flex items-center gap-1"
                   >
                     <Plus size={14} />
+                    <span className="hidden sm:inline">Add</span>
                   </Button>
                 </div>
                 {journeyContacts.length > 0 ? (
@@ -1082,12 +1102,12 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                       .map((contact, index) => {
                         const isPrimary = Number(contact.IsPrimary) === 1;
                         return (
-                      <div 
-                        key={contact.ID || `temp-${index}`} 
+                      <div
+                        key={contact.ID || `temp-${index}`}
                         className={`rounded border p-3 ${isPrimary ? 'bg-gray border-gray' : 'bg-surface'}`}
                       >
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-1">
+                          <div className="flex-1 w-full sm:w-auto">
                             {editingContactId === contact.ID ? (
                               <div className="space-y-2">
                                 <input
@@ -1181,7 +1201,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                               </>
                             )}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                             {editingContactId !== contact.ID && (
                               <>
                                 {isPrimary && <span className="text-xs bg-primary text-background px-2 py-1 rounded font-medium">Primary</span>}
@@ -1233,7 +1253,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               <h2 className="font-semibold text-text-muted text-sm">Journey Details</h2>
               <EditButtons isEditing={isEditingDetails} onSave={handleSaveDetails} onCancel={handleCancelDetails} onEdit={() => { setDetailsForm(createDetailsFormData(journey)); setIsEditingDetails(true); }} isSaving={isSaving} />
             </div>
-            <div className="grid grid-cols-4 gap-x-6 gap-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
               <FormField label="Created"><div className="text-sm text-text">{formatDateSafe(journey?.CreateDT)}</div></FormField>
 
               <FormField label="Last Activity Date">
@@ -1276,6 +1296,33 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               <FormField label="Journey Start Date">
                 {isEditingDetails ? <input type="date" className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text" value={detailsForm.journeyStartDate} onChange={(e) => setDetailsForm((s) => ({ ...s, journeyStartDate: e.target.value }))} /> : <div className="text-sm text-text">{formatDateSafe(journey?.Journey_Start_Date)}</div>}
               </FormField>
+
+              <FormField label="Quote Value">
+                <div className="text-sm text-text">
+                  {isLoadingQuoteValue ? "Loading..." : formatCurrency(quoteValue)}
+                </div>
+              </FormField>
+
+              <div>
+                <div className="text-sm text-text-muted">Journey Value</div>
+                {isEditingDetails ? (
+                  <input
+                    type="number"
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.value}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ ...s, value: e.target.value }))
+                    }
+                    min={0}
+                  />
+                ) : (
+                  <div className="text-sm text-text">
+                    {formatCurrency(
+                      Number(journey?.Journey_Value ?? journey?.value ?? 0)
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div>
                 <div className="text-sm text-text-muted">Journey Type</div>
@@ -1339,46 +1386,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               </div>
 
               <div>
-                <div className="text-sm text-text-muted">Qty of Items</div>
-                {isEditingDetails ? (
-                  <input
-                    type="number"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.qtyItems}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, qtyItems: e.target.value }))
-                    }
-                    min={0}
-                  />
-                ) : (
-                  <div className="text-sm text-text">
-                    {journey?.Qty_of_Items != null && journey?.Qty_of_Items !== "" ? journey.Qty_of_Items : "-"}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Journey Value</div>
-                {isEditingDetails ? (
-                  <input
-                    type="number"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.value}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, value: e.target.value }))
-                    }
-                    min={0}
-                  />
-                ) : (
-                  <div className="text-sm text-text">
-                    {formatCurrency(
-                      Number(journey?.Journey_Value ?? journey?.value ?? 0)
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div>
                 <div className="text-sm text-text-muted">RSM</div>
                 {isEditingDetails ? (
                   <select
@@ -1422,6 +1429,29 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                   </select>
                 ) : (
                   <div className="text-sm text-text">{getRsmDisplayName(journey?.RSM_Territory)}</div>
+                )}
+              </div>
+
+              <div>
+                <div className="text-sm text-text-muted">RSM Assist</div>
+                {isEditingDetails ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.rsmAssist}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ ...s, rsmAssist: e.target.value }))
+                    }
+                  >
+                    <option value="">No Value Selected</option>
+                    {detailsForm.rsmAssist && !availableRsms.find(r => r.initials === detailsForm.rsmAssist) && (
+                      <option key={detailsForm.rsmAssist} value={detailsForm.rsmAssist}>{detailsForm.rsmAssist}</option>
+                    )}
+                    {availableRsms.map(rsm => (
+                      <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-sm text-text">{getRsmDisplayName(journey?.RSM_Helped)}</div>
                 )}
               </div>
 
@@ -1720,10 +1750,10 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         </div>
 
         <div className="flex flex-col gap-2 flex-1">
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ maxHeight: '400px' }}>
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col max-h-[400px] md:max-h-[500px]">
             <h2 className="font-semibold text-text-muted text-sm mb-2">Notes</h2>
 
-            <div className="flex gap-2 mb-3">
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
               <textarea
                 className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                 value={newNoteBody}
@@ -1824,11 +1854,11 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
             </div>
           </div>
 
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ maxHeight: '400px' }}>
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col max-h-[400px] md:max-h-[500px]">
             <h2 className="font-semibold text-text-muted text-sm mb-2">Next Steps</h2>
 
             <div className="flex flex-col gap-2 mb-3">
-              <div className="flex gap-2 items-center">
+              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-text-muted">Next Action Date *</label>
                   <input
@@ -1839,9 +1869,9 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                   />
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <textarea
-                  className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary w-full"
                   value={newNextStepBody}
                   onChange={(e) => setNewNextStepBody(e.target.value)}
                   placeholder="Enter a new next step..."
@@ -1852,6 +1882,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                   size="sm"
                   onClick={handleCreateNextStep}
                   disabled={isCreatingNextStep || !newNextStepBody.trim() || !newNextStepDate}
+                  className="w-full sm:w-auto"
                 >
                   {isCreatingNextStep ? "Adding..." : "Add Next Step"}
                 </Button>
@@ -1978,7 +2009,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <div className="text-sm text-text-muted mb-2">Visit Date</div>
                 {isEditingVisitLogging ? (
@@ -2182,6 +2213,9 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any | null; updateJourney: (updates: Record<string, any>) => void; employee: any }) {
   const [isEditingQuotes, setIsEditingQuotes] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [quoteValue, setQuoteValue] = useState<number>(0);
+  const [quoteLineItems, setQuoteLineItems] = useState<Array<{ lineItem: string; description: string; price: number }>>([]);
+  const [isLoadingQuoteValue, setIsLoadingQuoteValue] = useState(false);
   const api = useApi();
 
   const createQuoteFormData = (journey: any) => ({
@@ -2200,6 +2234,35 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
     }
   }, [journey, isEditingQuotes]);
 
+  useEffect(() => {
+    const fetchQuoteValue = async () => {
+      if (!journey?.Quote_Key_Value) {
+        setQuoteValue(0);
+        setQuoteLineItems([]);
+        return;
+      }
+      setIsLoadingQuoteValue(true);
+      try {
+        const result = await api.get('/legacy/quote-value', {
+          quoteKeyValue: journey.Quote_Key_Value
+        });
+        if (result && typeof result.quoteValue === 'number') {
+          setQuoteValue(result.quoteValue);
+          setQuoteLineItems(result.lineItems || []);
+        } else {
+          setQuoteValue(0);
+          setQuoteLineItems([]);
+        }
+      } catch (error) {
+        setQuoteValue(0);
+        setQuoteLineItems([]);
+      } finally {
+        setIsLoadingQuoteValue(false);
+      }
+    };
+    fetchQuoteValue();
+  }, [journey?.Quote_Key_Value]);
+
 
   const handleSaveQuotes = async () => {
     const originalUpdates = { Quote_Number: quoteForm.quoteNumber, Quote_Type: quoteForm.quoteType, Presentation_Method: quoteForm.presentationMethod, Quote_Presentation_Date: quoteForm.presentationDate, Expected_Decision_Date: quoteForm.expectedDecisionDate };
@@ -2217,9 +2280,9 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
   if (!journey) return null;
 
   return (
-    <div className="flex flex-1 flex-col p-4 gap-6">
+    <div className="flex flex-1 flex-col p-2 md:p-4 gap-4 md:gap-6">
       {/* Quote Overview */}
-      <div className="bg-foreground rounded shadow-sm border p-4">
+      <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-text">Quote Overview</h3>
           <EditButtons isEditing={isEditingQuotes} onSave={handleSaveQuotes} onCancel={handleCancelQuotes} onEdit={() => { setQuoteForm(createQuoteFormData(journey)); setIsEditingQuotes(true); }} isSaving={isSaving} />
@@ -2244,9 +2307,9 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
           <div className="bg-background rounded border p-3">
             <div className="text-sm text-text-muted mb-1">Quote Value</div>
             <div className="text-lg font-semibold text-primary">
-              {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
+              {isLoadingQuoteValue ? "Loading..." : formatCurrency(quoteValue)}
             </div>
-            <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
+            <div className="text-xs text-text-muted mt-1">From quote system</div>
           </div>
           <div className="bg-background rounded border p-3">
             <div className="text-sm text-text-muted mb-1">Success Probability</div>
@@ -2256,12 +2319,42 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
             <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
           </div>
         </div>
+
+        {quoteLineItems.length > 0 && (
+          <div className="mt-6">
+            <h4 className="text-sm md:text-md font-semibold text-text mb-3">Line Items</h4>
+            <div className="bg-background rounded border overflow-x-auto">
+              <table className="w-full min-w-[500px]">
+                <thead className="bg-surface border-b border-border">
+                  <tr>
+                    <th className="text-left px-4 py-2 text-sm font-semibold text-text">Line Item</th>
+                    <th className="text-left px-4 py-2 text-sm font-semibold text-text">Description</th>
+                    <th className="text-right px-4 py-2 text-sm font-semibold text-text">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quoteLineItems.map((item, index) => (
+                    <tr key={index} className="border-b border-border last:border-b-0">
+                      <td className="px-4 py-2 text-sm text-text">{item.lineItem}</td>
+                      <td className="px-4 py-2 text-sm text-text">{item.description}</td>
+                      <td className="px-4 py-2 text-sm text-text text-right font-mono">{formatCurrency(item.price)}</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-surface font-semibold">
+                    <td className="px-4 py-3 text-sm text-text" colSpan={2}>Total</td>
+                    <td className="px-4 py-3 text-sm text-primary text-right font-mono">{formatCurrency(quoteValue)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Quote Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-foreground rounded shadow-sm border p-4">
-          <h3 className="text-lg font-semibold text-text mb-4">Quote Details</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
+          <h3 className="text-base md:text-lg font-semibold text-text mb-4">Quote Details</h3>
           <div className="space-y-4">
             <div>
               <div className="text-sm text-text-muted mb-1">Quote Type</div>
@@ -2325,8 +2418,8 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
           </div>
         </div>
 
-        <div className="bg-foreground rounded shadow-sm border p-4">
-          <h3 className="text-lg font-semibold text-text mb-4">Timeline & Dates</h3>
+        <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
+          <h3 className="text-base md:text-lg font-semibold text-text mb-4">Timeline & Dates</h3>
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -2377,41 +2470,9 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
         </div>
       </div>
 
-      {/* Quote Status Card */}
-      {journey?.Quote_Number && (
-        <div className="bg-foreground rounded shadow-sm border p-4">
-          <h3 className="text-lg font-semibold text-text mb-4">Quote Status</h3>
-          <div className="bg-background rounded border p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold text-text">Quote #{journey.Quote_Number}</div>
-                <div className="text-sm text-text-muted mt-1">
-                  {journey?.Equipment_Type?.trim() || "Standard"} • {journey?.Quote_Type || "Standard more than 6 months"}
-                </div>
-                {journey?.Qty_of_Items && journey.Qty_of_Items !== "" && (
-                  <div className="text-sm text-text-muted">
-                    Quantity: {journey.Qty_of_Items} items
-                  </div>
-                )}
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-primary">
-                  {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
-                </div>
-                {journey?.Chance_To_Secure_order && (
-                  <div className="text-sm text-text-muted">
-                    {journey.Chance_To_Secure_order}% probability
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Additional Quote Information */}
-      <div className="bg-foreground rounded shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-text mb-4">Additional Information</h3>
+      <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
+        <h3 className="text-base md:text-lg font-semibold text-text mb-4">Additional Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <div className="text-sm text-text-muted mb-2">Industry</div>
@@ -2486,8 +2547,8 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
   };
 
   return (
-    <div className="flex flex-1 flex-col p-2">
-      <div className="bg-foreground rounded shadow-sm border p-2 flex-1">
+    <div className="flex flex-1 flex-col p-2 md:p-4">
+      <div className="bg-foreground rounded shadow-sm border p-2 flex-1 overflow-x-auto">
         <div className="text-xs font-bold text-text-muted mb-1">
           Log Records {loadingLogs && <span className="text-text-muted">(Loading...)</span>}
         </div>
@@ -2616,15 +2677,15 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
   if (!journey) return null;
 
   return (
-    <div className="flex flex-1 flex-col p-4">
-      <div className="bg-foreground rounded shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-text mb-4">Journey Tags</h3>
+    <div className="flex flex-1 flex-col p-2 md:p-4">
+      <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
+        <h3 className="text-base md:text-lg font-semibold text-text mb-4">Journey Tags</h3>
         
         <div className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
-              className="flex-1 rounded border border-border px-3 py-2 text-sm bg-background text-text"
+              className="flex-1 rounded border border-border px-3 py-2 text-sm bg-background text-text w-full"
               placeholder="Enter tag name..."
               value={newTagInput}
               onChange={(e) => setNewTagInput(e.target.value)}
@@ -2636,6 +2697,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
               size="sm"
               onClick={handleAddTag}
               disabled={!newTagInput.trim() || isSaving}
+              className="w-full sm:w-auto"
             >
               {isSaving ? "Adding..." : "Add Tag"}
             </Button>
@@ -2673,208 +2735,6 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function JourneyLegacyTab({ journey, updateJourney, employee }: { journey: any | null; updateJourney: (updates: Record<string, any>) => void; employee: any }) {
-  const [notes, setNotes] = useState(journey?.Notes ?? journey?.notes ?? "");
-  const [nextSteps, setNextSteps] = useState(journey?.Next_Steps ?? "");
-  const [showSavePrompt, setShowSavePrompt] = useState(false);
-  const [showNextStepsSavePrompt, setShowNextStepsSavePrompt] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const api = useApi();
-
-  useEffect(() => {
-    if (journey) {
-      if (!showSavePrompt) {
-        setNotes(journey?.Notes ?? journey?.notes ?? "");
-      }
-      if (!showNextStepsSavePrompt) {
-        setNextSteps(journey?.Next_Steps ?? "");
-      }
-    }
-  }, [journey, showSavePrompt, showNextStepsSavePrompt]);
-
-  const handleSaveNotes = async () => {
-    const updates = { Notes: notes };
-    const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
-    if (success) { setShowSavePrompt(false); updateJourney(updates); }
-    else { setNotes(journey?.Notes ?? journey?.notes ?? ""); setShowSavePrompt(false); }
-  };
-
-  const handleCancelNotes = () => {
-    setNotes(journey?.Notes ?? journey?.notes ?? "");
-    setShowSavePrompt(false);
-  };
-
-  const handleSaveNextSteps = async () => {
-    const updates = { Next_Steps: nextSteps };
-    const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
-    setShowNextStepsSavePrompt(false);
-    if (success) updateJourney(updates); else setNextSteps(journey?.Next_Steps ?? "");
-  };
-
-  const handleCancelNextSteps = () => {
-    setNextSteps(journey?.Next_Steps ?? "");
-    setShowNextStepsSavePrompt(false);
-  };
-
-  if (!journey) return null;
-
-  return (
-    <div className="flex flex-1 flex-col p-4 gap-4">
-      <div className="bg-foreground rounded shadow-sm border p-4 flex flex-col" style={{ height: '400px' }}>
-        <h3 className="text-lg font-semibold text-text mb-4">Legacy Notes</h3>
-        <textarea
-          className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={() => {
-            if (notes !== (journey?.Notes ?? journey?.notes ?? "")) {
-              setShowSavePrompt(true);
-            }
-          }}
-        />
-      </div>
-
-      <div className="bg-foreground rounded shadow-sm border p-4 flex flex-col" style={{ height: '400px' }}>
-        <h3 className="text-lg font-semibold text-text mb-4">Legacy Next Steps</h3>
-        <textarea
-          className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-          value={nextSteps}
-          onChange={(e) => setNextSteps(e.target.value)}
-          onBlur={() => {
-            if (nextSteps !== (journey?.Next_Steps ?? "")) {
-              setShowNextStepsSavePrompt(true);
-            }
-          }}
-          placeholder="Enter next steps..."
-        />
-      </div>
-
-      <Modal
-        isOpen={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
-        title="Save Changes?"
-        size="sm"
-      >
-        <p className="mb-4">Do you want to save your changes to Legacy Notes?</p>
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSaveNotes}
-            disabled={isSaving}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-          <Button
-            variant="secondary-outline"
-            size="sm"
-            onClick={handleCancelNotes}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={showNextStepsSavePrompt}
-        onClose={() => setShowNextStepsSavePrompt(false)}
-        title="Save Changes?"
-        size="sm"
-      >
-        <p className="mb-4">Do you want to save your changes to Legacy Next Steps?</p>
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSaveNextSteps}
-            disabled={isSaving}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-          <Button
-            variant="secondary-outline"
-            size="sm"
-            onClick={handleCancelNextSteps}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-        </div>
-      </Modal>
-    </div>
-  );
-}
-
-function JourneyActionsTab({ journey }: { journey: any | null }) {
-  const navigate = useNavigate();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { delete: deleteApi } = useApi();
-
-  const handleDeleteJourney = async () => {
-    if (!journey?.ID && !journey?.id) return;
-
-    setIsDeleting(true);
-    try {
-      const journeyId = journey.ID || journey.id;
-      const result = await deleteApi(`/legacy/std/Journey/${journeyId}`);
-
-      if (result !== null) {
-        navigate('/sales/pipeline');
-      } else {
-        console.error('Failed to delete journey');
-      }
-    } catch (error) {
-      console.error('Error deleting journey:', error);
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-    }
-  };
-
-  if (!journey) return null;
-
-  return (
-    <div className="flex flex-1 flex-col p-4">
-      <div className="bg-foreground rounded shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-text mb-4">Journey Actions</h3>
-
-        <div className="space-y-4">
-          <div className="border border-red-200 bg-red-50 rounded p-4">
-            <div className="flex items-start gap-3">
-              <Trash2 className="text-red-600 mt-1" size={20} />
-              <div className="flex-1">
-                <h4 className="font-medium text-red-900 mb-2">Delete Journey</h4>
-                <p className="text-sm text-red-700 mb-3">
-                  Permanently delete this journey and all associated data. This action cannot be undone.
-                </p>
-                <Button
-                  variant="secondary-outline"
-                  size="sm"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="border-red-500 !text-gray-900 hover:bg-red-100 hover:!text-black"
-                >
-                  <Trash2 size={16} className="mr-2" />
-                  Delete Journey
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <DeleteJourneyModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => handleDeleteJourney()}
-        journey={journey}
-        isDeleting={isDeleting}
-      />
     </div>
   );
 }
@@ -2954,21 +2814,18 @@ const JourneyDetailsPage = () => {
           }
         }
         try {
-          console.log('[DEBUG] Initial fetch of journey contacts for:', journeyId);
-
           const [legacyContacts, prismaContacts] = await Promise.all([
             api.get('/legacy/std/Journey_Contact/filter/custom', {
               filterField: 'Jrn_ID',
               filterValue: journeyId
             }).catch(err => {
-              console.error('[DEBUG] Error fetching legacy contacts:', err);
+              console.error('Error fetching legacy contacts:', err);
               return [];
             }),
             api.get('/sales/journey-contacts', {
               filter: JSON.stringify({ journeyId }),
               include: JSON.stringify({ contact: true })
             }).then(result => {
-              console.log('[DEBUG] Initial Prisma journey-contacts result:', result);
               const contacts = result?.success && Array.isArray(result.data) ? result.data : [];
               return contacts.map((jc: any) => ({
                 ID: jc.id,
@@ -2984,17 +2841,13 @@ const JourneyDetailsPage = () => {
                 _isPrisma: true
               }));
             }).catch(err => {
-              console.error('[DEBUG] Error fetching prisma contacts:', err);
+              console.error('Error fetching prisma contacts:', err);
               return [];
             })
           ]);
 
           const legacyArray = Array.isArray(legacyContacts) ? legacyContacts : [];
           const mergedContacts = [...legacyArray, ...prismaContacts];
-
-          console.log('[DEBUG] Initial legacy contacts:', legacyArray.length);
-          console.log('[DEBUG] Initial prisma contacts:', prismaContacts.length);
-          console.log('[DEBUG] Initial total contacts:', mergedContacts.length);
 
           setJourneyContacts(mergedContacts);
         } catch (contactError) {
@@ -3045,7 +2898,7 @@ const JourneyDetailsPage = () => {
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={journeyData?.name || journeyData?.Project_Name || journeyData?.Target_Account || "Coe Press Equipment"}
-        description={`Started ${formatDateSafe(journeyData?.CreateDT) !== "-" ? formatDateSafe(journeyData?.CreateDT) : "Unknown Date"} • ${journeyData?.Journey_Type || "Standard"} • ${formatCurrency(Number(journeyData?.Journey_Value ?? journeyData?.value ?? 0))}`}
+        description="View and manage journey details"
         goBack
       />
       <Tabs
@@ -3056,27 +2909,24 @@ const JourneyDetailsPage = () => {
           { label: "Quote Info", value: "quotes" },
           { label: "History", value: "history" },
           { label: "Tags", value: "tags" },
-          { label: "Legacy", value: "legacy" },
-          { label: "Journey Actions", value: "actions" },
         ]}
       />
       {activeTab === "details" && <JourneyDetailsTab journey={journeyData ? { ...journeyData, customer: customerData } : null} journeyContacts={journeyContacts} updateJourney={updateJourney} setJourneyContacts={setJourneyContacts} employee={employee} validJourneyStatuses={validJourneyStatuses} />}
       {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
       {activeTab === "history" && <JourneyHistoryTab journey={journeyData} />}
       {activeTab === "tags" && <JourneyTagsTab journey={journeyData} employee={employee} />}
-      {activeTab === "legacy" && <JourneyLegacyTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
-      {activeTab === "actions" && <JourneyActionsTab journey={journeyData} />}
 
-      <div className="px-4 py-2 border-t border-border bg-foreground">
-        <div className="text-xs text-text-muted">
-          Journey ID: <span
+      <div className="px-2 md:px-4 py-2 border-t border-border bg-foreground">
+        <div className="text-xs text-text-muted flex flex-wrap items-center gap-1">
+          <span>Journey ID:</span>
+          <span
             onClick={handleCopyJourneyId}
             className="font-mono text-text bg-surface px-2 py-1 rounded border border-border cursor-pointer hover:bg-gray transition-colors"
             title="Click to copy"
           >
             {journeyData?.ID || journeyData?.id}
           </span>
-          <span className="ml-2 text-text-muted italic">
+          <span className="text-text-muted italic">
             {copiedJourneyId ? "Copied!" : "(click to copy)"}
           </span>
         </div>

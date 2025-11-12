@@ -27,11 +27,11 @@ const Modal = ({
   if (!isOpen) return null;
 
   const sizeClass = {
-    xs: "w-[400px]",
-    sm: "w-[600px]",
-    md: "w-[800px]",
-    lg: "w-[1000px]",
-    xl: "w-[1200px]",
+    xs: "w-full max-w-[400px]",
+    sm: "w-full max-w-[600px]",
+    md: "w-full max-w-[800px]",
+    lg: "w-full max-w-[1000px]",
+    xl: "w-full max-w-[1200px]",
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {

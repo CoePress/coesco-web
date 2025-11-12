@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
 import { Lock } from "lucide-react";
-import { Modal, Button } from "@/components";
+import { useEffect, useState } from "react";
+
+import { Button, Modal } from "@/components";
 import { useApi } from "@/hooks/use-api";
 
 interface AddAddressModalProps {
@@ -10,12 +11,12 @@ interface AddAddressModalProps {
   companyId?: string | number;
 }
 
-export const AddAddressModal = ({
+export function AddAddressModal({
   isOpen,
   onClose,
   onAddressAdded,
   companyId,
-}: AddAddressModalProps) => {
+}: AddAddressModalProps) {
   const api = useApi();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -68,13 +69,13 @@ export const AddAddressModal = ({
       if (zipData && Array.isArray(zipData) && zipData.length > 0) {
         // Extract unique values for each field
         const cities = [
-          ...new Set(zipData.map((item) => item.City).filter(Boolean)),
+          ...new Set(zipData.map(item => item.City).filter(Boolean)),
         ];
         const stateProvs = [
-          ...new Set(zipData.map((item) => item.StateProv).filter(Boolean)),
+          ...new Set(zipData.map(item => item.StateProv).filter(Boolean)),
         ];
         const countries = [
-          ...new Set(zipData.map((item) => item.Country).filter(Boolean)),
+          ...new Set(zipData.map(item => item.Country).filter(Boolean)),
         ];
 
         const results = {
@@ -86,25 +87,28 @@ export const AddAddressModal = ({
         setZipLookupResults(results);
 
         // Auto-populate fields - single option locks field, multiple options default to first
-        setFormData((prev) => ({
+        setFormData(prev => ({
           ...prev,
           City: cities.length >= 1 ? cities[0] : prev.City,
           State: stateProvs.length >= 1 ? stateProvs[0] : prev.State,
           Country: countries.length >= 1 ? countries[0] : prev.Country,
         }));
-      } else {
+      }
+      else {
         setZipLookupResults({ city: [], stateProv: [], country: [] });
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error looking up zip code:", error);
       setZipLookupResults({ city: [], stateProv: [], country: [] });
-    } finally {
+    }
+    finally {
       setIsLookingUpZip(false);
     }
   };
 
   const handleFieldChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
 
     // Trigger zip code lookup when zip code changes
     if (field === "ZipCode") {
@@ -113,7 +117,7 @@ export const AddAddressModal = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
     }
   };
@@ -150,29 +154,48 @@ export const AddAddressModal = ({
     setIsSubmitting(true);
 
     try {
-      // Don't include Address_ID in the payload for creation
-      const { ...addressDataToSave } = formData;
+      const companyAddresses = await api.get("/legacy/std/Address/filter/custom", {
+        filterField: "Company_ID",
+        filterValue: companyId,
+        limit: 1000,
+      });
+
+      let maxAddressId = 0;
+      if (companyAddresses && Array.isArray(companyAddresses) && companyAddresses.length > 0) {
+        maxAddressId = Math.max(...companyAddresses.map((addr: any) => addr.Address_ID || 0));
+      }
+
+      const nextAddressId = maxAddressId + 1;
+
+      const addressDataToSave = {
+        ...formData,
+        Company_ID: Number.parseInt(String(companyId)) || 0,
+        Address_ID: nextAddressId,
+      };
 
       await api.post("/legacy/std/Address", addressDataToSave);
 
       if (api.success && !api.error) {
         // Reset form
         resetForm();
-        
+
         // Notify parent component
         if (onAddressAdded) {
           onAddressAdded(addressDataToSave);
         }
 
         onClose();
-      } else {
+      }
+      else {
         console.error("Failed to create address:", api.error);
         alert("Failed to create address. Please check the console for details.");
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error creating address:", error);
       alert("Error creating address. Please try again.");
-    } finally {
+    }
+    finally {
       setIsSubmitting(false);
     }
   };
@@ -184,7 +207,7 @@ export const AddAddressModal = ({
 
   // Update company ID when prop changes
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, Company_ID: companyId || 0 }));
+    setFormData(prev => ({ ...prev, Company_ID: companyId || 0 }));
   }, [companyId]);
 
   return (
@@ -203,7 +226,7 @@ export const AddAddressModal = ({
             <input
               type="text"
               value={formData.AddressName}
-              onChange={(e) => handleFieldChange("AddressName", e.target.value)}
+              onChange={e => handleFieldChange("AddressName", e.target.value)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               placeholder="e.g., Main Office, Warehouse"
             />
@@ -217,7 +240,7 @@ export const AddAddressModal = ({
               <input
                 type="text"
                 value={formData.ZipCode}
-                onChange={(e) => handleFieldChange("ZipCode", e.target.value)}
+                onChange={e => handleFieldChange("ZipCode", e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary pr-8"
                 placeholder="Enter ZIP code to auto-populate"
@@ -240,7 +263,7 @@ export const AddAddressModal = ({
             <input
               type="text"
               value={formData.Address1}
-              onChange={(e) => handleFieldChange("Address1", e.target.value)}
+              onChange={e => handleFieldChange("Address1", e.target.value)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               placeholder="Street address"
             />
@@ -255,7 +278,7 @@ export const AddAddressModal = ({
             <input
               type="text"
               value={formData.Address2}
-              onChange={(e) => handleFieldChange("Address2", e.target.value)}
+              onChange={e => handleFieldChange("Address2", e.target.value)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               placeholder="Suite, unit, etc."
             />
@@ -268,7 +291,7 @@ export const AddAddressModal = ({
             <input
               type="text"
               value={formData.Address3}
-              onChange={(e) => handleFieldChange("Address3", e.target.value)}
+              onChange={e => handleFieldChange("Address3", e.target.value)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               placeholder="Additional address info"
             />
@@ -280,93 +303,99 @@ export const AddAddressModal = ({
             <label className="block text-sm font-medium text-text-muted mb-1">
               City
             </label>
-            {zipLookupResults.city.length > 1 ? (
-              <select
-                value={formData.City}
-                onChange={(e) => handleFieldChange("City", e.target.value)}
-                className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              >
-                {zipLookupResults.city.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.City}
-                  className="w-full rounded border border-border px-3 py-2 pr-8 text-sm bg-surface text-text-muted focus:outline-none cursor-not-allowed"
-                  placeholder="City"
-                  readOnly
-                  title="City is automatically populated from ZIP code"
-                />
-                <Lock size={14} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted" />
-              </div>
-            )}
+            {zipLookupResults.city.length > 1
+              ? (
+                  <select
+                    value={formData.City}
+                    onChange={e => handleFieldChange("City", e.target.value)}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  >
+                    {zipLookupResults.city.map(city => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                )
+              : (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.City}
+                      className="w-full rounded border border-border px-3 py-2 pr-8 text-sm bg-surface text-text-muted focus:outline-none cursor-not-allowed"
+                      placeholder="City"
+                      readOnly
+                      title="City is automatically populated from ZIP code"
+                    />
+                    <Lock size={14} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted" />
+                  </div>
+                )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">
               State/Province
             </label>
-            {zipLookupResults.stateProv.length > 1 ? (
-              <select
-                value={formData.State}
-                onChange={(e) => handleFieldChange("State", e.target.value)}
-                className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              >
-                {zipLookupResults.stateProv.map((state) => (
-                  <option key={state} value={state}>
-                    {state}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.State}
-                  className="w-full rounded border border-border px-3 py-2 pr-8 text-sm bg-surface text-text-muted focus:outline-none cursor-not-allowed"
-                  placeholder="State or Province"
-                  readOnly
-                  title="State is automatically populated from ZIP code"
-                />
-                <Lock size={14} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted" />
-              </div>
-            )}
+            {zipLookupResults.stateProv.length > 1
+              ? (
+                  <select
+                    value={formData.State}
+                    onChange={e => handleFieldChange("State", e.target.value)}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  >
+                    {zipLookupResults.stateProv.map(state => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                )
+              : (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.State}
+                      className="w-full rounded border border-border px-3 py-2 pr-8 text-sm bg-surface text-text-muted focus:outline-none cursor-not-allowed"
+                      placeholder="State or Province"
+                      readOnly
+                      title="State is automatically populated from ZIP code"
+                    />
+                    <Lock size={14} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted" />
+                  </div>
+                )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">
               Country
             </label>
-            {zipLookupResults.country.length > 1 ? (
-              <select
-                value={formData.Country}
-                onChange={(e) => handleFieldChange("Country", e.target.value)}
-                className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              >
-                {zipLookupResults.country.map((country) => (
-                  <option key={country} value={country}>
-                    {country}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.Country}
-                  className="w-full rounded border border-border px-3 py-2 pr-8 text-sm bg-surface text-text-muted focus:outline-none cursor-not-allowed"
-                  placeholder="Country"
-                  readOnly
-                  title="Country is automatically populated from ZIP code"
-                />
-                <Lock size={14} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted" />
-              </div>
-            )}
+            {zipLookupResults.country.length > 1
+              ? (
+                  <select
+                    value={formData.Country}
+                    onChange={e => handleFieldChange("Country", e.target.value)}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  >
+                    {zipLookupResults.country.map(country => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                )
+              : (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.Country}
+                      className="w-full rounded border border-border px-3 py-2 pr-8 text-sm bg-surface text-text-muted focus:outline-none cursor-not-allowed"
+                      placeholder="Country"
+                      readOnly
+                      title="Country is automatically populated from ZIP code"
+                    />
+                    <Lock size={14} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted" />
+                  </div>
+                )}
           </div>
         </div>
 
@@ -378,7 +407,7 @@ export const AddAddressModal = ({
             <input
               type="tel"
               value={formData.PhoneNumber}
-              onChange={(e) => handleFieldChange("PhoneNumber", e.target.value)}
+              onChange={e => handleFieldChange("PhoneNumber", e.target.value)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               placeholder="Phone number"
             />
@@ -391,7 +420,7 @@ export const AddAddressModal = ({
             <input
               type="tel"
               value={formData.FaxPhoneNum}
-              onChange={(e) => handleFieldChange("FaxPhoneNum", e.target.value)}
+              onChange={e => handleFieldChange("FaxPhoneNum", e.target.value)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               placeholder="Fax number"
             />
@@ -406,7 +435,7 @@ export const AddAddressModal = ({
             <input
               type="email"
               value={formData.EmailInvoiceTo}
-              onChange={(e) => handleFieldChange("EmailInvoiceTo", e.target.value)}
+              onChange={e => handleFieldChange("EmailInvoiceTo", e.target.value)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               placeholder="Email for invoices"
             />
@@ -419,7 +448,7 @@ export const AddAddressModal = ({
             <input
               type="number"
               value={formData.BillToNum || ""}
-              onChange={(e) => handleFieldChange("BillToNum", parseInt(e.target.value) || 0)}
+              onChange={e => handleFieldChange("BillToNum", Number.parseInt(e.target.value) || 0)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               placeholder="Bill to number"
             />
@@ -431,7 +460,7 @@ export const AddAddressModal = ({
             <input
               type="checkbox"
               checked={formData.CanShip === 1}
-              onChange={(e) => handleFieldChange("CanShip", e.target.checked ? 1 : 0)}
+              onChange={e => handleFieldChange("CanShip", e.target.checked ? 1 : 0)}
               className="rounded border-border text-primary focus:ring-primary"
             />
             <span>Can Ship</span>
@@ -440,7 +469,7 @@ export const AddAddressModal = ({
             <input
               type="checkbox"
               checked={formData.CanBill === 1}
-              onChange={(e) => handleFieldChange("CanBill", e.target.checked ? 1 : 0)}
+              onChange={e => handleFieldChange("CanBill", e.target.checked ? 1 : 0)}
               className="rounded border-border text-primary focus:ring-primary"
             />
             <span>Can Bill</span>
@@ -453,7 +482,7 @@ export const AddAddressModal = ({
           </label>
           <textarea
             value={formData.Notes}
-            onChange={(e) => handleFieldChange("Notes", e.target.value)}
+            onChange={e => handleFieldChange("Notes", e.target.value)}
             className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
             rows={3}
             placeholder="Additional notes"
@@ -467,7 +496,7 @@ export const AddAddressModal = ({
             </label>
             <textarea
               value={formData.ShipInstr}
-              onChange={(e) => handleFieldChange("ShipInstr", e.target.value)}
+              onChange={e => handleFieldChange("ShipInstr", e.target.value)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
               rows={2}
               placeholder="Special shipping instructions"
@@ -480,7 +509,7 @@ export const AddAddressModal = ({
             </label>
             <textarea
               value={formData.Directions}
-              onChange={(e) => handleFieldChange("Directions", e.target.value)}
+              onChange={e => handleFieldChange("Directions", e.target.value)}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
               rows={2}
               placeholder="Directions to this address"
@@ -507,4 +536,4 @@ export const AddAddressModal = ({
       </form>
     </Modal>
   );
-};
+}

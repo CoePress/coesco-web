@@ -31,6 +31,8 @@ import { UntrackJourneyModal } from "@/components/modals/untrack-journey-modal";
 import { AddTagsModal } from "@/components/modals/add-tags-modal";
 import { useJourneyTracking } from "@/hooks/use-journey-tracking";
 import { useApi } from "@/hooks/use-api";
+import { useMobileDetection } from "@/hooks/use-mobile-detection";
+import { MobileKanbanView } from "./components";
 
 // const columnIdPrefix = "column-";
 
@@ -377,23 +379,25 @@ export const KanbanView = ({
   journeyTags,
   isLoading = false,
 }: KanbanViewProps) => {
+  const isMobile = useMobileDetection(768);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [originalStage, setOriginalStage] = useState<number | null>(null);
   const api = useApi();
 
   const columnIdPrefix = "column-";
 
-  const stageFromDroppableId = (droppableId: string): number | undefined =>
+  const stageFromDroppableId = useCallback((droppableId: string): number | undefined =>
     droppableId.startsWith(columnIdPrefix)
       ? Number(droppableId.replace(columnIdPrefix, ""))
-      : undefined;
+      : undefined,
+  [columnIdPrefix]);
 
-  const findStageByItemId = (id: string): number | undefined => {
+  const findStageByItemId = useCallback((id: string): number | undefined => {
     const key = Object.keys(idsByStage).find((k) =>
       (idsByStage[Number(k)] ?? []).includes(id)
     );
     return key ? Number(key) : undefined;
-  };
+  }, [idsByStage]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -548,6 +552,28 @@ export const KanbanView = ({
       }
     }
   }, [originalStage, stageFromDroppableId, findStageByItemId, columnIdPrefix, setIdsByStage, onStageUpdate, employee, api, journeys]);
+
+  if (isMobile) {
+    return (
+      <MobileKanbanView
+        journeys={journeys}
+        customersById={customersById}
+        visibleStageIds={visibleStageIds}
+        idsByStage={idsByStage}
+        stageCalculations={stageCalculations}
+        onDeleteJourney={onDeleteJourney}
+        onStageUpdate={onStageUpdate}
+        setIdsByStage={setIdsByStage}
+        showTags={showTags}
+        onTagsUpdated={onTagsUpdated}
+        employee={employee}
+        journeyTags={journeyTags}
+        isLoading={isLoading}
+        JourneyCardComponent={JourneyCard}
+        DragPreviewComponent={DragPreview}
+      />
+    );
+  }
 
   return (
     <DndContext

@@ -26,6 +26,10 @@
       {
         "field": "Company_ID",
         "type": "int"
+      },
+      {
+        "field": "id",
+        "type": "uuid"
       }
     ]
   },
@@ -44,12 +48,8 @@
     "table": "Address",
     "ids": [
       {
-        "field": "Company_ID",
-        "type": "int"
-      },
-      {
-        "field": "Address_ID",
-        "type": "int"
+        "field": "id",
+        "type": "uuid"
       }
     ]
   }
