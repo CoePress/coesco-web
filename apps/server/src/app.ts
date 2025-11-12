@@ -1,3 +1,4 @@
+/* eslint-disable node/prefer-global/process */
 import type { NextFunction, Request, Response } from "express";
 
 import compression from "compression";
@@ -54,7 +55,6 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-// eslint-disable-next-line node/prefer-global/process
 const swaggerPath = path.join(process.cwd(), "./src/config/swagger.json");
 const swaggerDoc = JSON.parse(readFileSync(swaggerPath, "utf-8"));
 
