@@ -70,4 +70,4 @@ This script:
 - ✅ Add custom types to `src/custom/`
 - ✅ Import all types from `@coesco/types`
 - ❌ Don't edit `_auto-generated.ts`
-- ❌ Don't edit individual auto-generated model files (unless you know what you're doing)
+- ❌ Don't edit individual auto-generated model files
