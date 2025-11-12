@@ -46,23 +46,33 @@ const Pipeline = () => {
     const tagsMap = new Map<string, any[]>();
     if (journeyIds.length === 0) return tagsMap;
 
-    try {
-      const response = await get('/core/tags', {
-        filter: JSON.stringify({
-          parentTable: 'journeys',
-          parentIds: journeyIds
-        })
-      });
+    const BATCH_SIZE = 50;
+    const batches = [];
+    for (let i = 0; i < journeyIds.length; i += BATCH_SIZE) {
+      batches.push(journeyIds.slice(i, i + BATCH_SIZE));
+    }
 
-      if (response?.success && Array.isArray(response.data)) {
-        response.data.forEach((tag: any) => {
-          const journeyId = tag.parentId;
-          if (!tagsMap.has(journeyId)) {
-            tagsMap.set(journeyId, []);
+    try {
+      await Promise.all(
+        batches.map(async (batch) => {
+          const response = await get('/core/tags', {
+            filter: JSON.stringify({
+              parentTable: 'journeys',
+              parentId: { in: batch }
+            })
+          });
+
+          if (response?.success && Array.isArray(response.data)) {
+            response.data.forEach((tag: any) => {
+              const journeyId = tag.parentId;
+              if (!tagsMap.has(journeyId)) {
+                tagsMap.set(journeyId, []);
+              }
+              tagsMap.get(journeyId)?.push(tag);
+            });
           }
-          tagsMap.get(journeyId)?.push(tag);
-        });
-      }
+        })
+      );
 
       journeyIds.forEach(id => {
         if (!tagsMap.has(id)) {
@@ -1406,7 +1416,7 @@ const FilterModal = ({
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-text">Confidence Level</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[0, 25, 50, 75, 90, 100].map(level => (
               <label key={level} className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -1450,7 +1460,7 @@ const FilterModal = ({
           />
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-text">Date From</label>
             <input
@@ -1492,7 +1502,7 @@ const FilterModal = ({
           />
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Input
               label="Min Value ($)"
@@ -1516,25 +1526,25 @@ const FilterModal = ({
         <div className="space-y-2">
           <label className="text-sm font-medium text-text">Visible Stages</label>
           <div className="flex items-center justify-between gap-2 mb-2">
-            <Button 
-              variant="secondary-outline" 
+            <Button
+              variant="secondary-outline"
               size="sm"
               onClick={() => setLocalFilters(prev => ({ ...prev, visibleStages: [] }))}
             >
               Clear
             </Button>
-            <Button 
-              variant="secondary-outline" 
+            <Button
+              variant="secondary-outline"
               size="sm"
               onClick={() => setLocalFilters(prev => ({ ...prev, visibleStages: STAGES.map(s => s.id) }))}
             >
               Select All
             </Button>
           </div>
-          <div className="overflow-x-auto border rounded p-2">
-            <div className="grid grid-rows-2 grid-flow-col gap-x-4 gap-y-2 min-w-fit">
+          <div className="border rounded p-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-rows-2 md:grid-flow-col gap-2">
               {STAGES.map(stage => (
-                <label key={stage.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded whitespace-nowrap">
+                <label key={stage.id} className="flex items-center gap-2 cursor-pointer hover:bg-surface p-1 rounded">
                   <input
                     type="checkbox"
                     checked={localFilters.visibleStages.includes(stage.id)}
@@ -1560,19 +1570,20 @@ const FilterModal = ({
           </div>
         </div>
         
-        <div className="flex justify-between pt-4 border-t">
+        <div className="flex flex-col sm:flex-row justify-between gap-2 pt-4 border-t">
           <Button
             variant="secondary-outline"
             onClick={handleReset}
             disabled={!hasActiveFilters}
+            className="w-full sm:w-auto"
           >
             Clear All
           </Button>
           <div className="flex gap-2">
-            <Button variant="secondary-outline" onClick={onClose}>
+            <Button variant="secondary-outline" onClick={onClose} className="flex-1 sm:flex-initial">
               Cancel
             </Button>
-            <Button variant="primary" onClick={() => onApply(localFilters)}>
+            <Button variant="primary" onClick={() => onApply(localFilters)} className="flex-1 sm:flex-initial">
               Apply Filters
             </Button>
           </div>

@@ -91,7 +91,7 @@ const PageHeader = ({ title, description, actions, goBack = false, goBackTo }: P
           className={`md:hidden w-full bg-foreground border-b border-border shadow-lg overflow-hidden transition-all duration-300 ease-in-out ${
             isMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
           }`}>
-          <div className="p-4">
+          <div className="p-4 flex flex-col gap-2">
             {actions}
           </div>
         </div>

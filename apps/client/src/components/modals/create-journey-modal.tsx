@@ -222,7 +222,6 @@ export const CreateJourneyModal = ({
       };
 
       if (startDate) payload.Journey_Start_Date = startDate;
-      if (notes) payload.Notes = notes;
       if (actionDate) payload.Action_Date = actionDate;
       if (equipmentType) payload.Equipment_Type = equipmentType;
       if (selectedCompanyId) payload.Company_ID = parseInt(selectedCompanyId);
@@ -233,6 +232,22 @@ export const CreateJourneyModal = ({
         // If a contact was selected, create the JourneyContact association
         if (selectedContactId) {
           await createJourneyContact(result.ID.toString(), selectedContactId);
+        }
+
+        // If notes were provided, create them in the Postgres notes table
+        if (notes && notes.trim()) {
+          try {
+            await post('/core/notes', {
+              body: notes.trim(),
+              entityId: result.ID.toString(),
+              entityType: "journey",
+              type: "note",
+              createdBy: `${employee?.firstName || ''} ${employee?.lastName || ''}`.trim() || 'Unknown'
+            });
+          } catch (error) {
+            console.error('Error creating journey note:', error);
+            // Don't fail journey creation if note creation fails
+          }
         }
         const today = new Date().toISOString().split('T')[0];
         const newJourney = {

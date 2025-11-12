@@ -871,6 +871,87 @@ export class LegacyService {
     }
   }
 
+  async getQuoteValue(quoteKeyValue: string): Promise<{ quoteValue: number; revision: string; lineItems: Array<{ lineItem: string; description: string; price: number }> }> {
+    if (!quoteKeyValue) {
+      return { quoteValue: 0, revision: "", lineItems: [] };
+    }
+
+    const parts = quoteKeyValue.split("-");
+    if (parts.length < 2) {
+      return { quoteValue: 0, revision: "", lineItems: [] };
+    }
+
+    const qyear = Number.parseInt(parts[0], 10);
+    const qnum = Number.parseInt(parts[1], 10);
+
+    if (Number.isNaN(qyear) || Number.isNaN(qnum)) {
+      return { quoteValue: 0, revision: "", lineItems: [] };
+    }
+
+    const qyear2Digit = qyear < 100 ? qyear : qyear % 100;
+    const qyear4Digit = qyear < 100 ? 2000 + qyear : qyear;
+
+    const summaryQuery = `
+      SELECT QRev, SUM(salesprice) as total
+      FROM PUB.qrevcostsheet
+      WHERE (qyear = ${qyear2Digit} OR qyear = ${qyear4Digit}) AND qnum = ${qnum}
+      GROUP BY QRev
+      ORDER BY QRev DESC
+    `;
+
+    try {
+      const connection = this.quoteConnection;
+      if (!connection) {
+        return { quoteValue: 0, revision: "", lineItems: [] };
+      }
+
+      const summaryResult = await connection.query(summaryQuery);
+
+      if (!summaryResult || summaryResult.length === 0) {
+        return { quoteValue: 0, revision: "", lineItems: [] };
+      }
+
+      const revisions = summaryResult
+        .map((row: any) => ({
+          qrev: String(row.QRev ?? row.qrev ?? row.QREV ?? row.Qrev ?? "").trim(),
+          total: row.total ?? row.TOTAL ?? row.Total ?? 0
+        }))
+        .map((r: any) => ({
+          qrev: r.qrev || "a",
+          total: r.total
+        }));
+
+      revisions.sort((a: any, b: any) => b.qrev.localeCompare(a.qrev));
+      const selectedRow = revisions[0];
+      const selectedRevision = selectedRow.qrev;
+
+      const lineItemsQuery = `
+        SELECT lineItem, Description, salesprice
+        FROM PUB.qrevcostsheet
+        WHERE (qyear = ${qyear2Digit} OR qyear = ${qyear4Digit})
+          AND qnum = ${qnum}
+          AND (QRev = '${selectedRevision.replace(/'/g, "''")}' OR (QRev IS NULL AND '${selectedRevision}' = 'a'))
+        ORDER BY lineItem
+      `;
+
+      const lineItemsResult = await connection.query(lineItemsQuery);
+
+      const lineItems = (lineItemsResult || []).map((row: any) => ({
+        lineItem: String(row.lineItem ?? row.LINEITEM ?? row.LineItem ?? "").trim() || "-",
+        description: String(row.Description ?? row.DESCRIPTION ?? row.description ?? "").trim() || "-",
+        price: Number(row.salesprice ?? row.SALESPRICE ?? row.SalesPrice ?? 0)
+      }));
+
+      const finalValue = Number(selectedRow.total) || 0;
+
+      return { quoteValue: finalValue, revision: selectedRevision, lineItems };
+    }
+    catch (err) {
+      logger.error("[getQuoteValue] Error fetching quote value:", err);
+      return { quoteValue: 0, revision: "", lineItems: [] };
+    }
+  }
+
   async close() {
     try {
       if (this.connectionCheckInterval) {

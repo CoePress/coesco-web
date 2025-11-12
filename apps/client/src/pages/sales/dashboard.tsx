@@ -50,7 +50,7 @@ const SalesDashboard = () => {
   const [journeys, setJourneys] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'>('weekly');
   const [showMetricInfo, setShowMetricInfo] = useState(false);
   const api = useApi();
   const navigate = useNavigate();
@@ -75,6 +75,29 @@ const SalesDashboard = () => {
   const [showRevenue, setShowRevenue] = useState(true);
   const [showActiveJourneys, setShowActiveJourneys] = useState(true);
   const [showConversion, setShowConversion] = useState(true);
+
+  const getDateRangeInDays = () => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return Math.floor((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
+  };
+
+  const dateRangeDays = getDateRangeInDays();
+  const showDaily = dateRangeDays <= 365;
+  const showQuarterly = dateRangeDays >= 365;
+  const showYearly = dateRangeDays >= 1095;
+
+  useEffect(() => {
+    if (!showDaily && timeframe === 'daily') {
+      setTimeframe('weekly');
+    }
+    if (!showQuarterly && timeframe === 'quarterly') {
+      setTimeframe('monthly');
+    }
+    if (!showYearly && timeframe === 'yearly') {
+      setTimeframe('quarterly');
+    }
+  }, [dateRangeDays, timeframe, showDaily, showQuarterly, showYearly]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -288,6 +311,104 @@ const SalesDashboard = () => {
       });
 
       weekStart.setDate(weekStart.getDate() + 7);
+    }
+  } else if (timeframe === 'quarterly') {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    let currentQuarter = new Date(start.getFullYear(), Math.floor(start.getMonth() / 3) * 3, 1);
+    const endQuarter = new Date(end.getFullYear(), Math.floor(end.getMonth() / 3) * 3, 1);
+
+    while (currentQuarter <= endQuarter) {
+      const quarterNum = Math.floor(currentQuarter.getMonth() / 3) + 1;
+      const quarterLabel = `Q${quarterNum} ${currentQuarter.getFullYear()}`;
+
+      const quarterStart = new Date(currentQuarter);
+      const quarterEnd = new Date(currentQuarter.getFullYear(), currentQuarter.getMonth() + 3, 0);
+
+      const quarterJourneys = journeys.filter(j => {
+        if (!j.Journey_Start_Date) return false;
+        const jDate = new Date(j.Journey_Start_Date);
+        return jDate >= quarterStart && jDate <= quarterEnd;
+      });
+
+      const quarterSales = quarterJourneys
+        .filter(j => j.Journey_Status === 'won')
+        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+
+      const quarterQuotes = quarterJourneys.length;
+      const quarterJourneysWithValue = quarterJourneys.filter(j => {
+        const stage = String(j.Journey_Stage || '').toLowerCase();
+        return !stage.includes('closed won') &&
+               !stage.includes('job lost') &&
+               !stage.includes('closed lost') &&
+               !stage.includes('post installation');
+      }).length;
+
+      const quarterWonJourneys = quarterJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+      const quarterLostJourneys = quarterJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+      const quarterClosedJourneys = quarterWonJourneys.length + quarterLostJourneys.length;
+      const quarterConversion = quarterClosedJourneys > 0
+        ? (quarterWonJourneys.length / quarterClosedJourneys) * 100
+        : 0;
+
+      monthlyData.push({
+        month: quarterLabel,
+        sales: quarterSales,
+        quotes: quarterQuotes * 1000,
+        conversion: Math.round(quarterConversion),
+        journeys: quarterJourneysWithValue,
+        year: currentQuarter.getFullYear()
+      });
+
+      currentQuarter.setMonth(currentQuarter.getMonth() + 3);
+    }
+  } else if (timeframe === 'yearly') {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    let currentYear = start.getFullYear();
+    const endYear = end.getFullYear();
+
+    while (currentYear <= endYear) {
+      const yearLabel = currentYear.toString();
+
+      const yearJourneys = journeys.filter(j => {
+        if (!j.Journey_Start_Date) return false;
+        const jDate = new Date(j.Journey_Start_Date);
+        return jDate.getFullYear() === currentYear;
+      });
+
+      const yearSales = yearJourneys
+        .filter(j => j.Journey_Status === 'won')
+        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+
+      const yearQuotes = yearJourneys.length;
+      const yearJourneysWithValue = yearJourneys.filter(j => {
+        const stage = String(j.Journey_Stage || '').toLowerCase();
+        return !stage.includes('closed won') &&
+               !stage.includes('job lost') &&
+               !stage.includes('closed lost') &&
+               !stage.includes('post installation');
+      }).length;
+
+      const yearWonJourneys = yearJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+      const yearLostJourneys = yearJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+      const yearClosedJourneys = yearWonJourneys.length + yearLostJourneys.length;
+      const yearConversion = yearClosedJourneys > 0
+        ? (yearWonJourneys.length / yearClosedJourneys) * 100
+        : 0;
+
+      monthlyData.push({
+        month: yearLabel,
+        sales: yearSales,
+        quotes: yearQuotes * 1000,
+        conversion: Math.round(yearConversion),
+        journeys: yearJourneysWithValue,
+        year: currentYear
+      });
+
+      currentYear++;
     }
   } else {
     const start = new Date(startDate);
@@ -589,7 +710,7 @@ const SalesDashboard = () => {
 
   const Actions = () => {
     return (
-      <div className="flex gap-2 items-center">
+      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center w-full sm:w-auto">
         <Select
           value={(() => {
             if (rsmFilterDisplay === 'my-journeys' || rsmFilterDisplay === "") return rsmFilterDisplay;
@@ -626,34 +747,36 @@ const SalesDashboard = () => {
             }));
             return [...baseOptions, ...rsmOptions];
           })()}
-          className="w-48"
+          className="w-full sm:w-48"
         />
         <div className="flex gap-2 items-center">
-          <span className="text-sm text-text-muted">Start:</span>
+          <span className="text-sm text-text-muted whitespace-nowrap">Start:</span>
           <DatePicker
             value={startDate}
             onChange={setStartDate}
             placeholder="Start Date"
-            className="w-[150px]"
+            className="w-full sm:w-[150px]"
           />
         </div>
         <div className="flex gap-2 items-center">
-          <span className="text-sm text-text-muted">End:</span>
+          <span className="text-sm text-text-muted whitespace-nowrap">End:</span>
           <DatePicker
             value={endDate}
             onChange={setEndDate}
             placeholder="End Date"
-            className="w-[150px]"
+            className="w-full sm:w-[150px]"
           />
         </div>
-        <Button onClick={refreshData} disabled={isLoading}>
-          <RefreshCcw size={20} className={isLoading ? "animate-spin" : ""} />
-          {isLoading ? "Refreshing..." : "Refresh"}
-        </Button>
-        <Button onClick={exportToExcel} disabled={isLoading}>
-          <Download size={20} />
-          Export
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={refreshData} disabled={isLoading} className="flex-1 sm:flex-initial">
+            <RefreshCcw size={20} className={isLoading ? "animate-spin" : ""} />
+            <span className="hidden sm:inline">{isLoading ? "Refreshing..." : "Refresh"}</span>
+          </Button>
+          <Button onClick={exportToExcel} disabled={isLoading} className="flex-1 sm:flex-initial">
+            <Download size={20} />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+        </div>
       </div>
     );
   };
@@ -692,7 +815,7 @@ const SalesDashboard = () => {
         </Metrics>
 
         <div className="w-full h-full bg-foreground rounded border flex flex-col min-h-[250px] flex-1">
-          <div className="p-2 border-b flex justify-between items-center">
+          <div className="p-2 border-b flex flex-col md:flex-row md:justify-between md:items-center gap-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm text-text-muted">Performance Overview</h3>
               <button
@@ -701,8 +824,8 @@ const SalesDashboard = () => {
                 <Info size={16} />
               </button>
             </div>
-            <div className="flex gap-4 items-center">
-              <div className="flex gap-3 items-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
+              <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
@@ -710,7 +833,7 @@ const SalesDashboard = () => {
                     onChange={(e) => setShowRevenue(e.target.checked)}
                     className="rounded cursor-pointer"
                   />
-                  <span className="text-xs text-success">Revenue</span>
+                  <span className="text-xs text-success whitespace-nowrap">Order Intake</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
@@ -719,7 +842,7 @@ const SalesDashboard = () => {
                     onChange={(e) => setShowActiveJourneys(e.target.checked)}
                     className="rounded cursor-pointer"
                   />
-                  <span className="text-xs text-warning">Active Journeys</span>
+                  <span className="text-xs text-warning whitespace-nowrap">Active Journeys</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
@@ -728,16 +851,18 @@ const SalesDashboard = () => {
                     onChange={(e) => setShowConversion(e.target.checked)}
                     className="rounded cursor-pointer"
                   />
-                  <span className="text-xs text-error">Conversion Rate</span>
+                  <span className="text-xs text-error whitespace-nowrap">Conversion Rate</span>
                 </label>
               </div>
-              <div className="flex gap-1">
-                <Button
-                  variant={timeframe === 'daily' ? 'primary' : 'secondary-outline'}
-                  size="sm"
-                  onClick={() => setTimeframe('daily')}>
-                  Daily
-                </Button>
+              <div className="flex flex-wrap gap-1">
+                {showDaily && (
+                  <Button
+                    variant={timeframe === 'daily' ? 'primary' : 'secondary-outline'}
+                    size="sm"
+                    onClick={() => setTimeframe('daily')}>
+                    Daily
+                  </Button>
+                )}
                 <Button
                   variant={timeframe === 'weekly' ? 'primary' : 'secondary-outline'}
                   size="sm"
@@ -750,6 +875,22 @@ const SalesDashboard = () => {
                   onClick={() => setTimeframe('monthly')}>
                   Monthly
                 </Button>
+                {showQuarterly && (
+                  <Button
+                    variant={timeframe === 'quarterly' ? 'primary' : 'secondary-outline'}
+                    size="sm"
+                    onClick={() => setTimeframe('quarterly')}>
+                    Quarterly
+                  </Button>
+                )}
+                {showYearly && (
+                  <Button
+                    variant={timeframe === 'yearly' ? 'primary' : 'secondary-outline'}
+                    size="sm"
+                    onClick={() => setTimeframe('yearly')}>
+                    Yearly
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -757,7 +898,7 @@ const SalesDashboard = () => {
           {showMetricInfo && (
             <div className="p-3 bg-surface border-b text-xs text-text-muted space-y-2">
               <div>
-                <span className="font-medium text-success">Revenue:</span> Total value of all won journeys within the time period
+                <span className="font-medium text-success">Order Intake:</span> Total value of all won journeys within the time period
               </div>
               <div>
                 <span className="font-medium text-warning">Active Journeys:</span> Number of journeys excluding Closed Won, Job Lost, Closed Lost, and Post Installation stages
@@ -829,7 +970,7 @@ const SalesDashboard = () => {
                   formatter={(value, name) => {
                     const numValue = Number(value);
                     if (name === 'sales') {
-                      return [formatCurrency(numValue), 'Revenue'];
+                      return [formatCurrency(numValue), 'Order Intake'];
                     }
                     if (name === 'journeys') {
                       return [numValue, 'Active Journeys'];
@@ -843,7 +984,7 @@ const SalesDashboard = () => {
                 <Legend
                   wrapperStyle={{ fontSize: '12px' }}
                   formatter={(value) => {
-                    if (value === 'sales') return 'Revenue';
+                    if (value === 'sales') return 'Order Intake';
                     if (value === 'journeys') return 'Active Journeys';
                     if (value === 'conversion') return 'Conversion Rate';
                     return value;
