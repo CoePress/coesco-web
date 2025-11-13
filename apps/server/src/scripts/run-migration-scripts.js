@@ -1,15 +1,14 @@
+/* eslint-disable no-console */
 /* eslint-disable node/prefer-global/process */
-import { PrismaClient } from "@prisma/client";
-import { readdir, stat } from "node:fs/promises";
-import { join } from "node:path";
-
-import { logger } from "@/utils/logger";
+const { PrismaClient } = require("@prisma/client");
+const { readdir, stat } = require("node:fs/promises");
+const { join } = require("node:path");
 
 const prisma = new PrismaClient();
 
 async function runMigrationScripts() {
   try {
-    logger.info("🔍 Checking for migration scripts...\n");
+    console.log("🔍 Checking for migration scripts...\n");
 
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "_MigrationScripts" (
@@ -36,42 +35,35 @@ async function runMigrationScripts() {
       if (!migrationStat.isDirectory())
         continue;
 
-      const tsScriptPath = join(migrationPath, "post-migration.ts");
       const jsScriptPath = join(migrationPath, "post-migration.js");
 
-      let scriptPath: string | null = null;
+      let scriptPath = null;
 
       try {
-        await stat(tsScriptPath);
-        scriptPath = tsScriptPath;
+        await stat(jsScriptPath);
+        scriptPath = jsScriptPath;
       }
       catch {
-        try {
-          await stat(jsScriptPath);
-          scriptPath = jsScriptPath;
-        }
-        catch {
-          continue;
-        }
+        continue;
       }
 
       scriptsFound++;
 
-      const existingExecution = await prisma.$queryRawUnsafe<Array<{ migrationName: string }>>(
+      const existingExecution = await prisma.$queryRawUnsafe(
         `SELECT "migrationName" FROM "_MigrationScripts" WHERE "migrationName" = $1`,
         migrationFolder,
       );
 
       if (existingExecution.length > 0) {
-        logger.info(`⏭️  ${migrationFolder}: Already executed, skipping`);
+        console.log(`⏭️  ${migrationFolder}: Already executed, skipping`);
         scriptsSkipped++;
         continue;
       }
 
-      logger.info(`🚀 ${migrationFolder}: Executing post-migration script...`);
+      console.log(`🚀 ${migrationFolder}: Executing post-migration script...`);
 
       try {
-        const script = await import(scriptPath);
+        const script = require(scriptPath);
         const scriptFunction = script.default || script;
 
         if (typeof scriptFunction !== "function") {
@@ -85,36 +77,36 @@ async function runMigrationScripts() {
           migrationFolder,
         );
 
-        logger.info(`✅ ${migrationFolder}: Completed successfully\n`);
+        console.log(`✅ ${migrationFolder}: Completed successfully\n`);
         scriptsExecuted++;
       }
       catch (error) {
-        logger.error(`❌ ${migrationFolder}: Failed to execute`);
-        logger.error(error);
+        console.error(`❌ ${migrationFolder}: Failed to execute`);
+        console.error(error);
         throw new Error(`Migration script failed for ${migrationFolder}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
-    logger.info("━".repeat(50));
-    logger.info(`📊 Summary:`);
-    logger.info(`   Total scripts found: ${scriptsFound}`);
-    logger.info(`   Scripts executed: ${scriptsExecuted}`);
-    logger.info(`   Scripts skipped: ${scriptsSkipped}`);
-    logger.info("━".repeat(50));
+    console.log("━".repeat(50));
+    console.log(`📊 Summary:`);
+    console.log(`   Total scripts found: ${scriptsFound}`);
+    console.log(`   Scripts executed: ${scriptsExecuted}`);
+    console.log(`   Scripts skipped: ${scriptsSkipped}`);
+    console.log("━".repeat(50));
 
     if (scriptsExecuted === 0 && scriptsFound === 0) {
-      logger.info("ℹ️  No migration scripts found. This is normal if you haven't created any yet.\n");
+      console.log("ℹ️  No migration scripts found. This is normal if you haven't created any yet.\n");
     }
     else if (scriptsExecuted === 0 && scriptsSkipped > 0) {
-      logger.info("ℹ️  All migration scripts have already been executed.\n");
+      console.log("ℹ️  All migration scripts have already been executed.\n");
     }
     else {
-      logger.info("✨ Migration scripts completed successfully!\n");
+      console.log("✨ Migration scripts completed successfully!\n");
     }
   }
   catch (error) {
-    logger.error("\n💥 Fatal error running migration scripts:");
-    logger.error(error);
+    console.error("\n💥 Fatal error running migration scripts:");
+    console.error(error);
     process.exit(1);
   }
   finally {
