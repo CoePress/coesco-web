@@ -9,6 +9,7 @@ interface DatePickerProps {
   maxDate?: string;
   className?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   label?: string;
   id?: string;
   name?: string;
@@ -26,6 +27,7 @@ const DatePicker = ({
   maxDate,
   className = '',
   disabled = false,
+  readOnly = false,
   label,
   id,
   name,
@@ -100,9 +102,9 @@ const DatePicker = ({
       const date = new Date(year, month, day);
 
       if (!isNaN(date.getTime()) &&
-          date.getMonth() === month &&
-          date.getDate() === day &&
-          date.getFullYear() === year) {
+        date.getMonth() === month &&
+        date.getDate() === day &&
+        date.getFullYear() === year) {
 
         if (isDateInRange(date)) {
           setSelectedDate(date);
@@ -201,10 +203,10 @@ const DatePicker = ({
             ${isSelected
               ? 'bg-primary text-background cursor-pointer'
               : isCurrentDay
-              ? 'bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer'
-              : isDisabled
-              ? 'text-text-muted cursor-not-allowed opacity-40'
-              : 'text-text hover:bg-foreground cursor-pointer'
+                ? 'bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer'
+                : isDisabled
+                  ? 'text-text-muted cursor-not-allowed opacity-40'
+                  : 'text-text hover:bg-foreground cursor-pointer'
             }
           `}
         >
@@ -234,9 +236,10 @@ const DatePicker = ({
           name={name}
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => !readOnly && setIsOpen(true)}
           placeholder={placeholder}
           disabled={disabled}
+          readOnly={readOnly}
           className={`
             w-full text-sm px-3 py-1.5 pr-10 rounded
             bg-foreground border border-border
@@ -246,14 +249,15 @@ const DatePicker = ({
             transition-colors duration-200
             ${requiredBgClassName}
             ${checkBorderClassName}
+            ${readOnly ? "cursor-not-allowed" : ""}
             ${className}
           `}
         />
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          disabled={disabled}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors cursor-pointer"
+          onClick={() => !readOnly && setIsOpen(!isOpen)}
+          disabled={disabled || readOnly}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
           <Calendar size={18} />
         </button>

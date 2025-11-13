@@ -8,6 +8,7 @@ interface TextareaProps {
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   className?: string;
   rows?: number;
   placeholder?: string;
@@ -27,6 +28,7 @@ const Textarea = ({
   required = false,
   error,
   disabled = false,
+  readOnly = false,
   className = "",
   rows = 3,
   placeholder = "",
@@ -54,10 +56,11 @@ const Textarea = ({
         onBlur={onBlur}
         required={required}
         disabled={disabled}
+        readOnly={readOnly}
         rows={rows}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className={`w-full text-sm px-3 py-1.5 rounded border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-foreground text-text disabled:bg-surface disabled:text-text-muted transition-colors duration-200 ${error ? "border-error" : "border-border"} ${requiredBgClassName} ${checkBorderClassName} ${className}`}
+        className={`w-full text-sm px-3 py-1.5 rounded border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-foreground text-text disabled:bg-surface disabled:text-text-muted transition-colors duration-200 ${error ? "border-error" : "border-border"} ${requiredBgClassName} ${checkBorderClassName} ${readOnly ? "cursor-not-allowed" : ""} ${className}`}
       />
       {error && <p className="mt-1 text-sm text-error">{error}</p>}
     </div>

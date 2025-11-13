@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["referentialActions"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -107,14 +106,16 @@ model Employee {
   createdById     String
   updatedById     String
 
-  user             User        @relation(fields: [userId], references: [id])
-  department       Department? @relation(fields: [departmentId], references: [id])
-  manager          Employee?   @relation("ManagerSubordinates", fields: [managerId], references: [id])
-  subordinates     Employee[]  @relation("ManagerSubordinates")
-  journeys         Journey[]   @relation("RsmJourneys")
-  createdCompanies Company[]   @relation("CustomerCreatedBy")
-  createdJourneys  Journey[]   @relation("JourneyCreatedBy")
+  user             User            @relation(fields: [userId], references: [id])
+  department       Department?     @relation(fields: [departmentId], references: [id])
+  manager          Employee?       @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates     Employee[]      @relation("ManagerSubordinates")
+  journeys         Journey[]       @relation("RsmJourneys")
+  createdCompanies Company[]       @relation("CustomerCreatedBy")
+  createdJourneys  Journey[]       @relation("JourneyCreatedBy")
   chats            Chat[]
+  employeeHours    EmployeeHours[]
+  shiftNotes       ShiftNote[]
 
   @@index([number])
   @@index([createdById])
@@ -1367,4 +1368,104 @@ model LoginHistory {
   @@index([timestamp])
   @@index([success])
   @@map("login_history")
+}
+
+model CostCode {
+  id          String   @id @default(uuid())
+  jobSfx      String   @unique
+  bomItem     String
+  sequence    String
+  active      Boolean
+  jobCode     Int
+  jobName     String
+  needByDate  String
+  isConfirmed Boolean
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employeeHours EmployeeHours[]
+
+  @@index([jobCode])
+  @@index([active])
+  @@map("cost_codes")
+}
+
+model EmployeeHours {
+  id               String    @id @default(uuid())
+  empNum           String
+  timeIn           DateTime
+  timeOut          DateTime
+  jobCode          Int
+  costCode         String?
+  quantity         Float?
+  splitCode        String?
+  breakFlag        Int       @default(0)
+  managerApproval  Boolean   @default(false)
+  managerName      String?
+  inVariance       Int?
+  outVariance      Int?
+  timeSheetMinutes Int
+  timeOffset       Int?
+  nightShift       Boolean   @default(false)
+  isConfirmed      Boolean   @default(false)
+  flag             String?
+  tZOffset         String?
+  jobDesc          String?
+  actualTimeIn     DateTime?
+  actualTimeOut    DateTime?
+  hasNote          Boolean   @default(false)
+  isEdited         Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  employee       Employee?   @relation(fields: [empNum], references: [number])
+  jobCodeRecord  JobCode?    @relation(fields: [jobCode], references: [jobCode])
+  costCodeRecord CostCode?   @relation(fields: [costCode], references: [jobSfx])
+  shiftNotes     ShiftNote[]
+
+  @@index([empNum])
+  @@index([jobCode])
+  @@index([costCode])
+  @@index([timeIn])
+  @@index([timeOut])
+  @@index([isConfirmed])
+  @@map("employee_hours")
+}
+
+model JobCode {
+  id               String   @id @default(uuid())
+  jobCode          Int      @unique
+  description      String
+  active           Boolean  @default(true)
+  clockable        Boolean  @default(true)
+  requiresCostCode Boolean  @default(false)
+  askQuantity      Boolean  @default(false)
+  askSplitCode     Boolean  @default(false)
+  isConfirmed      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  employeeHours EmployeeHours[]
+
+  @@index([active])
+  @@index([clockable])
+  @@map("job_codes")
+}
+
+model ShiftNote {
+  id          String   @id @default(uuid())
+  empNum      String
+  hoursId     String
+  shiftNote   String
+  dateEntered DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employee      Employee      @relation(fields: [empNum], references: [number])
+  employeeHours EmployeeHours @relation(fields: [hoursId], references: [id])
+
+  @@index([empNum])
+  @@index([hoursId])
+  @@index([dateEntered])
+  @@map("shift_notes")
 }

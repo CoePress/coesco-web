@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Save, Lock, Link, ChevronDown } from "lucide-react";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ms } from "@/utils";
 import Loader from "@/components/ui/loader";
 import { getVisibleTabs } from "@/utils/tab-visibility";
-import { getReelWidthOptionsForModel, getBackplateDiameterOptionsForModel, getStrWidthOptionsForModel, getStrHorsepowerOptionsForModel, getStrFeedRateOptionsForModelAndHorsepower, getFeedMachineWidthOptionsForModel } from "@/utils/performance-sheet";
+import { getReelWidthOptionsForModel, getBackplateDiameterOptionsForModel, getStrWidthOptionsForModel, getStrHorsepowerOptionsForModel, getStrFeedRateOptionsForModelAndHorsepower, getFeedMachineWidthOptionsForModel, getHydThreadingDriveOptionsForModel, getHoldDownAssyOptionsForModel, getCylinderOptionsForHoldDownAssy } from "@/utils/performance-sheet";
 
 type PerformanceTabValue = string;
 type ModalType = 'links' | 'save-confirmation' | 'cancel-confirmation' | 'continue' | 'delete-link' | 'create-link' | null;
@@ -47,11 +47,172 @@ const PerformanceSheet = () => {
   const toast = useToast();
   const lockExtendIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const calculationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const queryParams = useMemo(() => {
     return {
       include: JSON.stringify(["version", "links"]),
     };
+  }, []);
+
+  // Debounced calculation function
+  const debouncedCalculate = useCallback((data: Record<string, any>) => {
+    if (calculationTimeoutRef.current) {
+      clearTimeout(calculationTimeoutRef.current);
+    }
+
+    calculationTimeoutRef.current = setTimeout(() => {
+      if (isPerformanceConnected && performanceSheet?.data?.version?.sections) {
+        const bundledData = bundleFormDataByTabsAndSections(data);
+        calculatePerformanceSheet(bundledData, "main.py", (response) => {
+          if (response?.ok) {
+            console.log("Calculation result:", response.result);
+            // Merge calculated values without overwriting user input
+            if (response.result) {
+              console.log("Merging calculated values with current form data");
+              setFormData(currentFormData => mergeCalculatedValues(currentFormData, response.result));
+            }
+          }
+        });
+      }
+    }, 1000); // Wait 1 second after user stops typing
+  }, [isPerformanceConnected, performanceSheet, calculatePerformanceSheet]);
+
+  // Helper function to merge calculated values without overwriting user input
+  const mergeCalculatedValues = useCallback((currentData: Record<string, any>, calculatedData: Record<string, any>): Record<string, any> => {
+    let mergedData = { ...currentData };
+
+    // Define paths for calculated fields that should be updated
+    const calculatedFieldPaths = [
+      // RFQ FPM values
+      'common.feedRates.average.fpm',
+      'common.feedRates.max.fpm',
+      'common.feedRates.min.fpm',
+      // Material specs
+      'materialSpecs.material.minBendRadius',
+      'materialSpecs.material.minLoopLength',
+      'materialSpecs.material.calculatedCoilOD',
+      // TDDBHD calculated fields
+      'tddbhd.coil.coilWeight',
+      'tddbhd.coil.coilOD',
+      'tddbhd.reel.dispReelMtr',
+      'tddbhd.reel.brakePadDiameter',
+      'tddbhd.reel.cylinderBore',
+      'tddbhd.reel.webTension.psi',
+      'tddbhd.reel.webTension.lbs',
+      'tddbhd.reel.torque.atMandrel',
+      'tddbhd.reel.torque.rewindRequired',
+      'tddbhd.reel.torque.required',
+      'tddbhd.reel.holddown.force.required',
+      'tddbhd.reel.holddown.force.available',
+      'tddbhd.reel.dragBrake.psiAirRequired',
+      'tddbhd.reel.dragBrake.holdingForce',
+      // Reel Drive calculated fields (key ones)
+      'reelDrive.reel.maxWidth',
+      'reelDrive.reel.mandrel.diameter',
+      'reelDrive.reel.mandrel.length',
+      'reelDrive.reel.mandrel.maxRPM',
+      'reelDrive.reel.backplate.thickness',
+      'reelDrive.reel.backplate.weight',
+      'reelDrive.coil.weight',
+      'reelDrive.reel.ratio',
+      'reelDrive.reel.speed',
+      'reelDrive.reel.accelerationRate',
+      'reelDrive.reel.torque.empty.torque',
+      'reelDrive.reel.torque.full.torque',
+
+      // Feed calculated fields
+      'feed.feed.motor',
+      'feed.feed.amp',
+      'feed.feed.ratio',
+      'feed.feed.maxMotorRPM',
+      'feed.feed.motorInertia',
+      'feed.feed.settleTime',
+      'feed.feed.regen',
+      'feed.feed.reflInertia',
+      'feed.feed.match',
+      'feed.feed.materialInLoop',
+      'feed.feed.torque.motorPeak',
+      'feed.feed.torque.peak',
+      'feed.feed.torque.frictional',
+      'feed.feed.torque.loop',
+      'feed.feed.torque.settle',
+      'feed.feed.torque.acceleration',
+      'feed.feed.torque.rms.motor',
+      'feed.feed.torque.rms.feedAngle1',
+      'feed.feed.torque.rms.feedAngle2',
+      'feed.feed.pullThru.centerDistance',
+      'feed.feed.pullThru.yieldStrength',
+      'feed.feed.pullThru.kConst',
+      'feed.feed.pullThru.straightenerRolls',
+      'feed.feed.pullThru.straightenerTorque',
+
+      // Str Utility calculated fields
+      'strUtility.straightener.centerDistance',
+      'strUtility.straightener.jackForceAvailable',
+      'strUtility.straightener.modulus',
+      'strUtility.straightener.maxRollDepth',
+      'strUtility.straightener.rolls.straightener.diameter',
+      'strUtility.straightener.rolls.pinch.diameter',
+      'strUtility.straightener.rolls.straightener.requiredGearTorque',
+      'strUtility.straightener.rolls.straightener.ratedTorque',
+      'strUtility.straightener.rolls.pinch.requiredGearTorque',
+      'strUtility.straightener.rolls.pinch.ratedTorque',
+      'strUtility.straightener.gear.faceWidth',
+      'strUtility.straightener.gear.contAngle',
+      'strUtility.straightener.gear.straightenerRoll.numberOfTeeth',
+      'strUtility.straightener.gear.straightenerRoll.dp',
+      'strUtility.straightener.gear.pinchRoll.numberOfTeeth',
+      'strUtility.straightener.gear.pinchRoll.dp',
+      'strUtility.straightener.required.force',
+      'strUtility.straightener.required.horsepower',
+      'strUtility.straightener.actualCoilWeight',
+      'strUtility.straightener.coilOD',
+      'strUtility.straightener.torque.straightener',
+      'strUtility.straightener.torque.acceleration',
+      'strUtility.straightener.torque.brake',
+      'strUtility.straightener.required.horsepowerCheck',
+      'strUtility.straightener.required.jackForceCheck',
+      'strUtility.straightener.required.backupRollsCheck',
+      'strUtility.straightener.required.feedRateCheck',
+      'strUtility.straightener.required.pinchRollCheck',
+      'strUtility.straightener.required.strRollCheck',
+      'strUtility.straightener.required.fpmCheck',
+
+      // Roll Str Backbend calculated fields  
+      'rollStrBackbend.rollConfiguration',
+      'rollStrBackbend.straightener.rollDiameter',
+      'rollStrBackbend.straightener.centerDistance',
+      'rollStrBackbend.straightener.jackForceAvailable',
+      'rollStrBackbend.straightener.rolls.depth.withMaterial',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.depthRequired',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequired',
+      'rollStrBackbend.straightener.rolls.backbend.yieldMet',
+      'rollStrBackbend.straightener.rolls.backbend.radius.comingOffCoil',
+      'rollStrBackbend.straightener.rolls.backbend.radius.offCoilAfterSpringback',
+      'rollStrBackbend.straightener.rolls.backbend.radius.bendingMomentToYield',
+      'rollStrBackbend.straightener.rolls.backbend.radius.oneOffCoil',
+      'rollStrBackbend.straightener.rolls.backbend.radius.curveAtYield',
+      'rollStrBackbend.straightener.rolls.backbend.radius.radiusAtYield',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.height',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.forceRequired',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.numberOfYieldStrainsAtSurface',
+
+      // Shear calculated fields
+      'shear.shear.blade.angleOfBlade',
+      'shear.shear.blade.initialCut.length',
+      'shear.shear.blade.initialCut.area'
+    ];
+
+    // Only update calculated fields, preserve user input fields
+    calculatedFieldPaths.forEach(path => {
+      const calculatedValue = getNestedValue(calculatedData, path);
+      if (calculatedValue !== undefined && calculatedValue !== null) {
+        mergedData = setNestedValue(mergedData, path, calculatedValue);
+      }
+    });
+
+    return mergedData;
   }, []);
 
   const getNestedValue = (obj: Record<string, any>, path: string): any => {
@@ -304,6 +465,8 @@ const PerformanceSheet = () => {
   useEffect(() => {
     if (performanceSheet?.data) {
       const data = performanceSheet.data.data || {};
+      console.log('Performance sheet data loaded:', data);
+      console.log('Reference number from server:', data.referenceNumber);
       setFormData(data);
       setOriginalData(data);
 
@@ -370,6 +533,15 @@ const PerformanceSheet = () => {
     }
   }, [isEditing, performanceSheetId, isLockConnected]);
 
+  // Cleanup calculation timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (calculationTimeoutRef.current) {
+        clearTimeout(calculationTimeoutRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onLockChanged((data: any) => {
       const { recordType, recordId, lockInfo } = data;
@@ -405,7 +577,39 @@ const PerformanceSheet = () => {
   }, [onLockChanged, performanceSheetId, user?.id, isEditing]);
 
   const getDynamicOptions = (fieldId: string, field: any) => {
-    // Return static options if no dynamic logic needed
+    // Check for dependency-based options first
+    if (field.dependsOn && field.dependencyType) {
+      const dependentValue = getNestedValue(formData, field.dependsOn);
+      if (dependentValue) {
+        switch (field.dependencyType) {
+          case "reelWidth":
+            return getReelWidthOptionsForModel(dependentValue);
+          case "backplateDiameter":
+            return getBackplateDiameterOptionsForModel(dependentValue);
+          case "hydThreadingDrive":
+            return getHydThreadingDriveOptionsForModel(dependentValue);
+          case "holdDownAssy":
+            return getHoldDownAssyOptionsForModel(dependentValue);
+          case "cylinder":
+            // Cylinder depends on both model and hold down assembly
+            const reelModelValue = getNestedValue(formData, "common.equipment.reel.model");
+            if (reelModelValue && dependentValue) {
+              return getCylinderOptionsForHoldDownAssy(reelModelValue, dependentValue);
+            }
+            return [];
+          case "strWidth":
+            return getStrWidthOptionsForModel(dependentValue);
+          case "strHorsepower":
+            return getStrHorsepowerOptionsForModel(dependentValue);
+          case "feedMachineWidth":
+            return getFeedMachineWidthOptionsForModel(dependentValue);
+        }
+      }
+      // If dependency field has no value, return empty array instead of all options
+      return [];
+    }
+
+    // Legacy handling for fields not yet migrated to dependency system
     if (fieldId !== "common.equipment.feed.lineType" &&
       fieldId !== "feed.feed.pullThru.isPullThru" &&
       fieldId !== "common.equipment.reel.width" &&
@@ -601,6 +805,9 @@ const PerformanceSheet = () => {
     if (fieldId === "common.equipment.reel.model") {
       const currentWidth = getNestedValue(updatedData, "common.equipment.reel.width");
       const currentBackplate = getNestedValue(updatedData, "common.equipment.reel.backplate.diameter");
+      const currentHydDrive = getNestedValue(updatedData, "tddbhd.reel.threadingDrive.hydThreadingDrive");
+      const currentHoldDown = getNestedValue(updatedData, "tddbhd.reel.holddown.assy");
+      const currentCylinder = getNestedValue(updatedData, "tddbhd.reel.holddown.cylinder");
 
       // Clear width if it's not valid for the new model
       if (currentWidth && value) {
@@ -616,6 +823,49 @@ const PerformanceSheet = () => {
         if (!validBackplates.includes(currentBackplate)) {
           updatedData = setNestedValue(updatedData, "common.equipment.reel.backplate.diameter", "");
         }
+      }
+
+      // Clear hydraulic threading drive if it's not valid for the new model
+      if (currentHydDrive && value) {
+        const validHydDrives = getHydThreadingDriveOptionsForModel(value).map(option => option.value);
+        if (!validHydDrives.includes(currentHydDrive)) {
+          updatedData = setNestedValue(updatedData, "tddbhd.reel.threadingDrive.hydThreadingDrive", "");
+        }
+      }
+
+      // Clear hold down assembly if it's not valid for the new model
+      if (currentHoldDown && value) {
+        const validHoldDowns = getHoldDownAssyOptionsForModel(value).map(option => option.value);
+        if (!validHoldDowns.includes(currentHoldDown)) {
+          updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.assy", "");
+          // Also clear cylinder since hold down changed
+          updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", "");
+        } else {
+          // Check if current cylinder is still valid for the existing hold down
+          if (currentCylinder && value) {
+            const validCylinders = getCylinderOptionsForHoldDownAssy(value, currentHoldDown).map(option => option.value);
+            if (!validCylinders.includes(currentCylinder)) {
+              updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", "");
+            }
+          }
+        }
+      }
+    }
+
+    // Handle dependent field logic when hold down assembly changes
+    if (fieldId === "tddbhd.reel.holddown.assy") {
+      const currentCylinder = getNestedValue(updatedData, "tddbhd.reel.holddown.cylinder");
+      const reelModelValue = getNestedValue(updatedData, "common.equipment.reel.model");
+
+      // Clear cylinder if it's not valid for the new hold down assembly
+      if (currentCylinder && value && reelModelValue) {
+        const validCylinders = getCylinderOptionsForHoldDownAssy(reelModelValue, value).map(option => option.value);
+        if (!validCylinders.includes(currentCylinder)) {
+          updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", "");
+        }
+      } else {
+        // Always clear cylinder when hold down assembly changes to ensure clean state
+        updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", "");
       }
     }
 
@@ -684,14 +934,8 @@ const PerformanceSheet = () => {
 
     setFormData(updatedData);
 
-    if (isPerformanceConnected && performanceSheet?.data?.version?.sections) {
-      const bundledData = bundleFormDataByTabsAndSections(updatedData);
-      calculatePerformanceSheet(bundledData, "main.py", (response) => {
-        if (response?.ok) {
-          console.log("Calculation result:", response.result);
-        }
-      });
-    }
+    // Trigger debounced calculation
+    debouncedCalculate(updatedData);
   };
 
   const bundleFormDataByTabsAndSections = (data: Record<string, any>) => {
@@ -917,6 +1161,16 @@ const PerformanceSheet = () => {
 
   const renderField = (field: any) => {
     const value = getNestedValue(formData, field.id) ?? "";
+
+    // Debug logging for reference number field
+    if (field.id === "referenceNumber") {
+      console.log('Rendering reference number field:');
+      console.log('- Field ID:', field.id);
+      console.log('- Current formData:', formData);
+      console.log('- Retrieved value:', value);
+      console.log('- getNestedValue result:', getNestedValue(formData, field.id));
+    }
+
     const isFilled = isFieldFilled(value, field.type);
     const isCheck = isCheckField(field.id);
     const checkStatus = isCheck ? getCheckStatus(value) : null;
@@ -939,6 +1193,7 @@ const PerformanceSheet = () => {
       label: field.label,
       required: field.required || false,
       disabled: !isEditing || isCheck,
+      readOnly: field.readOnly || false,
       autoComplete: "off",
       requiredBgClassName,
       checkBorderClassName,

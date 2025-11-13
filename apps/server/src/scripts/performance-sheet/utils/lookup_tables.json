@@ -55,12 +55,12 @@
       "modulus": 15500000,
       "density": 0.1630
     }
-  }, 
+  },
   "lookup_fpm_buffer": {
     "DEFAULT": 1.2
   },
   "lookup_type_of_line": {
-    "Compact":  {
+    "Compact": {
       "application": "Press Feed",
       "reel_type": "Motorized",
       "pull_thru_used": "No",
@@ -151,7 +151,7 @@
       "shear_used": "Yes"
     },
     "Pull Through": {
-    "application": "Press Feed",
+      "application": "Press Feed",
       "reel_type": "Motorized",
       "pull_thru_used": "Yes",
       "reel_used": "Yes",
@@ -1228,24 +1228,6 @@
   },
   "lookup_sigma5_feed": {
     "CPRF-S1": {
-      "ratio": 3.0,
-      "max_mtr_torque": 2000,
-      "mot_inertia": 0.0022,
-      "mot_peak_torque": 160,
-      "mot_rms_tq": 56.3,
-      "settle_tor": 20,
-      "settle_time": 0.035,
-      "efficiency": 1.0,
-      "gb_ratio": 0,
-      "u_roll": 2.25,
-      "l_roll": 2.25,
-      "motor": "YASKAWA SGMSV-20DDA61",
-      "amp": "YASKAWA SGDV-8R4DE1A000000300",
-      "ec": 45,
-      "watts_lost": 100,
-      "fric_torque": 0
-    },
-    "CPRF-S1 Plus": {
       "ratio": 3.733,
       "max_mtr_torque": 2000,
       "mot_inertia": 0.0022,
@@ -1255,8 +1237,8 @@
       "settle_time": 0.035,
       "efficiency": 1.0,
       "gb_ratio": 0,
-      "u_roll": 2.25,
-      "l_roll": 2.25,
+      "u_roll": 2.625,
+      "l_roll": 2.625,
       "motor": "YASKAWA SGMSV-20DDA61",
       "amp": "YASKAWA SGDV-8R4DE1A000000300",
       "ec": 45,
@@ -1446,24 +1428,6 @@
   },
   "lookup_sigma5_feed_pt": {
     "CPRF-S1 ES": {
-      "ratio": 3.0,
-      "max_mtr_torque": 2000,
-      "mot_inertia": 0.00283,
-      "mot_peak_torque": 169,
-      "mot_rms_tq": 56.4,
-      "settle_tor": 20,
-      "settle_time": 0.035,
-      "efficiency": 1.0,
-      "gb_ratio": 0,
-      "u_roll": 2.25,
-      "l_roll": 2.25,
-      "motor": "YASKAWA SGMSV-20DDA61",
-      "amp": "YASKAWA SGDV-8R4DE1A000000300",
-      "ec": 45,
-      "watts_lost": 100,
-      "cent_dist": 4.5
-    },
-    "CPRF-S1 ES Plus": {
       "ratio": 3.733,
       "max_mtr_torque": 2000,
       "mot_inertia": 0.0022,
@@ -1473,8 +1437,8 @@
       "settle_time": 0.035,
       "efficiency": 1.0,
       "gb_ratio": 0,
-      "u_roll": 2.25,
-      "l_roll": 2.25,
+      "u_roll": 2.625,
+      "l_roll": 2.625,
       "motor": "YASKAWA SGMSV-20DDA61",
       "amp": "YASKAWA SGDV-8R4DE1A000000300",
       "ec": 45,
@@ -2275,7 +2239,7 @@
       "full_od_backplate": 72,
       "backplate_thickness": 1.5
     },
-    "CPR-300" :  {
+    "CPR-300": {
       "bearing_dist": 29.8,
       "fbearing_dia": 13.19,
       "rbearing_dia": 11.65,
@@ -2285,7 +2249,7 @@
       "full_od_backplate": 72,
       "backplate_thickness": 1.5
     },
-    "CPR-400":  {
+    "CPR-400": {
       "bearing_dist": 29.8,
       "fbearing_dia": 15.43,
       "rbearing_dia": 12.68,
@@ -2305,7 +2269,7 @@
       "full_od_backplate": 72,
       "backplate_thickness": 1.5
     },
-    "CPR-600":  {
+    "CPR-600": {
       "bearing_dist": 29.8,
       "fbearing_dia": 15.35,
       "rbearing_dia": 13.19,

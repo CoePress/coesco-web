@@ -1,7 +1,7 @@
 {
     "CPRF-S1": {
         "u_roll": {
-            "o_dia": 2.250,
+            "o_dia": 2.625,
             "i_dia": 0,
             "length": 0.75,
             "density": 0.283,
@@ -21,135 +21,7 @@
             "ratio": 0
         },
         "l_roll": {
-            "o_dia": 2.250,
-            "i_dia": 0,
-            "length": 2.50,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "l_journ": {
-            "o_dia": 1.000,
-            "i_dia": 0,
-            "length": 5.50,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "gears_idler": {
-            "o_dia": 2.000,
-            "i_dia": 1.250,
-            "length": 0.75,
-            "density": 0.283,
-            "qty": 2,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "gears_drive": {
-            "o_dia": 2.000,
-            "i_dia": 1.000,
-            "length": 0.75,
-            "density": 0.283,
-            "qty": 2,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "u_pul": {
-            "o_dia": 5.594,
-            "i_dia": 4.880,
-            "length": 1.280,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "H90_5M_25_SDS": {
-            "o_dia": 4.880,
-            "i_dia": 2.188,
-            "length": 0.75,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "BUSH": {
-            "o_dia": 3.188,
-            "i_dia": 1.000,
-            "length": 0.438,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "SDSx1_bore": {
-            "o_dia": 2.188,
-            "i_dia": 1.000,
-            "length": 0.875,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "l_pul": {
-            "o_dia": 1.831,
-            "i_dia": 0.625,
-            "length": 1.280,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 1
-        },
-        "H30_5M_25_MPB": {
-            "o_dia": 1.190,
-            "i_dia": 0.625,
-            "length": 0.420,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 1
-        },
-        "g_box": {
-            "efficiency": 1,
-            "qty": 0,
-            "inertia": 0,
-            "ratio": 0
-        }
-    },
-    "CPRF-S1 PLUS": {
-        "u_roll": {
-            "o_dia": 2.250,
-            "i_dia": 0,
-            "length": 0.75,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "u_journ": {
-            "o_dia": 1.000,
-            "i_dia": 0,
-            "length": 4.25,
-            "density": 0.283,
-            "qty": 1,
-            "lbs": 0,
-            "inertia": 0,
-            "ratio": 0
-        },
-        "l_roll": {
-            "o_dia": 2.250,
+            "o_dia": 2.625,
             "i_dia": 0,
             "length": 2.50,
             "density": 0.283,

@@ -290,9 +290,19 @@ export class SocketService {
           const scriptPath = path.join(__dirname, "../../scripts/performance-sheet", scriptName);
           logger.info(`[${socket.id}] Calculate request - executing Python script: ${scriptPath}`);
 
-          const result = await this.executePythonScript(scriptPath, formData);
+          // Execute raw calculation
+          const calculationResults = await this.executePythonScript(scriptPath, formData);
 
-          callback?.({ ok: true, result });
+          // Map results back to data structure using Python result mapping
+          const mappedData = await this.mapCalculationResults(formData, calculationResults);
+
+          console.log('SOCKET MAPPED DATA FPM VALUES:', {
+            averageFpm: mappedData?.common?.feedRates?.average?.fpm,
+            maxFpm: mappedData?.common?.feedRates?.max?.fpm,
+            minFpm: mappedData?.common?.feedRates?.min?.fpm
+          });
+
+          callback?.({ ok: true, result: mappedData });
         }
         catch (err) {
           logger.error(`Error processing calculation for socket ${socket.id}`, err);
@@ -343,6 +353,66 @@ export class SocketService {
       python.on("error", (err) => {
         logger.error("Failed to start Python process:", err);
         reject(err);
+      });
+    });
+  }
+
+  private async mapCalculationResults(originalData: Record<string, any>, calculationResults: Record<string, any>): Promise<Record<string, any>> {
+    return new Promise((resolve, reject) => {
+      const scriptPath = path.join(__dirname, "../../scripts/performance-sheet/utils/result_mapping.py");
+      const pythonScriptDir = path.join(__dirname, "../../scripts/performance-sheet").replace(/\\/g, '/');
+      const python = spawn("python", ["-c", `
+import sys
+import json
+sys.path.append('${pythonScriptDir}')
+from utils.result_mapping import map_calculation_results_to_data_structure
+
+# Read input from stdin
+input_data = json.loads(sys.stdin.read())
+original_data = input_data['originalData']
+calculation_results = input_data['calculationResults']
+
+# Map results
+mapped_data = map_calculation_results_to_data_structure(original_data, calculation_results)
+
+# Output result
+print(json.dumps(mapped_data, default=str))
+      `]);
+
+      let outputData = "";
+      let errorData = "";
+
+      const inputData = {
+        originalData,
+        calculationResults
+      };
+
+      python.stdin.write(JSON.stringify(inputData));
+      python.stdin.end();
+
+      python.stdout.on("data", (data) => {
+        outputData += data.toString();
+      });
+
+      python.stderr.on("data", (data) => {
+        errorData += data.toString();
+      });
+
+      python.on("close", (code) => {
+        if (code !== 0) {
+          logger.error(`Result mapping script exited with code ${code}: ${errorData}`);
+          reject(new Error(errorData || "Result mapping failed"));
+        }
+        else {
+          try {
+            const result = JSON.parse(outputData);
+            resolve(result);
+          }
+          catch (err) {
+            logger.error("Failed to parse result mapping output:", outputData);
+            reject(new Error("Invalid JSON output from result mapping"));
+          }
+        }
       });
     });
   }

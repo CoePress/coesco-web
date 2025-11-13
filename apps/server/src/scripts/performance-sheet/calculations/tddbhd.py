@@ -230,27 +230,39 @@ def calculate_tbdbhd(data: tddbhd_input):
     )
 
     return {
-        "friction": round(data.friction, 3),
+        # Coil specifications - flat keys for result mapping
+        "coil_weight": round(coil_weight, 3),
+        "coil_od": round(coil_od, 3),
+        
+        # Reel specifications - flat keys for result mapping
+        "disp_reel_mtr": round(disp_reel_mtr),
+        "brake_pad_diameter": BRAKE_DISTANCE,  # Using constant from shared.py
+        "cylinder_bore": round(cylinder_bore, 3),
+        "min_material_width": round(min_material_width, 3),
+        
+        # Web tension - flat keys for result mapping
         "web_tension_psi": round(web_tension_psi, 3),
         "web_tension_lbs": round(web_tension_lbs, 3),
-        "calculated_coil_weight": round(coil_weight, 3),
-        "coil_od": round(coil_od, 3),
-        "disp_reel_mtr": round(disp_reel_mtr),
-        "cylinder_bore": round(cylinder_bore, 3),
+        
+        # Torque values - flat keys for result mapping
         "torque_at_mandrel": round(torque_at_mandrel, 3) if torque_at_mandrel else None,
-        "rewind_torque": round(rewind_torque, 3),
-        "holddown_pressure": round(holddown_pressure, 3),
-        "hold_down_force_available": round(hold_down_force_available, 3),
-        "hold_down_force_required": round(hold_down_force_req, 3),
-        "min_material_width": round(min_material_width, 3),
+        "rewind_torque_required": round(rewind_torque, 3),
         "torque_required": round(torque_required, 3),
-        "failsafe_required": round(brake_press_required, 3),
-        "failsafe_holding_force": round(failsafe_holding_force, 3),
+        
+        # Hold down force - flat keys for result mapping
+        "holddown_force_required": round(hold_down_force_req, 3),
+        "holddown_force_available": round(hold_down_force_available, 3),
+        
+        # Drag brake - flat keys for result mapping
+        "brake_psi_air_required": round(brake_press_required, 3),
+        "brake_holding_force": round(failsafe_holding_force, 3),
+        
+        # Validation checks - flat keys for result mapping
         "min_material_width_check": min_material_width_check,
         "air_pressure_check": air_pressure_check,
         "rewind_torque_check": rewind_torque_check,
-        "hold_down_force_check": hold_down_force_check,
+        "holddown_force_check": hold_down_force_check,
         "brake_press_check": brake_press_check,
         "torque_required_check": torque_required_check,
-        "tddbhd_check": tddbhd_check
+        "overall_check": tddbhd_check
     }

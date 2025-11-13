@@ -104,7 +104,6 @@ export const PASSLINE_OPTIONS = [
 
 export const FEED_MODEL_OPTIONS = [
   { value: "CPRF-S1", label: "CPRF-S1" },
-  { value: "CPRF-S1 PLUS", label: "CPRF-S1 PLUS" },
   { value: "CPRF-S2", label: "CPRF-S2" },
   { value: "CPRF-S2 PLUS", label: "CPRF-S2 PLUS" },
   { value: "CPRF-S3", label: "CPRF-S3" },
@@ -301,74 +300,196 @@ export const BACKPLATE_DIAMETER_OPTIONS = [
 ];
 
 export const HYDRAULIC_THREADING_DRIVE_OPTIONS = [
-  { value: "none", label: "None" },
-  { value: "standard", label: "Standard" },
-  { value: "high-torque", label: "High Torque" },
+  { value: "None", label: "None" },
+  { value: "22 cu in (D-15125)", label: "22 cu in (D-15125)" },
+  { value: "38 cu in (D-15125)", label: "38 cu in (D-15125)" },
+  { value: "22 cu in (D-12689)", label: "22 cu in (D-12689)" },
+  { value: "38 cu in (D-13374)", label: "38 cu in (D-13374)" },
+  { value: "60 cu in (D-13374)", label: "60 cu in (D-13374)" },
+  { value: "60 cu in (D-13382)", label: "60 cu in (D-13382)" },
 ];
 
 export const HOLD_DOWN_ASSY_OPTIONS = [
-  { value: "none", label: "None" },
-  { value: "pneumatic", label: "Pneumatic" },
-  { value: "hydraulic", label: "Hydraulic" },
-  { value: "spring-loaded", label: "Spring Loaded" },
+  { value: "None", label: "None" },
+  { value: "LD_STANDARD", label: "LD Standard" },
+  { value: "LD_NARROW", label: "LD Narrow" },
+  { value: "LD_MOTORIZED", label: "LD Motorized" },
+  { value: "SD", label: "SD" },
+  { value: "SD_MOTORIZED", label: "SD Motorized" },
+  { value: "MD", label: "MD" },
+  { value: "HD_Single", label: "HD Single" },
+  { value: "HD_Dual", label: "HD Dual" },
+  { value: "XD", label: "XD" },
+  { value: "XXD", label: "XXD" },
+];
+
+export const CYLINDER_OPTIONS = [
+  { value: "Air", label: "Air" },
+  { value: "4in Air", label: "4in Air" },
+  { value: "5in Air", label: "5in Air" },
+  { value: "8in Air", label: "8in Air" },
+  { value: "Hydraulic", label: "Hydraulic" },
 ];
 
 export const BRAKE_MODEL_OPTIONS = [
-  { value: "DB-10", label: "DB-10" },
-  { value: "DB-15", label: "DB-15" },
-  { value: "DB-20", label: "DB-20" },
-  { value: "DB-25", label: "DB-25" },
-  { value: "DB-30", label: "DB-30" },
+  { value: "Single Stage", label: "Single Stage" },
+  { value: "Double Stage", label: "Double Stage" },
+  { value: "Triple Stage", label: "Triple Stage" },
+  { value: "Failsafe - Single Stage", label: "Failsafe - Single Stage" },
+  { value: "Failsafe - Double Stage", label: "Failsafe - Double Stage" },
 ];
 
 export const BRAKE_QUANTITY_OPTIONS = [
   { value: "1", label: "1" },
   { value: "2", label: "2" },
   { value: "3", label: "3" },
-  { value: "4", label: "4" },
 ];
 
 // Reel model dependency mappings
 export const REEL_MODEL_DEPENDENCIES = {
   "CPR-040": {
     widths: ["12", "18", "24", "30", "36"],
-    backplateDiameters: ["23"]
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW"]
   },
   "CPR-060": {
     widths: ["18", "24", "30", "36"],
-    backplateDiameters: ["23"]
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
   },
   "CPR-080": {
     widths: ["18", "24", "30", "36"],
-    backplateDiameters: ["23"]
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
   },
   "CPR-100": {
     widths: ["24", "30", "36", "42", "48", "54", "60"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-150": {
     widths: ["24", "30", "36", "42", "48", "54", "60"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-200": {
     widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-300": {
     widths: ["30", "36", "42", "48", "54", "60", "66", "72"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-400": {
     widths: ["36", "42", "48", "54", "60", "66", "72"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-500": {
     widths: ["42", "48", "54", "60", "66", "72", "78"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-600": {
     widths: ["48", "54", "60", "66", "72", "78"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  }
+};
+
+// Add hold down assembly to cylinder options mapping (model-specific)
+export const HOLD_DOWN_CYLINDER_DEPENDENCIES: Record<string, Record<string, string[]>> = {
+  "CPR-040": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air"],
+    "LD_NARROW": ["4in Air"]
+  },
+  "CPR-060": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
+    "LD_NARROW": ["4in Air"],
+    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+  },
+  "CPR-080": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
+    "LD_NARROW": ["4in Air"],
+    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+  },
+  "CPR-100": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-150": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-200": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-300": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-400": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-500": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-600": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
   }
 };
 
@@ -385,6 +506,30 @@ export const getBackplateDiameterOptionsForModel = (model: string) => {
   if (!dependencies) return BACKPLATE_DIAMETER_OPTIONS;
 
   return dependencies.backplateDiameters.map(diameter => ({ value: diameter, label: diameter }));
+};
+
+export const getHydThreadingDriveOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return HYDRAULIC_THREADING_DRIVE_OPTIONS;
+
+  return dependencies.hydThreadingDrives.map(drive => ({ value: drive, label: drive }));
+};
+
+export const getHoldDownAssyOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return HOLD_DOWN_ASSY_OPTIONS;
+
+  return dependencies.holdDownAssys.map(assy => ({ value: assy, label: HOLD_DOWN_ASSY_OPTIONS.find(opt => opt.value === assy)?.label || assy }));
+};
+
+export const getCylinderOptionsForHoldDownAssy = (model: string, holdDownAssy: string) => {
+  const modelDependencies = HOLD_DOWN_CYLINDER_DEPENDENCIES[model];
+  if (!modelDependencies) return CYLINDER_OPTIONS;
+
+  const cylinderOptions = modelDependencies[holdDownAssy];
+  if (!cylinderOptions) return CYLINDER_OPTIONS;
+
+  return cylinderOptions.map(cylinder => ({ value: cylinder, label: cylinder }));
 };
 
 // STR model dependency mappings
@@ -522,9 +667,6 @@ export const getStrFeedRateOptionsForModelAndHorsepower = (model: string, horsep
 // Feed model dependency mappings
 export const FEED_MODEL_DEPENDENCIES = {
   "CPRF-S1": {
-    widths: ["6", "12", "18", "24"]
-  },
-  "CPRF-S1 PLUS": {
     widths: ["6", "12", "18", "24"]
   },
   "CPRF-S2": {
@@ -798,6 +940,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 4,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
       ],
     },
@@ -863,6 +1006,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 7,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.millEdge",
@@ -872,6 +1016,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 8,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.requireCoilCar",
@@ -881,6 +1026,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 9,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.runningOffBackplate",
@@ -890,6 +1036,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 10,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.requireRewinding",
@@ -899,6 +1046,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 11,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.changeTimeConcern",
@@ -908,6 +1056,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 12,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.timeChangeGoal",
@@ -925,6 +1074,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 14,
           required: true,
           options: COIL_LOADING_OPTIONS,
+          default: "Operator Side",
         },
         {
           id: "common.equipment.feed.direction",
@@ -934,6 +1084,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 15,
           required: true,
           options: FEED_DIRECTION_OPTIONS,
+          default: "left-to-right",
         },
       ],
     },
@@ -1112,6 +1263,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.dies.progressiveDies",
@@ -1121,6 +1273,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 2,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.dies.blankingDies",
@@ -1130,6 +1283,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 3,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
       ],
     },
@@ -1161,7 +1315,8 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 3,
-          required: true,
+          required: false,
+          readOnly: true,
         },
         {
           id: "common.feedRates.max.length",
@@ -1185,7 +1340,8 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 6,
-          required: true,
+          required: false,
+          readOnly: true,
         },
         {
           id: "common.feedRates.min.length",
@@ -1209,7 +1365,8 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 9,
-          required: true,
+          required: false,
+          readOnly: true,
         },
         {
           id: "rfq.press.feedWindowDegrees",
@@ -1275,6 +1432,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 5,
           required: false,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.mount.adequateSupport",
@@ -1284,6 +1442,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 6,
           required: false,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.mount.customMounting",
@@ -1293,6 +1452,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 7,
           required: false,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "common.equipment.feed.passline",
@@ -1311,6 +1471,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 9,
           required: false,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.requireGuarding",
@@ -1320,6 +1481,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 10,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
       ],
     },
@@ -1428,7 +1590,7 @@ export const MATERIAL_SPECS_PERFORMANCE_SHEET_SEED = {
           required: false,
         },
         {
-          id: "common.material.reqMaxFPM",
+          id: "common.feedRates.max.fpm",
           label: "Required Max FPM",
           type: "number",
           size: 1,
@@ -1458,6 +1620,7 @@ export const MATERIAL_SPECS_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 10,
           required: false,
+          readOnly: true,
         },
         {
           id: "materialSpecs.material.minLoopLength",
@@ -1466,6 +1629,7 @@ export const MATERIAL_SPECS_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 11,
           required: false,
+          readOnly: true,
         },
         {
           id: "materialSpecs.material.calculatedCoilOD",
@@ -1474,6 +1638,7 @@ export const MATERIAL_SPECS_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 12,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -1621,6 +1786,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: false,
           options: REEL_MODEL_OPTIONS,
+          default: "CPR-040",
         },
         {
           id: "common.equipment.reel.width",
@@ -1708,6 +1874,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.coil.coilOD",
@@ -1716,6 +1883,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.dispReelMtr",
@@ -1724,6 +1892,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.webTension.psi",
@@ -1732,6 +1901,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.webTension.lbs",
@@ -1740,6 +1910,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.brakePadDiameter",
@@ -1748,6 +1919,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.cylinderBore",
@@ -1756,6 +1928,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.coefficientOfFriction",
@@ -1790,6 +1963,8 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           sequence: 2,
           required: false,
           options: HYDRAULIC_THREADING_DRIVE_OPTIONS,
+          dependsOn: "common.equipment.reel.model",
+          dependencyType: "hydThreadingDrive",
         },
         {
           id: "tddbhd.reel.torque.atMandrel",
@@ -1798,6 +1973,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.torque.rewindRequired",
@@ -1806,6 +1982,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.checks.tddbhdCheck",
@@ -1838,6 +2015,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 8,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.checks.holdDownForceCheck",
@@ -1846,6 +2024,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 9,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.checks.brakePressCheck",
@@ -1862,6 +2041,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 11,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -1879,6 +2059,8 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: false,
           options: HOLD_DOWN_ASSY_OPTIONS,
+          dependsOn: "common.equipment.reel.model",
+          dependencyType: "holdDownAssy",
         },
         {
           id: "tddbhd.reel.holddown.cylinderPressure",
@@ -1895,6 +2077,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.holddown.force.available",
@@ -1903,6 +2086,18 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
+        },
+        {
+          id: "tddbhd.reel.holddown.cylinder",
+          label: "Cylinder",
+          type: "select",
+          size: 1,
+          sequence: 5,
+          required: false,
+          options: CYLINDER_OPTIONS,
+          dependsOn: "tddbhd.reel.holddown.assy",
+          dependencyType: "cylinder",
         },
         {
           id: "tddbhd.reel.minMaterialWidth",
@@ -1953,6 +2148,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.dragBrake.psiAirRequired",
@@ -1961,6 +2157,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.dragBrake.holdingForce",
@@ -1969,6 +2166,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2044,6 +2242,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.reel.width",
@@ -2060,6 +2259,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.bearing.diameter.front",
@@ -2068,6 +2268,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.bearing.diameter.rear",
@@ -2076,6 +2277,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2092,6 +2294,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.length",
@@ -2100,6 +2303,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.maxRPM",
@@ -2108,6 +2312,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.RpmFull",
@@ -2116,6 +2321,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.weight",
@@ -2124,6 +2330,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.inertia",
@@ -2132,6 +2339,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.reflInertia",
@@ -2140,6 +2348,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2164,6 +2373,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.backplate.weight",
@@ -2172,6 +2382,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.backplate.inertia",
@@ -2180,6 +2391,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.backplate.reflInertia",
@@ -2187,6 +2399,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 5,
+          readOnly: true,
           required: false,
         },
       ],
@@ -2548,6 +2761,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.full.torque",
@@ -2556,6 +2770,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2572,6 +2787,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.full.horsepowerRequired",
@@ -2580,6 +2796,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.empty.horsepowerCheck",
@@ -2588,6 +2805,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.full.horsepowerCheck",
@@ -2596,6 +2814,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2612,6 +2831,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.full.regen",
@@ -2620,6 +2840,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.empty.regenCheck",
@@ -2628,6 +2849,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.full.regenCheck",
@@ -2636,6 +2858,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2851,6 +3074,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.jackForceAvailable",
@@ -2859,6 +3083,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.maxRollDepth",
@@ -2867,6 +3092,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.modulus",
@@ -2875,6 +3101,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -4236,6 +4463,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readonly: true,
         },
         {
           id: "common.feedRates.max.length",
@@ -4260,6 +4488,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          readonly: true,
         },
         {
           id: "common.feedRates.min.length",
@@ -4284,6 +4513,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 9,
           required: false,
+          readonly: true,
         },
       ],
     },

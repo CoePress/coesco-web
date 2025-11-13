@@ -129,7 +129,7 @@
     },
     "225_AB_MPL-B4530F": {
         "u_roll": {
-            "o_dia": 2.250,
+            "o_dia": 2.625,
             "i_dia": 0,
             "length": 0.75,
             "density": 0.283,
@@ -149,7 +149,7 @@
             "ratio": 0
         },
         "l_roll": {
-            "o_dia": 2.250,
+            "o_dia": 2.625,
             "i_dia": 0,
             "length": 2.500,
             "density": 0.283,

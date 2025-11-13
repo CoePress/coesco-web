@@ -248,47 +248,183 @@ export const BACKPLATE_DIAMETER_OPTIONS = [
   { value: "72", label: "72" },
 ];
 
+export const HYDRAULIC_THREADING_DRIVE_OPTIONS = [
+  { value: "None", label: "None" },
+  { value: "22 cu in (D-15125)", label: "22 cu in (D-15125)" },
+  { value: "38 cu in (D-15125)", label: "38 cu in (D-15125)" },
+  { value: "22 cu in (D-12689)", label: "22 cu in (D-12689)" },
+  { value: "38 cu in (D-13374)", label: "38 cu in (D-13374)" },
+  { value: "60 cu in (D-13374)", label: "60 cu in (D-13374)" },
+  { value: "60 cu in (D-13382)", label: "60 cu in (D-13382)" },
+];
+
+export const HOLD_DOWN_ASSY_OPTIONS = [
+  { value: "None", label: "None" },
+  { value: "LD_STANDARD", label: "LD Standard" },
+  { value: "LD_NARROW", label: "LD Narrow" },
+  { value: "LD_MOTORIZED", label: "LD Motorized" },
+  { value: "SD", label: "SD" },
+  { value: "SD_MOTORIZED", label: "SD Motorized" },
+  { value: "MD", label: "MD" },
+  { value: "HD_Single", label: "HD Single" },
+  { value: "HD_Dual", label: "HD Dual" },
+  { value: "XD", label: "XD" },
+  { value: "XXD", label: "XXD" },
+];
+
+export const CYLINDER_OPTIONS = [
+  { value: "Air", label: "Air" },
+  { value: "4in Air", label: "4in Air" },
+  { value: "5in Air", label: "5in Air" },
+  { value: "8in Air", label: "8in Air" },
+  { value: "Hydraulic", label: "Hydraulic" },
+];
+
+// Add hold down assembly to cylinder options mapping (model-specific)
+export const HOLD_DOWN_CYLINDER_DEPENDENCIES: Record<string, Record<string, string[]>> = {
+  "CPR-040": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air"],
+    "LD_NARROW": ["4in Air"]
+  },
+  "CPR-060": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
+    "LD_NARROW": ["4in Air"],
+    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+  },
+  "CPR-080": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
+    "LD_NARROW": ["4in Air"],
+    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+  },
+  "CPR-100": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-150": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-200": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-300": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-400": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-500": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-600": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  }
+};
+
 // Reel model dependency mappings
 export const REEL_MODEL_DEPENDENCIES = {
   "CPR-040": {
     widths: ["12", "18", "24", "30", "36"],
-    backplateDiameters: ["23"]
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW"]
   },
   "CPR-060": {
     widths: ["18", "24", "30", "36"],
-    backplateDiameters: ["23"]
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
   },
   "CPR-080": {
     widths: ["18", "24", "30", "36"],
-    backplateDiameters: ["23"]
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
   },
   "CPR-100": {
     widths: ["24", "30", "36", "42", "48", "54", "60"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-150": {
     widths: ["24", "30", "36", "42", "48", "54", "60"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-200": {
     widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-300": {
     widths: ["30", "36", "42", "48", "54", "60", "66", "72"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-400": {
     widths: ["36", "42", "48", "54", "60", "66", "72"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-500": {
     widths: ["42", "48", "54", "60", "66", "72", "78"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   },
   "CPR-600": {
     widths: ["48", "54", "60", "66", "72", "78"],
-    backplateDiameters: ["27", "72"]
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
   }
 };
 
@@ -307,26 +443,29 @@ export const getBackplateDiameterOptionsForModel = (model: string) => {
   return dependencies.backplateDiameters.map(diameter => ({ value: diameter, label: diameter }));
 };
 
-export const HYDRAULIC_THREADING_DRIVE_OPTIONS = [
-  { value: "22 cu in (D-12689)", label: "22 cu in (D-12689)" },
-  { value: "38 cu in (D-13374)", label: "38 cu in (D-13374)" },
-  { value: "60 cu in (D-13374)", label: "60 cu in (D-13374)" },
-  { value: "60 cu in (D-13382)", label: "60 cu in (D-13382)" },
-];
+export const getHydThreadingDriveOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return HYDRAULIC_THREADING_DRIVE_OPTIONS;
 
-export const HOLD_DOWN_ASSY_OPTIONS = [
-  { value: "SD", label: "SD" },
-  { value: "SD_MOTORIZED", label: "SD_MOTORIZED" },
-  { value: "MD", label: "MD" },
-  { value: "HD_SINGLE", label: "HD_SINGLE" },
-  { value: "HD_DUAL", label: "HD_DUAL" },
-  { value: "XD", label: "XD" },
-  { value: "XXD", label: "XXD" },
-];
+  return dependencies.hydThreadingDrives.map(drive => ({ value: drive, label: drive }));
+};
 
-export const HOLD_DOWN_CYLINDER_OPTIONS = [
-  { value: "hydraulic", label: "Hydraulic" },
-];
+export const getHoldDownAssyOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return HOLD_DOWN_ASSY_OPTIONS;
+
+  return dependencies.holdDownAssys.map(assy => ({ value: assy, label: HOLD_DOWN_ASSY_OPTIONS.find(opt => opt.value === assy)?.label || assy }));
+};
+
+export const getCylinderOptionsForHoldDownAssy = (model: string, holdDownAssy: string) => {
+  const modelDependencies = HOLD_DOWN_CYLINDER_DEPENDENCIES[model];
+  if (!modelDependencies) return CYLINDER_OPTIONS;
+
+  const cylinderOptions = modelDependencies[holdDownAssy];
+  if (!cylinderOptions) return CYLINDER_OPTIONS;
+
+  return cylinderOptions.map(cylinder => ({ value: cylinder, label: cylinder }));
+};
 
 export const BRAKE_MODEL_OPTIONS = [
   { value: "Single Stage", label: "Single Stage" },

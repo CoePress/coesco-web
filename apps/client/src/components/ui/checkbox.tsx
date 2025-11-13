@@ -8,6 +8,7 @@ interface CheckboxProps {
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   className?: string;
   requiredBgClassName?: string;
 }
@@ -20,6 +21,7 @@ const Checkbox = ({
   required = false,
   error,
   disabled = false,
+  readOnly = false,
   className = "",
   requiredBgClassName = "",
 }: CheckboxProps) => {
@@ -31,11 +33,13 @@ const Checkbox = ({
         name={name}
         checked={checked}
         onChange={onChange}
-        disabled={disabled}
+        disabled={disabled || readOnly}
+        readOnly={readOnly}
         className={`
           accent-primary
           w-4 h-4 rounded border focus:ring-2 focus:ring-primary focus:border-transparent
           disabled:bg-surface disabled:text-text-muted
+          ${readOnly ? "cursor-not-allowed" : ""}
           ${error ? "border-error" : "border-border"}
         `}
       />

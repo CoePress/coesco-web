@@ -12,6 +12,7 @@ type SelectProps = {
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   className?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   required?: boolean;
   id?: string;
   name?: string;
@@ -29,6 +30,7 @@ const Select = ({
   onChange,
   className = "",
   disabled = false,
+  readOnly = false,
   required = false,
   id,
   name,
@@ -52,7 +54,7 @@ const Select = ({
       <select
         value={value}
         onChange={onChange}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         required={required}
         id={id}
         name={name}
@@ -65,6 +67,7 @@ const Select = ({
           ${error ? "border-error" : "border-border"}
           ${requiredBgClassName}
           ${checkBorderClassName}
+          ${readOnly ? "cursor-not-allowed" : ""}
           ${className}
         `}>
         {placeholder && (
