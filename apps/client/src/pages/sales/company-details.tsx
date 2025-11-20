@@ -7,13 +7,12 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { Button } from "@/components";
+import { Button, PageHeader, StatusBadge } from "@/components";
 import { AddAddressModal } from "@/components/modals/add-address-modal";
 import { CreateJourneyModal } from "@/components/modals/create-journey-modal";
 import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { JourneyNavigationModal } from "@/components/modals/journey-navigation-modal";
 import { useApi } from "@/hooks/use-api";
-import { useEditMode } from "@/hooks/use-edit-mode";
 import { ContactType } from "@/types/enums";
 import { formatCurrency, formatDate } from "@/utils";
 
@@ -140,33 +139,57 @@ function CompanyDetails() {
     return isNaN(parsed) ? defaultVal : parsed;
   };
 
-  const contactEditor = useEditMode<any, number>({
-    onSave: async (id, data) => {
-      const updateData = {
-        firstName: data.firstName || "",
-        lastName: data.lastName || "",
-        email: data.email || "",
-        phone: data.phone || "",
-        phoneExtension: data.phoneExtension || "",
-        title: data.title || "",
-        type: data.type || "",
-      };
-      pendingContactSaveDataRef.current = data;
-      return await api.patch(`/sales/contacts/${id}`, updateData);
+  const [contactEditingId, setContactEditingId] = useState<number | null>(null);
+  const [contactEditData, setContactEditData] = useState<any>({});
+  const [contactSaving, setContactSaving] = useState(false);
+
+  const contactEditor = {
+    isEditing: contactEditingId !== null,
+    editingId: contactEditingId,
+    editData: contactEditData,
+    isSaving: contactSaving,
+    startEdit: (id: number, data: any) => {
+      setContactEditingId(id);
+      setContactEditData({ ...data });
     },
-    onSuccess: (_result, id) => {
-      const updatedContacts = companyContacts.map(contact =>
-        contact.id === id ? { ...contact, ...pendingContactSaveDataRef.current } : contact,
-      );
-      setCompanyContacts(updatedContacts);
-      pendingContactSaveDataRef.current = null;
+    updateField: (field: string, value: any) => {
+      setContactEditData((prev: any) => ({ ...prev, [field]: value }));
     },
-    onError: (error) => {
-      console.error("Error saving contact:", error);
-      alert("Error saving contact. Please try again.");
-      pendingContactSaveDataRef.current = null;
+    save: async () => {
+      if (contactEditingId === null) return;
+      try {
+        setContactSaving(true);
+        const updateData = {
+          firstName: contactEditData.firstName || "",
+          lastName: contactEditData.lastName || "",
+          email: contactEditData.email || "",
+          phone: contactEditData.phone || "",
+          phoneExtension: contactEditData.phoneExtension || "",
+          title: contactEditData.title || "",
+          type: contactEditData.type || "",
+        };
+        pendingContactSaveDataRef.current = contactEditData;
+        await api.patch(`/sales/contacts/${contactEditingId}`, updateData);
+        const updatedContacts = companyContacts.map(contact =>
+          contact.id === contactEditingId ? { ...contact, ...pendingContactSaveDataRef.current } : contact,
+        );
+        setCompanyContacts(updatedContacts);
+        pendingContactSaveDataRef.current = null;
+        setContactEditingId(null);
+        setContactEditData({});
+      } catch (error) {
+        console.error("Error saving contact:", error);
+        alert("Error saving contact. Please try again.");
+        pendingContactSaveDataRef.current = null;
+      } finally {
+        setContactSaving(false);
+      }
     },
-  });
+    cancel: () => {
+      setContactEditingId(null);
+      setContactEditData({});
+    },
+  };
 
   const handleContactFieldChange = (field: string, value: any) => {
     if (field === "firstName" || field === "lastName") {
@@ -175,52 +198,76 @@ function CompanyDetails() {
     contactEditor.updateField(field, value);
   };
 
-  const addressEditor = useEditMode<any, number>({
-    onSave: async (id, data) => {
-      const addressBeingEdited = companyAddresses.find(a => a.Address_ID === id);
-      if (!addressBeingEdited)
-        throw new Error("Address not found");
+  const [addressEditingId, setAddressEditingId] = useState<number | null>(null);
+  const [addressEditData, setAddressEditData] = useState<any>({});
+  const [addressSaving, setAddressSaving] = useState(false);
 
-      const updateData = {
-        AddressName: data.AddressName || "",
-        Address1: data.Address1 || "",
-        Address2: data.Address2 || "",
-        Address3: data.Address3 || "",
-        City: data.City || "",
-        State: data.State || "",
-        Country: data.Country || "USA",
-        ZipCode: data.ZipCode || "",
-        PhoneNumber: data.PhoneNumber || "",
-        FaxPhoneNum: data.FaxPhoneNum || "",
-        CanShip: (data.CanShip === 1 || data.CanShip === true) ? 1 : 0,
-        CanBill: (data.CanBill === 1 || data.CanBill === true) ? 1 : 0,
-        Notes: data.Notes || "",
-        BillToNum: Number.parseInt(data.BillToNum) || 0,
-        BillToId: Number.parseInt(data.BillToId) || 0,
-        ShipInstr: data.ShipInstr || "",
-        Directions: data.Directions || "",
-        OriginalVia: data.OriginalVia || "",
-        EmailInvoiceTo: data.EmailInvoiceTo || "",
-        SystemNotes: data.SystemNotes || "",
-      };
+  const addressEditor = {
+    isEditing: addressEditingId !== null,
+    editingId: addressEditingId,
+    editData: addressEditData,
+    isSaving: addressSaving,
+    startEdit: (id: number, data: any) => {
+      setAddressEditingId(id);
+      setAddressEditData({ ...data });
+    },
+    updateField: (field: string, value: any) => {
+      setAddressEditData((prev: any) => ({ ...prev, [field]: value }));
+    },
+    save: async () => {
+      if (addressEditingId === null) return;
+      try {
+        setAddressSaving(true);
+        const addressBeingEdited = companyAddresses.find(a => a.Address_ID === addressEditingId);
+        if (!addressBeingEdited)
+          throw new Error("Address not found");
 
-      pendingAddressSaveDataRef.current = data;
-      return await api.patch(`/legacy/std/Address/filter/custom?Company_ID=${addressBeingEdited.Company_ID}&Address_ID=${id}`, updateData);
+        const updateData = {
+          AddressName: addressEditData.AddressName || "",
+          Address1: addressEditData.Address1 || "",
+          Address2: addressEditData.Address2 || "",
+          Address3: addressEditData.Address3 || "",
+          City: addressEditData.City || "",
+          State: addressEditData.State || "",
+          Country: addressEditData.Country || "USA",
+          ZipCode: addressEditData.ZipCode || "",
+          PhoneNumber: addressEditData.PhoneNumber || "",
+          FaxPhoneNum: addressEditData.FaxPhoneNum || "",
+          CanShip: (addressEditData.CanShip === 1 || addressEditData.CanShip === true) ? 1 : 0,
+          CanBill: (addressEditData.CanBill === 1 || addressEditData.CanBill === true) ? 1 : 0,
+          Notes: addressEditData.Notes || "",
+          BillToNum: Number.parseInt(addressEditData.BillToNum) || 0,
+          BillToId: Number.parseInt(addressEditData.BillToId) || 0,
+          ShipInstr: addressEditData.ShipInstr || "",
+          Directions: addressEditData.Directions || "",
+          OriginalVia: addressEditData.OriginalVia || "",
+          EmailInvoiceTo: addressEditData.EmailInvoiceTo || "",
+          SystemNotes: addressEditData.SystemNotes || "",
+        };
+
+        pendingAddressSaveDataRef.current = addressEditData;
+        await api.patch(`/legacy/std/Address/filter/custom?Company_ID=${addressBeingEdited.Company_ID}&Address_ID=${addressEditingId}`, updateData);
+        const updatedAddresses = companyAddresses.map(address =>
+          address.Address_ID === addressEditingId ? { ...address, ...pendingAddressSaveDataRef.current } : address,
+        );
+        setCompanyAddresses(updatedAddresses);
+        setEditZipLookupResults({ city: [], stateProv: [], country: [] });
+        pendingAddressSaveDataRef.current = null;
+        setAddressEditingId(null);
+        setAddressEditData({});
+      } catch (error) {
+        console.error("Error saving address:", error);
+        alert("Error saving address. Please try again.");
+        pendingAddressSaveDataRef.current = null;
+      } finally {
+        setAddressSaving(false);
+      }
     },
-    onSuccess: (_result, id) => {
-      const updatedAddresses = companyAddresses.map(address =>
-        address.Address_ID === id ? { ...address, ...pendingAddressSaveDataRef.current } : address,
-      );
-      setCompanyAddresses(updatedAddresses);
-      setEditZipLookupResults({ city: [], stateProv: [], country: [] });
-      pendingAddressSaveDataRef.current = null;
+    cancel: () => {
+      setAddressEditingId(null);
+      setAddressEditData({});
     },
-    onError: (error) => {
-      console.error("Error saving address:", error);
-      alert("Error saving address. Please try again.");
-      pendingAddressSaveDataRef.current = null;
-    },
-  });
+  };
 
   const handleAddressFieldChange = (field: string, value: any) => {
     addressEditor.updateField(field, value);
@@ -242,83 +289,131 @@ function CompanyDetails() {
     setEditZipLookupResults({ city: [], stateProv: [], country: [] });
   };
 
-  const callEditor = useEditMode<any, number>({
-    onSave: async (id, data) => {
-      const updateData = {
-        Contactname: data.Contactname || "",
-        CallStatus: data.CallStatus || "",
-        PhoneNumber: data.PhoneNumber || "",
-        CallType: data.CallType || "",
-        CallOwner: data.CallOwner || "",
-        CustEmail: data.CustEmail || "",
-        CustComments: data.CustComments || "",
-        OurComments: data.OurComments || "",
-        Resolution: data.Resolution || "",
-        Issues: data.Issues || "",
-        ServiceCodes: data.ServiceCodes || "",
-        RefEquipment: data.RefEquipment || "",
-      };
+  const [callEditingId, setCallEditingId] = useState<number | null>(null);
+  const [callEditData, setCallEditData] = useState<any>({});
+  const [callSaving, setCallSaving] = useState(false);
 
-      pendingCallSaveDataRef.current = data;
-      return await api.patch(`/legacy/std/CallHistory/filter/custom?filterField=CallRefNum&filterValue=${id}`, updateData);
+  const callEditor = {
+    isEditing: callEditingId !== null,
+    editingId: callEditingId,
+    editData: callEditData,
+    isSaving: callSaving,
+    startEdit: (id: number, data: any) => {
+      setCallEditingId(id);
+      setCallEditData({ ...data });
     },
-    onSuccess: (_result, id) => {
-      const updatedCallHistory = callHistory.map(call =>
-        call.CallRefNum === id ? { ...call, ...pendingCallSaveDataRef.current } : call,
-      );
-      setCallHistory(updatedCallHistory);
-      pendingCallSaveDataRef.current = null;
+    updateField: (field: string, value: any) => {
+      setCallEditData((prev: any) => ({ ...prev, [field]: value }));
     },
-    onError: (error) => {
-      console.error("Error saving call history:", error);
-      pendingCallSaveDataRef.current = null;
-    },
-  });
+    save: async () => {
+      if (callEditingId === null) return;
+      try {
+        setCallSaving(true);
+        const updateData = {
+          Contactname: callEditData.Contactname || "",
+          CallStatus: callEditData.CallStatus || "",
+          PhoneNumber: callEditData.PhoneNumber || "",
+          CallType: callEditData.CallType || "",
+          CallOwner: callEditData.CallOwner || "",
+          CustEmail: callEditData.CustEmail || "",
+          CustComments: callEditData.CustComments || "",
+          OurComments: callEditData.OurComments || "",
+          Resolution: callEditData.Resolution || "",
+          Issues: callEditData.Issues || "",
+          ServiceCodes: callEditData.ServiceCodes || "",
+          RefEquipment: callEditData.RefEquipment || "",
+        };
 
-  const companyEditor = useEditMode<any, boolean>({
-    onSave: async (_id, data) => {
-      if (!company || !id)
-        throw new Error("Company not found");
+        pendingCallSaveDataRef.current = callEditData;
+        await api.patch(`/legacy/std/CallHistory/filter/custom?filterField=CallRefNum&filterValue=${callEditingId}`, updateData);
+        const updatedCallHistory = callHistory.map(call =>
+          call.CallRefNum === callEditingId ? { ...call, ...pendingCallSaveDataRef.current } : call,
+        );
+        setCallHistory(updatedCallHistory);
+        pendingCallSaveDataRef.current = null;
+        setCallEditingId(null);
+        setCallEditData({});
+      } catch (error) {
+        console.error("Error saving call history:", error);
+        pendingCallSaveDataRef.current = null;
+      } finally {
+        setCallSaving(false);
+      }
+    },
+    cancel: () => {
+      setCallEditingId(null);
+      setCallEditData({});
+    },
+  };
 
-      const updateData = {
-        Active: data.active ? 1 : 0,
-        IsDealer: parseInt32(data.isDealer, 0),
-        CreditStatus: data.creditStatus || "",
-        CreditLimit: parseNumber(data.creditLimit, 0),
-        AcctBalance: parseNumber(data.acctBalance, 0),
-        TermsCode: data.termsCode ? String(data.termsCode) : "",
-        CoeRSM: parseInt32(data.coeRSM, 0),
-        BalanceDate: data.balanceDate || null,
-        CreditNote: data.creditNote || null,
-        Notes: data.notes || null,
-      };
+  const [companyEditingId, setCompanyEditingId] = useState<boolean | null>(null);
+  const [companyEditData, setCompanyEditData] = useState<any>({});
+  const [companySaving, setCompanySaving] = useState(false);
 
-      pendingCompanySaveDataRef.current = data;
-      return await api.patch(`/legacy/std/Company/${id}`, updateData);
+  const companyEditor = {
+    isEditing: companyEditingId !== null,
+    editingId: companyEditingId,
+    editData: companyEditData,
+    isSaving: companySaving,
+    startEdit: (id: boolean, data: any) => {
+      setCompanyEditingId(id);
+      setCompanyEditData({ ...data });
     },
-    onSuccess: (_result, _id) => {
-      const data = pendingCompanySaveDataRef.current;
-      setCompany({
-        ...company,
-        active: data.active,
-        isDealer: parseInt32(data.isDealer, 0),
-        creditStatus: data.creditStatus,
-        creditLimit: parseNumber(data.creditLimit, 0),
-        acctBalance: parseNumber(data.acctBalance, 0),
-        termsCode: data.termsCode,
-        coeRSM: parseInt32(data.coeRSM, 0),
-        balanceDate: data.balanceDate,
-        creditNote: data.creditNote,
-        notes: data.notes,
-      });
-      setIsCustomRsmInput(false);
-      pendingCompanySaveDataRef.current = null;
+    updateField: (field: string, value: any) => {
+      setCompanyEditData((prev: any) => ({ ...prev, [field]: value }));
     },
-    onError: (error) => {
-      console.error("Error saving company details:", error);
-      pendingCompanySaveDataRef.current = null;
+    save: async () => {
+      if (companyEditingId === null) return;
+      try {
+        setCompanySaving(true);
+        if (!company || !id)
+          throw new Error("Company not found");
+
+        const updateData = {
+          Active: companyEditData.active ? 1 : 0,
+          IsDealer: parseInt32(companyEditData.isDealer, 0),
+          CreditStatus: companyEditData.creditStatus || "",
+          CreditLimit: parseNumber(companyEditData.creditLimit, 0),
+          AcctBalance: parseNumber(companyEditData.acctBalance, 0),
+          TermsCode: companyEditData.termsCode ? String(companyEditData.termsCode) : "",
+          CoeRSM: parseInt32(companyEditData.coeRSM, 0),
+          BalanceDate: companyEditData.balanceDate || null,
+          CreditNote: companyEditData.creditNote || null,
+          Notes: companyEditData.notes || null,
+        };
+
+        pendingCompanySaveDataRef.current = companyEditData;
+        await api.patch(`/legacy/std/Company/${id}`, updateData);
+        const data = pendingCompanySaveDataRef.current;
+        setCompany({
+          ...company,
+          active: data.active,
+          isDealer: parseInt32(data.isDealer, 0),
+          creditStatus: data.creditStatus,
+          creditLimit: parseNumber(data.creditLimit, 0),
+          acctBalance: parseNumber(data.acctBalance, 0),
+          termsCode: data.termsCode,
+          coeRSM: parseInt32(data.coeRSM, 0),
+          balanceDate: data.balanceDate,
+          creditNote: data.creditNote,
+          notes: data.notes,
+        });
+        setIsCustomRsmInput(false);
+        pendingCompanySaveDataRef.current = null;
+        setCompanyEditingId(null);
+        setCompanyEditData({});
+      } catch (error) {
+        console.error("Error saving company details:", error);
+        pendingCompanySaveDataRef.current = null;
+      } finally {
+        setCompanySaving(false);
+      }
     },
-  });
+    cancel: () => {
+      setCompanyEditingId(null);
+      setCompanyEditData({});
+    },
+  };
 
   const startCompanyEdit = () => {
     setIsCustomRsmInput(false);
@@ -341,30 +436,54 @@ function CompanyDetails() {
     setIsCustomRsmInput(false);
   };
 
-  const notesEditor = useEditMode<any, boolean>({
-    onSave: async (_id, data) => {
-      if (!company || !id)
-        throw new Error("Company not found");
+  const [notesEditingId, setNotesEditingId] = useState<boolean | null>(null);
+  const [notesEditData, setNotesEditData] = useState<any>({});
+  const [notesSaving, setNotesSaving] = useState(false);
 
-      const updateData = {
-        Notes: data.notes || null,
-      };
+  const notesEditor = {
+    isEditing: notesEditingId !== null,
+    editingId: notesEditingId,
+    editData: notesEditData,
+    isSaving: notesSaving,
+    startEdit: (id: boolean, data: any) => {
+      setNotesEditingId(id);
+      setNotesEditData({ ...data });
+    },
+    updateField: (field: string, value: any) => {
+      setNotesEditData((prev: any) => ({ ...prev, [field]: value }));
+    },
+    save: async () => {
+      if (notesEditingId === null) return;
+      try {
+        setNotesSaving(true);
+        if (!company || !id)
+          throw new Error("Company not found");
 
-      pendingNotesSaveDataRef.current = data;
-      return await api.patch(`/legacy/std/Company/${id}`, updateData);
+        const updateData = {
+          Notes: notesEditData.notes || null,
+        };
+
+        pendingNotesSaveDataRef.current = notesEditData;
+        await api.patch(`/legacy/std/Company/${id}`, updateData);
+        setCompany({
+          ...company,
+          notes: pendingNotesSaveDataRef.current.notes,
+        });
+        pendingNotesSaveDataRef.current = null;
+        setNotesEditingId(null);
+        setNotesEditData({});
+      } catch (error) {
+        console.error("Error saving notes:", error);
+        pendingNotesSaveDataRef.current = null;
+      } finally {
+        setNotesSaving(false);
+      }
     },
-    onSuccess: (_result, _id) => {
-      setCompany({
-        ...company,
-        notes: pendingNotesSaveDataRef.current.notes,
-      });
-      pendingNotesSaveDataRef.current = null;
+    cancel: () => {
+      setNotesEditingId(null);
+      setNotesEditData({});
     },
-    onError: (error) => {
-      console.error("Error saving notes:", error);
-      pendingNotesSaveDataRef.current = null;
-    },
-  });
+  };
 
   const mapLegacyStageToId = (stage: any): number => {
     const s = String(stage ?? "").toLowerCase();
@@ -482,6 +601,7 @@ function CompanyDetails() {
       Notes: raw.Notes,
       Industry: raw.Industry,
       Chance_To_Secure_order: raw.Chance_To_Secure_order,
+      Deleted: raw.Deleted === 1 || raw.Deleted === '1' || raw.Deleted === true ? 1 : 0,
     };
   };
 
@@ -943,7 +1063,8 @@ function CompanyDetails() {
       });
 
       if (result) {
-        setCompanyContacts([...companyContacts, result]);
+        const newContact = result.data || result;
+        setCompanyContacts([...companyContacts, newContact]);
         setIsAddingContact(false);
         setNewContactData({});
       }
@@ -1014,7 +1135,7 @@ function CompanyDetails() {
       }
     }
     catch (error) {
-      console.error("Error looking up zip code:", error);
+      console.error("Error looking up postal code:", error);
       setEditZipLookupResults({ city: [], stateProv: [], country: [] });
     }
     finally {
@@ -1252,7 +1373,17 @@ function CompanyDetails() {
   const companyInitial = company.name ? company.name.charAt(0).toUpperCase() : "C";
 
   return (
-    <div className="flex flex-col md:flex-row flex-1 bg-background">
+    <div className="flex flex-col flex-1 bg-background">
+      {/* Mobile: Show header at top */}
+      <div className="md:hidden">
+        <PageHeader
+          title={company.name}
+          description="Company details and contacts"
+          goBack
+        />
+      </div>
+
+      <div className="flex flex-col md:flex-row flex-1">
       <aside className="w-full md:w-80 bg-foreground flex flex-col md:border-r border-b md:border-b-0 border-border">
         <div className="flex flex-col items-center py-4 border-b border-border">
           <div className="w-16 h-16 rounded-lg flex items-center justify-center mb-2 border border-border">
@@ -1498,7 +1629,16 @@ function CompanyDetails() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col p-2">
+      <main className="flex-1 flex flex-col">
+        {/* Desktop: Show header inside main */}
+        <div className="hidden md:block">
+          <PageHeader
+            title={company.name}
+            description="Company details and contacts"
+            goBack
+          />
+        </div>
+        <div className="p-2 flex flex-col flex-1">
         <div className="bg-foreground px-4 pt-2 rounded-lg border border-border">
           <div className="grid grid-cols-3 gap-x-2 gap-y-1 md:flex md:space-x-8 text-sm md:overflow-x-auto">
             <button
@@ -1930,15 +2070,18 @@ function CompanyDetails() {
                                   %
                                 </div>
                               )}
-                              {journey.Priority && (
-                                <div className="flex items-center mt-2">
+                              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                {journey.Priority && (
                                   <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
                                     Priority
                                     {" "}
                                     {journey.Priority}
                                   </span>
-                                </div>
-                              )}
+                                )}
+                                {(journey.Deleted === 1 || journey.Deleted === '1' || journey.Deleted === true) && (
+                                  <StatusBadge label="Disabled" variant="error" />
+                                )}
+                              </div>
                             </div>
                           );
                         })}
@@ -2099,7 +2242,7 @@ function CompanyDetails() {
                                                   onChange={e => handleAddressFieldChange("ZipCode", e.target.value)}
                                                   onKeyDown={handleKeyDown}
                                                   className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full pr-8"
-                                                  placeholder="ZIP code"
+                                                  placeholder="Postal code"
                                                 />
                                                 {isEditLookingUpZip && (
                                                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -3571,7 +3714,9 @@ function CompanyDetails() {
               )
             : null}
         </div>
+        </div>
       </main>
+      </div>
 
       {/* Journey Creation Modal */}
       <CreateJourneyModal

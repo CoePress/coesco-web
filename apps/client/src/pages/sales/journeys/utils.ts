@@ -167,6 +167,56 @@ export const fetchAvailableRsms = async (api: any, includeHistoric: boolean = fa
   }
 };
 
+export const fetchAvailableRsmsWithTerritories = async (api: any): Promise<Employee[]> => {
+  try {
+    const attrFileData = await api.get('/legacy/std/attrFile/filter/custom', {
+      filterField: 'AttrModifier',
+      filterValue: 'RSMAreas',
+      fields: 'AttrName,ValueList'
+    });
+
+    if (!Array.isArray(attrFileData) || attrFileData.length === 0) {
+      return [];
+    }
+
+    const rsmInitialsWithTerritories = attrFileData
+      .filter((item: any) => item.ValueList && item.ValueList.trim() !== '')
+      .map((item: any) => item.AttrName)
+      .filter(Boolean);
+
+    if (rsmInitialsWithTerritories.length === 0) {
+      return [];
+    }
+
+    const employeeData = await api.get('/legacy/std/Employee', {
+      filter: JSON.stringify({
+        filters: [{
+          field: 'EmpInitials',
+          operator: 'in',
+          values: rsmInitialsWithTerritories
+        }]
+      }),
+      fields: 'EmpFirstName,EmpLastName,EmpNum,EmpInitials'
+    });
+
+    const employees = Array.isArray(employeeData?.data) ? employeeData.data :
+                      Array.isArray(employeeData) ? employeeData : [];
+
+    const rsmOptions = employees
+      .map((employee: any) => ({
+        name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || employee.EmpInitials,
+        empNum: employee.EmpNum || 0,
+        initials: employee.EmpInitials
+      }))
+      .filter((rsm: any): rsm is Employee => rsm !== null && rsm.empNum > 0);
+
+    return rsmOptions;
+  } catch (error) {
+    console.error('Error fetching RSMs with territories:', error);
+    return [];
+  }
+};
+
 export const fetchEmployeeByNumber = async (api: any, empNum: number): Promise<{ name: string; empNum: number } | null> => {
   if (!empNum) return null;
 

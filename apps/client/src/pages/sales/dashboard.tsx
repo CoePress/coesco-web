@@ -961,6 +961,9 @@ const SalesDashboard = () => {
                     borderRadius: "4px",
                   }}
                   labelFormatter={(label) => {
+                    if (timeframe === 'quarterly' || timeframe === 'yearly') {
+                      return label;
+                    }
                     const dataPoint = monthlyData.find(d => d.month === label);
                     if (dataPoint?.year) {
                       return `${label} ${dataPoint.year}`;

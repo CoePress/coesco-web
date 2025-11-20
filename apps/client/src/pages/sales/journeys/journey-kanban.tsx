@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, memo, useEffect } from "react";
-import { MoreHorizontal, Eye, Tags } from "lucide-react";
+import { MoreHorizontal, Eye, Tags, Ban, CheckCircle } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
@@ -25,7 +25,6 @@ import { useNavigate } from "react-router-dom";
 import { formatCurrency, formatDate } from "@/utils";
 import { STAGES } from "./constants";
 import { getPriorityConfig } from "./utils";
-import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { TrackJourneyModal } from "@/components/modals/track-journey-modal";
 import { UntrackJourneyModal } from "@/components/modals/untrack-journey-modal";
 import { AddTagsModal } from "@/components/modals/add-tags-modal";
@@ -79,12 +78,12 @@ const JourneyCard = memo(({
   journeyTags?: Map<string, any[]>;
 } & any) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [showUntrackModal, setShowUntrackModal] = useState(false);
   const [showTagsModal, setShowTagsModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isTracked, trackingInfo, refreshTracking, setIsTracked } = useJourneyTracking(journey?.id);
+  const isDeleted = journey.deletedAt === 1;
 
   const tags = journeyTags?.get(journey?.id?.toString()) || [];
 
@@ -113,10 +112,10 @@ const JourneyCard = memo(({
   return (
     <div
       style={style}
-      onClick={showDeleteConfirm || showTagsModal ? undefined : onClick}
-      className={`bg-foreground rounded shadow-sm border border-border p-3 select-none mb-2 
+      onClick={showTagsModal ? undefined : onClick}
+      className={`bg-foreground rounded shadow-sm border border-border p-3 select-none mb-2
         hover:shadow-md hover:bg-opacity-90 hover:border-neutral-500 transition-all duration-200 ${
-          showDeleteConfirm || showTagsModal ? 'cursor-default' : 'cursor-move'
+          showTagsModal ? 'cursor-default' : 'cursor-move'
         }`}
       {...dragProps}
     >
@@ -220,22 +219,27 @@ const JourneyCard = memo(({
                   <Tags size={14} />
                   Add Tags
                 </button>
+                <button
+                  className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
+                    isDeleted
+                      ? 'text-green-600 hover:bg-green-50'
+                      : 'text-red-600 hover:bg-red-50'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMenuOpen(false);
+                    onDelete?.(journey.id);
+                  }}
+                >
+                  {isDeleted ? <CheckCircle size={14} /> : <Ban size={14} />}
+                  {isDeleted ? 'Enable Journey' : 'Disable Journey'}
+                </button>
               </div>
             )}
           </div>
         )}
       </div>
-      <DeleteJourneyModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={(e) => {
-          if (e) e.stopPropagation();
-          setShowDeleteConfirm(false);
-          onDelete?.(journey.id);
-        }}
-        journey={journey}
-      />
-      
+
       <TrackJourneyModal
         isOpen={showTrackModal}
         onClose={() => setShowTrackModal(false)}
