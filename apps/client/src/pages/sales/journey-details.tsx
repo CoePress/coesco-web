@@ -3128,7 +3128,7 @@ function JourneyActionsTab({ journey, employee }: { journey: any | null; employe
 
     setIsSendingNotification(true);
     try {
-      const data = await api.post("/sandbox/teams/channel-message", {
+      const data = await api.post("/system/teams/channel-message", {
         title: notificationForm.title || `Journey Update: ${journeyName}`,
         message: autoMessage,
         mentionEmails: allMentionEmails,
