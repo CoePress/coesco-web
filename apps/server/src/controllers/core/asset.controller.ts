@@ -1,4 +1,4 @@
-import type { AssetType } from "@coesco/types";
+import type { AssetType } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
 import { assetService } from "@/services/core/asset.service";

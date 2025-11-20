@@ -1,7 +1,7 @@
 import { CronJob } from "cron";
 
 import { env } from "@/config/env";
-import { backupService, microsoftService, sessionService } from "@/services";
+import { assetService, backupService, microsoftService, sessionService } from "@/services";
 import { logger } from "@/utils/logger";
 
 export class CronService {
@@ -48,6 +48,20 @@ export class CronService {
       ),
     );
     logger.info("Session cleanup cron job scheduled for 3:00 AM daily");
+
+    this.jobs.push(
+      new CronJob(
+        "0 4 * * *",
+        this.wrapJob("asset-cleanup", async () => {
+          const count = await assetService.cleanupDeletedAssets(30);
+          logger.info(`Asset cleanup completed: ${count} assets permanently deleted`);
+        }),
+        null,
+        true,
+        "America/New_York",
+      ),
+    );
+    logger.info("Asset cleanup cron job scheduled for 4:00 AM daily");
   }
 
   async stop(): Promise<void> {

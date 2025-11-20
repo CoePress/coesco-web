@@ -8,6 +8,7 @@ import {
   BoxIcon,
   Building2,
   ChartNoAxesCombined,
+  CloudIcon,
   CodeIcon,
   Database,
   DollarSignIcon,
@@ -26,7 +27,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { AdminDashboard, AssetManager, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import ImageManager from "@/pages/sandbox/image-manager";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
@@ -219,6 +220,12 @@ const adminModule: Module = {
       label: "Dashboard",
       icon: LayoutDashboardIcon,
       component: AdminDashboard,
+    },
+    {
+      slug: "assets",
+      label: "Asset Manager",
+      icon: CloudIcon,
+      component: AssetManager,
     },
     {
       slug: "employees",

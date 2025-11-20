@@ -1,3 +1,4 @@
+export { default as AssetManager } from "./admin/asset-manager";
 export { default as Bugs } from "./admin/bugs";
 export { default as AdminDashboard } from "./admin/dashboard";
 export { default as DataPipeline } from "./admin/data-pipeline";

@@ -1,6 +1,6 @@
 /* eslint-disable node/no-process-env */
 /* eslint-disable node/prefer-global/process */
-import type { Asset, AssetStatus, AssetType } from "@coesco/types";
+import type { Asset, AssetStatus, AssetType } from "@prisma/client";
 import type { Buffer } from "node:buffer";
 
 import mime from "mime-types";
@@ -228,6 +228,24 @@ export class AssetService {
         },
       });
     }
+  }
+
+  async cleanupDeletedAssets(olderThanDays = 30): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+
+    const assetsToCleanup = await prisma.asset.findMany({
+      where: {
+        deletedAt: { lte: cutoffDate },
+        status: "DELETED",
+      },
+    });
+
+    for (const asset of assetsToCleanup) {
+      await this.deleteAsset(asset.id, true);
+    }
+
+    return assetsToCleanup.length;
   }
 
   async updateAssetStatus(id: string, status: AssetStatus): Promise<Asset> {
