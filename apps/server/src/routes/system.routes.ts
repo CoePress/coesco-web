@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { bugReportingController } from "@/controllers";
+import { bugReportingController, teamsController } from "@/controllers";
 import { healthService } from "@/services";
 
 const router = Router();
@@ -51,5 +51,8 @@ router.get("/health/status", async (_req, res) => {
 
 router.post("/bugs", bugReportingController.sendBugReport);
 router.get("/bugs/my-reports", bugReportingController.getMyBugReports);
+
+router.post("/teams/channel-message", teamsController.sendChannelMessage);
+router.post("/teams/adaptive-card", teamsController.sendAdaptiveCard);
 
 export default router;

@@ -22,6 +22,7 @@ const envSchema = z.object({
   AZURE_CLIENT_ID: z.string(),
   AZURE_CLIENT_SECRET: z.string(),
   AZURE_REDIRECT_URI: z.string(),
+  TEAMS_WEBHOOK_URL: z.string().url(),
   JWT_SECRET: z.string(),
   JWT_EXPIRES_IN: z.string().default("1d"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),

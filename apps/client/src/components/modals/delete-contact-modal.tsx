@@ -16,7 +16,7 @@ export const DeleteContactModal = ({
   contact,
   isUpdating = false
 }: DeleteContactModalProps) => {
-  const contactName = `${contact?.FirstName || ""} ${contact?.LastName || ""}`.trim() || "Unnamed Contact";
+  const contactName = `${contact?.firstName || ""} ${contact?.lastName || ""}`.trim() || "Unnamed Contact";
 
   return (
     <Modal

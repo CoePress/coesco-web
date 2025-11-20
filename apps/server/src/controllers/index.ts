@@ -19,6 +19,7 @@ import { NoteController } from "./core/note.controller";
 import { SearchController } from "./core/search.controller";
 import { SettingsController } from "./core/settings.controller";
 import { TagController } from "./core/tag.controller";
+import { TeamsController } from "./core/teams.controller";
 import { WebhookController } from "./core/webhook.controller";
 import { ResourceMonitoringController } from "./production/resource-monitoring.controller";
 import { ResourceController } from "./production/resource.controller";
@@ -55,6 +56,7 @@ export const lockController = new LockController();
 export const searchController = new SearchController();
 export const settingsController = new SettingsController();
 export const tagController = new TagController();
+export const teamsController = new TeamsController();
 export const webhookController = new WebhookController();
 
 // Production
