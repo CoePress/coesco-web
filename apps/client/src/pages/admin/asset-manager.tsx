@@ -1,4 +1,4 @@
-import { CheckCircle2, Download, FileIcon, Loader2, Trash2, Upload, X } from "lucide-react";
+import { CheckCircle2, Download, Edit2, FileIcon, Loader2, Trash2, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { useApi } from "@/hooks/use-api";
@@ -34,12 +34,15 @@ const AssetManager = () => {
   const [total, setTotal] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("all");
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [editForm, setEditForm] = useState({ originalName: "", tags: "", isPublic: false });
 
   const { get, loading } = useApi<{ assets: Asset[]; total: number }>();
   const { post: uploadSingle } = useApi<Asset>();
   const { post: uploadMultiple } = useApi<{ assets: Asset[] }>();
   const { delete: deleteAsset } = useApi();
   const { get: getDownloadUrl } = useApi<{ url: string }>();
+  const { patch: updateAsset } = useApi<Asset>();
 
   const fetchAssets = async () => {
     const params = new URLSearchParams();
@@ -116,6 +119,38 @@ const AssetManager = () => {
     catch (error) {
       console.error("Delete failed:", error);
       toast.error("Delete failed. Please try again.");
+    }
+  };
+
+  const handleEdit = (asset: Asset) => {
+    setEditingAsset(asset);
+    setEditForm({
+      originalName: asset.originalName,
+      tags: asset.tags.join(", "),
+      isPublic: asset.isPublic,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingAsset) return;
+
+    try {
+      const tags = editForm.tags.split(",").map(t => t.trim()).filter(Boolean);
+      const response = await updateAsset(`/core/assets/${editingAsset.id}`, {
+        originalName: editForm.originalName,
+        tags,
+        isPublic: editForm.isPublic,
+      });
+
+      if (response) {
+        setAssets(prev => prev.map(a => a.id === response.id ? response : a));
+        toast.success("Asset updated successfully");
+        setEditingAsset(null);
+      }
+    }
+    catch (error) {
+      console.error("Update failed:", error);
+      toast.error("Update failed. Please try again.");
     }
   };
 
@@ -286,6 +321,13 @@ const AssetManager = () => {
 
                   <div className="flex gap-2">
                     <button
+                      onClick={() => handleEdit(asset)}
+                      className="flex-1 px-3 py-2 bg-surface hover:bg-border text-text rounded transition-colors flex items-center justify-center"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => handleDownload(asset)}
                       className="flex-1 px-3 py-2 bg-surface hover:bg-border text-text rounded transition-colors flex items-center justify-center"
                       title="Download"
@@ -318,6 +360,81 @@ const AssetManager = () => {
           </div>
         )}
       </div>
+
+      {editingAsset && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-text">Edit Asset</h2>
+              <button
+                onClick={() => setEditingAsset(null)}
+                className="text-text-muted hover:text-text"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">
+                  Label / Display Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.originalName}
+                  onChange={e => setEditForm(prev => ({ ...prev, originalName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Enter file label..."
+                />
+                <p className="text-xs text-text-muted mt-1">
+                  This is the display name shown in the UI. File is stored as: {editingAsset.filename}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">
+                  Tags (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={editForm.tags}
+                  onChange={e => setEditForm(prev => ({ ...prev, tags: e.target.value }))}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="tag1, tag2, tag3"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isPublic"
+                  checked={editForm.isPublic}
+                  onChange={e => setEditForm(prev => ({ ...prev, isPublic: e.target.checked }))}
+                  className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                />
+                <label htmlFor="isPublic" className="ml-2 text-sm text-text">
+                  Public Access
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setEditingAsset(null)}
+                  className="flex-1 px-4 py-2 border border-border rounded-lg text-text hover:bg-border transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

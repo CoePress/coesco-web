@@ -109,6 +109,33 @@ export class AssetController {
     }
   }
 
+  async updateAsset(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { originalName, tags, isPublic } = req.body;
+
+      const updateData: { originalName?: string; tags?: string[]; isPublic?: boolean } = {};
+
+      if (originalName !== undefined)
+        updateData.originalName = originalName;
+      if (tags !== undefined) {
+        if (!Array.isArray(tags)) {
+          return res.status(400).json({ error: "Tags must be an array" });
+        }
+        updateData.tags = tags;
+      }
+      if (isPublic !== undefined)
+        updateData.isPublic = isPublic;
+
+      const asset = await assetService.updateAsset(id, updateData);
+
+      res.status(200).json(asset);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
   async updateAssetTags(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;

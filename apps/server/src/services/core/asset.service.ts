@@ -255,6 +255,13 @@ export class AssetService {
     });
   }
 
+  async updateAsset(id: string, data: { originalName?: string; tags?: string[]; isPublic?: boolean }): Promise<Asset> {
+    return prisma.asset.update({
+      where: { id },
+      data,
+    });
+  }
+
   async updateAssetTags(id: string, tags: string[]): Promise<Asset> {
     return prisma.asset.update({
       where: { id },

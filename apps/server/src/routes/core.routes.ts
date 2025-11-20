@@ -74,6 +74,7 @@ router.post("/assets/generate-upload-url", assetController.generateUploadUrl);
 router.get("/assets", assetController.listAssets);
 router.get("/assets/:id", assetController.getAsset);
 router.get("/assets/:id/download", assetController.getDownloadUrl);
+router.patch("/assets/:id", assetController.updateAsset);
 router.patch("/assets/:id/tags", assetController.updateAssetTags);
 router.delete("/assets/:id", assetController.deleteAsset);
 
