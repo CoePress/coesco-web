@@ -152,8 +152,13 @@ export class AssetService {
 
   async listAssets(filters?: {
     type?: AssetType;
+    status?: string;
+    isPublic?: boolean;
     tags?: string[];
     uploadedById?: string;
+    search?: string;
+    sort?: string;
+    order?: "asc" | "desc";
     limit?: number;
     offset?: number;
   }): Promise<{ assets: Asset[]; total: number }> {
@@ -165,6 +170,14 @@ export class AssetService {
       where.type = filters.type;
     }
 
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.isPublic !== undefined) {
+      where.isPublic = filters.isPublic;
+    }
+
     if (filters?.tags && filters.tags.length > 0) {
       where.tags = {
         hasSome: filters.tags,
@@ -174,6 +187,20 @@ export class AssetService {
     if (filters?.uploadedById) {
       where.uploadedById = filters.uploadedById;
     }
+
+    if (filters?.search) {
+      where.OR = [
+        { originalName: { contains: filters.search, mode: "insensitive" } },
+        { filename: { contains: filters.search, mode: "insensitive" } },
+        { tags: { hasSome: [filters.search] } },
+      ];
+    }
+
+    const sortField = filters?.sort || "createdAt";
+    const sortOrder = filters?.order || "desc";
+
+    const orderBy: any = {};
+    orderBy[sortField] = sortOrder;
 
     const [assets, total] = await Promise.all([
       prisma.asset.findMany({
@@ -188,7 +215,7 @@ export class AssetService {
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
         take: filters?.limit || 50,
         skip: filters?.offset || 0,
       }),

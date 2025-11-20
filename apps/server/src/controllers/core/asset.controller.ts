@@ -74,21 +74,47 @@ export class AssetController {
 
   async listAssets(req: Request, res: Response, next: NextFunction) {
     try {
-      const type = req.query.type as AssetType | undefined;
+      const page = req.query.page ? Number.parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? Number.parseInt(req.query.limit as string) : 50;
+      const sort = (req.query.sort as string) || "createdAt";
+      const order = (req.query.order as "asc" | "desc") || "desc";
+      const search = req.query.search as string | undefined;
+
+      const filter = req.query.filter ? JSON.parse(req.query.filter as string) : {};
+
+      const type = filter.type as AssetType | undefined;
+      const status = filter.status as string | undefined;
+      const isPublic = filter.isPublic !== undefined ? filter.isPublic === "true" : undefined;
       const tags = req.query.tags ? (req.query.tags as string).split(",") : undefined;
       const uploadedById = req.query.uploadedById as string | undefined;
-      const limit = req.query.limit ? Number.parseInt(req.query.limit as string) : 50;
-      const offset = req.query.offset ? Number.parseInt(req.query.offset as string) : 0;
+
+      const offset = (page - 1) * limit;
 
       const result = await assetService.listAssets({
         type,
+        status,
+        isPublic,
         tags,
         uploadedById,
+        search,
+        sort,
+        order,
         limit,
         offset,
       });
 
-      res.status(200).json(result);
+      const totalPages = Math.ceil(result.total / limit);
+
+      res.status(200).json({
+        success: true,
+        data: result.assets,
+        meta: {
+          total: result.total,
+          page,
+          totalPages,
+          limit,
+        },
+      });
     }
     catch (error) {
       next(error);
