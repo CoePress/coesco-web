@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { auditController, employeeController, permissionController, roleController, sessionsController } from "@/controllers";
+import { auditController, deletedRecordsController, employeeController, permissionController, roleController, sessionsController } from "@/controllers";
 
 const router = Router();
 
@@ -44,5 +44,11 @@ router.get("/roles", roleController.getRoles);
 router.get("/roles/:roleId", roleController.getRole);
 router.patch("/roles/:roleId", roleController.updateRole);
 router.delete("/roles/:roleId", roleController.deleteRole);
+
+// Deleted Records
+router.get("/deleted-records", deletedRecordsController.getDeletedRecords);
+router.get("/deleted-records/models", deletedRecordsController.getModelNames);
+router.post("/deleted-records/:modelName/:id/restore", deletedRecordsController.restoreRecord);
+router.delete("/deleted-records/:modelName/:id", deletedRecordsController.hardDeleteRecord);
 
 export default router;

@@ -24,10 +24,11 @@ import {
   PaintBucketIcon,
   SearchIcon,
   ShieldIcon,
+  Trash2Icon,
   UsersIcon,
 } from "lucide-react";
 
-import { AdminDashboard, AssetManager, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { AdminDashboard, AssetManager, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, DeletedRecords, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import ImageManager from "@/pages/sandbox/image-manager";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
@@ -258,6 +259,12 @@ const adminModule: Module = {
       label: "Sessions",
       icon: FileClockIcon,
       component: Sessions,
+    },
+    {
+      slug: "deleted-records",
+      label: "Deleted Records",
+      icon: Trash2Icon,
+      component: DeletedRecords,
     },
     {
       slug: "logs",

@@ -1,5 +1,6 @@
 import { AuditController } from "./admin/audit.controller";
 import { BugReportingController } from "./admin/bug-reporting.cotroller";
+import { DeletedRecordsController } from "./admin/deleted-records.controller";
 import { EmployeeController } from "./admin/employee.controller";
 import { PermissionController } from "./admin/permission.controller";
 import { RoleController } from "./admin/role.controller";
@@ -31,6 +32,7 @@ import { QuoteController } from "./sales/quote.controller";
 // Admin
 export const auditController = new AuditController();
 export const bugReportingController = new BugReportingController();
+export const deletedRecordsController = new DeletedRecordsController();
 export const employeeController = new EmployeeController();
 export const permissionController = new PermissionController();
 export const roleController = new RoleController();

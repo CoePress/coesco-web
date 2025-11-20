@@ -3,6 +3,7 @@ import { __prod__ } from "@/config/env";
 
 import { AuditService } from "./admin/audit.service";
 import { BugReportingService } from "./admin/bug-reporting.service";
+import { DeletedRecordsService } from "./admin/deleted-records.service";
 import { EmployeeSyncService } from "./admin/employee-sync.service";
 import { EmployeeService } from "./admin/employee.service";
 import { MicrosoftService } from "./admin/microsoft.service";
@@ -47,6 +48,7 @@ import { QuoteService } from "./sales/quote.service";
 // Admin
 export const auditService = new AuditService();
 export const bugReportingService = new BugReportingService();
+export const deletedRecordsService = new DeletedRecordsService();
 export const employeeService = new EmployeeService();
 export const employeeSyncService = new EmployeeSyncService();
 export const microsoftService = new MicrosoftService();
