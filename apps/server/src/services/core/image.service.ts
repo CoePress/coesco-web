@@ -1,24 +1,19 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
 
 import { prisma } from "@/utils/prisma";
 
-export class ImageService {
-  private uploadsDir = path.join(process.cwd(), "uploads");
+import { storageService } from "../storage";
 
+export class ImageService {
   async uploadImage(file: Express.Multer.File): Promise<{ id: number; url: string }> {
     const date = new Date();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     const year = String(date.getFullYear());
 
-    const dateDir = path.join(this.uploadsDir, month, day, year);
-    await fs.mkdir(dateDir, { recursive: true });
-
     const filename = `${uuidv4()}.webp`;
-    const filePath = path.join(dateDir, filename);
+    const key = `images/${month}/${day}/${year}/${filename}`;
 
     const compressedBuffer = await sharp(file.buffer)
       .webp({ quality: 85 })
@@ -29,16 +24,19 @@ export class ImageService {
       throw new Error(`Compressed image size (${sizeInMB.toFixed(2)}MB) exceeds 2MB limit`);
     }
 
-    await fs.writeFile(filePath, compressedBuffer);
+    const uploadResult = await storageService.upload(key, compressedBuffer, {
+      contentType: "image/webp",
+      isPublic: true,
+    });
 
-    const relativePath = `/uploads/${month}/${day}/${year}/${filename}`;
+    const imagePath = uploadResult.cdnUrl || uploadResult.url;
     const image = await prisma.image.create({
-      data: { path: relativePath },
+      data: { path: imagePath },
     });
 
     return {
       id: image.id,
-      url: relativePath,
+      url: imagePath,
     };
   }
 
@@ -67,13 +65,12 @@ export class ImageService {
       throw new Error("Image not found");
     }
 
-    const fullPath = path.join(process.cwd(), image.path.replace(/^\//, ""));
-
     try {
-      await fs.unlink(fullPath);
+      const key = image.path.replace(/^https?:\/\/[^/]+\//, "");
+      await storageService.delete(key);
     }
     catch (error) {
-      console.error("Failed to delete file from disk:", error);
+      console.error("Failed to delete file from storage:", error);
     }
 
     await prisma.image.delete({

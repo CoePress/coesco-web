@@ -238,6 +238,94 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "asset",
+    description: "Schema for Asset entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      key: {
+        type: "string",
+        required: true,
+      },
+      filename: {
+        type: "string",
+        required: true,
+      },
+      originalName: {
+        type: "string",
+        required: true,
+      },
+      mimeType: {
+        type: "string",
+        required: true,
+      },
+      size: {
+        type: "int",
+        required: true,
+      },
+      type: {
+        type: "assettype",
+        required: true,
+      },
+      status: {
+        type: "assetstatus",
+        required: true,
+        hasDefault: true,
+      },
+      storageProvider: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      url: {
+        type: "string",
+        required: true,
+      },
+      cdnUrl: {
+        type: "string",
+        required: false,
+      },
+      thumbnailUrl: {
+        type: "string",
+        required: false,
+      },
+      metadata: {
+        type: "json",
+        required: false,
+      },
+      tags: {
+        type: "string",
+        required: true,
+        isList: true,
+      },
+      isPublic: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      uploadedById: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+    },
+  },
+  {
     name: "audit-log",
     description: "Schema for AuditLog entity",
     schema: {

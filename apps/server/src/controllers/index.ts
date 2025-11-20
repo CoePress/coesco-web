@@ -9,6 +9,7 @@ import { ServiceReportController } from "./artifact/service-report.controller";
 import { ConfigurationController } from "./catalog/configuration.controller";
 import { OptionController } from "./catalog/option.controller";
 import { ProductController } from "./catalog/product.controller";
+import { AssetController } from "./core/asset.controller";
 import { AuthController } from "./core/auth.controller";
 import { ChatController } from "./core/chat.controller";
 import { FormController } from "./core/form.controller";
@@ -45,6 +46,7 @@ export const optionController = new OptionController();
 export const productController = new ProductController();
 
 // Core
+export const assetController = new AssetController();
 export const authController = new AuthController();
 export const chatController = new ChatController();
 export const formController = new FormController();

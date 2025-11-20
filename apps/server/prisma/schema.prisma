@@ -115,6 +115,7 @@ model Employee {
   createdCompanies Company[]   @relation("CustomerCreatedBy")
   createdJourneys  Journey[]   @relation("JourneyCreatedBy")
   chats            Chat[]
+  uploadedAssets   Asset[]
 
   @@index([number])
   @@index([createdById])
@@ -1379,6 +1380,54 @@ enum LoginMethod {
   SSO
   API_KEY
   TEST_LOGIN
+}
+
+enum AssetType {
+  IMAGE
+  DOCUMENT
+  VIDEO
+  AUDIO
+  ARCHIVE
+  OTHER
+}
+
+enum AssetStatus {
+  UPLOADING
+  READY
+  PROCESSING
+  FAILED
+  DELETED
+}
+
+model Asset {
+  id              String       @id @default(uuid())
+  key             String       @unique
+  filename        String
+  originalName    String
+  mimeType        String
+  size            Int
+  type            AssetType
+  status          AssetStatus  @default(READY)
+  storageProvider String       @default("local")
+  url             String
+  cdnUrl          String?
+  thumbnailUrl    String?
+  metadata        Json?
+  tags            String[]
+  isPublic        Boolean      @default(false)
+  uploadedById    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  deletedAt       DateTime?
+
+  uploadedBy Employee? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([type])
+  @@index([status])
+  @@index([uploadedById])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("assets")
 }
 
 model LoginHistory {

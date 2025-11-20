@@ -13,6 +13,7 @@ import { RoleService } from "./admin/role.service";
 import { ConfigurationService } from "./catalog/configuration.service";
 import { OptionService } from "./catalog/option.service";
 import { ProductService } from "./catalog/product.service";
+import { assetService } from "./core/asset.service";
 import { AuthService } from "./core/auth.service";
 import { BackupService } from "./core/backup.service";
 import { CacheService } from "./core/cache.service";
@@ -60,6 +61,7 @@ export const optionService = new OptionService();
 export const productService = new ProductService();
 
 // Core
+export { assetService };
 export const authService = new AuthService();
 export const cacheService = new CacheService();
 export const chatService = new ChatService();

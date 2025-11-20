@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 
-import { chatController, imageController, lockController, noteController, searchController, settingsController, tagController } from "@/controllers";
+import { assetController, chatController, imageController, lockController, noteController, searchController, settingsController, tagController } from "@/controllers";
 
 const router = Router();
 
@@ -66,5 +66,15 @@ router.delete("/notes/:noteId", noteController.deleteNote);
 router.post("/images", upload.any(), imageController.uploadImages);
 router.get("/images", imageController.getAllImages);
 router.delete("/images/:id", imageController.deleteImage);
+
+// Assets
+router.post("/assets/upload", upload.single("file"), assetController.uploadAsset);
+router.post("/assets/upload-multiple", upload.array("files"), assetController.uploadAssets);
+router.post("/assets/generate-upload-url", assetController.generateUploadUrl);
+router.get("/assets", assetController.listAssets);
+router.get("/assets/:id", assetController.getAsset);
+router.get("/assets/:id/download", assetController.getDownloadUrl);
+router.patch("/assets/:id/tags", assetController.updateAssetTags);
+router.delete("/assets/:id", assetController.deleteAsset);
 
 export default router;
