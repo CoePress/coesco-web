@@ -182,11 +182,15 @@ const FormDetail = () => {
           <Card>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded">
-                <Calendar className="text-primary" size={24} />
+                <User className="text-primary" size={24} />
               </div>
               <div>
-                <StatusBadge label={form.status} />
-                <div className="text-sm text-text-muted mt-1">Status</div>
+                <div className="text-2xl font-bold text-text">
+                  {new Date(form.createdAt).toLocaleDateString()}
+                </div>
+                <div className="text-sm text-text-muted">
+                  Created by {form.createdByName || (form.createdById === 'system' ? 'System' : 'Unknown')}
+                </div>
               </div>
             </div>
           </Card>
@@ -194,20 +198,18 @@ const FormDetail = () => {
           <Card>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded">
-                <User className="text-primary" size={24} />
+                <Calendar className="text-primary" size={24} />
               </div>
               <div>
-                <div className="text-sm font-medium text-text truncate">
-                  {form.createdByName || (form.createdById === 'system' ? 'System' : 'Unknown')}
+                <div className="text-2xl font-bold text-text">
+                  {new Date(form.updatedAt).toLocaleDateString()}
                 </div>
-                <div className="text-sm text-text-muted">Created By</div>
+                <div className="text-sm text-text-muted">
+                  Updated by {form.updatedByName || (form.updatedById === 'system' ? 'System' : 'Unknown')}
+                </div>
               </div>
             </div>
           </Card>
-        </div>
-
-        <div className="text-xs text-text-muted px-1">
-          Created {new Date(form.createdAt).toLocaleDateString()} by {form.createdByName || (form.createdById === 'system' ? 'System' : 'Unknown')} • Updated {new Date(form.updatedAt).toLocaleDateString()} by {form.updatedByName || (form.updatedById === 'system' ? 'System' : 'Unknown')}
         </div>
 
         <Card className="flex flex-col flex-1 overflow-hidden">

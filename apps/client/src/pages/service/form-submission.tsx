@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2 } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2, Cloud, CloudOff } from 'lucide-react';
 import { Button, Input, Card, PageHeader, Modal, DatePicker, SignaturePad, CameraUpload, SketchPad } from '@/components';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
@@ -19,7 +19,7 @@ const FormSubmission = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { get, post } = useApi<IApiResponse<any>>();
+  const { get, post, patch } = useApi<IApiResponse<any>>();
   const toast = useToast();
 
   const isAdminContext = location.pathname.startsWith('/admin');
@@ -41,6 +41,11 @@ const FormSubmission = () => {
   const [hiddenElements, setHiddenElements] = useState<Set<string>>(new Set());
   const [disabledElements, setDisabledElements] = useState<Set<string>>(new Set());
   const [requiredFields, setRequiredFields] = useState<Set<string>>(new Set());
+  const [draftSubmissionId, setDraftSubmissionId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const include = useMemo(
     () => ["pages.sections.fields"],
@@ -104,6 +109,79 @@ const FormSubmission = () => {
     if (!id) return;
     localStorage.removeItem(storageKey);
   };
+
+  const autoSaveDraft = useCallback(async () => {
+    if (!id) return;
+
+    const visibleFieldVariables = new Set<string>();
+
+    pages.forEach((page: any) => {
+      if (hiddenElements.has(page.id)) return;
+      page.sections.forEach((section: any) => {
+        if (hiddenElements.has(section.id)) return;
+        section.fields.forEach((field: any) => {
+          if (hiddenElements.has(field.id)) return;
+          const fieldKey = field.variable || field.id;
+          visibleFieldVariables.add(fieldKey);
+        });
+      });
+    });
+
+    const filledFields = Object.entries(formValues).filter(([fieldKey, value]) => {
+      return visibleFieldVariables.has(fieldKey) &&
+             value !== '' && value !== null && value !== undefined;
+    });
+
+    if (filledFields.length === 0) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const filteredFormValues = Object.fromEntries(filledFields);
+
+      const submissionData = {
+        formId: id,
+        status: FormSubmissionStatus.DRAFT,
+        answers: {
+          ...filteredFormValues,
+          _gpsLocation: userLocation || null
+        }
+      };
+
+      let response;
+      if (draftSubmissionId) {
+        response = await patch(`/forms/${id}/submissions/${draftSubmissionId}`, submissionData);
+      } else {
+        response = await post(`/forms/${id}/submissions`, submissionData);
+        if (response?.success && response.data?.id) {
+          setDraftSubmissionId(response.data.id);
+        }
+      }
+
+      if (response?.success) {
+        setLastSaved(new Date());
+        setSaveError(null);
+      } else {
+        setSaveError(response?.error || 'Failed to auto-save');
+      }
+    } catch (error) {
+      console.error('Auto-save error:', error);
+      setSaveError('Failed to auto-save draft');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [id, formValues, pages, hiddenElements, userLocation, draftSubmissionId, post, patch]);
+
+  const debouncedAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      autoSaveDraft();
+    }, 3000);
+  }, [autoSaveDraft]);
 
   const autoFillForm = () => {
     if (!__dev__) return;
@@ -411,8 +489,17 @@ const FormSubmission = () => {
   useEffect(() => {
     if (getFilledFieldsCount() > 0) {
       saveToLocalStorage(formValues);
+      debouncedAutoSave();
     }
   }, [formValues, currentPageIndex]);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
 
   const handleFieldChange = (field: any, value: any) => {
@@ -513,10 +600,18 @@ const FormSubmission = () => {
         }
       };
 
-      const response = await post(`/forms/${id}/submissions`, submissionData);
+      let response;
+      if (draftSubmissionId) {
+        response = await patch(`/forms/${id}/submissions/${draftSubmissionId}`, submissionData);
+      } else {
+        response = await post(`/forms/${id}/submissions`, submissionData);
+      }
 
       if (response?.success) {
         clearLocalStorage();
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
         toast.success('Form submitted successfully!');
         navigate(`${basePath}/${id}`);
       } else {
@@ -723,7 +818,7 @@ const FormSubmission = () => {
 
       case 'CAMERA':
         return (
-          <div className="w-full">
+          <div className="w-full space-y-2">
             <CameraUpload
               formId={id || ''}
               value={value || []}
@@ -731,33 +826,98 @@ const FormSubmission = () => {
               disabled={isDisabled}
               className={hasError ? 'border-error' : ''}
             />
+            {value && Array.isArray(value) && value.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+                {value.map((file: any, index: number) => (
+                  <div key={file.id || index} className="border border-border rounded overflow-hidden group relative">
+                    <img
+                      src={file.url}
+                      alt={file.originalName || `Image ${index + 1}`}
+                      className="w-full h-32 object-cover cursor-pointer hover:opacity-75 transition-opacity"
+                      onClick={() => window.open(file.url, '_blank')}
+                      title={file.originalName || 'Click to view full size'}
+                    />
+                    {file.originalName && (
+                      <div className="p-1 bg-surface text-xs text-text-muted truncate">
+                        {file.originalName}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
       case 'SIGNATURE_PAD':
         return (
-          <div className="w-full">
-            <SignaturePad
-              value={value}
-              onChange={(signature) => handleFieldChange(field, signature)}
-              disabled={isDisabled}
-              className={hasError ? 'border-error' : ''}
-            />
+          <div className="w-full space-y-2">
+            {value && typeof value === 'string' && value.startsWith('data:image/') ? (
+              <div className="space-y-2">
+                <div className="border border-border rounded p-2 bg-white inline-block">
+                  <img
+                    src={value}
+                    alt="Signature"
+                    className="max-w-[400px] max-h-[200px] object-contain"
+                    style={{ imageRendering: 'auto' }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary-outline"
+                  size="sm"
+                  onClick={() => handleFieldChange(field, '')}
+                  disabled={isDisabled}
+                >
+                  Clear Signature
+                </Button>
+              </div>
+            ) : (
+              <SignaturePad
+                value={value}
+                onChange={(signature) => handleFieldChange(field, signature)}
+                disabled={isDisabled}
+                className={hasError ? 'border-error' : ''}
+              />
+            )}
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
       case 'SKETCH_PAD':
         return (
-          <div className="w-full">
-            <SketchPad
-              formId={id || ''}
-              value={value}
-              onChange={(sketchUrl) => handleFieldChange(field, sketchUrl)}
-              disabled={isDisabled}
-              className={hasError ? 'border-error' : ''}
-            />
+          <div className="w-full space-y-2">
+            {value && typeof value === 'string' && (value.startsWith('data:image/') || value.startsWith('http')) ? (
+              <div className="space-y-2">
+                <div className="border border-border rounded p-2 bg-white inline-block">
+                  <img
+                    src={value}
+                    alt="Sketch"
+                    className="max-w-[600px] max-h-[400px] object-contain cursor-pointer hover:opacity-75 transition-opacity"
+                    onClick={() => window.open(value, '_blank')}
+                    title="Click to view full size"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary-outline"
+                  size="sm"
+                  onClick={() => handleFieldChange(field, '')}
+                  disabled={isDisabled}
+                >
+                  Clear Sketch
+                </Button>
+              </div>
+            ) : (
+              <SketchPad
+                formId={id || ''}
+                value={value}
+                onChange={(sketchUrl) => handleFieldChange(field, sketchUrl)}
+                disabled={isDisabled}
+                className={hasError ? 'border-error' : ''}
+              />
+            )}
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
@@ -786,7 +946,25 @@ const FormSubmission = () => {
   };
 
   const Actions = () => (
-    <div className="flex gap-2">
+    <div className="flex gap-2 items-center">
+      {lastSaved && !isSaving && (
+        <div className="flex items-center gap-1 text-xs text-text-muted">
+          <Cloud size={14} className="text-success" />
+          <span>Saved {new Date(lastSaved).toLocaleTimeString()}</span>
+        </div>
+      )}
+      {isSaving && (
+        <div className="flex items-center gap-1 text-xs text-text-muted">
+          <Cloud size={14} className="animate-pulse" />
+          <span>Saving...</span>
+        </div>
+      )}
+      {saveError && (
+        <div className="flex items-center gap-1 text-xs text-error">
+          <CloudOff size={14} />
+          <span>Save failed</span>
+        </div>
+      )}
       {__dev__ && (
         <Button onClick={autoFillForm} variant="secondary">
           <Wand2 size={16} />
