@@ -19,6 +19,7 @@ export { CameraUpload } from "./ui/camera-upload";
 export { default as Card } from "./ui/card";
 export { default as Checkbox } from "./ui/checkbox";
 export { default as DatePicker } from "./ui/date-picker";
+export { default as TimePicker } from "./ui/time-picker";
 export { default as Input } from "./ui/input";
 export { default as Loader } from "./ui/loader";
 export { default as Modal } from "./ui/modal";

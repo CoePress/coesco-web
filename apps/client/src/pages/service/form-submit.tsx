@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2, Cloud, CloudOff } from 'lucide-react';
-import { Button, Input, Card, PageHeader, Modal, DatePicker, SignaturePad, CameraUpload, SketchPad } from '@/components';
+import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2, Cloud, CloudOff, Clock } from 'lucide-react';
+import { Button, Input, Card, PageHeader, Modal, DatePicker, TimePicker, SignaturePad, CameraUpload, SketchPad } from '@/components';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
@@ -761,6 +761,20 @@ const FormSubmit = () => {
           </div>
         );
 
+      case 'TIME_SELECTOR':
+        return (
+          <div className="w-full">
+            <TimePicker
+              value={value}
+              onChange={(time) => handleFieldChange(field, time)}
+              placeholder={`Select ${field.label.toLowerCase()}`}
+              className={hasError ? 'border-error' : ''}
+              disabled={isDisabled}
+            />
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
+          </div>
+        );
+
       case 'DROPDOWN':
         const dropdownOptions = Array.isArray(field.options) ? field.options : [];
 
@@ -936,6 +950,7 @@ const FormSubmit = () => {
         }
         return <FileText size={16} />;
       case 'DATE_SELECTOR': return <Calendar size={16} />;
+      case 'TIME_SELECTOR': return <Clock size={16} />;
       case 'DROPDOWN': return <List size={16} />;
       case 'MULTI_SELECT': return <CheckSquare size={16} />;
       case 'TEXT_AREA': return <FileText size={16} />;

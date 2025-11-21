@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Camera, PenTool, Download, Printer } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Camera, PenTool, Download, Printer, Clock } from 'lucide-react';
 import { Button, Card, PageHeader } from '@/components';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
@@ -293,6 +293,16 @@ const FormSubmission = () => {
       case 'DATE_SELECTOR':
         return <span className="text-text">{new Date(value).toLocaleDateString()}</span>;
 
+      case 'TIME_SELECTOR':
+        if (typeof value === 'string' && value.includes(':')) {
+          const [hours, minutes] = value.split(':');
+          const hour = parseInt(hours);
+          const period = hour >= 12 ? 'PM' : 'AM';
+          const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+          return <span className="text-text">{`${hour12}:${minutes} ${period}`}</span>;
+        }
+        return <span className="text-text">{value}</span>;
+
       case 'DROPDOWN':
         // If the value is a UUID, try to find the label from options
         if (field.options && typeof value === 'string' && value.match(/^[a-f0-9-]{36}$/)) {
@@ -332,6 +342,7 @@ const FormSubmission = () => {
         }
         return <FileText size={16} />;
       case 'DATE_SELECTOR': return <Calendar size={16} />;
+      case 'TIME_SELECTOR': return <Clock size={16} />;
       case 'DROPDOWN': return <List size={16} />;
       case 'MULTI_SELECT': return <CheckSquare size={16} />;
       case 'TEXT_AREA': return <FileText size={16} />;
