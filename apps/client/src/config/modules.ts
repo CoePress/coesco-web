@@ -33,7 +33,6 @@ import Design from "@/pages/sandbox/design";
 import ImageManager from "@/pages/sandbox/image-manager";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
-import FormDetail from "@/pages/service/form-detail";
 import FormSubmission from "@/pages/service/form-submission";
 import FormSubmissions from "@/pages/service/form-submissions";
 import SyncTest from "@/pages/service/sync-test";
@@ -191,7 +190,7 @@ const salesModule: Module = {
           slug: ":id",
           label: "Form Detail",
           icon: FileIcon,
-          component: FormDetail,
+          component: FormSubmissions,
         },
         {
           slug: ":id/submit",
@@ -200,13 +199,7 @@ const salesModule: Module = {
           component: FormSubmit,
         },
         {
-          slug: ":id/submissions",
-          label: "Form Submissions",
-          icon: FileCheck2Icon,
-          component: FormSubmissions,
-        },
-        {
-          slug: ":formId/submissions/:id",
+          slug: ":id/submissions/:submissionId",
           label: "Submission View",
           icon: FileTextIcon,
           component: FormSubmission,
@@ -295,7 +288,7 @@ const adminModule: Module = {
           slug: ":id",
           label: "Form Details",
           icon: FileCogIcon,
-          component: FormDetail,
+          component: FormSubmissions,
         },
         {
           slug: ":id/build",
@@ -304,13 +297,7 @@ const adminModule: Module = {
           component: FormBuilder,
         },
         {
-          slug: ":id/submissions",
-          label: "Form Submissions",
-          icon: FileCheck2Icon,
-          component: FormSubmissions,
-        },
-        {
-          slug: ":formId/submissions/:id",
+          slug: ":id/submissions/:submissionId",
           label: "Submission View",
           icon: FileTextIcon,
           component: FormSubmission,

@@ -21,11 +21,12 @@ interface FormSubmissionData {
 }
 
 const FormSubmission = () => {
-  const { id, formId } = useParams();
+  const { submissionId, id: formId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const isAdminContext = location.pathname.startsWith("/admin");
-  const basePath = isAdminContext ? "/admin/forms" : "/service/forms";
+  const isSalesContext = location.pathname.startsWith("/sales");
+  const basePath = isAdminContext ? "/admin/forms" : isSalesContext ? "/sales/forms" : "/service/forms";
   const { get } = useApi<IApiResponse<FormSubmissionData>>();
   const toast = useToast();
 
@@ -39,7 +40,7 @@ const FormSubmission = () => {
 
   useEffect(() => {
     fetchSubmission();
-  }, [id]);
+  }, [submissionId]);
 
   useEffect(() => {
     if (submission && conditionalRules.length > 0) {
@@ -48,13 +49,13 @@ const FormSubmission = () => {
   }, [submission?.answers, conditionalRules]);
 
   const fetchSubmission = async () => {
-    if (!id) return;
+    if (!submissionId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const response = await get(`/forms/${formId}/submissions/${id}`, {
+      const response = await get(`/forms/${formId}/submissions/${submissionId}`, {
         include: ['form.pages.sections.fields']
       });
 
@@ -355,7 +356,7 @@ const FormSubmission = () => {
 
   const Actions = () => (
     <div className="flex gap-2">
-      <Button onClick={() => navigate(`${basePath}/${formId}/submissions`)} variant="secondary-outline">
+      <Button onClick={() => navigate(`${basePath}/${formId}`)} variant="secondary-outline">
         <ArrowLeft size={16} />
         <span>Back</span>
       </Button>
@@ -382,8 +383,8 @@ const FormSubmission = () => {
     return (
       <div className="w-full flex-1 flex flex-col items-center justify-center">
         <div className="text-error text-lg mb-4">{error || "Submission not found"}</div>
-        <Button onClick={() => navigate(`${basePath}/${formId}/submissions`)}>
-          Back to Submissions
+        <Button onClick={() => navigate(`${basePath}/${formId}`)}>
+          Back to Form
         </Button>
       </div>
     );

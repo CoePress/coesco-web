@@ -67,11 +67,11 @@ const FormDetails = () => {
             <span>Edit Form</span>
           </Button>
           <Button
-            onClick={() => navigate(`/admin/forms/${id}/submissions`)}
+            onClick={() => navigate(`/admin/forms/${id}`)}
             variant='secondary-outline'
           >
             <FileText size={16} />
-            <span>View Submissions</span>
+            <span>View Form Details</span>
           </Button>
           {formData?.status === 'PUBLISHED' && (
             <Button
