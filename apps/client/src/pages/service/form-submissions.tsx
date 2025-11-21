@@ -1,4 +1,4 @@
-import { CalendarIcon, UserIcon, ClockIcon, FileText, Activity, User, Calendar, Edit, Plus, ArrowLeft } from "lucide-react";
+import { CalendarIcon, UserIcon, ClockIcon, FileText, Activity, User, Calendar, Edit, Plus, ArrowLeft, Eye } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 
@@ -151,28 +151,6 @@ const FormSubmissions = () => {
 
   const columns: TableColumn<any>[] = [
     {
-      key: "id",
-      header: "Submission ID",
-      className: "text-primary hover:underline font-mono text-sm",
-      render: (_, row) => (
-        <Link to={`${basePath}/${formId}/submissions/${row.id}`}>#{row.id.slice(-8).toUpperCase()}</Link>
-      ),
-    },
-    {
-      key: "form.name",
-      header: "Form Name",
-      render: (_, row) =>
-        row.form ? (
-          <Link
-            to={`${basePath}/${row.form.id}`}
-            className="hover:underline text-primary">
-            {row.form.name}
-          </Link>
-        ) : (
-          "-"
-        ),
-    },
-    {
       key: "status",
       header: "Status",
       render: (value) => {
@@ -188,12 +166,12 @@ const FormSubmissions = () => {
       },
     },
     {
-      key: "createdById",
+      key: "createdByName",
       header: "Submitted By",
-      render: (value) => (
+      render: (_, row) => (
         <div className="flex items-center gap-2">
           <UserIcon size={14} className="text-text-muted" />
-          <span className="text-sm">{value ? value.slice(-8).toUpperCase() : "System"}</span>
+          <span className="text-sm">{row.createdByName || "Unknown"}</span>
         </div>
       ),
     },
@@ -214,6 +192,22 @@ const FormSubmissions = () => {
         <div className="flex items-center gap-2">
           <ClockIcon size={14} className="text-text-muted" />
           {formatDate(value)}
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (_, row) => (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="secondary-outline"
+            onClick={() => navigate(`${basePath}/${formId}/submissions/${row.id}`)}
+          >
+            <Eye size={14} />
+            <span>View</span>
+          </Button>
         </div>
       ),
     },

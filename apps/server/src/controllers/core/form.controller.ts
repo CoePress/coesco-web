@@ -20,14 +20,14 @@ export class FormController {
     if (result.data) {
       const { employeeRepository } = await import("@/repositories");
 
-      if (result.data.createdById && result.data.createdById !== 'system') {
+      if (result.data.createdById && result.data.createdById !== "system") {
         const employee = await employeeRepository.getById(result.data.createdById);
         if (employee.data) {
           result.data.createdByName = `${employee.data.firstName} ${employee.data.lastName}`;
         }
       }
 
-      if (result.data.updatedById && result.data.updatedById !== 'system') {
+      if (result.data.updatedById && result.data.updatedById !== "system") {
         const employee = await employeeRepository.getById(result.data.updatedById);
         if (employee.data) {
           result.data.updatedByName = `${employee.data.firstName} ${employee.data.lastName}`;
@@ -109,6 +109,27 @@ export class FormController {
       filter: JSON.stringify({ ...existingFilter, formId }),
     };
     const result = await formSubmissionRepository.getAll(query);
+
+    if (result.data && Array.isArray(result.data)) {
+      const { employeeRepository } = await import("@/repositories");
+
+      for (const submission of result.data) {
+        if (submission.createdById && submission.createdById !== "system") {
+          const employee = await employeeRepository.getById(submission.createdById);
+          if (employee.data) {
+            submission.createdByName = `${employee.data.firstName} ${employee.data.lastName}`;
+          }
+        }
+
+        if (submission.updatedById && submission.updatedById !== "system") {
+          const employee = await employeeRepository.getById(submission.updatedById);
+          if (employee.data) {
+            submission.updatedByName = `${employee.data.firstName} ${employee.data.lastName}`;
+          }
+        }
+      }
+    }
+
     res.status(200).json(result);
   });
 
