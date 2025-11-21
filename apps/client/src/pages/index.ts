@@ -39,7 +39,7 @@ export { default as Timezone } from "./sandbox/timezone";
 export { default as ServiceDashboard } from "./service/dashboard";
 export { default as FormBuilder } from "./service/form-builder";
 export { default as FormDetails } from "./service/form-details";
-export { default as FormSubmission } from "./service/form-submission";
+export { default as FormSubmit } from "./service/form-submit";
 export { default as Forms } from "./service/forms";
 export { default as Chat } from "./utility/chat";
 export { default as MicrosoftCallback } from "./utility/microsoft-callback";

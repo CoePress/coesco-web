@@ -28,13 +28,13 @@ import {
   UsersIcon,
 } from "lucide-react";
 
-import { AdminDashboard, AssetManager, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, DeletedRecords, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { AdminDashboard, AssetManager, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, DeletedRecords, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmit, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import ImageManager from "@/pages/sandbox/image-manager";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
 import FormDetail from "@/pages/service/form-detail";
-import FormSubmissionView from "@/pages/service/form-submission-view";
+import FormSubmission from "@/pages/service/form-submission";
 import FormSubmissions from "@/pages/service/form-submissions";
 import SyncTest from "@/pages/service/sync-test";
 
@@ -197,7 +197,7 @@ const salesModule: Module = {
           slug: ":id/submit",
           label: "Form Submit",
           icon: FileCheck2Icon,
-          component: FormSubmission,
+          component: FormSubmit,
         },
         {
           slug: ":id/submissions",
@@ -209,7 +209,7 @@ const salesModule: Module = {
           slug: ":formId/submissions/:id",
           label: "Submission View",
           icon: FileTextIcon,
-          component: FormSubmissionView,
+          component: FormSubmission,
         },
       ],
     },
@@ -313,7 +313,7 @@ const adminModule: Module = {
           slug: ":formId/submissions/:id",
           label: "Submission View",
           icon: FileTextIcon,
-          component: FormSubmissionView,
+          component: FormSubmission,
         },
       ],
     },

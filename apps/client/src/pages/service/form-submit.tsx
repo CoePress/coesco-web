@@ -15,7 +15,7 @@ interface GPSLocation {
   timestamp: string;
 }
 
-const FormSubmission = () => {
+const FormSubmit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1159,4 +1159,4 @@ const FormSubmission = () => {
   );
 };
 
-export default FormSubmission;
+export default FormSubmit;

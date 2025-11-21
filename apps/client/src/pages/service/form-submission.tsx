@@ -20,7 +20,7 @@ interface FormSubmissionData {
   };
 }
 
-const FormSubmissionView = () => {
+const FormSubmission = () => {
   const { id, formId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -495,4 +495,4 @@ const FormSubmissionView = () => {
   );
 };
 
-export default FormSubmissionView;
+export default FormSubmission;
