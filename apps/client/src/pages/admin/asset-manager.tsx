@@ -1,7 +1,7 @@
-import { CheckCircle2, Download, Edit2, FileIcon, Loader2, Trash2, Upload, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, Download, Edit2, FileIcon, Loader2, Trash2, Upload } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Button, PageHeader, Toolbar } from "@/components";
+import { PageHeader, Toolbar, Button, Modal } from "@/components";
 import { Filter } from "@/components/feature/toolbar";
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
@@ -157,8 +157,6 @@ const AssetManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this asset?")) return;
-
     try {
       await deleteAsset(`/core/assets/${id}`);
       refresh();
@@ -285,18 +283,27 @@ const AssetManager = () => {
   ];
 
   const Actions = () => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     return (
-      <label className="px-4 py-2 bg-primary text-white rounded-lg cursor-pointer hover:opacity-90 transition-opacity flex items-center gap-2">
-        <Upload className="w-4 h-4" />
-        Upload Files
+      <>
+        <Button
+          variant="primary"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+        >
+          <Upload className="w-4 h-4" />
+          Upload Files
+        </Button>
         <input
+          ref={fileInputRef}
           type="file"
           multiple
           className="hidden"
           onChange={e => handleFileUpload(e.target.files)}
           disabled={uploading}
         />
-      </label>
+      </>
     );
   };
 
@@ -337,10 +344,7 @@ const AssetManager = () => {
             </div>
           ) : (
             <div className="h-full overflow-auto">
-              <div className="mb-3 text-sm text-text-muted px-2">
-                {assets.meta?.total || 0} asset{(assets.meta?.total || 0) !== 1 ? "s" : ""} total
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 p-2">
                 {assets.data.map(asset => (
               <div
                 key={asset.id}
@@ -364,13 +368,10 @@ const AssetManager = () => {
                 </div>
 
                 <div className="p-3">
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <h3 className="font-medium text-sm text-text truncate flex-1" title={asset.originalName}>
+                  <div className="mb-3">
+                    <h3 className="font-medium text-sm text-text truncate" title={asset.originalName}>
                       {asset.originalName}
                     </h3>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium shrink-0 ${getTypeColor(asset.type)}`}>
-                      {asset.type}
-                    </span>
                   </div>
 
                   <div className="space-y-1.5 mb-3 text-xs text-text-muted">
@@ -407,42 +408,25 @@ const AssetManager = () => {
                     </div>
                   )}
 
-                  <div className="flex gap-2 mb-3">
-                    <button
+                  <div className="flex gap-2">
+                    <Button
                       onClick={() => handleEdit(asset)}
-                      className="flex-1 px-3 py-1.5 border border-border hover:bg-background text-text rounded transition-colors flex items-center justify-center gap-1 text-xs"
-                      title="Edit"
+                      variant="secondary-outline"
+                      size="sm"
+                      className="flex-1"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => handleDownload(asset)}
-                      className="flex-1 px-3 py-1.5 border border-border hover:bg-background text-text rounded transition-colors flex items-center justify-center gap-1 text-xs"
-                      title="Download"
+                      variant="secondary-outline"
+                      size="sm"
+                      className="flex-1"
                     >
                       <Download className="w-3.5 h-3.5" />
                       Download
-                    </button>
-                    <button
-                      onClick={() => handleDelete(asset.id)}
-                      className="px-3 py-1.5 border border-error bg-error hover:opacity-90 text-white rounded transition-opacity flex items-center justify-center text-xs"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="p-2 bg-background border border-border rounded text-xs">
-                    <div className="text-text-muted mb-1 font-medium">CDN URL:</div>
-                    <a
-                      href={asset.cdnUrl || asset.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline break-all"
-                    >
-                      {asset.cdnUrl || asset.url}
-                    </a>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -453,83 +437,88 @@ const AssetManager = () => {
         </div>
       </div>
 
-      {editingAsset && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded border border-border max-w-md w-full p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-text">Edit Asset</h2>
-              <button
-                onClick={() => setEditingAsset(null)}
-                className="text-text-muted hover:text-text transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Modal
+        isOpen={!!editingAsset}
+        onClose={() => setEditingAsset(null)}
+        title="Edit Asset"
+        size="sm"
+        footer={
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                if (editingAsset) {
+                  handleDelete(editingAsset.id);
+                  setEditingAsset(null);
+                }
+              }}
+              variant="destructive"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </Button>
+            <div className="flex-1" />
+            <Button
+              onClick={() => setEditingAsset(null)}
+              variant="secondary-outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              variant="primary"
+            >
+              Save Changes
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text mb-2">
+              Display Name
+            </label>
+            <input
+              type="text"
+              value={editForm.originalName}
+              onChange={e => setEditForm(prev => ({ ...prev, originalName: e.target.value }))}
+              className="w-full px-3 py-2 border border-border rounded bg-background text-text text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+              placeholder="Enter file label..."
+            />
+            <p className="text-xs text-text-muted mt-1.5">
+              File stored as: <span className="font-medium">{editingAsset?.filename}</span>
+            </p>
+          </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-text mb-2">
-                  Display Name
-                </label>
-                <input
-                  type="text"
-                  value={editForm.originalName}
-                  onChange={e => setEditForm(prev => ({ ...prev, originalName: e.target.value }))}
-                  className="w-full px-3 py-2 border border-border rounded bg-background text-text text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                  placeholder="Enter file label..."
-                />
-                <p className="text-xs text-text-muted mt-1.5">
-                  File stored as: <span className="font-medium">{editingAsset.filename}</span>
-                </p>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-text mb-2">
+              Tags
+            </label>
+            <input
+              type="text"
+              value={editForm.tags}
+              onChange={e => setEditForm(prev => ({ ...prev, tags: e.target.value }))}
+              className="w-full px-3 py-2 border border-border rounded bg-background text-text text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+              placeholder="tag1, tag2, tag3"
+            />
+            <p className="text-xs text-text-muted mt-1.5">
+              Comma-separated tags for organization
+            </p>
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-text mb-2">
-                  Tags
-                </label>
-                <input
-                  type="text"
-                  value={editForm.tags}
-                  onChange={e => setEditForm(prev => ({ ...prev, tags: e.target.value }))}
-                  className="w-full px-3 py-2 border border-border rounded bg-background text-text text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                  placeholder="tag1, tag2, tag3"
-                />
-                <p className="text-xs text-text-muted mt-1.5">
-                  Comma-separated tags for organization
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 p-3 bg-background border border-border rounded">
-                <input
-                  type="checkbox"
-                  id="isPublic"
-                  checked={editForm.isPublic}
-                  onChange={e => setEditForm(prev => ({ ...prev, isPublic: e.target.checked }))}
-                  className="w-4 h-4 text-primary border-border rounded focus:ring-1 focus:ring-primary"
-                />
-                <label htmlFor="isPublic" className="text-sm text-text font-medium">
-                  Public Access
-                </label>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => setEditingAsset(null)}
-                  className="flex-1 px-4 py-2 border border-border rounded text-text text-sm font-medium hover:bg-background transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveEdit}
-                  className="flex-1 px-4 py-2 bg-primary text-white rounded text-sm font-medium hover:opacity-90 transition-opacity"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 p-3 bg-background border border-border rounded">
+            <input
+              type="checkbox"
+              id="isPublic"
+              checked={editForm.isPublic}
+              onChange={e => setEditForm(prev => ({ ...prev, isPublic: e.target.checked }))}
+              className="w-4 h-4 text-primary border-border rounded focus:ring-1 focus:ring-primary"
+            />
+            <label htmlFor="isPublic" className="text-sm text-text font-medium">
+              Public Access
+            </label>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };
