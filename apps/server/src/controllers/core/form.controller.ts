@@ -16,6 +16,25 @@ export class FormController {
 
   getForm = asyncWrapper(async (req: Request, res: Response) => {
     const result = await formRepository.getById(req.params.formId, req.query);
+
+    if (result.data) {
+      const { employeeRepository } = await import("@/repositories");
+
+      if (result.data.createdById && result.data.createdById !== 'system') {
+        const employee = await employeeRepository.getById(result.data.createdById);
+        if (employee.data) {
+          result.data.createdByName = `${employee.data.firstName} ${employee.data.lastName}`;
+        }
+      }
+
+      if (result.data.updatedById && result.data.updatedById !== 'system') {
+        const employee = await employeeRepository.getById(result.data.updatedById);
+        if (employee.data) {
+          result.data.updatedByName = `${employee.data.firstName} ${employee.data.lastName}`;
+        }
+      }
+    }
+
     res.status(200).json(result);
   });
 

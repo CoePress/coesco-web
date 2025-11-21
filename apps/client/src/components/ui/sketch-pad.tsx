@@ -165,17 +165,19 @@ export const SketchPad: React.FC<SketchPadProps> = ({
 
         const formData = new FormData();
         formData.append('files', blob, `sketch-${Date.now()}.png`);
-        formData.append('category', 'sketches');
+        formData.append('tags', JSON.stringify([`form:${formId}`, 'form-submission', 'sketch']));
+        formData.append('isPublic', 'false');
+        formData.append('generateThumbnail', 'false');
 
-        const response = await post(`/files/forms/${formId}/upload`, formData, {
+        const response = await post(`/assets/upload-multiple`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
 
-        if (response?.success && response.data.length > 0) {
-          const uploadedFile = response.data[0];
-          const sketchUrl = `/api/v1/files/forms/${formId}/temp/${uploadedFile.filename}`;
+        if (response?.assets && response.assets.length > 0) {
+          const uploadedAsset = response.assets[0];
+          const sketchUrl = uploadedAsset.cdnUrl || uploadedAsset.url;
           onChange(sketchUrl);
           setIsModalOpen(false);
           toast.success('Sketch saved successfully');

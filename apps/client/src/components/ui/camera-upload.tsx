@@ -51,21 +51,23 @@ export const CameraUpload: React.FC<CameraUploadProps> = ({
       filesToUpload.forEach(file => {
         formData.append('files', file);
       });
-      formData.append('category', 'images');
+      formData.append('tags', JSON.stringify([`form:${formId}`, 'form-submission']));
+      formData.append('isPublic', 'false');
+      formData.append('generateThumbnail', 'true');
 
-      const response = await post(`/files/forms/${formId}/upload`, formData, {
+      const response = await post(`/assets/upload-multiple`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      if (response?.success) {
-        const uploadedFiles: UploadedFile[] = response.data.map((file: any) => ({
-          id: file.id,
-          originalName: file.originalName,
-          filename: file.filename,
-          url: `/api/v1/files/forms/${formId}/temp/${file.filename}`, // Temp URL for preview
-          size: file.size,
+      if (response?.assets) {
+        const uploadedFiles: UploadedFile[] = response.assets.map((asset: any) => ({
+          id: asset.id,
+          originalName: asset.originalName,
+          filename: asset.filename,
+          url: asset.cdnUrl || asset.url,
+          size: asset.size,
         }));
 
         onChange([...value, ...uploadedFiles]);

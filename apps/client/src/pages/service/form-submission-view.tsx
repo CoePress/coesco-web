@@ -303,7 +303,7 @@ const FormSubmissionView = () => {
 
       case 'SKETCH_PAD':
         if (!value) return <span className="text-text-muted italic">No sketch</span>;
-        if (typeof value === 'string' && value.startsWith('/api/')) {
+        if (typeof value === 'string') {
           return (
             <div className="border border-border rounded p-2 bg-white inline-block">
               <img

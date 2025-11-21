@@ -59,8 +59,7 @@ const Forms = () => {
       header: "Form Name",
       className: "text-primary hover:underline",
       render: (_, row) => {
-        const linkPath = isAdminContext ? `${row.id}` : `${row.id}/submit`;
-        return <Link to={linkPath}>{row.name || `Form ${row.id.slice(-8)}`}</Link>;
+        return <Link to={`${row.id}`}>{row.name || `Form ${row.id.slice(-8)}`}</Link>;
       },
     },
     {

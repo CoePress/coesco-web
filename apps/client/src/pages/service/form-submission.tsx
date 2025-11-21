@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2 } from 'lucide-react';
 import { Button, Input, Card, PageHeader, Modal, DatePicker, SignaturePad, CameraUpload, SketchPad } from '@/components';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
 import { useToast } from '@/hooks/use-toast';
@@ -18,8 +18,13 @@ interface GPSLocation {
 const FormSubmission = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { get, post } = useApi<IApiResponse<any>>();
   const toast = useToast();
+
+  const isAdminContext = location.pathname.startsWith('/admin');
+  const isSalesContext = location.pathname.startsWith('/sales');
+  const basePath = isAdminContext ? '/admin/forms' : isSalesContext ? '/sales/forms' : '/service/forms';
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -513,7 +518,7 @@ const FormSubmission = () => {
       if (response?.success) {
         clearLocalStorage();
         toast.success('Form submitted successfully!');
-        navigate('/service');
+        navigate(`${basePath}/${id}`);
       } else {
         const errorMessage = response?.error || 'Failed to submit form';
         toast.error(errorMessage);
@@ -533,13 +538,13 @@ const FormSubmission = () => {
     if (hasFilledFields) {
       setShowCancelModal(true);
     } else {
-      navigate('/service/');
+      navigate(`${basePath}/${id}`);
     }
   };
 
   const confirmCancel = () => {
     setShowCancelModal(false);
-    navigate('/service/');
+    navigate(`${basePath}/${id}`);
   };
 
   const getTotalFields = () => {

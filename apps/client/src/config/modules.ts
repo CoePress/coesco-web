@@ -33,6 +33,7 @@ import Design from "@/pages/sandbox/design";
 import ImageManager from "@/pages/sandbox/image-manager";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
+import FormDetail from "@/pages/service/form-detail";
 import FormSubmissionView from "@/pages/service/form-submission-view";
 import FormSubmissions from "@/pages/service/form-submissions";
 import SyncTest from "@/pages/service/sync-test";
@@ -187,6 +188,12 @@ const salesModule: Module = {
       component: Forms,
       children: [
         {
+          slug: ":id",
+          label: "Form Detail",
+          icon: FileIcon,
+          component: FormDetail,
+        },
+        {
           slug: ":id/submit",
           label: "Form Submit",
           icon: FileCheck2Icon,
@@ -288,7 +295,7 @@ const adminModule: Module = {
           slug: ":id",
           label: "Form Details",
           icon: FileCogIcon,
-          component: FormDetails,
+          component: FormDetail,
         },
         {
           slug: ":id/build",
