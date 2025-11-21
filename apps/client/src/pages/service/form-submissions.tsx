@@ -151,6 +151,23 @@ const FormSubmissions = () => {
 
   const columns: TableColumn<any>[] = [
     {
+      key: "name",
+      header: "Submission Name",
+      render: (_, row) => (
+        <div className="flex items-center gap-2">
+          <FileText size={14} className="text-text-muted" />
+          <span className="text-sm">{row.name || `Submission ${row.id.slice(0, 8)}`}</span>
+        </div>
+      ),
+    },
+    {
+      key: "version",
+      header: "Form Version",
+      render: (_, row) => (
+        <span className="text-sm text-text-muted">{row.version || "1.0"}</span>
+      ),
+    },
+    {
       key: "status",
       header: "Status",
       render: (value) => {
@@ -181,7 +198,17 @@ const FormSubmissions = () => {
       render: (value) => (
         <div className="flex items-center gap-2">
           <CalendarIcon size={14} className="text-text-muted" />
-          {formatDate(value)}
+          <span className="text-sm">
+            {new Date(value).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            })} {new Date(value).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            })}
+          </span>
         </div>
       ),
     },
@@ -191,7 +218,17 @@ const FormSubmissions = () => {
       render: (value) => (
         <div className="flex items-center gap-2">
           <ClockIcon size={14} className="text-text-muted" />
-          {formatDate(value)}
+          <span className="text-sm">
+            {new Date(value).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            })} {new Date(value).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            })}
+          </span>
         </div>
       ),
     },
