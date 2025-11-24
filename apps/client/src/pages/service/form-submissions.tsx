@@ -1,4 +1,4 @@
-import { CalendarIcon, UserIcon, ClockIcon, FileText, Activity, User, Calendar, Edit, Plus, ArrowLeft, Eye } from "lucide-react";
+import { CalendarIcon, UserIcon, ClockIcon, FileText, Activity, User, Calendar, Edit, Plus, Eye } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 
@@ -320,14 +320,10 @@ const FormSubmissions = () => {
 
   const Actions = () => (
     <div className="flex gap-2">
-      <Button onClick={() => navigate(basePath)} variant="secondary-outline">
-        <ArrowLeft size={16} />
-        <span>Back</span>
-      </Button>
       {!isAdminContext && (
         <Button onClick={handleSubmitForm}>
           <Plus size={16} />
-          <span>Submit Form</span>
+          <span>Create Submission</span>
         </Button>
       )}
       {isAdminContext && (
@@ -353,6 +349,8 @@ const FormSubmissions = () => {
         title={form?.name || "Form Submissions"}
         description={form?.description || ""}
         actions={<Actions />}
+        goBack={true}
+        goBackTo={basePath}
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">

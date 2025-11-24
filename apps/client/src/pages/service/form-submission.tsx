@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Camera, PenTool, Download, Printer, Clock } from 'lucide-react';
+import { Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Camera, PenTool, Download, Printer, Clock } from 'lucide-react';
 import { Button, Card, PageHeader } from '@/components';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
@@ -356,10 +356,6 @@ const FormSubmission = () => {
 
   const Actions = () => (
     <div className="flex gap-2">
-      <Button onClick={() => navigate(`${basePath}/${formId}`)} variant="secondary-outline">
-        <ArrowLeft size={16} />
-        <span>Back</span>
-      </Button>
       <Button onClick={handlePrint} variant="secondary">
         <Printer size={16} />
         <span>Print</span>
@@ -396,6 +392,8 @@ const FormSubmission = () => {
         title={submission.form?.name || 'Form Submission'}
         description={`Status: ${submission.status} • Submitted: ${new Date(submission.createdAt).toLocaleString()}`}
         actions={<Actions />}
+        goBack={true}
+        goBackTo={`${basePath}/${formId}`}
       />
 
       <div className="space-y-4 p-4 max-w-4xl mx-auto w-full print:max-w-full">
