@@ -116,6 +116,9 @@ export class BaseRepository<T> {
     const meta = await this.getMetaFields({ for: "create", timestamps: true });
     const payload = { ...data, ...meta };
 
+    console.log(`[${this.modelName}] create payload:`, payload);
+    console.log(`[${this.modelName}] meta:`, meta);
+
     if (!skipValidation) {
       await this.validate(payload);
     }
@@ -224,12 +227,16 @@ export class BaseRepository<T> {
       return this._columns;
     }
 
-    const tables = deriveTableNames(this.modelName);
+    // Get actual table name from Prisma DMMF
+    const dmmf = Prisma.dmmf;
+    const model = dmmf.datamodel.models.find((m: any) => m.name.toLowerCase() === this.modelName?.toLowerCase());
+    const actualTableName = model?.dbName || deriveTableNames(this.modelName!)[0];
+
     const rows = await prisma.$queryRaw<Array<{ column_name: string }>>`
       SELECT column_name
       FROM information_schema.columns
       WHERE table_schema = 'public'
-        AND table_name IN (${Prisma.join(tables)})
+        AND table_name = ${actualTableName}
     `;
 
     const cols = rows.map(r => r.column_name);
@@ -273,9 +280,13 @@ export class BaseRepository<T> {
     const meta: Record<string, any> = {};
     const now = new Date();
 
+    console.log(`[${this.modelName}] getMetaFields:`, { ctx, columns, for: opts.for });
+
     if (opts.for === "create") {
-      if (columns.includes("createdById"))
+      if (columns.includes("createdById")) {
         meta.createdById = ctx.id;
+        console.log(`[${this.modelName}] Setting createdById:`, ctx.id);
+      }
       if (opts.timestamps && columns.includes("createdAt"))
         meta.createdAt = now;
     }

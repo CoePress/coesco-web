@@ -42,7 +42,7 @@ export const protect = asyncHandler(
     const apiKey = req.headers["x-api-key"];
     if (apiKey && API_KEYS.has(apiKey as string)) {
       req.user = { id: "system", role: "SYSTEM" };
-      contextStorage.run(
+      return contextStorage.run(
         {
           id: SYSTEM_USER_ID,
           number: "0",
@@ -52,9 +52,8 @@ export const protect = asyncHandler(
           email: "system@cpec.com",
           initials: "sys",
         },
-        () => next(),
+        async () => next(),
       );
-      return;
     }
 
     const { accessToken, refreshToken } = req.cookies;
@@ -112,7 +111,7 @@ export const protect = asyncHandler(
         initials: emp.initials ?? undefined,
       };
 
-      contextStorage.run(context, () => next());
+      return contextStorage.run(context, async () => next());
     }
     catch (error) {
       if (error instanceof UnauthorizedError) {

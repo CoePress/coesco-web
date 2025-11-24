@@ -4,11 +4,13 @@ import type { Quote, QuoteItem, QuoteTerms } from "@prisma/client";
 import type { IQueryParams } from "@/types";
 
 import { companyRepository, journeyRepository, quoteItemRepository, quoteRepository, quoteRevisionRepository, quoteTermsRepository } from "@/repositories";
+import { contextStorage } from "@/utils/context";
 import { prisma } from "@/utils/prisma";
 
 export class QuoteService {
   async createQuote(data: any) {
-    return await prisma.$transaction(async (tx) => {
+    const ctx = contextStorage.getStore();
+    return await contextStorage.run(ctx!, async () => prisma.$transaction(async (tx) => {
       const currentYear = new Date().getFullYear().toString();
       const isDraft = data.status === "DRAFT" || !data.status;
 
@@ -48,13 +50,19 @@ export class QuoteService {
       }
 
       const quoteResult = await quoteRepository.create({
-        ...data,
-        customerId,
         journeyId,
+        customerId,
         year: currentYear,
         number: quoteNumber,
+        rsmId: data.rsmId,
+        customerContactId: data.customerContactId,
+        customerAddressId: data.customerAddressId,
+        dealerId: data.dealerId,
+        dealerContactId: data.dealerContactId,
+        dealerAddressId: data.dealerAddressId,
         priority: data.priority || "C",
-        confidence: data.confidence || 0,
+        confidence: data.confidence ?? 0,
+        status: data.status || "OPEN",
         legacy: data.legacy || {},
         latestRevision: "A",
         latestRevisionStatus: data.status || "DRAFT",
@@ -108,7 +116,7 @@ export class QuoteService {
           totalAmount: revisionResult.data.totalAmount || 0,
         },
       };
-    });
+    }));
   }
 
   async createQuoteRevision(quoteId: string, data: any) {
@@ -580,31 +588,37 @@ export class QuoteService {
   async getNextQuoteNumber(isDraft: boolean = false): Promise<string> {
     const currentYear = new Date().getFullYear().toString();
 
+    // Get ALL quotes for the current year (including drafts) to find the highest number
     const quotesResult = await quoteRepository.getAll({
       filter: {
         year: currentYear,
-        number: {
-          not: {
-            startsWith: "DRAFT-",
-          },
-        },
       } as any,
-      sort: "number",
-      order: "desc",
-      limit: 1,
     });
+
+    if (!quotesResult.success) {
+      throw new Error("Failed to fetch quotes for number generation");
+    }
 
     let nextNumber: string;
 
-    if (!quotesResult.success || !quotesResult.data?.length || !quotesResult.data[0].number) {
-      nextNumber = `${currentYear}0001`;
+    if (!quotesResult.data?.length) {
+      // No quotes exist for this year - start at 1
+      nextNumber = "00001";
     }
     else {
-      const lastQuote = quotesResult.data[0];
-      const currentNumber = lastQuote.number.replace(/^DRAFT-/, "");
-      const numericPart = Number.parseInt(currentNumber.slice(-4));
-      const nextNumericPart = (numericPart + 1).toString().padStart(4, "0");
-      nextNumber = currentYear + nextNumericPart;
+      // Extract numeric parts and find the highest
+      const numbers = quotesResult.data.map((q: any) => {
+        let num = q.number.replace(/^DRAFT-/, "");
+
+        // Handle old format: if number starts with year (e.g., "20250001"), extract just the sequence
+        if (num.startsWith(currentYear)) {
+          num = num.substring(currentYear.length);
+        }
+
+        return Number.parseInt(num) || 0;
+      });
+      const maxNumber = Math.max(...numbers);
+      nextNumber = (maxNumber + 1).toString().padStart(5, "0");
     }
 
     return isDraft ? `DRAFT-${nextNumber}` : nextNumber;
