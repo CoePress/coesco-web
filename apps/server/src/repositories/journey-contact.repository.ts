@@ -18,8 +18,6 @@ export class JourneyContactRepository extends BaseRepository<JourneyContact> {
       throw new BadRequestError("journeyId is required");
     if (!entity.contactId)
       throw new BadRequestError("contactId is required");
-    if (entity.isPrimary === undefined || entity.isPrimary === null)
-      throw new BadRequestError("isPrimary is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

@@ -18,8 +18,6 @@ export class AddressRepository extends BaseRepository<Address> {
       throw new BadRequestError("companyId is required");
     if (!entity.addressLine1)
       throw new BadRequestError("addressLine1 is required");
-    if (entity.isPrimary === undefined || entity.isPrimary === null)
-      throw new BadRequestError("isPrimary is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

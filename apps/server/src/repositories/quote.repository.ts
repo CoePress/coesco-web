@@ -18,16 +18,10 @@ export class QuoteRepository extends BaseRepository<Quote> {
       throw new BadRequestError("year is required");
     if (!entity.number)
       throw new BadRequestError("number is required");
-    if (!entity.priority)
-      throw new BadRequestError("priority is required");
-    if (!entity.confidence)
-      throw new BadRequestError("confidence is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)
       throw new BadRequestError("updatedById is required");
-    if (!entity.legacy)
-      throw new BadRequestError("legacy is required");
   }
 
   protected getTransforms(): Record<string, string> {

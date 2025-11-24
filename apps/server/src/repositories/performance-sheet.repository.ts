@@ -16,8 +16,6 @@ export class PerformanceSheetRepository extends BaseRepository<PerformanceSheet>
   protected async validate(entity: PerformanceSheetAttributes): Promise<void> {
     if (!entity.versionId)
       throw new BadRequestError("versionId is required");
-    if (!entity.data)
-      throw new BadRequestError("data is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

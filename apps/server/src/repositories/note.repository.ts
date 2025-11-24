@@ -18,8 +18,6 @@ export class NoteRepository extends BaseRepository<Note> {
       throw new BadRequestError("entityId is required");
     if (!entity.entityType)
       throw new BadRequestError("entityType is required");
-    if (!entity.type)
-      throw new BadRequestError("type is required");
     if (!entity.body)
       throw new BadRequestError("body is required");
   }

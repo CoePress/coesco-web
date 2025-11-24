@@ -18,10 +18,6 @@ export class ProductClassOptionCategoryRepository extends BaseRepository<Product
       throw new BadRequestError("productClassId is required");
     if (!entity.optionCategoryId)
       throw new BadRequestError("optionCategoryId is required");
-    if (!entity.displayOrder)
-      throw new BadRequestError("displayOrder is required");
-    if (entity.isRequired === undefined || entity.isRequired === null)
-      throw new BadRequestError("isRequired is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

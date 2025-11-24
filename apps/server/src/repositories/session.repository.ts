@@ -18,15 +18,7 @@ export class SessionRepository extends BaseRepository<Session> {
       throw new BadRequestError("userId is required");
     if (!entity.token)
       throw new BadRequestError("token is required");
-    if (!entity.loginAt)
-      throw new BadRequestError("loginAt is required");
-    if (!entity.lastActivityAt)
-      throw new BadRequestError("lastActivityAt is required");
     if (!entity.expiresAt)
       throw new BadRequestError("expiresAt is required");
-    if (entity.isActive === undefined || entity.isActive === null)
-      throw new BadRequestError("isActive is required");
-    if (entity.isSuspicious === undefined || entity.isSuspicious === null)
-      throw new BadRequestError("isSuspicious is required");
   }
 }

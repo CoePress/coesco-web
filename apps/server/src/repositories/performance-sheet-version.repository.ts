@@ -14,8 +14,6 @@ export class PerformanceSheetVersionRepository extends BaseRepository<Performanc
   protected modelName = "performanceSheetVersion";
 
   protected async validate(entity: PerformanceSheetVersionAttributes): Promise<void> {
-    if (!entity.sections)
-      throw new BadRequestError("sections is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

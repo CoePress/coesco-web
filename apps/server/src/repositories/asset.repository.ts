@@ -24,13 +24,9 @@ export class AssetRepository extends BaseRepository<Asset> {
       throw new BadRequestError("mimeType is required");
     if (!entity.size)
       throw new BadRequestError("size is required");
-    if (!entity.storageProvider)
-      throw new BadRequestError("storageProvider is required");
     if (!entity.url)
       throw new BadRequestError("url is required");
     if (!entity.tags)
       throw new BadRequestError("tags is required");
-    if (entity.isPublic === undefined || entity.isPublic === null)
-      throw new BadRequestError("isPublic is required");
   }
 }

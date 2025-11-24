@@ -16,10 +16,6 @@ export class OptionRuleRepository extends BaseRepository<OptionRule> {
   protected async validate(entity: OptionRuleAttributes): Promise<void> {
     if (!entity.name)
       throw new BadRequestError("name is required");
-    if (!entity.priority)
-      throw new BadRequestError("priority is required");
-    if (entity.isActive === undefined || entity.isActive === null)
-      throw new BadRequestError("isActive is required");
     if (!entity.condition)
       throw new BadRequestError("condition is required");
     if (!entity.createdById)

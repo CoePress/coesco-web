@@ -14,12 +14,6 @@ export class ItemRepository extends BaseRepository<Item> {
   protected modelName = "item";
 
   protected async validate(entity: ItemAttributes): Promise<void> {
-    if (!entity.specifications)
-      throw new BadRequestError("specifications is required");
-    if (!entity.unitPrice)
-      throw new BadRequestError("unitPrice is required");
-    if (entity.isActive === undefined || entity.isActive === null)
-      throw new BadRequestError("isActive is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

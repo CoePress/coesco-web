@@ -18,8 +18,6 @@ export class CompanyRepository extends BaseRepository<Company> {
       throw new BadRequestError("name is required");
     if (!entity.tags)
       throw new BadRequestError("tags is required");
-    if (!entity.legacy)
-      throw new BadRequestError("legacy is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

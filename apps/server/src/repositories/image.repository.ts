@@ -16,7 +16,5 @@ export class ImageRepository extends BaseRepository<Image> {
   protected async validate(entity: ImageAttributes): Promise<void> {
     if (!entity.path)
       throw new BadRequestError("path is required");
-    if (!entity.uploadedAt)
-      throw new BadRequestError("uploadedAt is required");
   }
 }

@@ -16,8 +16,6 @@ export class ChatRepository extends BaseRepository<Chat> {
   protected async validate(entity: ChatAttributes): Promise<void> {
     if (!entity.employeeId)
       throw new BadRequestError("employeeId is required");
-    if (!entity.name)
-      throw new BadRequestError("name is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

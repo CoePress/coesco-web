@@ -18,16 +18,6 @@ export class NtfyDeviceRepository extends BaseRepository<NtfyDevice> {
       throw new BadRequestError("name is required");
     if (!entity.host)
       throw new BadRequestError("host is required");
-    if (!entity.pingIntervalSec)
-      throw new BadRequestError("pingIntervalSec is required");
-    if (!entity.maxMissedPings)
-      throw new BadRequestError("maxMissedPings is required");
-    if (!entity.currentMissedPings)
-      throw new BadRequestError("currentMissedPings is required");
-    if (entity.enabled === undefined || entity.enabled === null)
-      throw new BadRequestError("enabled is required");
-    if (entity.isDown === undefined || entity.isDown === null)
-      throw new BadRequestError("isDown is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

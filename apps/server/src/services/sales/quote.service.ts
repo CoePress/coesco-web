@@ -3,7 +3,7 @@ import type { Quote, QuoteItem, QuoteTerms } from "@prisma/client";
 
 import type { IQueryParams } from "@/types";
 
-import { quoteItemRepository, quoteRepository, quoteRevisionRepository, quoteTermsRepository } from "@/repositories";
+import { companyRepository, journeyRepository, quoteItemRepository, quoteRepository, quoteRevisionRepository, quoteTermsRepository } from "@/repositories";
 import { prisma } from "@/utils/prisma";
 
 export class QuoteService {
@@ -14,8 +14,43 @@ export class QuoteService {
 
       const quoteNumber = await this.getNextQuoteNumber(isDraft);
 
+      let customerId = data.customerId;
+      let journeyId = data.journeyId;
+
+      if (data.customerName) {
+        const customerResult = await companyRepository.create({
+          name: data.customerName,
+          type: "CUSTOMER",
+        }, tx);
+
+        if (!customerResult.success) {
+          throw new Error("Failed to create customer");
+        }
+
+        customerId = customerResult.data.id;
+      }
+
+      if (data.journeyName) {
+        if (!customerId) {
+          throw new Error("Customer is required to create a journey");
+        }
+
+        const journeyResult = await journeyRepository.create({
+          name: data.journeyName,
+          customerId,
+        }, tx);
+
+        if (!journeyResult.success) {
+          throw new Error("Failed to create journey");
+        }
+
+        journeyId = journeyResult.data.id;
+      }
+
       const quoteResult = await quoteRepository.create({
         ...data,
+        customerId,
+        journeyId,
         year: currentYear,
         number: quoteNumber,
         priority: data.priority || "C",

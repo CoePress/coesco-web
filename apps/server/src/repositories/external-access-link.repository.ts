@@ -16,7 +16,5 @@ export class ExternalAccessLinkRepository extends BaseRepository<ExternalAccessL
   protected async validate(entity: ExternalAccessLinkAttributes): Promise<void> {
     if (!entity.token)
       throw new BadRequestError("token is required");
-    if (!entity.useCount)
-      throw new BadRequestError("useCount is required");
   }
 }

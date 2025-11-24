@@ -9,8 +9,10 @@ import { HTTP_STATUS } from "@/utils/constants";
 
 const CreateQuoteSchema = z.object({
   journeyId: z.string().uuid("Invalid journey ID").optional(),
-  year: z.string().min(1, "Year is required"),
-  number: z.string().min(1, "Number is required"),
+  journeyName: z.string().optional(),
+  customerName: z.string().optional(),
+  year: z.string().min(1, "Year is required").optional(),
+  number: z.string().min(1, "Number is required").optional(),
   rsmId: z.string().uuid("Invalid RSM ID").optional(),
   customerId: z.string().uuid("Invalid customer ID").optional(),
   customerContactId: z.string().uuid("Invalid customer contact ID").optional(),

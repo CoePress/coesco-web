@@ -16,7 +16,5 @@ export class UserRepository extends BaseRepository<User> {
   protected async validate(entity: UserAttributes): Promise<void> {
     if (!entity.username)
       throw new BadRequestError("username is required");
-    if (entity.isActive === undefined || entity.isActive === null)
-      throw new BadRequestError("isActive is required");
   }
 }

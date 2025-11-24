@@ -205,6 +205,7 @@ async function generateValidations(model: any) {
       field.kind === "scalar"
       && field.isRequired
       && !field.isId
+      && !field.hasDefaultValue
       && field.name !== "createdAt"
       && field.name !== "updatedAt"
     ) {

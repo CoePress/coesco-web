@@ -16,14 +16,10 @@ export class QuoteItemRepository extends BaseRepository<QuoteItem> {
   protected async validate(entity: QuoteItemAttributes): Promise<void> {
     if (!entity.quoteRevisionId)
       throw new BadRequestError("quoteRevisionId is required");
-    if (!entity.quantity)
-      throw new BadRequestError("quantity is required");
     if (!entity.unitPrice)
       throw new BadRequestError("unitPrice is required");
     if (!entity.lineNumber)
       throw new BadRequestError("lineNumber is required");
-    if (entity.isCustom === undefined || entity.isCustom === null)
-      throw new BadRequestError("isCustom is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

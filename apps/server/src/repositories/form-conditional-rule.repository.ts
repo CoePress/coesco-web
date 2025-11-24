@@ -20,10 +20,6 @@ export class FormConditionalRuleRepository extends BaseRepository<FormConditiona
       throw new BadRequestError("targetId is required");
     if (!entity.conditions)
       throw new BadRequestError("conditions is required");
-    if (!entity.priority)
-      throw new BadRequestError("priority is required");
-    if (entity.isActive === undefined || entity.isActive === null)
-      throw new BadRequestError("isActive is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

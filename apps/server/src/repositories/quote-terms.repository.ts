@@ -16,7 +16,5 @@ export class QuoteTermsRepository extends BaseRepository<QuoteTerms> {
   protected async validate(entity: QuoteTermsAttributes): Promise<void> {
     if (!entity.quoteRevisionId)
       throw new BadRequestError("quoteRevisionId is required");
-    if (!entity.netDays)
-      throw new BadRequestError("netDays is required");
   }
 }

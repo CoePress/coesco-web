@@ -16,8 +16,6 @@ export class QuoteRevisionRepository extends BaseRepository<QuoteRevision> {
   protected async validate(entity: QuoteRevisionAttributes): Promise<void> {
     if (!entity.quoteId)
       throw new BadRequestError("quoteId is required");
-    if (!entity.revision)
-      throw new BadRequestError("revision is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

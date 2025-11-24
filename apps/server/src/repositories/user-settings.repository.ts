@@ -16,7 +16,5 @@ export class UserSettingsRepository extends BaseRepository<UserSettings> {
   protected async validate(entity: UserSettingsAttributes): Promise<void> {
     if (!entity.userId)
       throw new BadRequestError("userId is required");
-    if (!entity.settings)
-      throw new BadRequestError("settings is required");
   }
 }
