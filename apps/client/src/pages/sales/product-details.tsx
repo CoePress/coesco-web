@@ -1,48 +1,55 @@
 import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Card, StatusBadge } from "@/components";
 import { formatCurrency } from "@/utils";
 import PageHeader from "@/components/layout/page-header";
 import { PackageIcon, DollarSignIcon, AlertCircleIcon, CheckCircleIcon } from "lucide-react";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 
 const ProductDetails = () => {
   const { id } = useParams();
+  const { get } = useApi<IApiResponse<any>>();
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const product = {
-    id: id || "1",
-    name: "Industrial Hydraulic Press 2000T",
-    sku: "IHP-2000-XL",
-    category: "Machinery",
-    status: "Active",
-    unitPrice: 85000,
-    cost: 52000,
-    stock: 3,
-    leadTime: "8-12 weeks",
-    brand: "PowerPress Industries",
-    model: "PP-2000XL",
-    weight: "15,000 lbs",
-    dimensions: "12' x 8' x 14'",
-    warranty: "2 Years",
-    supplier: "PowerPress Manufacturing Co.",
-    description: "Heavy-duty industrial hydraulic press designed for high-volume metal forming operations. Features precision controls, safety systems, and robust construction for demanding manufacturing environments. Ideal for automotive, aerospace, and general manufacturing applications requiring consistent, high-force pressing operations.",
-    specifications: {
-      "Maximum Force": "2000 Tons",
-      "Working Height": "48 inches",
-      "Daylight Opening": "60 inches", 
-      "Bed Size": "72 x 48 inches",
-      "Ram Speed": "15 ipm approach, 3 ipm pressing",
-      "Motor Power": "75 HP",
-      "Hydraulic Pressure": "3000 PSI",
-      "Control System": "PLC with HMI touchscreen",
-      "Safety Features": "Light curtains, emergency stops, two-hand operation"
-    },
-    salesNotes: "• Key selling point: Industry-leading 2000-ton capacity in compact footprint\n• Highlight: Advanced PLC control system reduces setup time by 40%\n• Competitive advantage: Best-in-class safety features exceed OSHA requirements\n• Common question: 'What's the power requirement?' - Answer: 480V, 3-phase, 100 amp service\n• Financing available: 0% for 12 months or extended terms up to 84 months\n• Installation included within 500 miles of our facility"
-  };
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+
+      setLoading(true);
+      const response = await get(`/catalog/items/${id}`);
+
+      if (response?.success && response.data) {
+        setProduct(response.data);
+      }
+      setLoading(false);
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center">
+        <div className="text-lg">Loading product details...</div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center">
+        <div className="text-lg text-error">Product not found</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title={product.name || "Product Details"}
-        description={`SKU: ${product.sku || "N/A"} • ${product.category || "No Category"}`}
+        description={`SKU: ${product.modelNumber || "N/A"} • ${product.productClass?.name || "No Category"}`}
         goBack
       />
 
@@ -53,7 +60,7 @@ const ProductDetails = () => {
               <div className="aspect-square bg-surface rounded-lg flex items-center justify-center border border-border">
                 <PackageIcon size={64} className="text-text-muted" />
               </div>
-              
+
               <div className="grid grid-cols-5 gap-1">
                 {Array.from({ length: 5 }, (_, i) => (
                   <div
@@ -78,33 +85,33 @@ const ProductDetails = () => {
                     </div>
                     <div>
                       <div className="text-xs text-text-muted">SKU</div>
-                      <div className="text-sm font-mono text-text">{product.sku || "-"}</div>
+                      <div className="text-sm font-mono text-text">{product.modelNumber || "-"}</div>
                     </div>
                     <div>
                       <div className="text-xs text-text-muted">Category</div>
-                      <div className="text-sm text-text">{product.category || "-"}</div>
+                      <div className="text-sm text-text">{product.productClass?.name || "-"}</div>
                     </div>
                     <div>
                       <div className="text-xs text-text-muted">Status</div>
-                      <StatusBadge label={product.status || "Active"} />
+                      <StatusBadge label={product.legacy?.status || "Active"} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div>
                       <div className="text-xs text-text-muted">Brand</div>
-                      <div className="text-sm text-text">{product.brand || "-"}</div>
+                      <div className="text-sm text-text">{product.legacy?.brand || "-"}</div>
                     </div>
                     <div>
                       <div className="text-xs text-text-muted">Model</div>
-                      <div className="text-sm text-text">{product.model || "-"}</div>
+                      <div className="text-sm text-text">{product.modelNumber || "-"}</div>
                     </div>
                     <div>
                       <div className="text-xs text-text-muted">Supplier</div>
-                      <div className="text-sm text-text">{product.supplier || "-"}</div>
+                      <div className="text-sm text-text">{product.legacy?.supplier || "-"}</div>
                     </div>
                     <div>
                       <div className="text-xs text-text-muted">Warranty</div>
-                      <div className="text-sm text-text">{product.warranty || "1 Year"}</div>
+                      <div className="text-sm text-text">{product.legacy?.warranty || "1 Year"}</div>
                     </div>
                   </div>
                 </div>
@@ -119,20 +126,20 @@ const ProductDetails = () => {
                   <div>
                     <div className="text-xs text-text-muted">Unit Price</div>
                     <div className="text-lg font-bold text-primary">
-                      {formatCurrency(product.unitPrice || 0)}
+                      {formatCurrency(product.legacy?.unitPrice || 0)}
                     </div>
                   </div>
                   <div>
                     <div className="text-xs text-text-muted">Cost</div>
                     <div className="text-sm text-text">
-                      {formatCurrency(product.cost || 0)}
+                      {formatCurrency(product.legacy?.cost || 0)}
                     </div>
                   </div>
                   <div>
                     <div className="text-xs text-text-muted">Margin</div>
                     <div className="text-sm text-text">
-                      {product.unitPrice && product.cost 
-                        ? `${(((product.unitPrice - product.cost) / product.unitPrice) * 100).toFixed(1)}%`
+                      {product.legacy?.unitPrice && product.legacy?.cost
+                        ? `${(((product.legacy.unitPrice - product.legacy.cost) / product.legacy.unitPrice) * 100).toFixed(1)}%`
                         : "-"}
                     </div>
                   </div>
@@ -141,21 +148,21 @@ const ProductDetails = () => {
                   <div>
                     <div className="text-xs text-text-muted">Stock Level</div>
                     <div className={`text-sm font-medium flex items-center gap-1 ${
-                      (product.stock || 0) < 10 ? 'text-error' : 
-                      (product.stock || 0) < 50 ? 'text-warning' : 'text-success'
+                      (product.legacy?.stock || 0) < 10 ? 'text-error' :
+                      (product.legacy?.stock || 0) < 50 ? 'text-warning' : 'text-success'
                     }`}>
-                      {(product.stock || 0) < 10 ? (
+                      {(product.legacy?.stock || 0) < 10 ? (
                         <AlertCircleIcon size={16} />
                       ) : (
                         <CheckCircleIcon size={16} />
                       )}
-                      {product.stock || 0} units
+                      {product.legacy?.stock || 0} units
                     </div>
                   </div>
                   <div>
                     <div className="text-xs text-text-muted">Lead Time</div>
                     <div className="text-sm text-text">
-                      {product.leadTime || "2-3 weeks"}
+                      {product.legacy?.leadTime || "2-3 weeks"}
                     </div>
                   </div>
                 </div>
@@ -173,8 +180,8 @@ const ProductDetails = () => {
                   Specifications
                 </div>
                 <div className="space-y-2">
-                  {product.specifications ? (
-                    Object.entries(product.specifications).map(([key, value]) => (
+                  {product.legacy?.specifications ? (
+                    Object.entries(product.legacy.specifications).map(([key, value]) => (
                       <div key={key} className="flex justify-between text-sm">
                         <span className="text-text-muted capitalize">{key}:</span>
                         <span className="text-text">{value as string}</span>
@@ -194,7 +201,7 @@ const ProductDetails = () => {
                 </div>
                 <div className="bg-surface p-3 rounded border border-border">
                   <div className="text-sm text-text whitespace-pre-line">
-                    {product.salesNotes || "• Highlight key selling points here\n• Mention any special features or benefits\n• Include competitive advantages\n• Note any common customer questions or concerns"}
+                    {product.legacy?.salesNotes || "• Highlight key selling points here\n• Mention any special features or benefits\n• Include competitive advantages\n• Note any common customer questions or concerns"}
                   </div>
                 </div>
               </div>
