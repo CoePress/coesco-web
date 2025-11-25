@@ -71,7 +71,7 @@ export class TeamsService {
 
       if (options.mentionEmails && options.mentionEmails.length > 0) {
         const mentionTags = options.mentionEmails
-          .map((email) => `<at>${email}</at>`)
+          .map(email => `<at>${email}</at>`)
           .join(" ");
 
         messageText = `${mentionTags}\n\n${messageText}`;

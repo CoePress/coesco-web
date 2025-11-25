@@ -84,8 +84,8 @@ export class GraphClientService {
           id: c.id,
           type: c.chatType,
           memberCount: c.members?.length,
-          memberIds: c.members?.map((m: any) => m.userId)
-        }))
+          memberIds: c.members?.map((m: any) => m.userId),
+        })),
       });
 
       const selfChat = chats.value.find((chat: any) => {
@@ -99,7 +99,7 @@ export class GraphClientService {
           hasMembers,
           memberCount: chat.members?.length,
           allMembersAreMe,
-          memberIds: chat.members?.map((m: any) => m.userId)
+          memberIds: chat.members?.map((m: any) => m.userId),
         });
 
         return isOneOnOne && hasMembers && (chat.members.length === 1 || allMembersAreMe);
@@ -189,7 +189,8 @@ export class GraphClientService {
       logger.info("Sending chat message...");
       await this.sendChatMessage(employeeId, chatId, message);
       logger.info("Message sent successfully");
-    } catch (error: any) {
+    }
+    catch (error: any) {
       logger.error("sendDirectMessage failed", {
         employeeId,
         recipientEmail,

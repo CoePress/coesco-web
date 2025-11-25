@@ -25,6 +25,18 @@ interface EditFormData {
   profileUrl: string;
 }
 
+const getESTDateTime = (): string => {
+  const now = new Date();
+  const estOffset = -5 * 60 * 60 * 1000;
+  const estTime = new Date(now.getTime() + estOffset);
+  return estTime.toISOString().slice(0, 16);
+};
+
+const parseESTDateTime = (dateTimeLocal: string): string => {
+  const estDate = new Date(dateTimeLocal + ':00.000-05:00');
+  return estDate.toISOString();
+};
+
 interface Image {
   id: number;
   url: string;
@@ -45,9 +57,17 @@ const ContactDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"details" | "journeys">("details");
+  const [activeTab, setActiveTab] = useState<"details" | "journeys" | "activity">("details");
   const [journeysData, setJourneysData] = useState<any[]>([]);
   const [journeysLoading, setJourneysLoading] = useState(false);
+
+  const [activitiesData, setActivitiesData] = useState<any[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [isAddingActivity, setIsAddingActivity] = useState(false);
+  const [newActivityData, setNewActivityData] = useState<any>({});
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [editingActivityData, setEditingActivityData] = useState<any>({});
+  const [activityToDelete, setActivityToDelete] = useState<any>(null);
 
   const [contactNotes, setContactNotes] = useState<any[]>([]);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
@@ -442,6 +462,34 @@ const ContactDetails = () => {
     }
   };
 
+  const fetchActivities = async () => {
+    if (!contactId) return;
+
+    setActivitiesLoading(true);
+    try {
+      const activitiesResponse = await api.get('/sales/activities', {
+        filter: JSON.stringify({
+          entityType: 'contact',
+          entityId: contactId
+        }),
+        sort: 'timestamp',
+        order: 'desc',
+        limit: 1000
+      });
+
+      const activities = activitiesResponse?.success && Array.isArray(activitiesResponse.data)
+        ? activitiesResponse.data
+        : [];
+
+      setActivitiesData(activities);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      setActivitiesData([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchContactData();
   }, [contactId]);
@@ -471,6 +519,12 @@ const ContactDetails = () => {
   useEffect(() => {
     if (activeTab === 'journeys' && journeysData.length === 0 && !journeysLoading) {
       fetchJourneys();
+    }
+  }, [activeTab, contactId]);
+
+  useEffect(() => {
+    if (activeTab === 'activity' && activitiesData.length === 0 && !activitiesLoading) {
+      fetchActivities();
     }
   }, [activeTab, contactId]);
 
@@ -836,6 +890,97 @@ const ContactDetails = () => {
     }
   };
 
+  const handleCreateActivity = async () => {
+    if (!contactId || !newActivityData.activityType || !newActivityData.sentiment) return;
+
+    setIsSaving(true);
+    try {
+      const activityPayload = {
+        activityType: newActivityData.activityType,
+        sentiment: newActivityData.sentiment,
+        timestamp: newActivityData.timestamp ? parseESTDateTime(newActivityData.timestamp) : parseESTDateTime(getESTDateTime()),
+        description: newActivityData.description || null,
+        notes: newActivityData.notes || null,
+        entityType: 'contact',
+        entityId: contactId,
+        createdBy: newActivityData.createdBy || `${employee?.firstName} ${employee?.lastName}` || null,
+      };
+
+      const result = await api.post('/sales/activities', activityPayload);
+
+      if (result?.success && result.data) {
+        setActivitiesData(prev => [result.data, ...prev]);
+        setNewActivityData({});
+        success('Activity created successfully');
+      } else {
+        toastError('Failed to create activity');
+      }
+    } catch (error: any) {
+      console.error('Error creating activity:', error);
+      toastError(error.response?.data?.message || 'Failed to create activity');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdateActivity = async () => {
+    if (!editingActivityId || !editingActivityData.activityType || !editingActivityData.sentiment) return;
+
+    setIsSaving(true);
+    try {
+      const updatePayload = {
+        activityType: editingActivityData.activityType,
+        sentiment: editingActivityData.sentiment,
+        timestamp: editingActivityData.timestamp && editingActivityData.timestamp.length === 16
+          ? parseESTDateTime(editingActivityData.timestamp)
+          : editingActivityData.timestamp,
+        description: editingActivityData.description || null,
+        notes: editingActivityData.notes || null,
+        createdBy: editingActivityData.createdBy || null,
+      };
+
+      const result = await api.patch(`/sales/activities/${editingActivityId}`, updatePayload);
+
+      if (result?.success && result.data) {
+        setActivitiesData(prev => prev.map(activity =>
+          activity.id === editingActivityId ? result.data : activity
+        ));
+        setEditingActivityId(null);
+        setEditingActivityData({});
+        success('Activity updated successfully');
+      } else {
+        toastError('Failed to update activity');
+      }
+    } catch (error: any) {
+      console.error('Error updating activity:', error);
+      toastError(error.response?.data?.message || 'Failed to update activity');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteActivity = async () => {
+    if (!activityToDelete) return;
+
+    setIsSaving(true);
+    try {
+      const result = await api.delete(`/sales/activities/${activityToDelete.id}`);
+
+      if (result !== null) {
+        setActivitiesData(prev => prev.filter(activity => activity.id !== activityToDelete.id));
+        setActivityToDelete(null);
+        success('Activity deleted successfully');
+      } else {
+        toastError('Failed to delete activity');
+      }
+    } catch (error: any) {
+      console.error('Error deleting activity:', error);
+      toastError(error.response?.data?.message || 'Failed to delete activity');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const addressEditor = {
     isEditing: addressEditingId !== null,
     editingId: addressEditingId,
@@ -1139,6 +1284,16 @@ const ContactDetails = () => {
             }`}
           >
             Journeys
+          </button>
+          <button
+            onClick={() => setActiveTab("activity")}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === "activity"
+                ? "border-primary text-primary"
+                : "border-transparent text-text-muted hover:text-text"
+            }`}
+          >
+            Activity
           </button>
         </div>
       </div>
@@ -2002,6 +2157,278 @@ const ContactDetails = () => {
         </div>
       )}
 
+      {activeTab === "activity" && (
+        <div className="p-4 flex flex-1 flex-col gap-6">
+          <div className="bg-foreground rounded shadow-sm border p-4">
+            <h3 className="text-lg font-semibold text-text mb-4">Add New Activity</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Activity Type *</label>
+                <select
+                  value={newActivityData.activityType || ''}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, activityType: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                >
+                  <option value="">Select Type</option>
+                  <option value="Call">Call</option>
+                  <option value="Email">Email</option>
+                  <option value="Meeting">Meeting</option>
+                  <option value="TextChat">Text/Chat</option>
+                  <option value="QuoteSent">Quote Sent</option>
+                  <option value="QuotePresentation">Quote Presentation</option>
+                  <option value="Event">Event</option>
+                  <option value="FormSubmission">Form Submission</option>
+                  <option value="WebsiteActivity">Website Activity</option>
+                  <option value="ContentDownloaded">Content Downloaded</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Sentiment *</label>
+                <select
+                  value={newActivityData.sentiment || ''}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, sentiment: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                >
+                  <option value="">Select Sentiment</option>
+                  <option value="Positive">Positive</option>
+                  <option value="Neutral">Neutral</option>
+                  <option value="Negative">Negative</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Timestamp</label>
+                <input
+                  type="datetime-local"
+                  value={newActivityData.timestamp || getESTDateTime()}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, timestamp: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Created By</label>
+                <input
+                  type="text"
+                  value={`${employee?.firstName || ''} ${employee?.lastName || ''}`.trim()}
+                  disabled
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-surface text-text-muted cursor-not-allowed"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-text-muted mb-1">Description</label>
+                <textarea
+                  value={newActivityData.description || ''}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, description: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                  rows={2}
+                  placeholder="Brief description of the activity..."
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-text-muted mb-1">Notes</label>
+                <textarea
+                  value={newActivityData.notes || ''}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, notes: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                  rows={3}
+                  placeholder="Additional notes..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleCreateActivity}
+                disabled={!newActivityData.activityType || !newActivityData.sentiment || isSaving}
+              >
+                {isSaving ? 'Adding...' : 'Add Activity'}
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-foreground rounded shadow-sm border p-4">
+            <h3 className="text-lg font-semibold text-text mb-4">Activity History</h3>
+
+            {activitiesLoading ? (
+              <div className="flex justify-center items-center h-64">Loading activities...</div>
+            ) : (
+              <div className="space-y-4">
+                {activitiesData.map((activity) => (
+                  <div key={activity.id} className="p-4 bg-surface border border-border rounded">
+                    {editingActivityId === activity.id ? (
+                      <div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">Activity Type *</label>
+                            <select
+                              value={editingActivityData.activityType || ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, activityType: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                            >
+                              <option value="">Select Type</option>
+                              <option value="Call">Call</option>
+                              <option value="Email">Email</option>
+                              <option value="Meeting">Meeting</option>
+                              <option value="TextChat">Text/Chat</option>
+                              <option value="QuoteSent">Quote Sent</option>
+                              <option value="QuotePresentation">Quote Presentation</option>
+                              <option value="Event">Event</option>
+                              <option value="FormSubmission">Form Submission</option>
+                              <option value="WebsiteActivity">Website Activity</option>
+                              <option value="ContentDownloaded">Content Downloaded</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">Sentiment *</label>
+                            <select
+                              value={editingActivityData.sentiment || ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, sentiment: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                            >
+                              <option value="">Select Sentiment</option>
+                              <option value="Positive">Positive</option>
+                              <option value="Neutral">Neutral</option>
+                              <option value="Negative">Negative</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">Timestamp</label>
+                            <input
+                              type="datetime-local"
+                              value={editingActivityData.timestamp ? new Date(editingActivityData.timestamp).toISOString().slice(0, 16) : ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, timestamp: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">Created By</label>
+                            <input
+                              type="text"
+                              value={editingActivityData.createdBy || ''}
+                              disabled
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-surface text-text-muted cursor-not-allowed"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-text-muted mb-1">Description</label>
+                            <textarea
+                              value={editingActivityData.description || ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, description: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                              rows={2}
+                              placeholder="Brief description of the activity..."
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-text-muted mb-1">Notes</label>
+                            <textarea
+                              value={editingActivityData.notes || ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, notes: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                              rows={3}
+                              placeholder="Additional notes..."
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingActivityId(null);
+                              setEditingActivityData({});
+                            }}
+                            disabled={isSaving}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleUpdateActivity}
+                            disabled={!editingActivityData.activityType || !editingActivityData.sentiment || isSaving}
+                          >
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-primary/20 text-primary">
+                              {activity.activityType}
+                            </span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              activity.sentiment === 'Positive' ? 'bg-success/20 text-success' :
+                              activity.sentiment === 'Negative' ? 'bg-error/20 text-error' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {activity.sentiment}
+                            </span>
+                            <span className="text-xs text-text-muted">
+                              {new Date(activity.timestamp).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingActivityId(activity.id);
+                                setEditingActivityData(activity);
+                              }}
+                            >
+                              <Edit size={12} />
+                            </Button>
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => setActivityToDelete(activity)}
+                              className="border-red-300 hover:bg-red-50 hover:border-red-400"
+                            >
+                              <Trash2 size={12} className="text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                        {activity.description && (
+                          <p className="text-sm text-text mb-2">{activity.description}</p>
+                        )}
+                        {activity.notes && (
+                          <p className="text-xs text-text-muted">{activity.notes}</p>
+                        )}
+                        {activity.createdBy && (
+                          <p className="text-xs text-text-muted mt-2">By: {activity.createdBy}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+
+                {activitiesData.length === 0 && (
+                  <div className="text-center py-8 text-text-muted">
+                    No activities yet. Add your first activity below.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <DeleteContactModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -2031,6 +2458,37 @@ const ContactDetails = () => {
                 variant="primary"
                 size="sm"
                 onClick={confirmDeleteNote}
+                disabled={isSaving}
+                className="bg-error hover:bg-error/90"
+              >
+                {isSaving ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Activity Confirmation Modal */}
+      {activityToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-foreground rounded shadow-lg border p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-text mb-4">Delete Activity</h3>
+            <p className="text-sm text-text-muted mb-6">
+              Are you sure you want to delete this activity? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => setActivityToDelete(null)}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleDeleteActivity}
                 disabled={isSaving}
                 className="bg-error hover:bg-error/90"
               >

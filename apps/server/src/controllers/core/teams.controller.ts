@@ -133,11 +133,12 @@ export class TeamsController {
       );
 
       res.status(HTTP_STATUS.OK).json({ success: true });
-    } catch (error: any) {
+    }
+    catch (error: any) {
       const errorMessage = error.message || "Failed to send direct message";
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        error: errorMessage
+        error: errorMessage,
       });
     }
   });

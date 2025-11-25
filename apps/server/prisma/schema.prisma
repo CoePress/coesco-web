@@ -319,6 +319,46 @@ enum ContactType {
   Sales
 }
 
+enum ActivityType {
+  Call
+  Email
+  Meeting
+  TextChat
+  QuoteSent
+  QuotePresentation
+  Event
+  FormSubmission
+  WebsiteActivity
+  ContentDownloaded
+}
+
+enum ActivitySentiment {
+  Negative
+  Neutral
+  Positive
+}
+
+model Activity {
+  id           String            @id @default(uuid())
+  activityType ActivityType
+  sentiment    ActivitySentiment
+  timestamp    DateTime
+  description  String?           @db.Text
+  notes        String?           @db.Text
+  entityType   String?
+  entityId     String?
+  createdBy    String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+
+  @@index([entityType, entityId])
+  @@index([timestamp])
+  @@index([activityType])
+  @@index([createdBy])
+  @@map("activities")
+}
+
 model JourneyContact {
   id          String    @id @default(uuid())
   journeyId   String

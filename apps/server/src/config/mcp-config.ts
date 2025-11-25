@@ -173,6 +173,62 @@ export const TOOLS: ITool[] = [
 
 export const SCHEMAS: ISchema[] = [
   {
+    name: "activity",
+    description: "Schema for Activity entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      activityType: {
+        type: "activitytype",
+        required: true,
+      },
+      sentiment: {
+        type: "activitysentiment",
+        required: true,
+      },
+      timestamp: {
+        type: "datetime",
+        required: true,
+      },
+      description: {
+        type: "string",
+        required: false,
+      },
+      notes: {
+        type: "string",
+        required: false,
+      },
+      entityType: {
+        type: "string",
+        required: false,
+      },
+      entityId: {
+        type: "string",
+        required: false,
+      },
+      createdBy: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+    },
+  },
+  {
     name: "address",
     description: "Schema for Address entity",
     schema: {
