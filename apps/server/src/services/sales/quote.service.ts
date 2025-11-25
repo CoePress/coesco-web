@@ -188,19 +188,68 @@ export class QuoteService {
       };
     }
 
-    // Map to match expected frontend format
-    const quotesWithRevisions = quotesResult.data.map((quote: any) => ({
-      ...quote,
-      revision: quote.latestRevision || "A",
-      revisionStatus: quote.latestRevisionStatus || "DRAFT",
-      totalAmount: quote.latestRevisionTotalAmount || 0,
-    }));
+    // Fetch latest revisions with items for all quotes
+    const quoteIds = quotesResult.data.map((q: any) => q.id);
+    const revisionsResult = await quoteRevisionRepository.getAll({
+      filter: { quoteId: { in: quoteIds } } as any,
+      include: ["items"],
+    });
+
+    // Group revisions by quoteId and find latest for each
+    const latestRevisionByQuoteId = new Map<string, any>();
+    if (revisionsResult.success && revisionsResult.data) {
+      for (const revision of revisionsResult.data) {
+        const existing = latestRevisionByQuoteId.get(revision.quoteId);
+        if (!existing || revision.revision > existing.revision) {
+          latestRevisionByQuoteId.set(revision.quoteId, revision);
+        }
+      }
+    }
+
+    // Map to match expected frontend format with calculated totals
+    const quotesWithRevisions = quotesResult.data.map((quote: any) => {
+      const latestRevision = latestRevisionByQuoteId.get(quote.id);
+      let totalAmount = 0;
+
+      if (latestRevision?.items?.length) {
+        totalAmount = latestRevision.items.reduce(
+          (sum: number, item: QuoteItem) => sum + Number(item.unitPrice) * item.quantity,
+          0,
+        );
+      }
+
+      return {
+        ...quote,
+        revision: quote.latestRevision || "A",
+        revisionStatus: quote.latestRevisionStatus || "DRAFT",
+        totalAmount,
+      };
+    });
 
     return {
       success: true,
       data: quotesWithRevisions,
       meta: quotesResult.meta,
     };
+  }
+
+  private enrichQuoteItems(items: QuoteItem[]) {
+    return items.map((item) => ({
+      ...item,
+      totalPrice: Number(item.unitPrice) * item.quantity,
+    }));
+  }
+
+  private async getEmployeeNames(ids: (string | null | undefined)[]): Promise<Map<string, string>> {
+    const validIds = ids.filter((id): id is string => !!id);
+    if (validIds.length === 0) return new Map();
+
+    const employees = await prisma.employee.findMany({
+      where: { id: { in: validIds } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+
+    return new Map(employees.map(e => [e.id, `${e.firstName} ${e.lastName}`]));
   }
 
   async getQuoteWithDetails(id: string) {
@@ -230,19 +279,42 @@ export class QuoteService {
       quoteTermsRepository.getAll({ filter: { quoteRevisionId: latestRevision.id } }),
     ]);
 
+    const enrichedItems = this.enrichQuoteItems(itemsResult.data || []);
+    const totalAmount = enrichedItems.reduce((sum, item) => sum + item.totalPrice, 0);
+
+    // Get employee names for all ById fields
+    const quote = quoteResult.data;
+    const employeeIds = [
+      quote.rsmId,
+      quote.createdById,
+      quote.updatedById,
+      latestRevision.approvedById,
+      latestRevision.sentById,
+      latestRevision.createdById,
+      latestRevision.updatedById,
+    ];
+    const employeeNames = await this.getEmployeeNames(employeeIds);
+
     return {
       success: true,
       data: {
-        ...quoteResult.data,
+        ...quote,
+        rsm: quote.rsmId ? employeeNames.get(quote.rsmId) : null,
+        createdBy: employeeNames.get(quote.createdById) || null,
+        updatedBy: employeeNames.get(quote.updatedById) || null,
         latestRevision: {
           ...latestRevision,
-          items: itemsResult.data || [],
+          items: enrichedItems,
           terms: termsResult.data || [],
+          approvedBy: latestRevision.approvedById ? employeeNames.get(latestRevision.approvedById) : null,
+          sentBy: latestRevision.sentById ? employeeNames.get(latestRevision.sentById) : null,
+          createdBy: employeeNames.get(latestRevision.createdById) || null,
+          updatedBy: employeeNames.get(latestRevision.updatedById) || null,
         },
         revision: latestRevision.revision,
         status: latestRevision.status,
-        totalAmount: latestRevision.totalAmount || 0,
-        quoteItems: itemsResult.data || [],
+        totalAmount,
+        quoteItems: enrichedItems,
       },
     };
   }
@@ -354,18 +426,43 @@ export class QuoteService {
       quoteTermsRepository.getAll({ filter: { quoteRevisionId: revisionId } }),
     ]);
 
+    const enrichedItems = this.enrichQuoteItems(itemsResult.data || []);
+    const totalAmount = enrichedItems.reduce((sum, item) => sum + item.totalPrice, 0);
+
+    // Get employee names for all ById fields
+    const quote = quoteResult.data;
+    const revision = revisionResult.data;
+    const employeeIds = [
+      quote.rsmId,
+      quote.createdById,
+      quote.updatedById,
+      revision.approvedById,
+      revision.sentById,
+      revision.createdById,
+      revision.updatedById,
+    ];
+    const employeeNames = await this.getEmployeeNames(employeeIds);
+
     return {
       success: true,
       data: {
-        ...quoteResult.data,
+        ...quote,
+        rsm: quote.rsmId ? employeeNames.get(quote.rsmId) : null,
+        createdBy: employeeNames.get(quote.createdById) || null,
+        updatedBy: employeeNames.get(quote.updatedById) || null,
         latestRevision: {
-          ...revisionResult.data,
-          items: itemsResult.data || [],
+          ...revision,
+          items: enrichedItems,
           terms: termsResult.data || [],
+          approvedBy: revision.approvedById ? employeeNames.get(revision.approvedById) : null,
+          sentBy: revision.sentById ? employeeNames.get(revision.sentById) : null,
+          createdBy: employeeNames.get(revision.createdById) || null,
+          updatedBy: employeeNames.get(revision.updatedById) || null,
         },
-        revision: revisionResult.data.revision,
-        status: revisionResult.data.status,
-        totalAmount: revisionResult.data.totalAmount || 0,
+        revision: revision.revision,
+        status: revision.status,
+        totalAmount,
+        quoteItems: enrichedItems,
       },
     };
   }

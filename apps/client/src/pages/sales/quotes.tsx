@@ -3,7 +3,7 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import { AdvancedDropdown, Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
-import { formatQuoteNumber } from "@/utils";
+import { formatQuoteNumber, formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";
@@ -142,6 +142,12 @@ const Quotes = () => {
       key: "confidence",
       header: "Confidence",
       className: "w-1 text-center",
+    },
+    {
+      key: "totalAmount",
+      header: "Value",
+      className: "w-1 text-right",
+      render: (_, row) => formatCurrency(row.totalAmount || 0, false),
     },
     {
       key: "createdAt",

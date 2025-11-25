@@ -447,42 +447,34 @@ const QuoteDetails = () => {
               <div className="space-y-1">
                 <div className="text-xs text-text-muted">Created</div>
                 <div className="text-sm text-text">
-                  {quoteOverview?.quote?.createdAt
-                    ? formatDate(quoteOverview?.quote?.createdAt)
-                    : "Jan 15, 2024"}
+                  {quoteOverview?.createdAt
+                    ? formatDate(quoteOverview.createdAt)
+                    : "-"}
                 </div>
                 <div className="text-xs text-text-muted">Created By</div>
                 <div className="text-sm font-medium text-text">
-                  {quoteOverview?.quote?.createdById
-                    ? `${quoteOverview?.quote?.createdBy?.firstName} ${quoteOverview?.quote?.createdBy?.lastName}`
-                    : "Alex Chen"}
+                  {quoteOverview?.createdBy || "-"}
                 </div>
-                <div className="text-xs text-text-muted">Expires</div>
+                <div className="text-xs text-text-muted">RSM</div>
                 <div className="text-sm text-text">
-                  {quoteOverview?.quote?.expiryDate
-                    ? formatDate(quoteOverview?.quote?.expiryDate)
-                    : "-"}
+                  {quoteOverview?.rsm || "-"}
                 </div>
               </div>
 
               {/* Approval Info */}
               <div className="space-y-1">
-                <div className="text-xs text-text-muted">Approved</div>
-                <div className="text-sm text-text">
-                  {quoteOverview?.quote?.approvedAt
-                    ? formatDate(quoteOverview?.quote?.approvedAt)
-                    : "-"}
-                </div>
                 <div className="text-xs text-text-muted">Approved By</div>
                 <div className="text-sm text-text">
-                  {quoteOverview?.quote?.approvedBy
-                    ? `${quoteOverview?.quote?.approvedBy?.firstName} ${quoteOverview?.quote?.approvedBy?.lastName}`
-                    : "-"}
+                  {quoteOverview?.latestRevision?.approvedBy || "-"}
                 </div>
-                <div className="text-xs text-text-muted">Sent</div>
+                <div className="text-xs text-text-muted">Sent By</div>
                 <div className="text-sm text-text">
-                  {quoteOverview?.quote?.sentAt
-                    ? formatDate(quoteOverview?.quote?.sentAt)
+                  {quoteOverview?.latestRevision?.sentBy || "-"}
+                </div>
+                <div className="text-xs text-text-muted">Last Updated</div>
+                <div className="text-sm text-text">
+                  {quoteOverview?.updatedAt
+                    ? formatDate(quoteOverview.updatedAt)
                     : "-"}
                 </div>
               </div>
@@ -544,8 +536,8 @@ const QuoteDetails = () => {
                 style={{
                   gridTemplateColumns:
                     quoteOverview?.status === "DRAFT"
-                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
-                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                      ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
+                      : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
                 }}>
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div className="truncate whitespace-nowrap">Line</div>
@@ -742,8 +734,8 @@ const QuoteDetails = () => {
                 style={{
                   gridTemplateColumns:
                     quoteOverview?.status === "DRAFT"
-                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
-                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                      ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
+                      : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
                 }}>
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
@@ -769,8 +761,8 @@ const QuoteDetails = () => {
                 style={{
                   gridTemplateColumns:
                     quoteOverview?.status === "DRAFT"
-                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
-                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                      ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
+                      : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
                 }}>
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
@@ -804,8 +796,8 @@ const QuoteDetails = () => {
                 style={{
                   gridTemplateColumns:
                     quoteOverview?.status === "DRAFT"
-                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
-                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                      ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
+                      : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
                 }}>
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
@@ -832,8 +824,8 @@ const QuoteDetails = () => {
                 style={{
                   gridTemplateColumns:
                     quoteOverview?.status === "DRAFT"
-                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
-                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                      ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
+                      : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
                 }}>
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>

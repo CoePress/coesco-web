@@ -86,8 +86,6 @@ export const protect = asyncHandler(
         throw new UnauthorizedError("Unauthorized");
       }
 
-      await sessionService.updateActivity(session.id);
-
       const emp = user.employee;
 
       const context: EmployeeContext = {
@@ -111,7 +109,10 @@ export const protect = asyncHandler(
         initials: emp.initials ?? undefined,
       };
 
-      return contextStorage.run(context, async () => next());
+      return contextStorage.run(context, async () => {
+        await sessionService.updateActivity(session.id);
+        return next();
+      });
     }
     catch (error) {
       if (error instanceof UnauthorizedError) {
