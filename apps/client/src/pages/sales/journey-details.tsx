@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Edit, Plus, Trash2, Search, XIcon } from "lucide-react";
+import { Edit, Plus, Trash2, Search, XIcon, MessageSquare, ArrowLeft, Loader2 } from "lucide-react";
 import { PageHeader, Tabs, Table, Button, Modal, AddContactModal, StatusBadge } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
@@ -2981,22 +2981,13 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
   );
 }
 
-function JourneyActionsTab({ journey, employee }: { journey: any | null; employee: any }) {
+function JourneyActionsTab({ journey, employee, handleOpenTeamsModal }: { journey: any | null; employee: any; handleOpenTeamsModal: () => void }) {
   const [tags, setTags] = useState<any[]>([]);
   const [newTagInput, setNewTagInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [notificationForm, setNotificationForm] = useState({
-    title: "",
-    message: "",
-    mentionEmails: [] as string[],
-  });
-  const [emailInput, setEmailInput] = useState("");
-  const [isSendingNotification, setIsSendingNotification] = useState(false);
-
   const api = useApi();
-  const toast = useToast();
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -3073,168 +3064,17 @@ function JourneyActionsTab({ journey, employee }: { journey: any | null; employe
     }
   };
 
-  const handleAddEmail = () => {
-    const trimmedEmail = emailInput.trim();
-    if (!trimmedEmail) return;
-
-    if (!trimmedEmail.includes("@")) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    if (notificationForm.mentionEmails.includes(trimmedEmail)) {
-      toast.error("Email already added");
-      return;
-    }
-
-    setNotificationForm({
-      ...notificationForm,
-      mentionEmails: [...notificationForm.mentionEmails, trimmedEmail],
-    });
-    setEmailInput("");
-  };
-
-  const handleRemoveEmail = (emailToRemove: string) => {
-    setNotificationForm({
-      ...notificationForm,
-      mentionEmails: notificationForm.mentionEmails.filter(email => email !== emailToRemove),
-    });
-  };
-
-  const handleSendNotification = async () => {
-    if (notificationForm.mentionEmails.length === 0) {
-      toast.error("Please add at least one user to mention");
-      return;
-    }
-
-    const creatorEmail = employee?.email || `${employee?.initials || "unknown"}@cpec.com`;
-
-    const journeyUrl = `${window.location.origin}/sales/pipeline/${journey?.ID || journey?.id}`;
-    const journeyName = journey?.name || journey?.Project_Name || journey?.Target_Account || "Journey";
-
-    const pingedUsersMentions = notificationForm.mentionEmails
-      .map(email => `<at>${email}</at>`)
-      .join(", ");
-
-    let autoMessage = `<at>${creatorEmail}</at> pinged ${pingedUsersMentions} on ${journeyName}`;
-
-    if (notificationForm.message) {
-      autoMessage += ` with the following message: ${notificationForm.message}`;
-    }
-
-    autoMessage += `\n\nView journey: ${journeyUrl}`;
-
-    const allMentionEmails = [creatorEmail, ...notificationForm.mentionEmails];
-
-    setIsSendingNotification(true);
-    try {
-      const data = await api.post("/system/teams/channel-message", {
-        title: notificationForm.title || `Journey Update: ${journeyName}`,
-        message: autoMessage,
-        mentionEmails: allMentionEmails,
-        themeColor: "0078D4",
-      });
-
-      if (data?.success) {
-        toast.success("Teams notification sent successfully!");
-        setNotificationForm({
-          title: "",
-          message: "",
-          mentionEmails: [],
-        });
-      } else {
-        throw new Error("Failed to send notification");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send Teams notification");
-    } finally {
-      setIsSendingNotification(false);
-    }
-  };
-
   if (!journey) return null;
 
   return (
     <div className="flex flex-1 flex-col p-2 md:p-4 gap-4">
-      <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
-        <h3 className="text-base md:text-lg font-semibold text-text mb-4">Send Teams Notification</h3>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-text mb-2">Title (Optional)</label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text"
-              placeholder="Notification Title"
-              value={notificationForm.title}
-              onChange={(e) => setNotificationForm({ ...notificationForm, title: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text mb-2">
-              Message (Optional)
-            </label>
-            <textarea
-              className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text min-h-[100px]"
-              placeholder="Enter your message (a link to this journey will be automatically added)"
-              value={notificationForm.message}
-              onChange={(e) => setNotificationForm({ ...notificationForm, message: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text mb-2">
-              Mention Users <span className="text-error">*</span>
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-text"
-                placeholder="user@cpec.com"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddEmail();
-                  }
-                }}
-              />
-              <Button onClick={handleAddEmail} variant="secondary">
-                Add
-              </Button>
-            </div>
-            {notificationForm.mentionEmails.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {notificationForm.mentionEmails.map((email) => (
-                  <div
-                    key={email}
-                    className="flex items-center gap-1 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-sm text-primary">
-                    {email}
-                    <button
-                      onClick={() => handleRemoveEmail(email)}
-                      className="ml-1 hover:bg-primary/20 rounded-full p-0.5">
-                      <XIcon className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <p className="text-xs text-text-muted mt-1">
-              These users will be @mentioned in Teams and receive a notification
-            </p>
-          </div>
-
-          <Button
-            onClick={handleSendNotification}
-            disabled={isSendingNotification || notificationForm.mentionEmails.length === 0}
-            variant="primary"
-            className="w-full">
-            {isSendingNotification ? "Sending..." : "Send Teams Notification"}
-          </Button>
-        </div>
-      </div>
+      <button
+        onClick={handleOpenTeamsModal}
+        className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded hover:bg-secondary transition-colors font-medium self-start"
+      >
+        <MessageSquare size={18} />
+        <span>Send Teams Message</span>
+      </button>
 
       <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
         <h3 className="text-base md:text-lg font-semibold text-text mb-4">Journey Tags</h3>
@@ -3308,8 +3148,19 @@ const JourneyDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedJourneyId, setCopiedJourneyId] = useState(false);
+  const [showTeamsModal, setShowTeamsModal] = useState(false);
+  const [teamsMode, setTeamsMode] = useState<'select' | 'channel' | 'direct' | null>(null);
+  const [teamsMessage, setTeamsMessage] = useState("");
+  const [teamsEmail, setTeamsEmail] = useState("");
+  const [teamsMentions, setTeamsMentions] = useState<string[]>([]);
+  const [teamsMentionInput, setTeamsMentionInput] = useState("");
+  const [includeUrl, setIncludeUrl] = useState(true);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isTeamsConnected, setIsTeamsConnected] = useState(false);
+  const [checkingConnection, setCheckingConnection] = useState(false);
   const api = useApi();
   const { employee } = useAuth();
+  const toast = useToast();
 
   const adaptLegacyJourney = (raw: any) => {
     const normalizeDate = (d: any) => {
@@ -3447,6 +3298,162 @@ const JourneyDetailsPage = () => {
     })();
   }, []);
 
+  const checkTeamsConnection = async () => {
+    setCheckingConnection(true);
+    const result = await api.get("/system/teams/connection-status");
+    setCheckingConnection(false);
+
+    if (result?.data?.isConnected) {
+      setIsTeamsConnected(true);
+    } else {
+      setIsTeamsConnected(false);
+    }
+
+    return result?.data?.isConnected || false;
+  };
+
+  const handleConnectTeams = async () => {
+    const result = await api.get("/system/teams/auth");
+    if (result?.data?.authUrl) {
+      const popup = window.open(result.data.authUrl, "teams-auth", "width=600,height=700");
+
+      const handleMessage = async (event: MessageEvent) => {
+        if (event.data.type === "teams-connected") {
+          setIsTeamsConnected(true);
+          await checkTeamsConnection();
+          toast.success("Teams connected successfully!");
+          cleanup();
+          popup?.close();
+        } else if (event.data.type === "teams-auth-error") {
+          toast.error("Failed to connect to Teams");
+          cleanup();
+          popup?.close();
+        }
+      };
+
+      const cleanup = () => {
+        window.removeEventListener("message", handleMessage);
+        if (popupCheckInterval) clearInterval(popupCheckInterval);
+      };
+
+      const popupCheckInterval = setInterval(() => {
+        if (popup?.closed) {
+          cleanup();
+        }
+      }, 500);
+
+      window.addEventListener("message", handleMessage);
+    }
+  };
+
+  const handleOpenTeamsModal = () => {
+    setTeamsMode('select');
+    setShowTeamsModal(true);
+  };
+
+  const handleSelectChannelMessage = () => {
+    setTeamsMode('channel');
+    setTeamsMessage("");
+    setTeamsMentions([]);
+    setTeamsMentionInput("");
+    setIncludeUrl(true);
+  };
+
+  const handleSelectDirectMessage = async () => {
+    await checkTeamsConnection();
+    setTeamsMode('direct');
+    setTeamsMessage("");
+    setTeamsEmail("");
+    setIncludeUrl(true);
+  };
+
+  const handleBackToSelect = () => {
+    setTeamsMode('select');
+    setTeamsMessage("");
+    setTeamsEmail("");
+    setTeamsMentions([]);
+    setTeamsMentionInput("");
+    setIncludeUrl(true);
+  };
+
+  const handleAddMention = () => {
+    const email = teamsMentionInput.trim();
+    if (email && !teamsMentions.includes(email)) {
+      setTeamsMentions([...teamsMentions, email]);
+      setTeamsMentionInput("");
+    }
+  };
+
+  const handleRemoveMention = (emailToRemove: string) => {
+    setTeamsMentions(teamsMentions.filter(email => email !== emailToRemove));
+  };
+
+  const handleSendChannelMessage = async () => {
+    if (!teamsMessage.trim()) return;
+    setIsSendingMessage(true);
+
+    let messageWithUrl = teamsMessage.trim();
+    if (includeUrl) {
+      messageWithUrl += `   View journey: ${window.location.href}`;
+    }
+
+    const result = await api.post("/system/teams/channel-message", {
+      message: messageWithUrl,
+      mentionEmails: teamsMentions.length > 0 ? teamsMentions : undefined,
+    });
+
+    setIsSendingMessage(false);
+
+    if (result === null || result === undefined) {
+      toast.error("Failed to send message");
+      return;
+    }
+
+    toast.success("Message sent to Teams channel!");
+    setShowTeamsModal(false);
+    setTeamsMode(null);
+    setTeamsMessage("");
+    setTeamsMentions([]);
+    setTeamsMentionInput("");
+    setIncludeUrl(true);
+  };
+
+  const handleSendDirectMessage = async () => {
+    if (!teamsEmail.trim() || !teamsMessage.trim()) return;
+    setIsSendingMessage(true);
+
+    let messageWithUrl = teamsMessage.trim();
+    if (includeUrl) {
+      messageWithUrl += `   View journey: ${window.location.href}`;
+    }
+
+    const result = await api.post("/system/teams/direct-message", {
+      recipientEmail: teamsEmail.trim(),
+      message: messageWithUrl,
+    });
+
+    setIsSendingMessage(false);
+
+    if (result === null) {
+      const errorMessage = api.error || "Failed to send message";
+
+      if (errorMessage.includes("Account not found") || errorMessage.includes("Please reconnect")) {
+        setIsTeamsConnected(false);
+        toast.error("Teams connection expired. Please reconnect your account.");
+      } else {
+        toast.error(errorMessage);
+      }
+      return;
+    }
+
+    toast.success(`Message sent to ${teamsEmail}!`);
+    setShowTeamsModal(false);
+    setTeamsMode(null);
+    setTeamsMessage("");
+    setTeamsEmail("");
+    setIncludeUrl(true);
+  };
+
   if (loading) return <div className="flex justify-center items-center h-64">Loading journey details...</div>;
   if (error) return <div className="flex justify-center items-center h-64 text-red-500">{error}</div>;
   if (!journeyId) return <div className="w-full flex flex-1 flex-col"><PageHeader title="Invalid Journey" description="No journey ID provided in the URL." goBack /></div>;
@@ -3472,7 +3479,7 @@ const JourneyDetailsPage = () => {
       {activeTab === "details" && <JourneyDetailsTab journey={journeyData ? { ...journeyData, customer: customerData } : null} journeyContacts={journeyContacts} updateJourney={updateJourney} setJourneyContacts={setJourneyContacts} employee={employee} validJourneyStatuses={validJourneyStatuses} />}
       {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
       {activeTab === "history" && <JourneyHistoryTab journey={journeyData} />}
-      {activeTab === "tags" && <JourneyActionsTab journey={journeyData} employee={employee} />}
+      {activeTab === "tags" && <JourneyActionsTab journey={journeyData} employee={employee} handleOpenTeamsModal={handleOpenTeamsModal} />}
 
       <div className="px-2 md:px-4 py-2 border-t border-border bg-foreground">
         <div className="text-xs text-text-muted flex flex-wrap items-center gap-1">
@@ -3489,6 +3496,253 @@ const JourneyDetailsPage = () => {
           </span>
         </div>
       </div>
+
+      {showTeamsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-foreground rounded-lg shadow-lg w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-text">
+                {teamsMode === 'select' && 'Send Teams Message'}
+                {teamsMode === 'channel' && 'Send to Channel'}
+                {teamsMode === 'direct' && 'Send Direct Message'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowTeamsModal(false);
+                  setTeamsMode(null);
+                  setTeamsMessage("");
+                  setTeamsEmail("");
+                  setTeamsMentions([]);
+                  setTeamsMentionInput("");
+                  setIncludeUrl(true);
+                }}
+                className="text-text-muted hover:text-text"
+              >
+                <XIcon size={20} />
+              </button>
+            </div>
+
+            <div className="p-4">
+              {teamsMode === 'select' && (
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={handleSelectChannelMessage}
+                    className="flex items-center gap-3 p-4 border border-border rounded hover:bg-surface transition-colors text-left"
+                  >
+                    <MessageSquare size={24} className="text-primary" />
+                    <div>
+                      <div className="font-semibold text-text">Send to Channel</div>
+                      <div className="text-sm text-text-muted">Post a message to the Teams channel</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={handleSelectDirectMessage}
+                    className="flex items-center gap-3 p-4 border border-border rounded hover:bg-surface transition-colors text-left"
+                  >
+                    <MessageSquare size={24} className="text-primary" />
+                    <div>
+                      <div className="font-semibold text-text">Send Direct Message</div>
+                      <div className="text-sm text-text-muted">Send a DM from your Teams account</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {teamsMode === 'channel' && (
+                <div className="flex flex-col gap-4">
+                  <button
+                    onClick={handleBackToSelect}
+                    className="flex items-center gap-2 text-text-muted hover:text-text text-sm"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back</span>
+                  </button>
+                  <div>
+                    <label className="block text-sm font-medium text-text mb-2">
+                      Mention Users (optional)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={teamsMentionInput}
+                        onChange={(e) => setTeamsMentionInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddMention();
+                          }
+                        }}
+                        placeholder="user@example.com"
+                        className="flex-1 px-3 py-2 border border-border rounded bg-surface text-text placeholder-text-muted"
+                      />
+                      <button
+                        onClick={handleAddMention}
+                        disabled={!teamsMentionInput.trim()}
+                        className="px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-surface disabled:border disabled:border-border disabled:text-text bg-primary hover:bg-secondary text-black font-medium"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {teamsMentions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {teamsMentions.map((email) => (
+                          <div
+                            key={email}
+                            className="flex items-center gap-1 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-sm text-primary"
+                          >
+                            {email}
+                            <button
+                              onClick={() => handleRemoveMention(email)}
+                              className="ml-1 hover:bg-primary/20 rounded-full p-0.5"
+                            >
+                              <XIcon className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-text-muted mt-1">
+                      These users will be @mentioned in Teams
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text mb-2">
+                      Message
+                    </label>
+                    <textarea
+                      value={teamsMessage}
+                      onChange={(e) => setTeamsMessage(e.target.value)}
+                      placeholder="Enter your message..."
+                      className="w-full px-3 py-2 border border-border rounded bg-surface text-text placeholder-text-muted resize-none"
+                      rows={4}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="includeUrlChannel"
+                      checked={includeUrl}
+                      onChange={(e) => setIncludeUrl(e.target.checked)}
+                      className="w-4 h-4 rounded border-border"
+                    />
+                    <label htmlFor="includeUrlChannel" className="text-sm text-text cursor-pointer">
+                      Include current page URL
+                    </label>
+                  </div>
+                  <button
+                    onClick={handleSendChannelMessage}
+                    disabled={isSendingMessage || !teamsMessage.trim()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-black rounded hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    {isSendingMessage ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare size={18} />
+                        <span>Send Message</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {teamsMode === 'direct' && (
+                <div className="flex flex-col gap-4">
+                  <button
+                    onClick={handleBackToSelect}
+                    className="flex items-center gap-2 text-text-muted hover:text-text text-sm"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back</span>
+                  </button>
+
+                  {!isTeamsConnected && !checkingConnection && (
+                    <div className="bg-warning/10 border border-warning/30 rounded p-4 text-sm">
+                      <p className="text-text mb-3">
+                        You need to connect your Teams account to send direct messages.
+                      </p>
+                      <button
+                        onClick={handleConnectTeams}
+                        className="px-4 py-2 bg-primary text-black rounded hover:bg-secondary transition-colors font-medium"
+                      >
+                        Connect Teams Account
+                      </button>
+                    </div>
+                  )}
+
+                  {checkingConnection && (
+                    <div className="text-center text-text-muted">
+                      <Loader2 className="animate-spin inline-block" size={20} />
+                      <span className="ml-2">Checking connection...</span>
+                    </div>
+                  )}
+
+                  {isTeamsConnected && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-text mb-2">
+                          Recipient Email
+                        </label>
+                        <input
+                          type="email"
+                          value={teamsEmail}
+                          onChange={(e) => setTeamsEmail(e.target.value)}
+                          placeholder="user@example.com"
+                          className="w-full px-3 py-2 border border-border rounded bg-surface text-text placeholder-text-muted"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-text mb-2">
+                          Message
+                        </label>
+                        <textarea
+                          value={teamsMessage}
+                          onChange={(e) => setTeamsMessage(e.target.value)}
+                          placeholder="Enter your message..."
+                          className="w-full px-3 py-2 border border-border rounded bg-surface text-text placeholder-text-muted resize-none"
+                          rows={4}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="includeUrlDirect"
+                          checked={includeUrl}
+                          onChange={(e) => setIncludeUrl(e.target.checked)}
+                          className="w-4 h-4 rounded border-border"
+                        />
+                        <label htmlFor="includeUrlDirect" className="text-sm text-text cursor-pointer">
+                          Include current page URL
+                        </label>
+                      </div>
+                      <button
+                        onClick={handleSendDirectMessage}
+                        disabled={isSendingMessage || !teamsMessage.trim() || !teamsEmail.trim()}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-black rounded hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      >
+                        {isSendingMessage ? (
+                          <>
+                            <Loader2 size={18} className="animate-spin" />
+                            <span>Sending...</span>
+                          </>
+                        ) : (
+                          <>
+                            <MessageSquare size={18} />
+                            <span>Send Message</span>
+                          </>
+                        )}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

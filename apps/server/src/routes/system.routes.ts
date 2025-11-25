@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { bugReportingController, teamsController } from "@/controllers";
+import { protect } from "@/middleware/auth.middleware";
 import { healthService } from "@/services";
 
 const router = Router();
@@ -54,5 +55,13 @@ router.get("/bugs/my-reports", bugReportingController.getMyBugReports);
 
 router.post("/teams/channel-message", teamsController.sendChannelMessage);
 router.post("/teams/adaptive-card", teamsController.sendAdaptiveCard);
+
+router.get("/teams/auth/callback", teamsController.handleCallback);
+
+router.use(protect);
+router.get("/teams/auth", teamsController.initiateAuth);
+router.get("/teams/connection-status", teamsController.getConnectionStatus);
+router.post("/teams/direct-message", teamsController.sendDirectMessage);
+router.delete("/teams/connection", teamsController.disconnect);
 
 export default router;

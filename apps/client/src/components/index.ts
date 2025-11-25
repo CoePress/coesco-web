@@ -2,6 +2,7 @@ export { default as MicrosoftCallback } from "../pages/utility/microsoft-callbac
 export { default as AddressInput } from "./feature/address-input";
 export { default as CommandBar } from "./feature/command-bar";
 export { default as MachineMap } from "./feature/machine-map";
+export { TeamsConnectionButton } from "./teams-connection-button";
 export { default as Toolbar } from "./feature/toolbar";
 export type { Filter, FilterOption } from "./feature/toolbar";
 export { default as LoginForm } from "./forms/login-form";

@@ -107,14 +107,15 @@ model Employee {
   createdById     String
   updatedById     String
 
-  user             User        @relation(fields: [userId], references: [id])
-  department       Department? @relation(fields: [departmentId], references: [id])
-  manager          Employee?   @relation("ManagerSubordinates", fields: [managerId], references: [id])
-  subordinates     Employee[]  @relation("ManagerSubordinates")
-  journeys         Journey[]   @relation("RsmJourneys")
-  createdCompanies Company[]   @relation("CustomerCreatedBy")
-  createdJourneys  Journey[]   @relation("JourneyCreatedBy")
+  user             User                   @relation(fields: [userId], references: [id])
+  department       Department?            @relation(fields: [departmentId], references: [id])
+  manager          Employee?              @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates     Employee[]             @relation("ManagerSubordinates")
+  journeys         Journey[]              @relation("RsmJourneys")
+  createdCompanies Company[]              @relation("CustomerCreatedBy")
+  createdJourneys  Journey[]              @relation("JourneyCreatedBy")
   chats            Chat[]
+  graphToken       MicrosoftGraphToken?
 
   @@index([number])
   @@index([createdById])
@@ -1399,4 +1400,36 @@ model LoginHistory {
   @@index([timestamp])
   @@index([success])
   @@map("login_history")
+}
+
+model MicrosoftGraphToken {
+  id              String   @id @default(uuid())
+  employeeId      String   @unique
+  accessToken     String
+  refreshToken    String
+  tokenType       String   @default("Bearer")
+  scope           String
+  expiresAt       DateTime
+  lastRefreshedAt DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([expiresAt])
+  @@map("microsoft_graph_tokens")
+}
+
+model TeamsChatCache {
+  id              String   @id @default(uuid())
+  employeeId      String
+  recipientUserId String
+  chatId          String
+  createdAt       DateTime @default(now())
+  lastUsedAt      DateTime @default(now())
+
+  @@unique([employeeId, recipientUserId])
+  @@index([employeeId])
+  @@map("teams_chat_cache")
 }

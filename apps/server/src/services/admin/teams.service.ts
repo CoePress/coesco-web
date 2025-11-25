@@ -12,6 +12,41 @@ export interface ChannelMessageOptions {
   mentionEmails?: string[];
 }
 
+interface AdaptiveCardTextBlock {
+  type: "TextBlock";
+  text: string;
+  weight?: "Bolder";
+  size?: "Large";
+  color?: string;
+  wrap?: boolean;
+}
+
+interface TeamsMention {
+  type: "mention";
+  text: string;
+  mentioned: {
+    id: string;
+    name: string;
+  };
+}
+
+interface AdaptiveCard {
+  type: "AdaptiveCard";
+  version: "1.2";
+  body: AdaptiveCardTextBlock[];
+  msteams?: {
+    entities: TeamsMention[];
+  };
+}
+
+interface TeamsWebhookPayload {
+  type: "message";
+  attachments: Array<{
+    contentType: "application/vnd.microsoft.card.adaptive";
+    content: AdaptiveCard | Record<string, unknown>;
+  }>;
+}
+
 export class TeamsService {
   async sendChannelMessage(options: ChannelMessageOptions) {
     try {
@@ -19,7 +54,7 @@ export class TeamsService {
 
       const webhookUrl = options.webhookUrl || env.TEAMS_WEBHOOK_URL;
 
-      const textBlocks: any[] = [];
+      const textBlocks: AdaptiveCardTextBlock[] = [];
 
       if (options.title) {
         textBlocks.push({
@@ -31,10 +66,16 @@ export class TeamsService {
         });
       }
 
-      const messageText = options.message;
-      const mentions: any[] = [];
+      let messageText = options.message;
+      const mentions: TeamsMention[] = [];
 
       if (options.mentionEmails && options.mentionEmails.length > 0) {
+        const mentionTags = options.mentionEmails
+          .map((email) => `<at>${email}</at>`)
+          .join(" ");
+
+        messageText = `${mentionTags}\n\n${messageText}`;
+
         options.mentionEmails.forEach((email) => {
           mentions.push({
             type: "mention",
@@ -53,7 +94,7 @@ export class TeamsService {
         wrap: true,
       });
 
-      const card: any = {
+      const card: AdaptiveCard = {
         type: "AdaptiveCard",
         version: "1.2",
         body: textBlocks,
@@ -65,7 +106,7 @@ export class TeamsService {
         };
       }
 
-      const payload = {
+      const payload: TeamsWebhookPayload = {
         type: "message",
         attachments: [
           {
@@ -92,7 +133,8 @@ export class TeamsService {
   }
 
   private getColorFromHex(hex?: string): string {
-    if (!hex) return "Default";
+    if (!hex)
+      return "Default";
 
     const colorMap: Record<string, string> = {
       "0078D4": "Default",
@@ -104,13 +146,13 @@ export class TeamsService {
     return colorMap[hex.toUpperCase()] || "Default";
   }
 
-  async sendAdaptiveCard(options: ChannelMessageOptions & { card: any }) {
+  async sendAdaptiveCard(options: ChannelMessageOptions & { card: Record<string, unknown> }) {
     try {
       logger.info("Sending Teams Adaptive Card");
 
       const webhookUrl = options.webhookUrl || env.TEAMS_WEBHOOK_URL;
 
-      const payload = {
+      const payload: TeamsWebhookPayload = {
         type: "message",
         attachments: [
           {
