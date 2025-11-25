@@ -172,6 +172,25 @@ export class QuoteService {
     });
   }
 
+  private compareRevisions(a: string, b: string): number {
+    const aIsNumeric = /^\d+$/.test(a);
+    const bIsNumeric = /^\d+$/.test(b);
+
+    if (aIsNumeric && bIsNumeric) {
+      return Number.parseInt(a) - Number.parseInt(b);
+    }
+
+    if (aIsNumeric !== bIsNumeric) {
+      return aIsNumeric ? -1 : 1;
+    }
+
+    if (a.length !== b.length) {
+      return a.length - b.length;
+    }
+
+    return a.localeCompare(b);
+  }
+
   async getAllQuotesWithLatestRevision(params?: IQueryParams<Quote>) {
     const quotesResult = await quoteRepository.getAll(params);
 
@@ -188,43 +207,11 @@ export class QuoteService {
       };
     }
 
-    // Fetch latest revisions with items for all quotes
-    const quoteIds = quotesResult.data.map((q: any) => q.id);
-    const revisionsResult = await quoteRevisionRepository.getAll({
-      filter: { quoteId: { in: quoteIds } } as any,
-      include: ["items"],
-    });
-
-    // Group revisions by quoteId and find latest for each
-    const latestRevisionByQuoteId = new Map<string, any>();
-    if (revisionsResult.success && revisionsResult.data) {
-      for (const revision of revisionsResult.data) {
-        const existing = latestRevisionByQuoteId.get(revision.quoteId);
-        if (!existing || revision.revision > existing.revision) {
-          latestRevisionByQuoteId.set(revision.quoteId, revision);
-        }
-      }
-    }
-
-    // Map to match expected frontend format with calculated totals
-    const quotesWithRevisions = quotesResult.data.map((quote: any) => {
-      const latestRevision = latestRevisionByQuoteId.get(quote.id);
-      let totalAmount = 0;
-
-      if (latestRevision?.items?.length) {
-        totalAmount = latestRevision.items.reduce(
-          (sum: number, item: QuoteItem) => sum + Number(item.unitPrice) * item.quantity,
-          0,
-        );
-      }
-
-      return {
-        ...quote,
-        revision: quote.latestRevision || "A",
-        revisionStatus: quote.latestRevisionStatus || "DRAFT",
-        totalAmount,
-      };
-    });
+    const quotesWithRevisions = quotesResult.data.map((quote: any) => ({
+      ...quote,
+      revisionStatus: quote.latestRevisionStatus || "DRAFT",
+      totalAmount: quote.latestRevisionTotalAmount || 0,
+    }));
 
     return {
       success: true,

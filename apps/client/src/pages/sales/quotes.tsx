@@ -95,7 +95,7 @@ const Quotes = () => {
       key: "latestRevision",
       header: "Revision",
       className: "w-1 text-center",
-      render: (_, row) => row.revision,
+      render: (_, row) => row.latestRevision,
     },
     {
       key: "journey.customer.name",

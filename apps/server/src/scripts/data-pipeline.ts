@@ -1065,6 +1065,25 @@ async function _migrateQuotes(): Promise<MigrationResult> {
   return result;
 }
 
+function compareRevisions(a: string, b: string): number {
+  const aIsNumeric = /^\d+$/.test(a);
+  const bIsNumeric = /^\d+$/.test(b);
+
+  if (aIsNumeric && bIsNumeric) {
+    return Number.parseInt(a) - Number.parseInt(b);
+  }
+
+  if (aIsNumeric !== bIsNumeric) {
+    return aIsNumeric ? -1 : 1;
+  }
+
+  if (a.length !== b.length) {
+    return a.length - b.length;
+  }
+
+  return a.localeCompare(b);
+}
+
 async function updateQuoteRevisionStatuses(): Promise<void> {
   try {
     logger.info("Updating quote revision statuses...");
@@ -1078,11 +1097,12 @@ async function updateQuoteRevisionStatuses(): Promise<void> {
     for (const quote of quotes) {
       const revisions = await mainDatabase.quoteRevision.findMany({
         where: { quoteId: quote.id },
-        orderBy: { revision: "desc" },
       });
 
       if (revisions.length <= 1)
         continue;
+
+      revisions.sort((a, b) => compareRevisions(b.revision, a.revision));
 
       for (let i = 1; i < revisions.length; i++) {
         await mainDatabase.quoteRevision.update({
@@ -1097,6 +1117,55 @@ async function updateQuoteRevisionStatuses(): Promise<void> {
   }
   catch (error) {
     logger.error("Error updating quote revision statuses:", error);
+    throw error;
+  }
+}
+
+export async function updateQuoteLatestRevisionFields(): Promise<void> {
+  try {
+    logger.info("Updating quote latestRevision fields...");
+
+    const quotes = await mainDatabase.quote.findMany({
+      select: { id: true },
+    });
+
+    let updateCount = 0;
+
+    for (const quote of quotes) {
+      const revisions = await mainDatabase.quoteRevision.findMany({
+        where: { quoteId: quote.id },
+        include: {
+          items: true,
+        },
+      });
+
+      if (revisions.length === 0)
+        continue;
+
+      revisions.sort((a, b) => compareRevisions(b.revision, a.revision));
+      const latestRevision = revisions[0];
+
+      const totalAmount = latestRevision.items?.reduce(
+        (sum, item) => sum + Number(item.unitPrice) * item.quantity,
+        0,
+      ) || 0;
+
+      await mainDatabase.quote.update({
+        where: { id: quote.id },
+        data: {
+          latestRevision: latestRevision.revision,
+          latestRevisionStatus: latestRevision.status,
+          latestRevisionTotalAmount: totalAmount,
+        },
+      });
+
+      updateCount++;
+    }
+
+    logger.info(`Updated ${updateCount} quotes with latestRevision fields`);
+  }
+  catch (error) {
+    logger.error("Error updating quote latestRevision fields:", error);
     throw error;
   }
 }
@@ -1158,6 +1227,7 @@ async function _migrateQuoteRevisions(): Promise<MigrationResult> {
   const result = await migrateWithMapping(mapping);
 
   await updateQuoteRevisionStatuses();
+  await updateQuoteLatestRevisionFields();
 
   return result;
 }
@@ -2299,6 +2369,7 @@ async function main() {
     const quoteHeaders = await _migrateQuotes();
     const quotes = await _migrateQuoteRevisions();
     const quoteItems = await _migrateQuoteItems();
+    await updateQuoteLatestRevisionFields();
     // const customQuoteItems = await _migrateCustomQuoteItems();
     // const quoteTerms = await _migrateQuoteTerms();
     // const quoteNotes = await _migrateQuoteNotes();
