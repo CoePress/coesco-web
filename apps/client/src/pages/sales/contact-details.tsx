@@ -63,7 +63,6 @@ const ContactDetails = () => {
 
   const [activitiesData, setActivitiesData] = useState<any[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
-  const [isAddingActivity, setIsAddingActivity] = useState(false);
   const [newActivityData, setNewActivityData] = useState<any>({});
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [editingActivityData, setEditingActivityData] = useState<any>({});

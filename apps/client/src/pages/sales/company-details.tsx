@@ -893,7 +893,7 @@ function CompanyDetails() {
 
   useEffect(() => {
     if (activeTab === "activity" && companyContacts.length === 1 && !newActivityData.contactId) {
-      setNewActivityData(prev => ({ ...prev, contactId: companyContacts[0].id }));
+      setNewActivityData((prev: any) => ({ ...prev, contactId: companyContacts[0].id }));
     }
   }, [activeTab, companyContacts]);
 
