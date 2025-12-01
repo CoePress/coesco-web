@@ -39,6 +39,7 @@ interface IdMapEntry {
     field: string;
     type: "uuid" | "int";
   }>;
+  primaryKey?: string;
 }
 
 export class LegacyService {
@@ -172,6 +173,14 @@ export class LegacyService {
       logger.error("Error loading ID map:", err);
       return [];
     }
+  }
+
+  private getPrimaryKeyField(database: string, table: string): string {
+    const idMap = this.loadIdMap();
+    const tableConfig = idMap?.find(
+      entry => entry.database === database && entry.table.toLowerCase() === table.toLowerCase(),
+    );
+    return tableConfig?.primaryKey || "ID";
   }
 
   private async generateUniqueUuid(database: string, table: string, field: string): Promise<string> {
@@ -579,16 +588,7 @@ export class LegacyService {
 
   async getById(database: string, table: string, id: string, fields?: string[] | null) {
     const fieldSelection = fields && fields.length > 0 ? fields.join(",") : "*";
-
-    // To help prevent bullshit temporarily
-    // TODO: This can be updated to use a mapping
-    let idField = "ID";
-    if (table.toLowerCase() === "company") {
-      idField = "Company_ID";
-    }
-    else if (table.toLowerCase() === "contacts") {
-      idField = "Cont_ID";
-    }
+    const idField = this.getPrimaryKeyField(database, table);
 
     const query = `
       SELECT ${fieldSelection}
@@ -665,13 +665,7 @@ export class LegacyService {
       return false;
     }
 
-    let idField = "ID";
-    if (table.toLowerCase() === "company") {
-      idField = "Company_ID";
-    }
-    else if (table.toLowerCase() === "contacts") {
-      idField = "Cont_ID";
-    }
+    const idField = this.getPrimaryKeyField(database, table);
 
     const setClause = Object.entries(data)
       .map(([field, value]) => {

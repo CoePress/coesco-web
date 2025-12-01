@@ -7,7 +7,8 @@
         "field": "ID",
         "type": "uuid"
       }
-    ]
+    ],
+    "primaryKey": "ID"
   },
   {
     "database": "std",
@@ -17,7 +18,8 @@
         "field": "ID",
         "type": "uuid"
       }
-    ]
+    ],
+    "primaryKey": "ID"
   },
   {
     "database": "std",
@@ -31,7 +33,8 @@
         "field": "id",
         "type": "uuid"
       }
-    ]
+    ],
+    "primaryKey": "Company_ID"
   },
   {
     "database": "std",
@@ -41,7 +44,8 @@
         "field": "ID",
         "type": "uuid"
       }
-    ]
+    ],
+    "primaryKey": "ID"
   },
   {
     "database": "std",
@@ -51,6 +55,18 @@
         "field": "id",
         "type": "uuid"
       }
-    ]
+    ],
+    "primaryKey": "id"
+  },
+  {
+    "database": "std",
+    "table": "Contacts",
+    "ids": [
+      {
+        "field": "Cont_ID",
+        "type": "int"
+      }
+    ],
+    "primaryKey": "Cont_ID"
   }
 ]

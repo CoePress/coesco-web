@@ -30,8 +30,16 @@ const CREDIT_STATUS_OPTIONS = [
   { value: "S", label: "OK to Ship" },
 ];
 
-// TODO: what the fuck do these codes mean
-const TERMS_CODE_OPTIONS = ["30", "45", "01", "60", "90", "40", "50", "70"];
+const TERMS_CODE_OPTIONS = [
+  { value: "01", label: "Net 1 (Due on Receipt)" },
+  { value: "30", label: "Net 30" },
+  { value: "40", label: "Net 40" },
+  { value: "45", label: "Net 45" },
+  { value: "50", label: "Net 50" },
+  { value: "60", label: "Net 60" },
+  { value: "70", label: "Net 70" },
+  { value: "90", label: "Net 90" },
+];
 
 function getContactTypeName(type: ContactType | string | null | undefined): string {
   switch (type) {
@@ -3251,15 +3259,15 @@ function CompanyDetails() {
                           >
                             <option value="">Select terms...</option>
                             {TERMS_CODE_OPTIONS.map(option => (
-                              <option key={option} value={option}>
-                                {option}
+                              <option key={option.value} value={option.value}>
+                                {option.label}
                               </option>
                             ))}
                           </select>
                         )
                       : (
                           <div className="w-full bg-surface text-text px-3 py-2 rounded border">
-                            {company.termsCode || "-"}
+                            {TERMS_CODE_OPTIONS.find(o => o.value === company.termsCode)?.label || company.termsCode || "-"}
                           </div>
                         )}
                   </div>

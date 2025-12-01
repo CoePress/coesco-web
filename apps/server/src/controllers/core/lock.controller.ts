@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
+import type { AuthenticatedRequest } from "@/middleware/auth.middleware";
 import { lockingService } from "@/services";
 import { getEmployeeContext } from "@/utils/context";
 
@@ -96,29 +97,29 @@ export class LockController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const { recordType, recordId, adminUserId } = req.body;
+      const { recordType, recordId } = req.body;
+      const authReq = req as AuthenticatedRequest;
 
-      if (!recordType || !recordId || !adminUserId) {
+      if (!recordType || !recordId) {
         res.status(400).json({
           success: false,
-          error: "recordType, recordId and adminUserId are required",
+          error: "recordType and recordId are required",
         });
         return;
       }
 
-      // const isAdmin = await this.authService.isAdmin(adminUserId);
-      // if (!isAdmin) {
-      //   res.status(403).json({
-      //     success: false,
-      //     error: "Admin privileges required",
-      //   });
-      //   return;
-      // }
+      if (authReq.user?.role !== "ADMIN") {
+        res.status(403).json({
+          success: false,
+          error: "Admin privileges required",
+        });
+        return;
+      }
 
       const result = await lockingService.forceReleaseLock(
         recordType,
         recordId,
-        adminUserId,
+        authReq.user.id,
       );
 
       if (result.success) {
@@ -220,16 +221,15 @@ export class LockController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      // TODO: Add admin role validation here
-      // const { userId } = req.user;
-      // const isAdmin = await this.authService.isAdmin(userId);
-      // if (!isAdmin) {
-      //   res.status(403).json({
-      //     success: false,
-      //     error: "Admin privileges required",
-      //   });
-      //   return;
-      // }
+      const authReq = req as AuthenticatedRequest;
+
+      if (authReq.user?.role !== "ADMIN") {
+        res.status(403).json({
+          success: false,
+          error: "Admin privileges required",
+        });
+        return;
+      }
 
       const locks = await lockingService.getAllLocks();
 
@@ -277,16 +277,15 @@ export class LockController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      // TODO: Add admin role validation here
-      // const { userId } = req.user;
-      // const isAdmin = await this.authService.isAdmin(userId);
-      // if (!isAdmin) {
-      //   res.status(403).json({
-      //     success: false,
-      //     error: "Admin privileges required",
-      //   });
-      //   return;
-      // }
+      const authReq = req as AuthenticatedRequest;
+
+      if (authReq.user?.role !== "ADMIN") {
+        res.status(403).json({
+          success: false,
+          error: "Admin privileges required",
+        });
+        return;
+      }
 
       await lockingService.clearAllLocks();
 
