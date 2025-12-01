@@ -344,9 +344,12 @@ export class BaseRepository<T> {
 
     const finalWhere = { AND: [where ?? {}, scope ?? {}] };
 
+    const primaryOrderBy = transformedOrderBy ?? orderBy;
+    const finalOrderBy = await this.applyDefaultSort(primaryOrderBy, columns);
+
     const query: any = {
       where: finalWhere,
-      orderBy: transformedOrderBy ?? orderBy,
+      orderBy: finalOrderBy,
       take,
       skip,
     };
@@ -359,6 +362,33 @@ export class BaseRepository<T> {
     const countQuery = { where: finalWhere };
 
     return { query, countQuery, page, take, hasComputedSearch };
+  }
+
+  private async applyDefaultSort(
+    primaryOrderBy: any,
+    columns: string[],
+  ): Promise<any> {
+    const defaultSort = this.getDefaultSort();
+    const hasCreatedAt = columns.includes("createdAt");
+
+    const fallbackSort = defaultSort ?? (hasCreatedAt ? { createdAt: "desc" as const } : undefined);
+
+    if (!fallbackSort) {
+      return primaryOrderBy;
+    }
+
+    if (!primaryOrderBy) {
+      return fallbackSort;
+    }
+
+    const primaryArray = Array.isArray(primaryOrderBy) ? primaryOrderBy : [primaryOrderBy];
+    const primaryFields = new Set(primaryArray.flatMap(obj => Object.keys(obj)));
+
+    if (primaryFields.has(Object.keys(fallbackSort)[0])) {
+      return primaryOrderBy;
+    }
+
+    return [...primaryArray, fallbackSort];
   }
 
   private async log(
@@ -426,6 +456,10 @@ export class BaseRepository<T> {
 
   protected getTransforms(): Record<string, string> {
     return {};
+  }
+
+  protected getDefaultSort(): Record<string, "asc" | "desc"> | undefined {
+    return undefined;
   }
 
   private isEnumField(fieldName: string): boolean {
