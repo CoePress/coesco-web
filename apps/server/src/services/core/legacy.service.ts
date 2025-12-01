@@ -914,11 +914,11 @@ export class LegacyService {
       const revisions = summaryResult
         .map((row: any) => ({
           qrev: String(row.QRev ?? row.qrev ?? row.QREV ?? row.Qrev ?? "").trim(),
-          total: row.total ?? row.TOTAL ?? row.Total ?? 0
+          total: row.total ?? row.TOTAL ?? row.Total ?? 0,
         }))
         .map((r: any) => ({
           qrev: r.qrev || "a",
-          total: r.total
+          total: r.total,
         }));
 
       revisions.sort((a: any, b: any) => b.qrev.localeCompare(a.qrev));
@@ -939,7 +939,7 @@ export class LegacyService {
       const lineItems = (lineItemsResult || []).map((row: any) => ({
         lineItem: String(row.lineItem ?? row.LINEITEM ?? row.LineItem ?? "").trim() || "-",
         description: String(row.Description ?? row.DESCRIPTION ?? row.description ?? "").trim() || "-",
-        price: Number(row.salesprice ?? row.SALESPRICE ?? row.SalesPrice ?? 0)
+        price: Number(row.salesprice ?? row.SALESPRICE ?? row.SalesPrice ?? 0),
       }));
 
       const finalValue = Number(selectedRow.total) || 0;

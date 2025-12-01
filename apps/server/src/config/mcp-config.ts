@@ -173,6 +173,62 @@ export const TOOLS: ITool[] = [
 
 export const SCHEMAS: ISchema[] = [
   {
+    name: "activity",
+    description: "Schema for Activity entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      activityType: {
+        type: "activitytype",
+        required: true,
+      },
+      sentiment: {
+        type: "activitysentiment",
+        required: true,
+      },
+      timestamp: {
+        type: "datetime",
+        required: true,
+      },
+      description: {
+        type: "string",
+        required: false,
+      },
+      notes: {
+        type: "string",
+        required: false,
+      },
+      entityType: {
+        type: "string",
+        required: false,
+      },
+      entityId: {
+        type: "string",
+        required: false,
+      },
+      createdBy: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+    },
+  },
+  {
     name: "address",
     description: "Schema for Address entity",
     schema: {
@@ -1810,6 +1866,56 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "microsoft-graph-token",
+    description: "Schema for MicrosoftGraphToken entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      employeeId: {
+        type: "string",
+        required: true,
+      },
+      accessToken: {
+        type: "string",
+        required: true,
+      },
+      refreshToken: {
+        type: "string",
+        required: true,
+      },
+      tokenType: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      scope: {
+        type: "string",
+        required: true,
+      },
+      expiresAt: {
+        type: "datetime",
+        required: true,
+      },
+      lastRefreshedAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+    },
+  },
+  {
     name: "note",
     description: "Schema for Note entity",
     schema: {
@@ -3089,6 +3195,39 @@ export const SCHEMAS: ISchema[] = [
       updatedAt: {
         type: "datetime",
         required: true,
+      },
+    },
+  },
+  {
+    name: "teams-chat-cache",
+    description: "Schema for TeamsChatCache entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      employeeId: {
+        type: "string",
+        required: true,
+      },
+      recipientUserId: {
+        type: "string",
+        required: true,
+      },
+      chatId: {
+        type: "string",
+        required: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      lastUsedAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
       },
     },
   },

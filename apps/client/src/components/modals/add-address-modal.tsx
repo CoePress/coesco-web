@@ -43,7 +43,7 @@ export function AddAddressModal({
     SystemNotes: "",
   });
 
-  // Zip code lookup states
+  // Postal code lookup states
   const [zipLookupResults, setZipLookupResults] = useState<{
     city: string[];
     stateProv: string[];
@@ -99,7 +99,7 @@ export function AddAddressModal({
       }
     }
     catch (error) {
-      console.error("Error looking up zip code:", error);
+      console.error("Error looking up postal code:", error);
       setZipLookupResults({ city: [], stateProv: [], country: [] });
     }
     finally {
@@ -110,7 +110,7 @@ export function AddAddressModal({
   const handleFieldChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
 
-    // Trigger zip code lookup when zip code changes
+    // Trigger postal code lookup when postal code changes
     if (field === "ZipCode") {
       lookupZipCode(value);
     }
@@ -234,7 +234,7 @@ export function AddAddressModal({
 
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">
-              ZIP Code *
+              Postal Code *
             </label>
             <div className="relative">
               <input
@@ -243,7 +243,7 @@ export function AddAddressModal({
                 onChange={e => handleFieldChange("ZipCode", e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary pr-8"
-                placeholder="Enter ZIP code to auto-populate"
+                placeholder="Enter postal code to auto-populate"
                 required
               />
               {isLookingUpZip && (
@@ -325,7 +325,7 @@ export function AddAddressModal({
                       className="w-full rounded border border-border px-3 py-2 pr-8 text-sm bg-surface text-text-muted focus:outline-none cursor-not-allowed"
                       placeholder="City"
                       readOnly
-                      title="City is automatically populated from ZIP code"
+                      title="City is automatically populated from postal code"
                     />
                     <Lock size={14} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted" />
                   </div>
@@ -358,7 +358,7 @@ export function AddAddressModal({
                       className="w-full rounded border border-border px-3 py-2 pr-8 text-sm bg-surface text-text-muted focus:outline-none cursor-not-allowed"
                       placeholder="State or Province"
                       readOnly
-                      title="State is automatically populated from ZIP code"
+                      title="State is automatically populated from postal code"
                     />
                     <Lock size={14} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted" />
                   </div>
@@ -391,7 +391,7 @@ export function AddAddressModal({
                       className="w-full rounded border border-border px-3 py-2 pr-8 text-sm bg-surface text-text-muted focus:outline-none cursor-not-allowed"
                       placeholder="Country"
                       readOnly
-                      title="Country is automatically populated from ZIP code"
+                      title="Country is automatically populated from postal code"
                     />
                     <Lock size={14} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted" />
                   </div>

@@ -76,7 +76,24 @@ export const AddContactModal = ({
         });
 
         if (results?.success && Array.isArray(results.data)) {
-          setSearchResults(results.data);
+          const contactsWithCompanyNames = await Promise.all(
+            results.data.map(async (contact: any) => {
+              if (contact.legacyCompanyId) {
+                try {
+                  const companyData = await api.get(`/legacy/std/Company/${contact.legacyCompanyId}`);
+                  return {
+                    ...contact,
+                    companyName: companyData?.CustDlrName || null
+                  };
+                } catch (error) {
+                  console.error(`Error fetching company for contact ${contact.id}:`, error);
+                  return contact;
+                }
+              }
+              return contact;
+            })
+          );
+          setSearchResults(contactsWithCompanyNames);
         }
       } catch (error) {
         console.error("Error searching contacts:", error);
@@ -112,15 +129,15 @@ export const AddContactModal = ({
 
       const newContact = await api.post("/sales/contacts", trimmedData);
 
-      if (newContact) {
+      if (newContact?.data) {
         if (journeyId) {
-          await createJourneyContact(newContact.id);
+          await createJourneyContact(newContact.data.id);
         }
 
         resetForm();
 
         if (onContactAdded) {
-          onContactAdded(newContact);
+          onContactAdded(newContact.data);
         }
 
         onClose();
@@ -438,6 +455,7 @@ export const AddContactModal = ({
                     {contact.firstName} {contact.lastName}
                   </div>
                   <div className="text-xs text-text-muted">
+                    {contact.companyName && <div>Company: {contact.companyName}</div>}
                     {contact.email && <div>Email: {contact.email}</div>}
                     {contact.phone && <div>Phone: {contact.phone}</div>}
                     {contact.type && <div>Type: {contact.type}</div>}

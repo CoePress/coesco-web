@@ -7,13 +7,13 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { Button } from "@/components";
+import { Button, PageHeader, StatusBadge } from "@/components";
 import { AddAddressModal } from "@/components/modals/add-address-modal";
 import { CreateJourneyModal } from "@/components/modals/create-journey-modal";
 import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { JourneyNavigationModal } from "@/components/modals/journey-navigation-modal";
+import { useAuth } from "@/contexts/auth.context";
 import { useApi } from "@/hooks/use-api";
-import { useEditMode } from "@/hooks/use-edit-mode";
 import { ContactType } from "@/types/enums";
 import { formatCurrency, formatDate } from "@/utils";
 
@@ -57,10 +57,23 @@ function getContactTypeColor(type: ContactType | string | null | undefined): str
   }
 }
 
+const getESTDateTime = (): string => {
+  const now = new Date();
+  const estOffset = -5 * 60 * 60 * 1000;
+  const estTime = new Date(now.getTime() + estOffset);
+  return estTime.toISOString().slice(0, 16);
+};
+
+const parseESTDateTime = (dateTimeLocal: string): string => {
+  const estDate = new Date(dateTimeLocal + ':00.000-05:00');
+  return estDate.toISOString();
+};
+
 function CompanyDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const api = useApi();
+  const { employee } = useAuth();
   const [company, setCompany] = useState<any>(null);
   const [companyContacts, setCompanyContacts] = useState<any[]>([]);
   const [companyJourneys, setCompanyJourneys] = useState<any[]>([]);
@@ -70,7 +83,7 @@ function CompanyDetails() {
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const [navigationModal, setNavigationModal] = useState<{ isOpen: boolean; journeyName: string; journeyId: string }>({ isOpen: false, journeyName: "", journeyId: "" });
 
-  const [activeTab, setActiveTab] = useState<"overview" | "addresses" | "credit" | "interactions" | "purchase-history" | "notes" | "relationships">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "addresses" | "credit" | "interactions" | "purchase-history" | "notes" | "relationships" | "activity">("overview");
 
   const [isAddingCall, setIsAddingCall] = useState(false);
   const [newCallData, setNewCallData] = useState<any>({});
@@ -108,6 +121,13 @@ function CompanyDetails() {
   const [companySearchResults, setCompanySearchResults] = useState<any[]>([]);
   const [isSearchingCompanies, setIsSearchingCompanies] = useState(false);
 
+  const [activitiesData, setActivitiesData] = useState<any[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [newActivityData, setNewActivityData] = useState<any>({});
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [editingActivityData, setEditingActivityData] = useState<any>({});
+  const [activityToDelete, setActivityToDelete] = useState<any>(null);
+
   const getContactName = (contact: any) => `${contact.firstName || ""} ${contact.lastName || ""}`.trim();
   const getContactInitial = (name: string) => name ? name.charAt(0).toUpperCase() : "C";
 
@@ -140,33 +160,57 @@ function CompanyDetails() {
     return isNaN(parsed) ? defaultVal : parsed;
   };
 
-  const contactEditor = useEditMode<any, number>({
-    onSave: async (id, data) => {
-      const updateData = {
-        firstName: data.firstName || "",
-        lastName: data.lastName || "",
-        email: data.email || "",
-        phone: data.phone || "",
-        phoneExtension: data.phoneExtension || "",
-        title: data.title || "",
-        type: data.type || "",
-      };
-      pendingContactSaveDataRef.current = data;
-      return await api.patch(`/sales/contacts/${id}`, updateData);
+  const [contactEditingId, setContactEditingId] = useState<number | null>(null);
+  const [contactEditData, setContactEditData] = useState<any>({});
+  const [contactSaving, setContactSaving] = useState(false);
+
+  const contactEditor = {
+    isEditing: contactEditingId !== null,
+    editingId: contactEditingId,
+    editData: contactEditData,
+    isSaving: contactSaving,
+    startEdit: (id: number, data: any) => {
+      setContactEditingId(id);
+      setContactEditData({ ...data });
     },
-    onSuccess: (_result, id) => {
-      const updatedContacts = companyContacts.map(contact =>
-        contact.id === id ? { ...contact, ...pendingContactSaveDataRef.current } : contact,
-      );
-      setCompanyContacts(updatedContacts);
-      pendingContactSaveDataRef.current = null;
+    updateField: (field: string, value: any) => {
+      setContactEditData((prev: any) => ({ ...prev, [field]: value }));
     },
-    onError: (error) => {
-      console.error("Error saving contact:", error);
-      alert("Error saving contact. Please try again.");
-      pendingContactSaveDataRef.current = null;
+    save: async () => {
+      if (contactEditingId === null) return;
+      try {
+        setContactSaving(true);
+        const updateData = {
+          firstName: contactEditData.firstName || "",
+          lastName: contactEditData.lastName || "",
+          email: contactEditData.email || "",
+          phone: contactEditData.phone || "",
+          phoneExtension: contactEditData.phoneExtension || "",
+          title: contactEditData.title || "",
+          type: contactEditData.type || "",
+        };
+        pendingContactSaveDataRef.current = contactEditData;
+        await api.patch(`/sales/contacts/${contactEditingId}`, updateData);
+        const updatedContacts = companyContacts.map(contact =>
+          contact.id === contactEditingId ? { ...contact, ...pendingContactSaveDataRef.current } : contact,
+        );
+        setCompanyContacts(updatedContacts);
+        pendingContactSaveDataRef.current = null;
+        setContactEditingId(null);
+        setContactEditData({});
+      } catch (error) {
+        console.error("Error saving contact:", error);
+        alert("Error saving contact. Please try again.");
+        pendingContactSaveDataRef.current = null;
+      } finally {
+        setContactSaving(false);
+      }
     },
-  });
+    cancel: () => {
+      setContactEditingId(null);
+      setContactEditData({});
+    },
+  };
 
   const handleContactFieldChange = (field: string, value: any) => {
     if (field === "firstName" || field === "lastName") {
@@ -175,52 +219,76 @@ function CompanyDetails() {
     contactEditor.updateField(field, value);
   };
 
-  const addressEditor = useEditMode<any, number>({
-    onSave: async (id, data) => {
-      const addressBeingEdited = companyAddresses.find(a => a.Address_ID === id);
-      if (!addressBeingEdited)
-        throw new Error("Address not found");
+  const [addressEditingId, setAddressEditingId] = useState<number | null>(null);
+  const [addressEditData, setAddressEditData] = useState<any>({});
+  const [addressSaving, setAddressSaving] = useState(false);
 
-      const updateData = {
-        AddressName: data.AddressName || "",
-        Address1: data.Address1 || "",
-        Address2: data.Address2 || "",
-        Address3: data.Address3 || "",
-        City: data.City || "",
-        State: data.State || "",
-        Country: data.Country || "USA",
-        ZipCode: data.ZipCode || "",
-        PhoneNumber: data.PhoneNumber || "",
-        FaxPhoneNum: data.FaxPhoneNum || "",
-        CanShip: (data.CanShip === 1 || data.CanShip === true) ? 1 : 0,
-        CanBill: (data.CanBill === 1 || data.CanBill === true) ? 1 : 0,
-        Notes: data.Notes || "",
-        BillToNum: Number.parseInt(data.BillToNum) || 0,
-        BillToId: Number.parseInt(data.BillToId) || 0,
-        ShipInstr: data.ShipInstr || "",
-        Directions: data.Directions || "",
-        OriginalVia: data.OriginalVia || "",
-        EmailInvoiceTo: data.EmailInvoiceTo || "",
-        SystemNotes: data.SystemNotes || "",
-      };
+  const addressEditor = {
+    isEditing: addressEditingId !== null,
+    editingId: addressEditingId,
+    editData: addressEditData,
+    isSaving: addressSaving,
+    startEdit: (id: number, data: any) => {
+      setAddressEditingId(id);
+      setAddressEditData({ ...data });
+    },
+    updateField: (field: string, value: any) => {
+      setAddressEditData((prev: any) => ({ ...prev, [field]: value }));
+    },
+    save: async () => {
+      if (addressEditingId === null) return;
+      try {
+        setAddressSaving(true);
+        const addressBeingEdited = companyAddresses.find(a => a.Address_ID === addressEditingId);
+        if (!addressBeingEdited)
+          throw new Error("Address not found");
 
-      pendingAddressSaveDataRef.current = data;
-      return await api.patch(`/legacy/std/Address/filter/custom?Company_ID=${addressBeingEdited.Company_ID}&Address_ID=${id}`, updateData);
+        const updateData = {
+          AddressName: addressEditData.AddressName || "",
+          Address1: addressEditData.Address1 || "",
+          Address2: addressEditData.Address2 || "",
+          Address3: addressEditData.Address3 || "",
+          City: addressEditData.City || "",
+          State: addressEditData.State || "",
+          Country: addressEditData.Country || "USA",
+          ZipCode: addressEditData.ZipCode || "",
+          PhoneNumber: addressEditData.PhoneNumber || "",
+          FaxPhoneNum: addressEditData.FaxPhoneNum || "",
+          CanShip: (addressEditData.CanShip === 1 || addressEditData.CanShip === true) ? 1 : 0,
+          CanBill: (addressEditData.CanBill === 1 || addressEditData.CanBill === true) ? 1 : 0,
+          Notes: addressEditData.Notes || "",
+          BillToNum: Number.parseInt(addressEditData.BillToNum) || 0,
+          BillToId: Number.parseInt(addressEditData.BillToId) || 0,
+          ShipInstr: addressEditData.ShipInstr || "",
+          Directions: addressEditData.Directions || "",
+          OriginalVia: addressEditData.OriginalVia || "",
+          EmailInvoiceTo: addressEditData.EmailInvoiceTo || "",
+          SystemNotes: addressEditData.SystemNotes || "",
+        };
+
+        pendingAddressSaveDataRef.current = addressEditData;
+        await api.patch(`/legacy/std/Address/filter/custom?Company_ID=${addressBeingEdited.Company_ID}&Address_ID=${addressEditingId}`, updateData);
+        const updatedAddresses = companyAddresses.map(address =>
+          address.Address_ID === addressEditingId ? { ...address, ...pendingAddressSaveDataRef.current } : address,
+        );
+        setCompanyAddresses(updatedAddresses);
+        setEditZipLookupResults({ city: [], stateProv: [], country: [] });
+        pendingAddressSaveDataRef.current = null;
+        setAddressEditingId(null);
+        setAddressEditData({});
+      } catch (error) {
+        console.error("Error saving address:", error);
+        alert("Error saving address. Please try again.");
+        pendingAddressSaveDataRef.current = null;
+      } finally {
+        setAddressSaving(false);
+      }
     },
-    onSuccess: (_result, id) => {
-      const updatedAddresses = companyAddresses.map(address =>
-        address.Address_ID === id ? { ...address, ...pendingAddressSaveDataRef.current } : address,
-      );
-      setCompanyAddresses(updatedAddresses);
-      setEditZipLookupResults({ city: [], stateProv: [], country: [] });
-      pendingAddressSaveDataRef.current = null;
+    cancel: () => {
+      setAddressEditingId(null);
+      setAddressEditData({});
     },
-    onError: (error) => {
-      console.error("Error saving address:", error);
-      alert("Error saving address. Please try again.");
-      pendingAddressSaveDataRef.current = null;
-    },
-  });
+  };
 
   const handleAddressFieldChange = (field: string, value: any) => {
     addressEditor.updateField(field, value);
@@ -242,83 +310,131 @@ function CompanyDetails() {
     setEditZipLookupResults({ city: [], stateProv: [], country: [] });
   };
 
-  const callEditor = useEditMode<any, number>({
-    onSave: async (id, data) => {
-      const updateData = {
-        Contactname: data.Contactname || "",
-        CallStatus: data.CallStatus || "",
-        PhoneNumber: data.PhoneNumber || "",
-        CallType: data.CallType || "",
-        CallOwner: data.CallOwner || "",
-        CustEmail: data.CustEmail || "",
-        CustComments: data.CustComments || "",
-        OurComments: data.OurComments || "",
-        Resolution: data.Resolution || "",
-        Issues: data.Issues || "",
-        ServiceCodes: data.ServiceCodes || "",
-        RefEquipment: data.RefEquipment || "",
-      };
+  const [callEditingId, setCallEditingId] = useState<number | null>(null);
+  const [callEditData, setCallEditData] = useState<any>({});
+  const [callSaving, setCallSaving] = useState(false);
 
-      pendingCallSaveDataRef.current = data;
-      return await api.patch(`/legacy/std/CallHistory/filter/custom?filterField=CallRefNum&filterValue=${id}`, updateData);
+  const callEditor = {
+    isEditing: callEditingId !== null,
+    editingId: callEditingId,
+    editData: callEditData,
+    isSaving: callSaving,
+    startEdit: (id: number, data: any) => {
+      setCallEditingId(id);
+      setCallEditData({ ...data });
     },
-    onSuccess: (_result, id) => {
-      const updatedCallHistory = callHistory.map(call =>
-        call.CallRefNum === id ? { ...call, ...pendingCallSaveDataRef.current } : call,
-      );
-      setCallHistory(updatedCallHistory);
-      pendingCallSaveDataRef.current = null;
+    updateField: (field: string, value: any) => {
+      setCallEditData((prev: any) => ({ ...prev, [field]: value }));
     },
-    onError: (error) => {
-      console.error("Error saving call history:", error);
-      pendingCallSaveDataRef.current = null;
-    },
-  });
+    save: async () => {
+      if (callEditingId === null) return;
+      try {
+        setCallSaving(true);
+        const updateData = {
+          Contactname: callEditData.Contactname || "",
+          CallStatus: callEditData.CallStatus || "",
+          PhoneNumber: callEditData.PhoneNumber || "",
+          CallType: callEditData.CallType || "",
+          CallOwner: callEditData.CallOwner || "",
+          CustEmail: callEditData.CustEmail || "",
+          CustComments: callEditData.CustComments || "",
+          OurComments: callEditData.OurComments || "",
+          Resolution: callEditData.Resolution || "",
+          Issues: callEditData.Issues || "",
+          ServiceCodes: callEditData.ServiceCodes || "",
+          RefEquipment: callEditData.RefEquipment || "",
+        };
 
-  const companyEditor = useEditMode<any, boolean>({
-    onSave: async (_id, data) => {
-      if (!company || !id)
-        throw new Error("Company not found");
+        pendingCallSaveDataRef.current = callEditData;
+        await api.patch(`/legacy/std/CallHistory/filter/custom?filterField=CallRefNum&filterValue=${callEditingId}`, updateData);
+        const updatedCallHistory = callHistory.map(call =>
+          call.CallRefNum === callEditingId ? { ...call, ...pendingCallSaveDataRef.current } : call,
+        );
+        setCallHistory(updatedCallHistory);
+        pendingCallSaveDataRef.current = null;
+        setCallEditingId(null);
+        setCallEditData({});
+      } catch (error) {
+        console.error("Error saving call history:", error);
+        pendingCallSaveDataRef.current = null;
+      } finally {
+        setCallSaving(false);
+      }
+    },
+    cancel: () => {
+      setCallEditingId(null);
+      setCallEditData({});
+    },
+  };
 
-      const updateData = {
-        Active: data.active ? 1 : 0,
-        IsDealer: parseInt32(data.isDealer, 0),
-        CreditStatus: data.creditStatus || "",
-        CreditLimit: parseNumber(data.creditLimit, 0),
-        AcctBalance: parseNumber(data.acctBalance, 0),
-        TermsCode: data.termsCode ? String(data.termsCode) : "",
-        CoeRSM: parseInt32(data.coeRSM, 0),
-        BalanceDate: data.balanceDate || null,
-        CreditNote: data.creditNote || null,
-        Notes: data.notes || null,
-      };
+  const [companyEditingId, setCompanyEditingId] = useState<boolean | null>(null);
+  const [companyEditData, setCompanyEditData] = useState<any>({});
+  const [companySaving, setCompanySaving] = useState(false);
 
-      pendingCompanySaveDataRef.current = data;
-      return await api.patch(`/legacy/std/Company/${id}`, updateData);
+  const companyEditor = {
+    isEditing: companyEditingId !== null,
+    editingId: companyEditingId,
+    editData: companyEditData,
+    isSaving: companySaving,
+    startEdit: (id: boolean, data: any) => {
+      setCompanyEditingId(id);
+      setCompanyEditData({ ...data });
     },
-    onSuccess: (_result, _id) => {
-      const data = pendingCompanySaveDataRef.current;
-      setCompany({
-        ...company,
-        active: data.active,
-        isDealer: parseInt32(data.isDealer, 0),
-        creditStatus: data.creditStatus,
-        creditLimit: parseNumber(data.creditLimit, 0),
-        acctBalance: parseNumber(data.acctBalance, 0),
-        termsCode: data.termsCode,
-        coeRSM: parseInt32(data.coeRSM, 0),
-        balanceDate: data.balanceDate,
-        creditNote: data.creditNote,
-        notes: data.notes,
-      });
-      setIsCustomRsmInput(false);
-      pendingCompanySaveDataRef.current = null;
+    updateField: (field: string, value: any) => {
+      setCompanyEditData((prev: any) => ({ ...prev, [field]: value }));
     },
-    onError: (error) => {
-      console.error("Error saving company details:", error);
-      pendingCompanySaveDataRef.current = null;
+    save: async () => {
+      if (companyEditingId === null) return;
+      try {
+        setCompanySaving(true);
+        if (!company || !id)
+          throw new Error("Company not found");
+
+        const updateData = {
+          Active: companyEditData.active ? 1 : 0,
+          IsDealer: parseInt32(companyEditData.isDealer, 0),
+          CreditStatus: companyEditData.creditStatus || "",
+          CreditLimit: parseNumber(companyEditData.creditLimit, 0),
+          AcctBalance: parseNumber(companyEditData.acctBalance, 0),
+          TermsCode: companyEditData.termsCode ? String(companyEditData.termsCode) : "",
+          CoeRSM: parseInt32(companyEditData.coeRSM, 0),
+          BalanceDate: companyEditData.balanceDate || null,
+          CreditNote: companyEditData.creditNote || null,
+          Notes: companyEditData.notes || null,
+        };
+
+        pendingCompanySaveDataRef.current = companyEditData;
+        await api.patch(`/legacy/std/Company/${id}`, updateData);
+        const data = pendingCompanySaveDataRef.current;
+        setCompany({
+          ...company,
+          active: data.active,
+          isDealer: parseInt32(data.isDealer, 0),
+          creditStatus: data.creditStatus,
+          creditLimit: parseNumber(data.creditLimit, 0),
+          acctBalance: parseNumber(data.acctBalance, 0),
+          termsCode: data.termsCode,
+          coeRSM: parseInt32(data.coeRSM, 0),
+          balanceDate: data.balanceDate,
+          creditNote: data.creditNote,
+          notes: data.notes,
+        });
+        setIsCustomRsmInput(false);
+        pendingCompanySaveDataRef.current = null;
+        setCompanyEditingId(null);
+        setCompanyEditData({});
+      } catch (error) {
+        console.error("Error saving company details:", error);
+        pendingCompanySaveDataRef.current = null;
+      } finally {
+        setCompanySaving(false);
+      }
     },
-  });
+    cancel: () => {
+      setCompanyEditingId(null);
+      setCompanyEditData({});
+    },
+  };
 
   const startCompanyEdit = () => {
     setIsCustomRsmInput(false);
@@ -341,30 +457,54 @@ function CompanyDetails() {
     setIsCustomRsmInput(false);
   };
 
-  const notesEditor = useEditMode<any, boolean>({
-    onSave: async (_id, data) => {
-      if (!company || !id)
-        throw new Error("Company not found");
+  const [notesEditingId, setNotesEditingId] = useState<boolean | null>(null);
+  const [notesEditData, setNotesEditData] = useState<any>({});
+  const [notesSaving, setNotesSaving] = useState(false);
 
-      const updateData = {
-        Notes: data.notes || null,
-      };
+  const notesEditor = {
+    isEditing: notesEditingId !== null,
+    editingId: notesEditingId,
+    editData: notesEditData,
+    isSaving: notesSaving,
+    startEdit: (id: boolean, data: any) => {
+      setNotesEditingId(id);
+      setNotesEditData({ ...data });
+    },
+    updateField: (field: string, value: any) => {
+      setNotesEditData((prev: any) => ({ ...prev, [field]: value }));
+    },
+    save: async () => {
+      if (notesEditingId === null) return;
+      try {
+        setNotesSaving(true);
+        if (!company || !id)
+          throw new Error("Company not found");
 
-      pendingNotesSaveDataRef.current = data;
-      return await api.patch(`/legacy/std/Company/${id}`, updateData);
+        const updateData = {
+          Notes: notesEditData.notes || null,
+        };
+
+        pendingNotesSaveDataRef.current = notesEditData;
+        await api.patch(`/legacy/std/Company/${id}`, updateData);
+        setCompany({
+          ...company,
+          notes: pendingNotesSaveDataRef.current.notes,
+        });
+        pendingNotesSaveDataRef.current = null;
+        setNotesEditingId(null);
+        setNotesEditData({});
+      } catch (error) {
+        console.error("Error saving notes:", error);
+        pendingNotesSaveDataRef.current = null;
+      } finally {
+        setNotesSaving(false);
+      }
     },
-    onSuccess: (_result, _id) => {
-      setCompany({
-        ...company,
-        notes: pendingNotesSaveDataRef.current.notes,
-      });
-      pendingNotesSaveDataRef.current = null;
+    cancel: () => {
+      setNotesEditingId(null);
+      setNotesEditData({});
     },
-    onError: (error) => {
-      console.error("Error saving notes:", error);
-      pendingNotesSaveDataRef.current = null;
-    },
-  });
+  };
 
   const mapLegacyStageToId = (stage: any): number => {
     const s = String(stage ?? "").toLowerCase();
@@ -482,6 +622,7 @@ function CompanyDetails() {
       Notes: raw.Notes,
       Industry: raw.Industry,
       Chance_To_Secure_order: raw.Chance_To_Secure_order,
+      Deleted: raw.Deleted === 1 || raw.Deleted === '1' || raw.Deleted === true ? 1 : 0,
     };
   };
 
@@ -744,6 +885,18 @@ function CompanyDetails() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (activeTab === "activity") {
+      fetchActivities();
+    }
+  }, [activeTab, id]);
+
+  useEffect(() => {
+    if (activeTab === "activity" && companyContacts.length === 1 && !newActivityData.contactId) {
+      setNewActivityData((prev: any) => ({ ...prev, contactId: companyContacts[0].id }));
+    }
+  }, [activeTab, companyContacts]);
+
   const handleAddCall = async () => {
     const currentDateTime = new Date();
     const currentDate = currentDateTime.toISOString().split("T")[0];
@@ -943,7 +1096,8 @@ function CompanyDetails() {
       });
 
       if (result) {
-        setCompanyContacts([...companyContacts, result]);
+        const newContact = result.data || result;
+        setCompanyContacts([...companyContacts, newContact]);
         setIsAddingContact(false);
         setNewContactData({});
       }
@@ -1014,7 +1168,7 @@ function CompanyDetails() {
       }
     }
     catch (error) {
-      console.error("Error looking up zip code:", error);
+      console.error("Error looking up postal code:", error);
       setEditZipLookupResults({ city: [], stateProv: [], country: [] });
     }
     finally {
@@ -1233,6 +1387,105 @@ function CompanyDetails() {
     }
   };
 
+  const fetchActivities = async () => {
+    if (!id) return;
+
+    setActivitiesLoading(true);
+    try {
+      const response = await api.get(`/sales/companies/${id}/activities`);
+
+      const activities = response?.success && Array.isArray(response.data)
+        ? response.data
+        : [];
+
+      setActivitiesData(activities);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      setActivitiesData([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
+  const handleCreateActivity = async () => {
+    if (!id || !newActivityData.activityType || !newActivityData.sentiment || !newActivityData.contactId) return;
+
+    try {
+      const activityPayload = {
+        activityType: newActivityData.activityType,
+        sentiment: newActivityData.sentiment,
+        timestamp: newActivityData.timestamp ? parseESTDateTime(newActivityData.timestamp) : parseESTDateTime(getESTDateTime()),
+        description: newActivityData.description || null,
+        notes: newActivityData.notes || null,
+        entityType: 'contact',
+        entityId: newActivityData.contactId,
+        createdBy: `${employee?.firstName || ''} ${employee?.lastName || ''}`.trim() || null,
+      };
+
+      const result = await api.post('/sales/activities', activityPayload);
+
+      if (result?.success && result.data) {
+        const selectedContact = companyContacts.find((c: any) => c.id === newActivityData.contactId);
+        const activityToAdd = {
+          ...result.data,
+          _contactName: selectedContact ? `${selectedContact.firstName || ''} ${selectedContact.lastName || ''}`.trim() : ''
+        };
+
+        setActivitiesData(prev => [activityToAdd, ...prev]);
+        setNewActivityData({});
+      }
+    } catch (error: any) {
+      console.error('Error creating activity:', error);
+      alert(error.response?.data?.message || 'Failed to create activity');
+    }
+  };
+
+  const handleUpdateActivity = async () => {
+    if (!editingActivityId || !editingActivityData.activityType || !editingActivityData.sentiment) return;
+
+    try {
+      const updatePayload = {
+        activityType: editingActivityData.activityType,
+        sentiment: editingActivityData.sentiment,
+        timestamp: editingActivityData.timestamp && editingActivityData.timestamp.length === 16
+          ? parseESTDateTime(editingActivityData.timestamp)
+          : editingActivityData.timestamp,
+        description: editingActivityData.description || null,
+        notes: editingActivityData.notes || null,
+        createdBy: editingActivityData.createdBy || null,
+      };
+
+      const result = await api.patch(`/sales/activities/${editingActivityId}`, updatePayload);
+
+      if (result?.success && result.data) {
+        setActivitiesData(prev => prev.map(activity =>
+          activity.id === editingActivityId ? result.data : activity
+        ));
+        setEditingActivityId(null);
+        setEditingActivityData({});
+      }
+    } catch (error: any) {
+      console.error('Error updating activity:', error);
+      alert(error.response?.data?.message || 'Failed to update activity');
+    }
+  };
+
+  const handleDeleteActivity = async () => {
+    if (!activityToDelete) return;
+
+    try {
+      const result = await api.delete(`/sales/activities/${activityToDelete.id}`);
+
+      if (result !== null) {
+        setActivitiesData(prev => prev.filter(activity => activity.id !== activityToDelete.id));
+        setActivityToDelete(null);
+      }
+    } catch (error: any) {
+      console.error('Error deleting activity:', error);
+      alert(error.response?.data?.message || 'Failed to delete activity');
+    }
+  };
+
   if (isInitialLoading) {
     return (
       <div className="flex flex-1 bg-background items-center justify-center">
@@ -1252,7 +1505,17 @@ function CompanyDetails() {
   const companyInitial = company.name ? company.name.charAt(0).toUpperCase() : "C";
 
   return (
-    <div className="flex flex-col md:flex-row flex-1 bg-background">
+    <div className="flex flex-col flex-1 bg-background">
+      {/* Mobile: Show header at top */}
+      <div className="md:hidden">
+        <PageHeader
+          title={company.name}
+          description="Company details and contacts"
+          goBack
+        />
+      </div>
+
+      <div className="flex flex-col md:flex-row flex-1">
       <aside className="w-full md:w-80 bg-foreground flex flex-col md:border-r border-b md:border-b-0 border-border">
         <div className="flex flex-col items-center py-4 border-b border-border">
           <div className="w-16 h-16 rounded-lg flex items-center justify-center mb-2 border border-border">
@@ -1498,7 +1761,16 @@ function CompanyDetails() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col p-2">
+      <main className="flex-1 flex flex-col">
+        {/* Desktop: Show header inside main */}
+        <div className="hidden md:block">
+          <PageHeader
+            title={company.name}
+            description="Company details and contacts"
+            goBack
+          />
+        </div>
+        <div className="p-2 flex flex-col flex-1">
         <div className="bg-foreground px-4 pt-2 rounded-lg border border-border">
           <div className="grid grid-cols-3 gap-x-2 gap-y-1 md:flex md:space-x-8 text-sm md:overflow-x-auto">
             <button
@@ -1560,6 +1832,16 @@ function CompanyDetails() {
               }`}
             >
               Relationships
+            </button>
+            <button
+              onClick={() => setActiveTab("activity")}
+              className={`pb-2 border-b-2 font-semibold cursor-pointer text-xs md:text-sm ${
+                activeTab === "activity"
+                  ? "border-primary/50 text-primary"
+                  : "border-transparent text-text-muted hover:text-primary"
+              }`}
+            >
+              Activity
             </button>
           </div>
         </div>
@@ -1930,15 +2212,18 @@ function CompanyDetails() {
                                   %
                                 </div>
                               )}
-                              {journey.Priority && (
-                                <div className="flex items-center mt-2">
+                              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                {journey.Priority && (
                                   <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
                                     Priority
                                     {" "}
                                     {journey.Priority}
                                   </span>
-                                </div>
-                              )}
+                                )}
+                                {(journey.Deleted === 1 || journey.Deleted === '1' || journey.Deleted === true) && (
+                                  <StatusBadge label="Disabled" variant="error" />
+                                )}
+                              </div>
                             </div>
                           );
                         })}
@@ -2099,7 +2384,7 @@ function CompanyDetails() {
                                                   onChange={e => handleAddressFieldChange("ZipCode", e.target.value)}
                                                   onKeyDown={handleKeyDown}
                                                   className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full pr-8"
-                                                  placeholder="ZIP code"
+                                                  placeholder="Postal code"
                                                 />
                                                 {isEditLookingUpZip && (
                                                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -3569,9 +3854,313 @@ function CompanyDetails() {
                   </div>
                 </section>
               )
-            : null}
+            : activeTab === "activity"
+              ? (
+                  <section className="flex-1 space-y-2">
+                    <div
+                      className="bg-foreground rounded-lg border border-border p-4"
+                      style={{ boxShadow: `0 1px 3px var(--shadow)` }}
+                    >
+                      <h4 className="font-semibold text-text mb-4">Add New Activity</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-sm font-medium text-text-muted mb-1">Activity Type *</label>
+                          <select
+                            value={newActivityData.activityType || ''}
+                            onChange={(e) => setNewActivityData({ ...newActivityData, activityType: e.target.value })}
+                            className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                          >
+                            <option value="">Select Type</option>
+                            <option value="Call">Call</option>
+                            <option value="Email">Email</option>
+                            <option value="Meeting">Meeting</option>
+                            <option value="TextChat">Text/Chat</option>
+                            <option value="QuoteSent">Quote Sent</option>
+                            <option value="QuotePresentation">Quote Presentation</option>
+                            <option value="Event">Event</option>
+                            <option value="FormSubmission">Form Submission</option>
+                            <option value="WebsiteActivity">Website Activity</option>
+                            <option value="ContentDownloaded">Content Downloaded</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-text-muted mb-1">Sentiment *</label>
+                          <select
+                            value={newActivityData.sentiment || ''}
+                            onChange={(e) => setNewActivityData({ ...newActivityData, sentiment: e.target.value })}
+                            className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                          >
+                            <option value="">Select Sentiment</option>
+                            <option value="Positive">Positive</option>
+                            <option value="Neutral">Neutral</option>
+                            <option value="Negative">Negative</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-text-muted mb-1">Contact *</label>
+                          <select
+                            value={newActivityData.contactId || ''}
+                            onChange={(e) => setNewActivityData({ ...newActivityData, contactId: e.target.value })}
+                            className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                            disabled={companyContacts.length === 0}
+                          >
+                            <option value="">Select Contact</option>
+                            {companyContacts.map((contact: any) => (
+                              <option key={contact.id} value={contact.id}>
+                                {`${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Unnamed Contact'}
+                              </option>
+                            ))}
+                          </select>
+                          {companyContacts.length === 0 && (
+                            <p className="text-xs text-error mt-1">No contacts available. Please add a contact first.</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-text-muted mb-1">Timestamp</label>
+                          <input
+                            type="datetime-local"
+                            value={newActivityData.timestamp || getESTDateTime()}
+                            onChange={(e) => setNewActivityData({ ...newActivityData, timestamp: e.target.value })}
+                            className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-text-muted mb-1">Created By</label>
+                          <input
+                            type="text"
+                            value={`${employee?.firstName || ''} ${employee?.lastName || ''}`.trim()}
+                            disabled
+                            className="w-full rounded border border-border px-3 py-2 text-sm bg-surface text-text-muted cursor-not-allowed"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-text-muted mb-1">Description</label>
+                          <textarea
+                            value={newActivityData.description || ''}
+                            onChange={(e) => setNewActivityData({ ...newActivityData, description: e.target.value })}
+                            className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                            rows={2}
+                            placeholder="Brief description of the activity..."
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-text-muted mb-1">Notes</label>
+                          <textarea
+                            value={newActivityData.notes || ''}
+                            onChange={(e) => setNewActivityData({ ...newActivityData, notes: e.target.value })}
+                            className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                            rows={3}
+                            placeholder="Additional notes..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handleCreateActivity}
+                          disabled={!newActivityData.activityType || !newActivityData.sentiment || !newActivityData.contactId || companyContacts.length === 0}
+                          className="text-xs text-info border border-info px-3 py-1.5 rounded hover:bg-info/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Add Activity
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      className="bg-foreground rounded-lg border border-border p-4"
+                      style={{ boxShadow: `0 1px 3px var(--shadow)` }}
+                    >
+                      <h4 className="font-semibold text-text mb-4">Activity History</h4>
+
+                      {activitiesLoading ? (
+                        <div className="flex justify-center items-center h-64">Loading activities...</div>
+                      ) : (
+                        <div className="space-y-4">
+                          {activitiesData.map((activity) => (
+                            <div key={activity.id} className="p-4 bg-surface border border-border rounded">
+                              {editingActivityId === activity.id ? (
+                                <div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                      <label className="block text-sm font-medium text-text-muted mb-1">Activity Type *</label>
+                                      <select
+                                        value={editingActivityData.activityType || ''}
+                                        onChange={(e) => setEditingActivityData({ ...editingActivityData, activityType: e.target.value })}
+                                        className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                                      >
+                                        <option value="">Select Type</option>
+                                        <option value="Call">Call</option>
+                                        <option value="Email">Email</option>
+                                        <option value="Meeting">Meeting</option>
+                                        <option value="TextChat">Text/Chat</option>
+                                        <option value="QuoteSent">Quote Sent</option>
+                                        <option value="QuotePresentation">Quote Presentation</option>
+                                        <option value="Event">Event</option>
+                                        <option value="FormSubmission">Form Submission</option>
+                                        <option value="WebsiteActivity">Website Activity</option>
+                                        <option value="ContentDownloaded">Content Downloaded</option>
+                                      </select>
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-sm font-medium text-text-muted mb-1">Sentiment *</label>
+                                      <select
+                                        value={editingActivityData.sentiment || ''}
+                                        onChange={(e) => setEditingActivityData({ ...editingActivityData, sentiment: e.target.value })}
+                                        className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                                      >
+                                        <option value="">Select Sentiment</option>
+                                        <option value="Positive">Positive</option>
+                                        <option value="Neutral">Neutral</option>
+                                        <option value="Negative">Negative</option>
+                                      </select>
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-sm font-medium text-text-muted mb-1">Timestamp</label>
+                                      <input
+                                        type="datetime-local"
+                                        value={editingActivityData.timestamp ? new Date(editingActivityData.timestamp).toISOString().slice(0, 16) : ''}
+                                        onChange={(e) => setEditingActivityData({ ...editingActivityData, timestamp: e.target.value })}
+                                        className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-sm font-medium text-text-muted mb-1">Created By</label>
+                                      <input
+                                        type="text"
+                                        value={editingActivityData.createdBy || ''}
+                                        disabled
+                                        className="w-full rounded border border-border px-3 py-2 text-sm bg-surface text-text-muted cursor-not-allowed"
+                                      />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                      <label className="block text-sm font-medium text-text-muted mb-1">Description</label>
+                                      <textarea
+                                        value={editingActivityData.description || ''}
+                                        onChange={(e) => setEditingActivityData({ ...editingActivityData, description: e.target.value })}
+                                        className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                                        rows={2}
+                                        placeholder="Brief description of the activity..."
+                                      />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                      <label className="block text-sm font-medium text-text-muted mb-1">Notes</label>
+                                      <textarea
+                                        value={editingActivityData.notes || ''}
+                                        onChange={(e) => setEditingActivityData({ ...editingActivityData, notes: e.target.value })}
+                                        className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                                        rows={3}
+                                        placeholder="Additional notes..."
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingActivityId(null);
+                                        setEditingActivityData({});
+                                      }}
+                                      className="text-xs text-text-muted border border-border px-3 py-1.5 rounded hover:bg-surface"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={handleUpdateActivity}
+                                      disabled={!editingActivityData.activityType || !editingActivityData.sentiment}
+                                      className="text-xs text-info border border-info px-3 py-1.5 rounded hover:bg-info/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      Save Changes
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2 py-1 rounded text-xs font-medium bg-primary/20 text-primary">
+                                        {activity.activityType}
+                                      </span>
+                                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                        activity.sentiment === 'Positive' ? 'bg-success/20 text-success' :
+                                        activity.sentiment === 'Negative' ? 'bg-error/20 text-error' :
+                                        'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {activity.sentiment}
+                                      </span>
+                                      <span className="text-xs text-text-muted">
+                                        {new Date(activity.timestamp).toLocaleString()}
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingActivityId(activity.id);
+                                          setEditingActivityData(activity);
+                                        }}
+                                        className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setActivityToDelete(activity)}
+                                        className="text-xs text-error border border-error px-2 py-1 rounded hover:bg-error/10"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>
+                                  {activity.description && (
+                                    <p className="text-sm text-text mb-2">{activity.description}</p>
+                                  )}
+                                  {activity.notes && (
+                                    <p className="text-xs text-text-muted">{activity.notes}</p>
+                                  )}
+                                  <div className="flex items-center gap-2 mt-2">
+                                    {activity.createdBy && (
+                                      <p className="text-xs text-text-muted">By: {activity.createdBy}</p>
+                                    )}
+                                    {activity._contactName && (
+                                      <p className="text-xs text-text-muted">
+                                        {activity.createdBy ? '•' : ''} Contact: {activity._contactName}
+                                      </p>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))}
+
+                          {activitiesData.length === 0 && (
+                            <div className="text-center py-8 text-text-muted">
+                              No activities yet. Add your first activity above.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )
+              : null}
+        </div>
         </div>
       </main>
+      </div>
 
       {/* Journey Creation Modal */}
       <CreateJourneyModal
@@ -3621,6 +4210,34 @@ function CompanyDetails() {
         contact={markInactiveContact}
         isUpdating={isMarkingInactive}
       />
+
+      {/* Delete Activity Confirmation Modal */}
+      {activityToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-foreground rounded shadow-lg border p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-text mb-4">Delete Activity</h3>
+            <p className="text-sm text-text-muted mb-6">
+              Are you sure you want to delete this activity? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setActivityToDelete(null)}
+                className="text-xs text-text-muted border border-border px-3 py-1.5 rounded hover:bg-surface"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteActivity}
+                className="text-xs text-error border border-error px-3 py-1.5 rounded hover:bg-error/10"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

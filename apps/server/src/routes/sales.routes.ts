@@ -10,6 +10,7 @@ router.get("/companies", customerController.getCompanies);
 router.get("/companies/:companyId", customerController.getCompany);
 router.patch("/companies/:companyId", customerController.updateCompany);
 router.delete("/companies/:companyId", customerController.deleteCompany);
+router.get("/companies/:companyId/activities", customerController.getCompanyActivities);
 
 // Addresses
 router.post("/addresses", customerController.createAddress);
@@ -38,6 +39,13 @@ router.get("/journey-contacts", customerController.getJourneyContacts);
 router.get("/journey-contacts/:journeyContactId", customerController.getJourneyContact);
 router.patch("/journey-contacts/:journeyContactId", customerController.updateJourneyContact);
 router.delete("/journey-contacts/:journeyContactId", customerController.deleteJourneyContact);
+
+// Activities
+router.post("/activities", customerController.createActivity);
+router.get("/activities", customerController.getActivities);
+router.get("/activities/:activityId", customerController.getActivity);
+router.patch("/activities/:activityId", customerController.updateActivity);
+router.delete("/activities/:activityId", customerController.deleteActivity);
 
 // Journeys
 router.post("/journeys", journeyController.createJourney);

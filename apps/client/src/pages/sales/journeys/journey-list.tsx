@@ -1,22 +1,21 @@
 import { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Ban, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StatusBadge } from "@/components";
 import Table from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/utils";
 import { getPriorityConfig } from "./utils";
-import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { TrackJourneyModal } from "@/components/modals/track-journey-modal";
 import { UntrackJourneyModal } from "@/components/modals/untrack-journey-modal";
 import { useJourneyTracking } from "@/hooks/use-journey-tracking";
 
 const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: string) => void }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [showUntrackModal, setShowUntrackModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isTracked, trackingInfo, refreshTracking, setIsTracked } = useJourneyTracking(journey?.id);
+  const isDeleted = journey.deletedAt === 1;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,29 +67,24 @@ const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: 
               {isTracked ? 'Stop Tracking' : 'Track Journey'}
             </button>
             <button
-              className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
+                isDeleted
+                  ? 'text-green-600 hover:bg-green-50'
+                  : 'text-red-600 hover:bg-red-50'
+              }`}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMenuOpen(false);
-                setShowDeleteConfirm(true);
+                onDelete(journey.id);
               }}
             >
-              <Trash2 size={14} />
-              Delete Journey
+              {isDeleted ? <CheckCircle size={14} /> : <Ban size={14} />}
+              {isDeleted ? 'Enable Journey' : 'Disable Journey'}
             </button>
           </div>
         )}
       </div>
-      <DeleteJourneyModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => {
-          setShowDeleteConfirm(false);
-          onDelete(journey.id);
-        }}
-        journey={journey}
-      />
-      
+
       <TrackJourneyModal
         isOpen={showTrackModal}
         onClose={() => setShowTrackModal(false)}
@@ -131,6 +125,8 @@ interface ListViewProps {
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
   isLoading?: boolean;
+  showDisabled?: boolean;
+  onToggleShowDisabled?: (show: boolean) => void;
 }
 
 export const ListView = ({
@@ -144,6 +140,8 @@ export const ListView = ({
   sortField,
   sortDirection,
   isLoading,
+  showDisabled = false,
+  onToggleShowDisabled,
 }: ListViewProps) => {
   const listContainerRef = useRef<HTMLDivElement>(null);
 
@@ -248,6 +246,19 @@ export const ListView = ({
             <div className="bg-foreground p-4 rounded border shadow-lg">
               <span className="text-sm text-text-muted">Loading journeys...</span>
             </div>
+          </div>
+        )}
+        {onToggleShowDisabled && (
+          <div className="bg-foreground px-4 py-3 border-b flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-neutral-400">
+              <input
+                type="checkbox"
+                checked={showDisabled}
+                onChange={(e) => onToggleShowDisabled(e.target.checked)}
+                className="w-4 h-4 rounded border-border cursor-pointer"
+              />
+              Show disabled journeys
+            </label>
           </div>
         )}
         <Table

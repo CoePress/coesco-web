@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Building2, Mail, Phone, Calendar, User, MapPin, Edit, UserX, Briefcase, Trash2, Camera, Upload, X, ExternalLink } from "lucide-react";
-import { PageHeader, Button } from "@/components";
+import { Building2, Mail, Phone, Calendar, User, MapPin, Edit, UserX, Briefcase, Trash2, Camera, Upload, X, ExternalLink, Lock, Search } from "lucide-react";
+import { PageHeader, Button, StatusBadge } from "@/components";
 import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
+import { AddAddressModal } from "@/components/modals/add-address-modal";
 import { formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth.context";
 import { ContactType } from "@/types/enums";
-import { fetchAvailableRsms, Employee } from "@/pages/sales/journeys/utils";
+import { fetchAvailableRsms, fetchDemographicCategory, Employee } from "@/pages/sales/journeys/utils";
 
 interface EditFormData {
   firstName: string;
@@ -23,6 +24,18 @@ interface EditFormData {
   imageId: number | null;
   profileUrl: string;
 }
+
+const getESTDateTime = (): string => {
+  const now = new Date();
+  const estOffset = -5 * 60 * 60 * 1000;
+  const estTime = new Date(now.getTime() + estOffset);
+  return estTime.toISOString().slice(0, 16);
+};
+
+const parseESTDateTime = (dateTimeLocal: string): string => {
+  const estDate = new Date(dateTimeLocal + ':00.000-05:00');
+  return estDate.toISOString();
+};
 
 interface Image {
   id: number;
@@ -44,9 +57,16 @@ const ContactDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"details" | "journeys">("details");
+  const [activeTab, setActiveTab] = useState<"details" | "journeys" | "activity">("details");
   const [journeysData, setJourneysData] = useState<any[]>([]);
   const [journeysLoading, setJourneysLoading] = useState(false);
+
+  const [activitiesData, setActivitiesData] = useState<any[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [newActivityData, setNewActivityData] = useState<any>({});
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [editingActivityData, setEditingActivityData] = useState<any>({});
+  const [activityToDelete, setActivityToDelete] = useState<any>(null);
 
   const [contactNotes, setContactNotes] = useState<any[]>([]);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
@@ -75,6 +95,16 @@ const ContactDetails = () => {
   });
 
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
+  const [availableContactPositions, setAvailableContactPositions] = useState<string[]>([]);
+
+  const [companySearchMode, setCompanySearchMode] = useState(false);
+  const [companySearchQuery, setCompanySearchQuery] = useState("");
+  const [companySearchResults, setCompanySearchResults] = useState<any[]>([]);
+  const [isSearchingCompany, setIsSearchingCompany] = useState(false);
+  const [showCompanyResults, setShowCompanyResults] = useState(false);
+  const [tempCompanyId, setTempCompanyId] = useState("");
+  const [tempCompanyName, setTempCompanyName] = useState("");
+  const justSelectedCompany = useRef<boolean>(false);
 
   const [showImageModal, setShowImageModal] = useState(false);
   const [availableImages, setAvailableImages] = useState<Image[]>([]);
@@ -88,6 +118,14 @@ const ContactDetails = () => {
   const [journeySearchTerm, setJourneySearchTerm] = useState("");
   const [linkingJourney, setLinkingJourney] = useState(false);
   const [journeyToUnlink, setJourneyToUnlink] = useState<any>(null);
+
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [addressEditingId, setAddressEditingId] = useState<number | null>(null);
+  const [addressEditData, setAddressEditData] = useState<any>({});
+  const [addressSaving, setAddressSaving] = useState(false);
+  const [editZipLookupResults, setEditZipLookupResults] = useState<{ city: string[]; stateProv: string[]; country: string[] }>({ city: [], stateProv: [], country: [] });
+  const [isEditLookingUpZip, setIsEditLookingUpZip] = useState(false);
+  const [newAddressToLink, setNewAddressToLink] = useState<any>(null);
 
   const getContactTypeName = (type: ContactType | string | null | undefined): string => {
     switch (type) {
@@ -149,24 +187,25 @@ const ContactDetails = () => {
     if (!contactData?.id) return;
 
     setIsSaving(true);
-    const trimmedData = {
+    const companyChanged = tempCompanyId !== contactData.legacyCompanyId;
+
+    const trimmedData: any = {
       firstName: editForm.firstName.trim(),
       lastName: editForm.lastName.trim(),
-      title: editForm.title,
-      type: editForm.type,
-      phone: editForm.phone,
-      phoneExtension: editForm.phoneExtension,
-      email: editForm.email,
+      title: editForm.title || null,
+      phone: editForm.phone || null,
+      phoneExtension: editForm.phoneExtension || null,
+      email: editForm.email || null,
       addressId: editForm.addressId || null,
       owner: editForm.owner || null,
       imageId: editForm.imageId,
       profileUrl: editForm.profileUrl?.trim() || null,
-      companyId: contactData.companyId,
-      isPrimary: contactData.isPrimary,
-      legacyCompanyId: contactData.legacyCompanyId,
-      createdById: contactData.createdById,
-      updatedById: contactData.updatedById,
+      legacyCompanyId: tempCompanyId || null,
     };
+
+    if (editForm.type) {
+      trimmedData.type = editForm.type;
+    }
 
     const result = await api.patch(`/sales/contacts/${contactData.id}`, trimmedData);
     if (result !== null) {
@@ -176,11 +215,60 @@ const ContactDetails = () => {
 
       const updatedContactData = {
         ...contactData,
-        ...trimmedData,
+        firstName: trimmedData.firstName,
+        lastName: trimmedData.lastName,
+        title: trimmedData.title,
+        type: trimmedData.type,
+        phone: trimmedData.phone,
+        phoneExtension: trimmedData.phoneExtension,
+        email: trimmedData.email,
+        addressId: trimmedData.addressId,
+        owner: trimmedData.owner,
+        imageId: trimmedData.imageId,
+        profileUrl: trimmedData.profileUrl,
+        legacyCompanyId: trimmedData.legacyCompanyId,
         image: selectedImage ? (selectedImage.path ? selectedImage : { path: selectedImage.url }) : null
       };
       setContactData(updatedContactData);
-      if (trimmedData.addressId) {
+
+      if (companyChanged && tempCompanyId) {
+        try {
+          const [addressResponse, companyResponse] = await Promise.all([
+            api.get('/legacy/base/Address/filter/custom', {
+              Company_ID: tempCompanyId
+            }),
+            !tempCompanyName ? api.get('/legacy/base/Company', {
+              filter: JSON.stringify({
+                operator: "in",
+                field: "Company_ID",
+                values: [parseInt(tempCompanyId, 10)]
+              }),
+              fields: 'Company_ID,CustDlrName',
+              limit: 1
+            }) : Promise.resolve(null)
+          ]);
+
+          const addresses = addressResponse?.data
+            ? (Array.isArray(addressResponse.data) ? addressResponse.data : [])
+            : (Array.isArray(addressResponse) ? addressResponse : []);
+          setAvailableAddresses(addresses);
+          setAddressData(null);
+
+          if (companyResponse) {
+            const companies = companyResponse?.data
+              ? (Array.isArray(companyResponse.data) ? companyResponse.data : [])
+              : (Array.isArray(companyResponse) ? companyResponse : []);
+            if (companies.length > 0 && companies[0]?.CustDlrName) {
+              setCompanyData({ name: companies[0].CustDlrName });
+              setTempCompanyName(companies[0].CustDlrName);
+            }
+          } else if (tempCompanyName) {
+            setCompanyData({ name: tempCompanyName });
+          }
+        } catch (error) {
+          console.error("Error fetching data for new company:", error);
+        }
+      } else if (trimmedData.addressId) {
         const selectedAddress = availableAddresses.find((addr: any) =>
           addr.Address_ID == trimmedData.addressId
         );
@@ -190,6 +278,10 @@ const ContactDetails = () => {
       }
 
       setIsEditing(false);
+      setCompanySearchMode(false);
+      setCompanySearchQuery("");
+      setCompanySearchResults([]);
+      setShowCompanyResults(false);
       success("Contact updated successfully");
     } else {
       toastError("Failed to update contact. Please check email format and try again.");
@@ -200,6 +292,12 @@ const ContactDetails = () => {
   const handleCancel = () => {
     setIsEditing(false);
     initializeEditForm(contactData);
+    setCompanySearchMode(false);
+    setCompanySearchQuery("");
+    setCompanySearchResults([]);
+    setShowCompanyResults(false);
+    setTempCompanyId(contactData?.legacyCompanyId || "");
+    setTempCompanyName(companyData?.name || "");
     if (contactData.addressId) {
       const originalAddress = availableAddresses.find((addr: any) => addr.Address_ID == contactData.addressId);
       setAddressData(originalAddress || null);
@@ -210,6 +308,8 @@ const ContactDetails = () => {
 
   const handleEdit = () => {
     initializeEditForm(contactData);
+    setTempCompanyId(contactData?.legacyCompanyId || "");
+    setTempCompanyName(companyData?.name || "");
     setIsEditing(true);
   };
 
@@ -251,6 +351,7 @@ const ContactDetails = () => {
 
         setContactData(rawContact);
         initializeEditForm(rawContact);
+        setTempCompanyId(rawContact?.legacyCompanyId || "");
         if (rawContact?.legacyCompanyId) {
           try {
             const companyResponse = await api.get('/legacy/base/Company', {
@@ -269,6 +370,7 @@ const ContactDetails = () => {
 
             if (companies.length > 0 && companies[0]?.CustDlrName) {
               setCompanyData({ name: companies[0].CustDlrName });
+              setTempCompanyName(companies[0].CustDlrName);
             }
           } catch (companyError) {
             console.error("Could not fetch company data:", companyError);
@@ -335,7 +437,7 @@ const ContactDetails = () => {
           operator: 'in',
           values: journeyIds
         }),
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Status,Journey_Start_Date,Expected_Decision_Date,CreateDT'
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Status,Journey_Start_Date,Expected_Decision_Date,CreateDT,Deleted'
       });
 
       const journeysArray = journeysResponse?.data
@@ -359,6 +461,34 @@ const ContactDetails = () => {
     }
   };
 
+  const fetchActivities = async () => {
+    if (!contactId) return;
+
+    setActivitiesLoading(true);
+    try {
+      const activitiesResponse = await api.get('/sales/activities', {
+        filter: JSON.stringify({
+          entityType: 'contact',
+          entityId: contactId
+        }),
+        sort: 'timestamp',
+        order: 'desc',
+        limit: 1000
+      });
+
+      const activities = activitiesResponse?.success && Array.isArray(activitiesResponse.data)
+        ? activitiesResponse.data
+        : [];
+
+      setActivitiesData(activities);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      setActivitiesData([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchContactData();
   }, [contactId]);
@@ -375,8 +505,25 @@ const ContactDetails = () => {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const positions = await fetchDemographicCategory(api, 'contact_position');
+      if (!cancelled) {
+        setAvailableContactPositions(positions);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
     if (activeTab === 'journeys' && journeysData.length === 0 && !journeysLoading) {
       fetchJourneys();
+    }
+  }, [activeTab, contactId]);
+
+  useEffect(() => {
+    if (activeTab === 'activity' && activitiesData.length === 0 && !activitiesLoading) {
+      fetchActivities();
     }
   }, [activeTab, contactId]);
 
@@ -406,6 +553,75 @@ const ContactDetails = () => {
     };
     fetchNotes();
   }, [contactId]);
+
+  useEffect(() => {
+    if (!companySearchQuery.trim() || !companySearchMode || justSelectedCompany.current) {
+      setCompanySearchResults([]);
+      setShowCompanyResults(false);
+      if (justSelectedCompany.current) {
+        justSelectedCompany.current = false;
+      }
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsSearchingCompany(true);
+      try {
+        const searchResults = await api.get('/legacy/std/Company/filter/custom', {
+          CustDlrName: `%${companySearchQuery}%`,
+          limit: 5
+        });
+
+        if (Array.isArray(searchResults)) {
+          setCompanySearchResults(searchResults);
+          setShowCompanyResults(true);
+        }
+      } catch (error) {
+        console.error("Error searching companies:", error);
+        setCompanySearchResults([]);
+      } finally {
+        setIsSearchingCompany(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [companySearchQuery, companySearchMode]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-company-search]')) {
+        setShowCompanyResults(false);
+      }
+    };
+
+    if (showCompanyResults) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showCompanyResults]);
+
+  const handleCompanySelect = (company: any) => {
+    justSelectedCompany.current = true;
+
+    const companyIdString = String(company.Company_ID);
+
+    setTempCompanyId(companyIdString);
+    setCompanySearchQuery(company.CustDlrName || "");
+    setTempCompanyName(company.CustDlrName || "");
+
+    setShowCompanyResults(false);
+    setCompanySearchResults([]);
+  };
+
+  const toggleCompanySearchMode = () => {
+    setCompanySearchMode(!companySearchMode);
+    if (!companySearchMode) {
+      setCompanySearchQuery("");
+      setCompanySearchResults([]);
+      setShowCompanyResults(false);
+    }
+  };
 
   const handleCreateNote = async () => {
     if (!newNoteBody.trim() || !contactId) return;
@@ -673,6 +889,294 @@ const ContactDetails = () => {
     }
   };
 
+  const handleCreateActivity = async () => {
+    if (!contactId || !newActivityData.activityType || !newActivityData.sentiment) return;
+
+    setIsSaving(true);
+    try {
+      const activityPayload = {
+        activityType: newActivityData.activityType,
+        sentiment: newActivityData.sentiment,
+        timestamp: newActivityData.timestamp ? parseESTDateTime(newActivityData.timestamp) : parseESTDateTime(getESTDateTime()),
+        description: newActivityData.description || null,
+        notes: newActivityData.notes || null,
+        entityType: 'contact',
+        entityId: contactId,
+        createdBy: newActivityData.createdBy || `${employee?.firstName} ${employee?.lastName}` || null,
+      };
+
+      const result = await api.post('/sales/activities', activityPayload);
+
+      if (result?.success && result.data) {
+        setActivitiesData(prev => [result.data, ...prev]);
+        setNewActivityData({});
+        success('Activity created successfully');
+      } else {
+        toastError('Failed to create activity');
+      }
+    } catch (error: any) {
+      console.error('Error creating activity:', error);
+      toastError(error.response?.data?.message || 'Failed to create activity');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdateActivity = async () => {
+    if (!editingActivityId || !editingActivityData.activityType || !editingActivityData.sentiment) return;
+
+    setIsSaving(true);
+    try {
+      const updatePayload = {
+        activityType: editingActivityData.activityType,
+        sentiment: editingActivityData.sentiment,
+        timestamp: editingActivityData.timestamp && editingActivityData.timestamp.length === 16
+          ? parseESTDateTime(editingActivityData.timestamp)
+          : editingActivityData.timestamp,
+        description: editingActivityData.description || null,
+        notes: editingActivityData.notes || null,
+        createdBy: editingActivityData.createdBy || null,
+      };
+
+      const result = await api.patch(`/sales/activities/${editingActivityId}`, updatePayload);
+
+      if (result?.success && result.data) {
+        setActivitiesData(prev => prev.map(activity =>
+          activity.id === editingActivityId ? result.data : activity
+        ));
+        setEditingActivityId(null);
+        setEditingActivityData({});
+        success('Activity updated successfully');
+      } else {
+        toastError('Failed to update activity');
+      }
+    } catch (error: any) {
+      console.error('Error updating activity:', error);
+      toastError(error.response?.data?.message || 'Failed to update activity');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteActivity = async () => {
+    if (!activityToDelete) return;
+
+    setIsSaving(true);
+    try {
+      const result = await api.delete(`/sales/activities/${activityToDelete.id}`);
+
+      if (result !== null) {
+        setActivitiesData(prev => prev.filter(activity => activity.id !== activityToDelete.id));
+        setActivityToDelete(null);
+        success('Activity deleted successfully');
+      } else {
+        toastError('Failed to delete activity');
+      }
+    } catch (error: any) {
+      console.error('Error deleting activity:', error);
+      toastError(error.response?.data?.message || 'Failed to delete activity');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const addressEditor = {
+    isEditing: addressEditingId !== null,
+    editingId: addressEditingId,
+    editData: addressEditData,
+    isSaving: addressSaving,
+    startEdit: (id: number, data: any) => {
+      setAddressEditingId(id);
+      setAddressEditData({ ...data });
+    },
+    updateField: (field: string, value: any) => {
+      setAddressEditData((prev: any) => ({ ...prev, [field]: value }));
+    },
+    save: async () => {
+      if (addressEditingId === null || !contactData?.legacyCompanyId) return;
+      try {
+        setAddressSaving(true);
+        const addressBeingEdited = availableAddresses.find(a => a.Address_ID === addressEditingId);
+        if (!addressBeingEdited)
+          throw new Error("Address not found");
+
+        const updateData = {
+          AddressName: addressEditData.AddressName || "",
+          Address1: addressEditData.Address1 || "",
+          Address2: addressEditData.Address2 || "",
+          Address3: addressEditData.Address3 || "",
+          City: addressEditData.City || "",
+          State: addressEditData.State || "",
+          Country: addressEditData.Country || "USA",
+          ZipCode: addressEditData.ZipCode || "",
+          PhoneNumber: addressEditData.PhoneNumber || "",
+          FaxPhoneNum: addressEditData.FaxPhoneNum || "",
+          CanShip: (addressEditData.CanShip === 1 || addressEditData.CanShip === true) ? 1 : 0,
+          CanBill: (addressEditData.CanBill === 1 || addressEditData.CanBill === true) ? 1 : 0,
+          Notes: addressEditData.Notes || "",
+          BillToNum: Number.parseInt(addressEditData.BillToNum) || 0,
+          BillToId: Number.parseInt(addressEditData.BillToId) || 0,
+          ShipInstr: addressEditData.ShipInstr || "",
+          Directions: addressEditData.Directions || "",
+          OriginalVia: addressEditData.OriginalVia || "",
+          EmailInvoiceTo: addressEditData.EmailInvoiceTo || "",
+          SystemNotes: addressEditData.SystemNotes || "",
+        };
+
+        await api.patch(`/legacy/std/Address/filter/custom?Company_ID=${addressBeingEdited.Company_ID}&Address_ID=${addressEditingId}`, updateData);
+
+        const updatedAddresses = availableAddresses.map(address =>
+          address.Address_ID === addressEditingId ? { ...address, ...addressEditData } : address
+        );
+        setAvailableAddresses(updatedAddresses);
+
+        if (contactData.addressId == addressEditingId) {
+          setAddressData({ ...addressData, ...addressEditData });
+        }
+
+        setEditZipLookupResults({ city: [], stateProv: [], country: [] });
+        setAddressEditingId(null);
+        setAddressEditData({});
+        success("Address updated successfully");
+      } catch (error) {
+        console.error("Error saving address:", error);
+        toastError("Error saving address. Please try again.");
+      } finally {
+        setAddressSaving(false);
+      }
+    },
+    cancel: () => {
+      setAddressEditingId(null);
+      setAddressEditData({});
+      setEditZipLookupResults({ city: [], stateProv: [], country: [] });
+    },
+  };
+
+  const lookupZipCode = async (zipCode: string) => {
+    if (!zipCode || zipCode.length < 5) {
+      setEditZipLookupResults({ city: [], stateProv: [], country: [] });
+      return;
+    }
+
+    try {
+      setIsEditLookingUpZip(true);
+
+      const zipData = await api.get(`/legacy/std/ZipCode/filter/custom`, {
+        filterField: "ZipCode",
+        filterValue: zipCode,
+        limit: 100,
+      });
+
+      if (zipData && Array.isArray(zipData) && zipData.length > 0) {
+        const cities = [...new Set(zipData.map(item => item.City).filter(Boolean))];
+        const stateProvs = [...new Set(zipData.map(item => item.StateProv).filter(Boolean))];
+        const countries = [...new Set(zipData.map(item => item.Country).filter(Boolean))];
+
+        const results = {
+          city: cities,
+          stateProv: stateProvs,
+          country: countries,
+        };
+
+        setEditZipLookupResults(results);
+
+        if (cities.length >= 1)
+          addressEditor.updateField("City", cities[0]);
+        if (stateProvs.length >= 1)
+          addressEditor.updateField("State", stateProvs[0]);
+        if (countries.length >= 1)
+          addressEditor.updateField("Country", countries[0]);
+      }
+      else {
+        setEditZipLookupResults({ city: [], stateProv: [], country: [] });
+      }
+    }
+    catch (error) {
+      console.error("Error looking up zip code:", error);
+      setEditZipLookupResults({ city: [], stateProv: [], country: [] });
+    }
+    finally {
+      setIsEditLookingUpZip(false);
+    }
+  };
+
+  const handleAddressFieldChange = (field: string, value: any) => {
+    addressEditor.updateField(field, value);
+    if (field === "ZipCode") {
+      lookupZipCode(value);
+    }
+  };
+
+  const startAddressEdit = (address: any) => {
+    addressEditor.startEdit(address.Address_ID, address);
+    setEditZipLookupResults({ city: [], stateProv: [], country: [] });
+    if (address.ZipCode) {
+      lookupZipCode(address.ZipCode);
+    }
+  };
+
+  const handleAddAddress = () => {
+    setIsAddingAddress(true);
+  };
+
+  const handleAddressAdded = async (newAddress: any) => {
+    if (!contactData?.legacyCompanyId) return;
+    try {
+      const addressResponse = await api.get('/legacy/base/Address/filter/custom', {
+        Company_ID: contactData.legacyCompanyId
+      });
+
+      const addresses = addressResponse?.data
+        ? (Array.isArray(addressResponse.data) ? addressResponse.data : [])
+        : (Array.isArray(addressResponse) ? addressResponse : []);
+
+      setAvailableAddresses(addresses);
+      setIsAddingAddress(false);
+
+      setNewAddressToLink(newAddress);
+    } catch (error) {
+      console.error("Error refreshing addresses:", error);
+      setIsAddingAddress(false);
+    }
+  };
+
+  const handleLinkNewAddress = async () => {
+    if (!newAddressToLink || !contactData?.id) return;
+
+    setIsSaving(true);
+    try {
+      const result = await api.patch(`/sales/contacts/${contactData.id}`, {
+        addressId: String(newAddressToLink.Address_ID)
+      });
+
+      if (result !== null) {
+        const selectedAddress = availableAddresses.find((addr: any) =>
+          addr.Address_ID == newAddressToLink.Address_ID
+        );
+
+        setContactData({ ...contactData, addressId: String(newAddressToLink.Address_ID) });
+        setAddressData(selectedAddress || newAddressToLink);
+        setEditForm(prev => ({ ...prev, addressId: String(newAddressToLink.Address_ID) }));
+
+        success("Address linked to contact successfully");
+      } else {
+        toastError("Failed to link address to contact");
+      }
+    } catch (error) {
+      console.error("Error linking address to contact:", error);
+      toastError("Error linking address to contact");
+    } finally {
+      setIsSaving(false);
+      setNewAddressToLink(null);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading contact details...</div>;
   }
@@ -779,6 +1283,16 @@ const ContactDetails = () => {
             }`}
           >
             Journeys
+          </button>
+          <button
+            onClick={() => setActiveTab("activity")}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === "activity"
+                ? "border-primary text-primary"
+                : "border-transparent text-text-muted hover:text-text"
+            }`}
+          >
+            Activity
           </button>
         </div>
       </div>
@@ -888,13 +1402,19 @@ const ContactDetails = () => {
               <div>
                 <div className="text-sm text-text-muted">Title</div>
                 {isEditing ? (
-                  <input
-                    type="text"
+                  <select
                     className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
                     value={editForm.title}
                     onChange={(e) => setEditForm(s => ({ ...s, title: e.target.value }))}
-                    placeholder="Contact Title"
-                  />
+                  >
+                    <option value="">No Value Selected</option>
+                    {editForm.title && !availableContactPositions.includes(editForm.title) && (
+                      <option key={editForm.title} value={editForm.title}>{editForm.title}</option>
+                    )}
+                    {availableContactPositions.map(position => (
+                      <option key={position} value={position}>{position}</option>
+                    ))}
+                  </select>
                 ) : (
                   <div className="text-text">{contactData.title || "-"}</div>
                 )}
@@ -1010,20 +1530,110 @@ const ContactDetails = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Building2 size={16} className="text-text-muted" />
-                <div>
+                <div className="flex-1">
                   <div className="text-sm text-text-muted">Company</div>
-                  <Link
-                    to={`/sales/companies/${contactData.legacyCompanyId}`}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {companyName}
-                  </Link>
+                  {isEditing ? (
+                    <div className="text-text font-medium">
+                      {tempCompanyName || companyName}
+                    </div>
+                  ) : (
+                    <Link
+                      to={`/sales/companies/${contactData.legacyCompanyId}`}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      {companyName}
+                    </Link>
+                  )}
                 </div>
               </div>
 
               <div>
-                <div className="text-sm text-text-muted">Company ID</div>
-                <div className="text-text font-mono">{contactData.legacyCompanyId}</div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-sm text-text-muted">Company ID</div>
+                  {isEditing && (
+                    <div title={companySearchMode ? "Switch to direct ID entry" : "Search by company name"}>
+                      <Button
+                        variant="secondary-outline"
+                        size="sm"
+                        onClick={toggleCompanySearchMode}
+                        className="!p-1 !h-6 !w-6"
+                      >
+                        <Search size={12} />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {isEditing ? (
+                  <div className="relative" data-company-search>
+                    {companySearchMode ? (
+                      <>
+                        <input
+                          type="text"
+                          className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                          value={companySearchQuery}
+                          onChange={(e) => {
+                            justSelectedCompany.current = false;
+                            setCompanySearchQuery(e.target.value);
+                          }}
+                          placeholder="Search company by name..."
+                        />
+                        {isSearchingCompany && (
+                          <div className="absolute right-2 top-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                          </div>
+                        )}
+                        {showCompanyResults && companySearchResults.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-b shadow-lg max-h-60 overflow-y-auto">
+                            {companySearchResults.map((company, index) => (
+                              <div
+                                key={company.Company_ID || index}
+                                className="p-3 hover:bg-gray cursor-pointer border-b border-border last:border-b-0"
+                                onClick={() => handleCompanySelect(company)}
+                              >
+                                <div className="font-medium text-sm text-text">
+                                  {company.CustDlrName || "Unnamed Company"}
+                                </div>
+                                <div className="text-xs text-text-muted mt-1">
+                                  ID: <span className="font-mono">{company.Company_ID}</span>
+                                  {company.CreateDate && (
+                                    <span className="ml-3">
+                                      Created: {(() => {
+                                        try {
+                                          return formatDate(company.CreateDate);
+                                        } catch {
+                                          return company.CreateDate;
+                                        }
+                                      })()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="text-xs text-text-muted mt-1">
+                          Selected ID: <span className="font-mono">{tempCompanyId || "None"}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <input
+                        type="text"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
+                        value={tempCompanyId}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || /^\d+$/.test(value)) {
+                            setTempCompanyId(value);
+                            setTempCompanyName("");
+                          }
+                        }}
+                        placeholder="Enter company ID directly..."
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-text font-mono">{contactData.legacyCompanyId}</div>
+                )}
               </div>
             </div>
           </div>
@@ -1091,34 +1701,203 @@ const ContactDetails = () => {
 
         {/* Address Information */}
         <div className="bg-foreground rounded shadow-sm border p-4">
-          <h3 className="text-lg font-semibold text-text mb-4">Address Information</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-text">Address Information</h3>
+            {!isEditing && contactData?.legacyCompanyId && (
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={handleAddAddress}
+              >
+                Add Address
+              </Button>
+            )}
+          </div>
           {addressData ? (
             <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <MapPin size={16} className="text-text-muted mt-1" />
-                <div className="flex-1">
-                  <div className="text-sm text-text-muted">Address</div>
-                  <div className="text-text">
-                    {addressData.Address1 && (
-                      <div>{addressData.Address1}</div>
-                    )}
-                    {addressData.Address2 && (
-                      <div>{addressData.Address2}</div>
-                    )}
-                    {addressData.Address3 && (
-                      <div>{addressData.Address3}</div>
-                    )}
-                    {(addressData.City || addressData.State || addressData.ZipCode) && (
-                      <div>
-                        {[addressData.City, addressData.State, addressData.ZipCode].filter(Boolean).join(', ')}
+              {addressEditor.isEditing && addressEditor.editingId === addressData.Address_ID ? (
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={addressEditor.editData.AddressName || ""}
+                    onChange={e => handleAddressFieldChange("AddressName", e.target.value)}
+                    className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                    placeholder="Address name"
+                  />
+                  <input
+                    type="text"
+                    value={addressEditor.editData.Address1 || ""}
+                    onChange={e => handleAddressFieldChange("Address1", e.target.value)}
+                    className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                    placeholder="Address line 1"
+                  />
+                  <input
+                    type="text"
+                    value={addressEditor.editData.Address2 || ""}
+                    onChange={e => handleAddressFieldChange("Address2", e.target.value)}
+                    className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                    placeholder="Address line 2"
+                  />
+                  <input
+                    type="text"
+                    value={addressEditor.editData.Address3 || ""}
+                    onChange={e => handleAddressFieldChange("Address3", e.target.value)}
+                    className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                    placeholder="Address line 3"
+                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={addressEditor.editData.ZipCode || ""}
+                      onChange={e => handleAddressFieldChange("ZipCode", e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary pr-8"
+                      placeholder="ZIP code"
+                    />
+                    {isEditLookingUpZip && (
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
                       </div>
                     )}
-                    {addressData.Country && addressData.Country !== 'USA' && (
-                      <div>{addressData.Country}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {editZipLookupResults.city.length > 1 ? (
+                      <select
+                        value={addressEditor.editData.City || ""}
+                        onChange={e => handleAddressFieldChange("City", e.target.value)}
+                        className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                      >
+                        {editZipLookupResults.city.map(city => (
+                          <option key={city} value={city}>{city}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="relative w-full">
+                        <input
+                          type="text"
+                          value={addressEditor.editData.City || ""}
+                          onKeyDown={handleKeyDown}
+                          className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
+                          placeholder="City"
+                          readOnly
+                          title="City is automatically populated from ZIP code"
+                        />
+                        <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
+                      </div>
+                    )}
+                    {editZipLookupResults.stateProv.length > 1 ? (
+                      <select
+                        value={addressEditor.editData.State || ""}
+                        onChange={e => handleAddressFieldChange("State", e.target.value)}
+                        className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                      >
+                        {editZipLookupResults.stateProv.map(state => (
+                          <option key={state} value={state}>{state}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="relative w-full">
+                        <input
+                          type="text"
+                          value={addressEditor.editData.State || ""}
+                          onKeyDown={handleKeyDown}
+                          className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
+                          placeholder="State"
+                          readOnly
+                          title="State is automatically populated from ZIP code"
+                        />
+                        <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
+                      </div>
                     )}
                   </div>
+                  <div>
+                    {editZipLookupResults.country.length > 1 ? (
+                      <select
+                        value={addressEditor.editData.Country || ""}
+                        onChange={e => handleAddressFieldChange("Country", e.target.value)}
+                        className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full"
+                      >
+                        {editZipLookupResults.country.map(country => (
+                          <option key={country} value={country}>{country}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="relative w-full">
+                        <input
+                          type="text"
+                          value={addressEditor.editData.Country || ""}
+                          onKeyDown={handleKeyDown}
+                          className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
+                          placeholder="Country"
+                          readOnly
+                          title="Country is automatically populated from ZIP code"
+                        />
+                        <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={addressEditor.save}
+                      disabled={addressEditor.isSaving}
+                    >
+                      {addressEditor.isSaving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                      onClick={addressEditor.cancel}
+                      disabled={addressEditor.isSaving}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1">
+                      <MapPin size={16} className="text-text-muted mt-1" />
+                      <div className="flex-1">
+                        <div className="text-sm text-text-muted mb-1">Address</div>
+                        {addressData.AddressName && (
+                          <div className="text-sm font-semibold text-text mb-1">{addressData.AddressName}</div>
+                        )}
+                        <div className="text-text">
+                          {addressData.Address1 && (
+                            <div>{addressData.Address1}</div>
+                          )}
+                          {addressData.Address2 && (
+                            <div>{addressData.Address2}</div>
+                          )}
+                          {addressData.Address3 && (
+                            <div>{addressData.Address3}</div>
+                          )}
+                          {(addressData.City || addressData.State || addressData.ZipCode) && (
+                            <div>
+                              {[addressData.City, addressData.State, addressData.ZipCode].filter(Boolean).join(', ')}
+                            </div>
+                          )}
+                          {addressData.Country && addressData.Country !== 'USA' && (
+                            <div>{addressData.Country}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {!isEditing && (
+                      <Button
+                        variant="secondary-outline"
+                        size="sm"
+                        onClick={() => startAddressEdit(addressData)}
+                      >
+                        <Edit size={12} />
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           ) : contactData.addressId ? (
             <div className="text-text-muted text-sm">Address data not available</div>
@@ -1302,87 +2081,350 @@ const ContactDetails = () => {
               <p className="text-sm">This contact is not linked to any journeys.</p>
             </div>
           ) : (
-            <div className="bg-foreground rounded shadow-sm border">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="border-b border-border">
-                    <tr>
-                      <th className="text-left p-4 text-sm font-semibold text-text">Journey</th>
-                      <th className="text-left p-4 text-sm font-semibold text-text">Stage</th>
-                      <th className="text-left p-4 text-sm font-semibold text-text">Status</th>
-                      <th className="text-left p-4 text-sm font-semibold text-text">Date</th>
-                      <th className="text-right p-4 text-sm font-semibold text-text w-24">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {journeysData.map((journey: any) => {
-                      const displayName = journey?.Project_Name ||
-                        journey?.Target_Account ||
-                        `Journey #${journey?.ID || 'Unknown'}`;
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {journeysData.map((journey: any) => {
+                const displayName = journey?.Project_Name ||
+                  journey?.Target_Account ||
+                  `Journey #${journey?.ID || 'Unknown'}`;
 
-                      const journeyStage = journey?.Journey_Stage || '-';
-                      const journeyStatus = journey?.Journey_Status || 'Active';
-                      const startDate = journey?.Journey_Start_Date || journey?.CreateDT;
+                const journeyStage = journey?.Journey_Stage || '-';
+                const journeyStatus = journey?.Journey_Status || 'Active';
+                const startDate = journey?.Journey_Start_Date || journey?.CreateDT;
 
-                      return (
-                        <tr key={journey?.ID || Math.random()} className="border-b border-border last:border-b-0 hover:bg-background/50">
-                          <td className="p-4">
-                            {journey?.ID ? (
-                              <Link
-                                to={`/sales/pipeline/${journey.ID}`}
-                                className="text-primary hover:underline font-medium"
-                              >
-                                {displayName}
-                              </Link>
-                            ) : (
-                              <div className="font-medium text-text">{displayName}</div>
-                            )}
-                            {journey?.Target_Account && journey?.Target_Account !== displayName && (
-                              <div className="text-xs text-text-muted mt-1">
-                                {journey.Target_Account}
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <span className="text-sm text-text-muted">{journeyStage}</span>
-                          </td>
-                          <td className="p-4">
-                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                              journeyStatus?.toLowerCase().includes('active') ? 'bg-success/20 text-success' :
-                              journeyStatus?.toLowerCase().includes('complete') ? 'bg-info/20 text-info' :
-                              journeyStatus?.toLowerCase().includes('cancel') ? 'bg-error/20 text-error' :
-                              journeyStatus?.toLowerCase().includes('lost') ? 'bg-error/20 text-error' :
-                              journeyStatus?.toLowerCase().includes('won') ? 'bg-success/20 text-success' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {journeyStatus}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className="text-sm text-text-muted">
-                              {startDate ? formatDate(startDate) : '-'}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex justify-end">
-                              <Button
-                                variant="secondary-outline"
-                                size="sm"
-                                onClick={() => setJourneyToUnlink(journey)}
-                                disabled={isSaving}
-                              >
-                                Unlink
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                return (
+                  <div key={journey?.ID || Math.random()} className="bg-foreground rounded shadow-sm border p-4 flex flex-col gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {journey?.ID ? (
+                        <Link
+                          to={`/sales/pipeline/${journey.ID}`}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          {displayName}
+                        </Link>
+                      ) : (
+                        <div className="font-medium text-text">{displayName}</div>
+                      )}
+                      {(journey?.Deleted === 1 || journey?.Deleted === '1' || journey?.Deleted === true) && (
+                        <StatusBadge label="Disabled" variant="error" />
+                      )}
+                    </div>
+                    {journey?.Target_Account && journey?.Target_Account !== displayName && (
+                      <div className="text-xs text-text-muted">
+                        {journey.Target_Account}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-1 text-sm">
+                        <span className="text-text-muted">Stage:</span>
+                        <span className="text-text">{journeyStage}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-text-muted text-sm">Status:</span>
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                          journeyStatus?.toLowerCase().includes('active') ? 'bg-success/20 text-success' :
+                          journeyStatus?.toLowerCase().includes('complete') ? 'bg-info/20 text-info' :
+                          journeyStatus?.toLowerCase().includes('cancel') ? 'bg-error/20 text-error' :
+                          journeyStatus?.toLowerCase().includes('lost') ? 'bg-error/20 text-error' :
+                          journeyStatus?.toLowerCase().includes('won') ? 'bg-success/20 text-success' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {journeyStatus}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-1 text-sm">
+                        <span className="text-text-muted">Start Date:</span>
+                        <span className="text-text">
+                          {startDate ? formatDate(startDate) : '-'}
+                        </span>
+                      </div>
+                      <Button
+                        variant="secondary-outline"
+                        size="sm"
+                        onClick={() => setJourneyToUnlink(journey)}
+                        disabled={isSaving}
+                      >
+                        Unlink
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === "activity" && (
+        <div className="p-4 flex flex-1 flex-col gap-6">
+          <div className="bg-foreground rounded shadow-sm border p-4">
+            <h3 className="text-lg font-semibold text-text mb-4">Add New Activity</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Activity Type *</label>
+                <select
+                  value={newActivityData.activityType || ''}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, activityType: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                >
+                  <option value="">Select Type</option>
+                  <option value="Call">Call</option>
+                  <option value="Email">Email</option>
+                  <option value="Meeting">Meeting</option>
+                  <option value="TextChat">Text/Chat</option>
+                  <option value="QuoteSent">Quote Sent</option>
+                  <option value="QuotePresentation">Quote Presentation</option>
+                  <option value="Event">Event</option>
+                  <option value="FormSubmission">Form Submission</option>
+                  <option value="WebsiteActivity">Website Activity</option>
+                  <option value="ContentDownloaded">Content Downloaded</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Sentiment *</label>
+                <select
+                  value={newActivityData.sentiment || ''}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, sentiment: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                >
+                  <option value="">Select Sentiment</option>
+                  <option value="Positive">Positive</option>
+                  <option value="Neutral">Neutral</option>
+                  <option value="Negative">Negative</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Timestamp</label>
+                <input
+                  type="datetime-local"
+                  value={newActivityData.timestamp || getESTDateTime()}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, timestamp: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Created By</label>
+                <input
+                  type="text"
+                  value={`${employee?.firstName || ''} ${employee?.lastName || ''}`.trim()}
+                  disabled
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-surface text-text-muted cursor-not-allowed"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-text-muted mb-1">Description</label>
+                <textarea
+                  value={newActivityData.description || ''}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, description: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                  rows={2}
+                  placeholder="Brief description of the activity..."
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-text-muted mb-1">Notes</label>
+                <textarea
+                  value={newActivityData.notes || ''}
+                  onChange={(e) => setNewActivityData({ ...newActivityData, notes: e.target.value })}
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                  rows={3}
+                  placeholder="Additional notes..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleCreateActivity}
+                disabled={!newActivityData.activityType || !newActivityData.sentiment || isSaving}
+              >
+                {isSaving ? 'Adding...' : 'Add Activity'}
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-foreground rounded shadow-sm border p-4">
+            <h3 className="text-lg font-semibold text-text mb-4">Activity History</h3>
+
+            {activitiesLoading ? (
+              <div className="flex justify-center items-center h-64">Loading activities...</div>
+            ) : (
+              <div className="space-y-4">
+                {activitiesData.map((activity) => (
+                  <div key={activity.id} className="p-4 bg-surface border border-border rounded">
+                    {editingActivityId === activity.id ? (
+                      <div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">Activity Type *</label>
+                            <select
+                              value={editingActivityData.activityType || ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, activityType: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                            >
+                              <option value="">Select Type</option>
+                              <option value="Call">Call</option>
+                              <option value="Email">Email</option>
+                              <option value="Meeting">Meeting</option>
+                              <option value="TextChat">Text/Chat</option>
+                              <option value="QuoteSent">Quote Sent</option>
+                              <option value="QuotePresentation">Quote Presentation</option>
+                              <option value="Event">Event</option>
+                              <option value="FormSubmission">Form Submission</option>
+                              <option value="WebsiteActivity">Website Activity</option>
+                              <option value="ContentDownloaded">Content Downloaded</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">Sentiment *</label>
+                            <select
+                              value={editingActivityData.sentiment || ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, sentiment: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                            >
+                              <option value="">Select Sentiment</option>
+                              <option value="Positive">Positive</option>
+                              <option value="Neutral">Neutral</option>
+                              <option value="Negative">Negative</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">Timestamp</label>
+                            <input
+                              type="datetime-local"
+                              value={editingActivityData.timestamp ? new Date(editingActivityData.timestamp).toISOString().slice(0, 16) : ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, timestamp: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">Created By</label>
+                            <input
+                              type="text"
+                              value={editingActivityData.createdBy || ''}
+                              disabled
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-surface text-text-muted cursor-not-allowed"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-text-muted mb-1">Description</label>
+                            <textarea
+                              value={editingActivityData.description || ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, description: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                              rows={2}
+                              placeholder="Brief description of the activity..."
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-text-muted mb-1">Notes</label>
+                            <textarea
+                              value={editingActivityData.notes || ''}
+                              onChange={(e) => setEditingActivityData({ ...editingActivityData, notes: e.target.value })}
+                              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text resize-none"
+                              rows={3}
+                              placeholder="Additional notes..."
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingActivityId(null);
+                              setEditingActivityData({});
+                            }}
+                            disabled={isSaving}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleUpdateActivity}
+                            disabled={!editingActivityData.activityType || !editingActivityData.sentiment || isSaving}
+                          >
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-primary/20 text-primary">
+                              {activity.activityType}
+                            </span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              activity.sentiment === 'Positive' ? 'bg-success/20 text-success' :
+                              activity.sentiment === 'Negative' ? 'bg-error/20 text-error' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {activity.sentiment}
+                            </span>
+                            <span className="text-xs text-text-muted">
+                              {new Date(activity.timestamp).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingActivityId(activity.id);
+                                setEditingActivityData(activity);
+                              }}
+                            >
+                              <Edit size={12} />
+                            </Button>
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => setActivityToDelete(activity)}
+                              className="border-red-300 hover:bg-red-50 hover:border-red-400"
+                            >
+                              <Trash2 size={12} className="text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                        {activity.description && (
+                          <p className="text-sm text-text mb-2">{activity.description}</p>
+                        )}
+                        {activity.notes && (
+                          <p className="text-xs text-text-muted">{activity.notes}</p>
+                        )}
+                        {activity.createdBy && (
+                          <p className="text-xs text-text-muted mt-2">By: {activity.createdBy}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+
+                {activitiesData.length === 0 && (
+                  <div className="text-center py-8 text-text-muted">
+                    No activities yet. Add your first activity below.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1415,6 +2457,37 @@ const ContactDetails = () => {
                 variant="primary"
                 size="sm"
                 onClick={confirmDeleteNote}
+                disabled={isSaving}
+                className="bg-error hover:bg-error/90"
+              >
+                {isSaving ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Activity Confirmation Modal */}
+      {activityToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-foreground rounded shadow-lg border p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-text mb-4">Delete Activity</h3>
+            <p className="text-sm text-text-muted mb-6">
+              Are you sure you want to delete this activity? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => setActivityToDelete(null)}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleDeleteActivity}
                 disabled={isSaving}
                 className="bg-error hover:bg-error/90"
               >
@@ -1668,6 +2741,61 @@ const ContactDetails = () => {
                 disabled={isSaving}
               >
                 {isSaving ? "Unlinking..." : "Confirm Unlink"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Address Modal */}
+      <AddAddressModal
+        isOpen={isAddingAddress}
+        onClose={() => setIsAddingAddress(false)}
+        onAddressAdded={handleAddressAdded}
+        companyId={contactData?.legacyCompanyId}
+      />
+
+      {/* Link New Address Confirmation Modal */}
+      {newAddressToLink && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-foreground rounded shadow-lg border max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-text mb-4">Link Address to Contact</h3>
+            <p className="text-sm text-text-muted mb-6">
+              The address was created successfully. Would you like to link this address to {contactData?.firstName} {contactData?.lastName}?
+            </p>
+            <div className="bg-surface border border-border rounded p-3 mb-6">
+              <div className="text-xs text-text-muted mb-1">New Address:</div>
+              <div className="text-sm text-text">
+                {newAddressToLink.AddressName && (
+                  <div className="font-medium">{newAddressToLink.AddressName}</div>
+                )}
+                {newAddressToLink.Address1 && <div>{newAddressToLink.Address1}</div>}
+                {(newAddressToLink.City || newAddressToLink.State || newAddressToLink.ZipCode) && (
+                  <div>
+                    {[newAddressToLink.City, newAddressToLink.State, newAddressToLink.ZipCode].filter(Boolean).join(', ')}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => {
+                  setNewAddressToLink(null);
+                  success("Address created successfully");
+                }}
+                disabled={isSaving}
+              >
+                No, Don't Link
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleLinkNewAddress}
+                disabled={isSaving}
+              >
+                {isSaving ? "Linking..." : "Yes, Link Address"}
               </Button>
             </div>
           </div>

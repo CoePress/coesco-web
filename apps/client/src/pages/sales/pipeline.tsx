@@ -35,7 +35,7 @@ const Pipeline = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { employee } = useAuth();
-  const { get, delete: del, patch } = useApi();
+  const { get, patch } = useApi();
   const [journeys, setJourneys] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [journeyTags, setJourneyTags] = useState<Map<string, any[]>>(new Map());
@@ -184,6 +184,7 @@ const Pipeline = () => {
       Lead_Source: raw.Lead_Source,
       Next_Steps: raw.Next_Steps,
       Address_ID: raw.Address_ID,
+      deletedAt: raw.Deleted === 1 || raw.Deleted === '1' || raw.Deleted === true ? 1 : 0,
     };
   };
 
@@ -197,7 +198,7 @@ const Pipeline = () => {
             limit: 200,
             sort: 'CreateDT',
             order: 'desc',
-            fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+            fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
           }),
           get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' }),
           fetchAvailableRsms({ get }),
@@ -295,6 +296,7 @@ const Pipeline = () => {
   const [listViewJourneys, setListViewJourneys] = useState<any[]>([]);
   const [listViewPagination, setListViewPagination] = useState({ page: 1, totalPages: 0, total: 0, limit: 25 });
   const [isLoadingListView, setIsLoadingListView] = useState(false);
+  const [showDisabledJourneys, setShowDisabledJourneys] = useState(() => getFromLocalStorage('showDisabledJourneys', false));
   const [kanbanViewJourneys, setKanbanViewJourneys] = useState<any[]>([]);
   const [isLoadingKanbanView, setIsLoadingKanbanView] = useState(false);
   const [savedPresets, setSavedPresets] = useState<any[]>(() => getFromLocalStorage('savedPresets', []));
@@ -379,8 +381,12 @@ const Pipeline = () => {
       );
     }
 
+    if (!showDisabledJourneys) {
+      results = results.filter(j => j.deletedAt !== 1);
+    }
+
     return results;
-  }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter, journeyTags]);
+  }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter, journeyTags, showDisabledJourneys]);
   const buildStageConditions = (stageId: number) => {
     const stageMap: Record<number, any> = {
       1: { operator: "or", conditions: [
@@ -515,10 +521,13 @@ const Pipeline = () => {
         limit: listPageSize,
         sort: dbSortField,
         order: sortDirection,
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
       };
 
       const filterConditions = buildFilterConditions();
+      if (!showDisabledJourneys) {
+        filterConditions.push({ field: "Deleted", operator: "notEquals", value: 1 });
+      }
       if (filterConditions.length > 0) {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
@@ -545,7 +554,7 @@ const Pipeline = () => {
     } finally {
       setIsLoadingListView(false);
     }
-  }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, get, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+  }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, get, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
   const fetchKanbanViewJourneys = useCallback(async () => {
     if (isLoadingKanbanView) return;
@@ -565,10 +574,13 @@ const Pipeline = () => {
         limit: kanbanBatchSize,
         sort: 'CreateDT',
         order: 'desc',
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
       };
 
       const filterConditions = buildFilterConditions();
+      if (!showDisabledJourneys) {
+        filterConditions.push({ field: "Deleted", operator: "notEquals", value: 1 });
+      }
       if (filterConditions.length > 0) {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
@@ -585,19 +597,19 @@ const Pipeline = () => {
     } finally {
       setIsLoadingKanbanView(false);
     }
-  }, [isLoadingKanbanView, kanbanBatchSize, get, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys]);
+  }, [isLoadingKanbanView, kanbanBatchSize, get, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys, showDisabledJourneys]);
 
   useEffect(() => {
     if (viewMode === 'list') {
       fetchListViewJourneys();
     }
-  }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+  }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
   useEffect(() => {
     if (viewMode === 'kanban') {
       fetchKanbanViewJourneys();
     }
-  }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+  }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
   const handleListPageChange = (newPage: number) => {
     setListPage(newPage);
@@ -617,7 +629,8 @@ const Pipeline = () => {
     saveToLocalStorage('sortDirection', sortDirection);
     saveToLocalStorage('showTags', showTags);
     saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
-  }, [searchTerm, filters, rsmFilter, rsmFilterDisplay, journeyStatusFilter, viewMode, sortField, sortDirection, showTags, kanbanBatchSize]);
+    saveToLocalStorage('showDisabledJourneys', showDisabledJourneys);
+  }, [searchTerm, filters, rsmFilter, rsmFilterDisplay, journeyStatusFilter, viewMode, sortField, sortDirection, showTags, kanbanBatchSize, showDisabledJourneys]);
 
   useEffect(() => {
     if (showTags && viewMode === 'kanban' && kanbanViewJourneys.length > 0) {
@@ -693,22 +706,47 @@ const Pipeline = () => {
 
   const handleDeleteJourney = useCallback(async (journeyId: string) => {
     try {
-      const success = await del(`/legacy/std/Journey/${journeyId}`);
+      const journey = [...(legacyJourneys || []), ...journeys, ...listViewJourneys, ...kanbanViewJourneys]
+        .find(j => j.id.toString() === journeyId);
+
+      if (!journey) return;
+
+      const isCurrentlyDeleted = journey.deletedAt === 1;
+      const newDeletedValue = isCurrentlyDeleted ? 0 : 1;
+
+      const success = await patch(`/legacy/base/Journey/${journeyId}`, {
+        Deleted: newDeletedValue
+      });
 
       if (success) {
-        setLegacyJourneys(prev =>
-          prev ? prev.filter(j => j.id.toString() !== journeyId) : prev
-        );
-        setJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
-        setKanbanViewJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
+        const updateJourney = (j: any) =>
+          j.id.toString() === journeyId
+            ? { ...j, deletedAt: newDeletedValue }
+            : j;
+
+        setLegacyJourneys(prev => prev ? prev.map(updateJourney) : prev);
+        setJourneys(prev => prev.map(updateJourney));
+        setListViewJourneys(prev => prev.map(updateJourney));
+        setKanbanViewJourneys(prev => prev.map(updateJourney));
+
+        if (!showDisabledJourneys && !isCurrentlyDeleted) {
+          setListViewJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
+          setKanbanViewJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
+        }
+
+        if (viewMode === 'list') {
+          fetchListViewJourneys();
+        } else if (viewMode === 'kanban') {
+          fetchKanbanViewJourneys();
+        }
       } else {
-        alert("Failed to delete journey. Please try again.");
+        alert("Failed to toggle journey status. Please try again.");
       }
     } catch (error) {
-      console.error("Error deleting journey:", error);
-      alert("Failed to delete journey. Please try again.");
+      console.error("Error toggling journey status:", error);
+      alert("Failed to toggle journey status. Please try again.");
     }
-  }, [del]);
+  }, [patch, legacyJourneys, journeys, listViewJourneys, kanbanViewJourneys, showDisabledJourneys, viewMode, fetchListViewJourneys, fetchKanbanViewJourneys]);
 
   const handleTagsUpdated = useCallback(async () => {
     if (!showTags) return;
@@ -1141,6 +1179,8 @@ const Pipeline = () => {
             sortField={sortField}
             sortDirection={sortDirection}
             isLoading={isLoadingListView}
+            showDisabled={showDisabledJourneys}
+            onToggleShowDisabled={setShowDisabledJourneys}
           />
         </div>
       )}
@@ -1197,7 +1237,7 @@ const Pipeline = () => {
                   limit: 200,
                   sort: 'CreateDT',
                   order: 'desc',
-                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
                 })
               ]);
 
@@ -1260,7 +1300,12 @@ const Pipeline = () => {
         <FilterModal
           isOpen={isFilterModalOpen}
           filters={filters}
-          onApply={(newFilters) => { setFilters(newFilters); setIsFilterModalOpen(false); }}
+          showDisabled={showDisabledJourneys}
+          onApply={(newFilters, newShowDisabled) => {
+            setFilters(newFilters);
+            setShowDisabledJourneys(newShowDisabled);
+            setIsFilterModalOpen(false);
+          }}
           onClose={() => setIsFilterModalOpen(false)}
         />
       )}
@@ -1368,6 +1413,7 @@ const Pipeline = () => {
 const FilterModal = ({
   isOpen,
   filters,
+  showDisabled,
   onApply,
   onClose,
 }: {
@@ -1381,14 +1427,17 @@ const FilterModal = ({
     maxValue: string;
     visibleStages: number[];
   };
-  onApply: (filters: any) => void;
+  showDisabled: boolean;
+  onApply: (filters: any, showDisabled: boolean) => void;
   onClose: () => void;
 }) => {
   const [localFilters, setLocalFilters] = useState(filters);
+  const [localShowDisabled, setLocalShowDisabled] = useState(showDisabled);
   
   useEffect(() => {
     setLocalFilters(filters);
-  }, [filters, isOpen]);
+    setLocalShowDisabled(showDisabled);
+  }, [filters, showDisabled, isOpen]);
   
   const handleReset = () => {
     setLocalFilters({
@@ -1400,16 +1449,18 @@ const FilterModal = ({
       maxValue: "",
       visibleStages: STAGES.map(s => s.id),
     });
+    setLocalShowDisabled(false);
   };
   
-  const hasActiveFilters = 
+  const hasActiveFilters =
     localFilters.confidenceLevels.length > 0 ||
     localFilters.dateRange[0] ||
     localFilters.dateRange[1] ||
     localFilters.priority ||
     localFilters.minValue ||
     localFilters.maxValue ||
-    localFilters.visibleStages.length !== STAGES.length;
+    localFilters.visibleStages.length !== STAGES.length ||
+    localShowDisabled;
   
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Filter Pipeline" size="md">
@@ -1569,7 +1620,19 @@ const FilterModal = ({
             </div>
           </div>
         </div>
-        
+
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={localShowDisabled}
+              onChange={(e) => setLocalShowDisabled(e.target.checked)}
+              className="rounded"
+            />
+            <span className="text-sm text-text">Show disabled journeys</span>
+          </label>
+        </div>
+
         <div className="flex flex-col sm:flex-row justify-between gap-2 pt-4 border-t">
           <Button
             variant="secondary-outline"
@@ -1583,7 +1646,7 @@ const FilterModal = ({
             <Button variant="secondary-outline" onClick={onClose} className="flex-1 sm:flex-initial">
               Cancel
             </Button>
-            <Button variant="primary" onClick={() => onApply(localFilters)} className="flex-1 sm:flex-initial">
+            <Button variant="primary" onClick={() => onApply(localFilters, localShowDisabled)} className="flex-1 sm:flex-initial">
               Apply Filters
             </Button>
           </div>

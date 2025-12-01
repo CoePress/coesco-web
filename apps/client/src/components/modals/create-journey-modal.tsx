@@ -47,6 +47,8 @@ export const CreateJourneyModal = ({
   const [isSearchingContacts, setIsSearchingContacts] = useState<boolean>(false);
   const [hasSearchedContacts, setHasSearchedContacts] = useState<boolean>(false);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState<boolean>(false);
+  const [showWarningModal, setShowWarningModal] = useState<boolean>(false);
+  const [missingFieldsList, setMissingFieldsList] = useState<string[]>([]);
 
   const { post, loading, error, get } = useApi();
   const { employee } = useAuth();
@@ -201,11 +203,30 @@ export const CreateJourneyModal = ({
   };
 
   const handleCreate = async () => {
-    if (!name || !journeyType || !rsm || !city || !stateProv || !country || !industry || !leadSource) {
-      alert("Please fill in all required fields: Journey Name, Journey Type, RSM, City, State, Country, Industry, and Lead Source");
+    if (!name) {
+      alert("Please enter a journey name");
       return;
     }
 
+    const missingFields = [];
+    if (!journeyType) missingFields.push("Journey Type");
+    if (!rsm) missingFields.push("RSM");
+    if (!city) missingFields.push("City");
+    if (!stateProv) missingFields.push("State");
+    if (!country) missingFields.push("Country");
+    if (!industry) missingFields.push("Industry");
+    if (!leadSource) missingFields.push("Lead Source");
+
+    if (missingFields.length > 0) {
+      setMissingFieldsList(missingFields);
+      setShowWarningModal(true);
+      return;
+    }
+
+    await createJourney();
+  };
+
+  const createJourney = async () => {
     try {
       // Map form fields to database field names
       const payload: any = {
@@ -229,6 +250,18 @@ export const CreateJourneyModal = ({
       const result = await post("/legacy/std/Journey", payload);
 
       if (result && result.ID) {
+        // Log journey creation
+        try {
+          await post('/legacy/std/Journey_Log', {
+            Jrn_ID: result.ID,
+            Action: 'Journey Created',
+            CreateDtTm: new Date().toISOString().replace('T', ' ').substring(0, 23),
+            CreateInit: employee?.initials || 'Unknown'
+          });
+        } catch (error) {
+          console.error('Error logging journey creation:', error);
+        }
+
         // If a contact was selected, create the JourneyContact association
         if (selectedContactId) {
           await createJourneyContact(result.ID.toString(), selectedContactId);
@@ -579,7 +612,7 @@ export const CreateJourneyModal = ({
           <div className="pt-2 border-t">
             <Button
               onClick={handleCreate}
-              disabled={!name || !journeyType || !rsm || !city || !stateProv || !country || !industry || !leadSource || loading}
+              disabled={!name || loading}
               variant="primary"
               className="w-full"
             >
@@ -596,6 +629,44 @@ export const CreateJourneyModal = ({
       onContactAdded={handleContactAdded}
       companyId={selectedCompanyId}
     />
+
+    <Modal
+      isOpen={showWarningModal}
+      onClose={() => setShowWarningModal(false)}
+      title="Missing Required Fields"
+      size="sm"
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-text">
+          The following fields are missing:
+        </p>
+        <ul className="list-disc list-inside text-sm text-text-muted space-y-1">
+          {missingFieldsList.map((field) => (
+            <li key={field}>{field}</li>
+          ))}
+        </ul>
+        <p className="text-sm text-text">
+          Do you want to continue creating the journey anyway? Your initials will be recorded as the creator.
+        </p>
+        <div className="flex gap-2 justify-end pt-2">
+          <Button
+            onClick={() => setShowWarningModal(false)}
+            variant="secondary"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              setShowWarningModal(false);
+              createJourney();
+            }}
+            variant="primary"
+          >
+            Continue
+          </Button>
+        </div>
+      </div>
+    </Modal>
   </>
   );
 };
