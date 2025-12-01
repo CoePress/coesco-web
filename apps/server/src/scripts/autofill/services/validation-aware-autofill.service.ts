@@ -946,7 +946,7 @@ export class ValidationAwareAutofillService {
 
     // Basic validation for numeric fields
     if (typeof value === "number") {
-      return value > 0 && isFinite(value);
+      return value > 0 && Number.isFinite(value);
     }
 
     // Basic validation for string fields
@@ -1128,7 +1128,7 @@ export class ValidationAwareAutofillService {
 
       // Check if it's a numeric string
       const numericValue = Number.parseFloat(value);
-      if (!isNaN(numericValue)) {
+      if (!Number.isNaN(numericValue)) {
         return numericValue > 0; // Numeric strings are meaningful if > 0
       }
 

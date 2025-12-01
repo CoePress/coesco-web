@@ -12,7 +12,7 @@ export class CoilTypeRepository extends BaseRepository<CoilType> {
   protected entityName = "CoilType";
   protected modelName = "coilType";
 
-  protected async validate(entity: CoilTypeAttributes): Promise<void> {
-
+  protected async validate(_entity: CoilTypeAttributes): Promise<void> {
+    // No custom validation needed
   }
 }

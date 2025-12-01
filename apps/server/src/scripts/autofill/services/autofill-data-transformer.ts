@@ -16,10 +16,10 @@ export function transformDataForAutofill(data: PerformanceData): any {
   const transformedData = JSON.parse(JSON.stringify(data)); // Deep clone
 
   // Helper function to convert string numbers to numbers (int or float)
-  const convertToNumber = (value: any, forceInteger = false): any => {
+  const _convertToNumber = (value: unknown, forceInteger = false): unknown => {
     if (typeof value === "string" && value.trim() !== "") {
       const parsed = forceInteger ? Number.parseInt(value) : Number.parseFloat(value);
-      return !isNaN(parsed) ? parsed : value;
+      return !Number.isNaN(parsed) ? parsed : value;
     }
     return value;
   };
@@ -83,7 +83,7 @@ export function transformDataForAutofill(data: PerformanceData): any {
 
         // Convert if it looks like a number
         const parsed = shouldBeInteger ? Number.parseInt(value) : Number.parseFloat(value);
-        if (!isNaN(parsed)) {
+        if (!Number.isNaN(parsed)) {
           obj[key] = parsed;
         }
       }

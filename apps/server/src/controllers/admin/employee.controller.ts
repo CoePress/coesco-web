@@ -48,7 +48,7 @@ export class EmployeeController {
   });
 
   updateEmployee = asyncWrapper(async (req: Request, res: Response) => {
-    const validData = UpdateEmployeeSchema.parse(req.body);
+    UpdateEmployeeSchema.parse(req.body); // Validates input, throws on error
     const { body } = req;
     const employeeData: any = {};
     const userData: any = {};

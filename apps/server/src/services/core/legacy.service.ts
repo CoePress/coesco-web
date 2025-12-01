@@ -277,7 +277,7 @@ export class LegacyService {
           try {
             await conn.query("SELECT 1 FROM PUB.\"_File\" FETCH FIRST 1 ROW ONLY");
           }
-          catch (err) {
+          catch {
             logger.warn(`No connection to ${db} database, attempting to reconnect...`);
             await this.reconnect(db);
           }
@@ -407,7 +407,7 @@ export class LegacyService {
     `;
 
     try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
+      await this.getDatabaseConnection(database)?.query(query);
       return filteredData;
     }
     catch (err) {
@@ -740,7 +740,7 @@ export class LegacyService {
     `;
 
     try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
+      await this.getDatabaseConnection(database)?.query(query);
       return true;
     }
     catch (err) {
@@ -785,7 +785,7 @@ export class LegacyService {
     `;
 
     try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
+      await this.getDatabaseConnection(database)?.query(query);
       return true;
     }
     catch (err) {

@@ -37,7 +37,7 @@ export class ImageController {
   async deleteImage(req: Request, res: Response, next: NextFunction) {
     try {
       const imageId = Number.parseInt(req.params.id);
-      if (isNaN(imageId)) {
+      if (Number.isNaN(imageId)) {
         return res.status(400).json({ error: "Invalid image ID" });
       }
 

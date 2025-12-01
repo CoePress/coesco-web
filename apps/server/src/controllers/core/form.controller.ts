@@ -141,8 +141,6 @@ export class FormController {
   createFormSubmission = asyncWrapper(async (req: Request, res: Response) => {
     const { formId } = req.params;
     const result = await formSubmissionRepository.create({ ...req.body, formId });
-    const submission = result.data;
-
     res.status(201).json(result);
   });
 

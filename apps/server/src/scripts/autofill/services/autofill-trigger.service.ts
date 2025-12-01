@@ -333,7 +333,7 @@ export class AutofillTriggerService {
 
       // Check if it's a numeric string
       const numericValue = Number.parseFloat(value);
-      if (!isNaN(numericValue)) {
+      if (!Number.isNaN(numericValue)) {
         return numericValue > 0; // Numeric strings are meaningful if > 0
       }
 

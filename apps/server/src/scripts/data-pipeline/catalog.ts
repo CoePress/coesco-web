@@ -1,6 +1,7 @@
 import type { ItemType } from "@prisma/client";
 
 import type { Migration } from "./migrator";
+
 import { runMigration } from "./migrator";
 
 export const migrateCoilTypes: Migration = {
@@ -34,7 +35,8 @@ export const migrateProductClasses: Migration = {
       ],
       beforeSave: async (data, original) => {
         const equFamily = original.EquFamily?.toString().trim() || "";
-        if (equFamily !== "") return null; // Skip children
+        if (equFamily !== "")
+          return null; // Skip children
 
         const equGroup = original.EquGroup?.toString().trim() || "";
         const code = equGroup || original.GroupDesc?.toString().replace(/\s+/g, "-").toUpperCase();
@@ -59,7 +61,8 @@ export const migrateProductClasses: Migration = {
       ],
       beforeSave: async (data, original, ctx) => {
         const equFamily = original.EquFamily?.toString().trim() || "";
-        if (!equFamily || equFamily.toLowerCase() === "n/a") return null;
+        if (!equFamily || equFamily.toLowerCase() === "n/a")
+          return null;
 
         const segments = equFamily.replace(/\s+/g, "-").split("-");
         const parentCode = segments[0];

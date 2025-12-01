@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import type { AuthenticatedRequest } from "@/middleware/auth.middleware";
+
 import { lockingService } from "@/services";
 import { getEmployeeContext } from "@/utils/context";
 

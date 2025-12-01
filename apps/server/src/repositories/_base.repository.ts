@@ -470,7 +470,7 @@ export class BaseRepository<T> {
     return field?.kind === "enum";
   }
 
-  private async fuzzySearch(params: IQueryParams<T>, tx?: Prisma.TransactionClient) {
+  private async fuzzySearch(params: IQueryParams<T>, _tx?: Prisma.TransactionClient) {
     if (!this.modelName) {
       throw new Error("Model name is required for fuzzy search");
     }

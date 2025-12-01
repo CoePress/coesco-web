@@ -1,10 +1,10 @@
 /* eslint-disable node/prefer-global/process */
-import { closeConnections, createContext, runMigrations } from "./migrator";
 import type { Migration } from "./migrator";
 
 // Import modules
 import { catalogMigrations } from "./catalog";
 import { employeeMigrations } from "./employees";
+import { closeConnections, runMigrations } from "./migrator";
 import { quoteMigrations } from "./quotes";
 
 // All available migrations grouped by module
@@ -81,7 +81,7 @@ Examples:
 }
 
 // Export for programmatic use
-export { createContext, closeConnections, runMigrations } from "./migrator";
+export { closeConnections, createContext, runMigrations } from "./migrator";
 export type { Migration, MigrationConfig, MigrationContext, MigrationResult } from "./migrator";
 
 if (require.main === module) {

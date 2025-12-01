@@ -1291,7 +1291,7 @@ async function _migrateQuoteItems(): Promise<MigrationResult> {
       const modelNumber = original.Model?.toString().trim();
       if (modelNumber) {
         const item = await findReferencedRecord("item", {
-          modelNumber: modelNumber,
+          modelNumber,
         });
         if (item) {
           data.itemId = item.id;
@@ -1387,7 +1387,7 @@ async function _migrateCustomQuoteItems(): Promise<MigrationResult> {
       const modelNumber = original.Model?.toString().trim();
       if (modelNumber) {
         const item = await findReferencedRecord("item", {
-          modelNumber: modelNumber,
+          modelNumber,
         });
         if (item) {
           data.itemId = item.id;

@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 
-import type { Migration, MigrationContext } from "./migrator";
+import type { Migration } from "./migrator";
 
 import { runMigration } from "./migrator";
 

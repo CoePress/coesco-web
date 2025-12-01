@@ -124,7 +124,7 @@ export class InitialAutofillTriggerService {
 
     // For numbers, special handling for feed rate fields (length/SPM must be > 0)
     if (typeof value === "number") {
-      const isValid = !isNaN(value) && isFinite(value);
+      const isValid = !Number.isNaN(value) && Number.isFinite(value);
 
       // Feed rate fields (length/SPM) must be greater than 0 for meaningful FPM calculations
       if (fieldPath.includes("feedRates") && (fieldPath.includes("length") || fieldPath.includes("spm"))) {
@@ -142,7 +142,7 @@ export class InitialAutofillTriggerService {
       // Special handling for feed rate string values - must be > 0 when parsed
       if (fieldPath.includes("feedRates") && (fieldPath.includes("length") || fieldPath.includes("spm"))) {
         const numValue = Number.parseFloat(trimmed);
-        return !isNaN(numValue) && isFinite(numValue) && numValue > 0;
+        return !Number.isNaN(numValue) && Number.isFinite(numValue) && numValue > 0;
       }
 
       // Regular string validation

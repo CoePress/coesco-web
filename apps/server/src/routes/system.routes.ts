@@ -20,7 +20,7 @@ router.get("/health/ready", async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   }
-  catch (error) {
+  catch {
     res.status(503).json({
       ready: false,
       timestamp: new Date().toISOString(),
@@ -40,7 +40,7 @@ router.get("/health/status", async (_req, res) => {
 
     res.status(httpCode).json(status);
   }
-  catch (error) {
+  catch {
     res.status(503).json({
       status: "unhealthy",
       timestamp: new Date().toISOString(),

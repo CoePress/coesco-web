@@ -38,7 +38,7 @@
  * 3. Connections are closed, results are reported
  */
 
-import type { Migration, MigrationConfig, MigrationContext } from "./migrator";
+import type { Migration, MigrationContext } from "./migrator";
 
 import { runMigration } from "./migrator";
 

@@ -221,7 +221,7 @@ export class QuoteService {
   }
 
   private enrichQuoteItems(items: QuoteItem[]) {
-    return items.map((item) => ({
+    return items.map(item => ({
       ...item,
       totalPrice: Number(item.unitPrice) * item.quantity,
     }));
@@ -229,7 +229,8 @@ export class QuoteService {
 
   private async getEmployeeNames(ids: (string | null | undefined)[]): Promise<Map<string, string>> {
     const validIds = ids.filter((id): id is string => !!id);
-    if (validIds.length === 0) return new Map();
+    if (validIds.length === 0)
+      return new Map();
 
     const employees = await prisma.employee.findMany({
       where: { id: { in: validIds } },
