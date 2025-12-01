@@ -22,7 +22,7 @@ import type { Employee } from "./journeys/utils";
 import { fetchAvailableRsms, fetchEmployeeByNumber } from "./journeys/utils";
 
 const CREDIT_STATUS_OPTIONS = [
-  { value: "A", label: "Call Accouting" },
+  { value: "A", label: "Call Accounting" },
   { value: "C", label: "COD Only" },
   { value: "I", label: "International" },
   { value: "N", label: "No Shipment" },

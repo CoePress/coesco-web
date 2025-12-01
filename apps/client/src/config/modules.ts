@@ -5,6 +5,7 @@ import type { ComponentType } from "react";
 
 import {
   ActivityIcon,
+  ArrowLeftRightIcon,
   BoxIcon,
   Building2,
   ChartNoAxesCombined,
@@ -21,11 +22,13 @@ import {
   FolderSyncIcon,
   LayoutDashboardIcon,
   LogsIcon,
+  PackageIcon,
   PaintBucketIcon,
   SearchIcon,
   ShieldIcon,
   Trash2Icon,
   UsersIcon,
+  WarehouseIcon,
 } from "lucide-react";
 
 import { AdminDashboard, AssetManager, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, DeletedRecords, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmit, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
@@ -36,6 +39,9 @@ import Sandbox from "@/pages/sandbox/sandbox";
 import FormSubmission from "@/pages/service/form-submission";
 import FormSubmissions from "@/pages/service/form-submissions";
 import SyncTest from "@/pages/service/sync-test";
+import WarehouseDashboard from "@/pages/warehouse/dashboard";
+import Inventory from "@/pages/warehouse/inventory";
+import Transactions from "@/pages/warehouse/transactions";
 
 import { __dev__ } from "./env";
 
@@ -307,6 +313,34 @@ const adminModule: Module = {
   ],
 };
 
+const warehouseModule: Module = {
+  sequence: 3,
+  slug: "warehouse",
+  label: "Warehouse",
+  icon: WarehouseIcon,
+  status: "development",
+  pages: [
+    {
+      slug: null,
+      label: "Dashboard",
+      icon: LayoutDashboardIcon,
+      component: WarehouseDashboard,
+    },
+    {
+      slug: "inventory",
+      label: "Inventory",
+      icon: PackageIcon,
+      component: Inventory,
+    },
+    {
+      slug: "transactions",
+      label: "Transactions",
+      icon: ArrowLeftRightIcon,
+      component: Transactions,
+    },
+  ],
+};
+
 const sandboxModule: Module = {
   sequence: 9999,
   slug: "sandbox",
@@ -356,6 +390,7 @@ const sandboxModule: Module = {
 const modules: Module[] = [
   salesModule,
   productionModule,
+  warehouseModule,
   adminModule,
   sandboxModule,
 ]

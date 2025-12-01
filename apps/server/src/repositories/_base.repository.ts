@@ -116,9 +116,6 @@ export class BaseRepository<T> {
     const meta = await this.getMetaFields({ for: "create", timestamps: true });
     const payload = { ...data, ...meta };
 
-    console.log(`[${this.modelName}] create payload:`, payload);
-    console.log(`[${this.modelName}] meta:`, meta);
-
     if (!skipValidation) {
       await this.validate(payload);
     }
@@ -280,12 +277,9 @@ export class BaseRepository<T> {
     const meta: Record<string, any> = {};
     const now = new Date();
 
-    console.log(`[${this.modelName}] getMetaFields:`, { ctx, columns, for: opts.for });
-
     if (opts.for === "create") {
       if (columns.includes("createdById")) {
         meta.createdById = ctx.id;
-        console.log(`[${this.modelName}] Setting createdById:`, ctx.id);
       }
       if (opts.timestamps && columns.includes("createdAt"))
         meta.createdAt = now;

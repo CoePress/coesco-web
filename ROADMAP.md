@@ -23,16 +23,19 @@
   - ~~Search for "TODO: Add admin role validation here" (2 occurrences)~~
   - Implemented proper authorization checks for `forceReleaseLock`, `getAllLocks`, and `clearAllLocks`
 
-- [ ] Fix itemId mapping in data pipeline
-  - File: `apps/server/scripts/data-pipeline.ts`
-  - Search for "TODO: Add logic to map itemId" (2 occurrences)
-  - Ensure legacy quote items map correctly to new schema
+- [x] Fix itemId mapping in data pipeline
+  - Added logic to look up Item by modelNumber in both `_migrateQuoteItems` and `_migrateCustomQuoteItems`
+  - Fixed `QuoteStatus.ACTIVE` → `QuoteStatus.OPEN` in `quotes.ts`
 
 ### 1.2 Data Migration
 
-- [ ] Complete catalog migration module (`scripts/data-pipeline/catalog.ts`)
-- [ ] Complete employees migration module (`scripts/data-pipeline/employees.ts`)
-- [ ] Complete quotes migration module (`scripts/data-pipeline/quotes.ts`)
+- [x] Complete catalog migration module (`scripts/data-pipeline/catalog.ts`)
+  - Migrates: CoilTypes, ProductClasses, Items, OptionCategories, OptionHeaders
+- [x] Complete employees migration module (`scripts/data-pipeline/employees.ts`)
+  - Migrates: Departments, Users, Employees, Manager relationships
+- [x] Complete quotes migration module (`scripts/data-pipeline/quotes.ts`)
+  - Migrates: Quotes, QuoteRevisions, QuoteItems
+  - Includes revision status and latest revision updates
 - [ ] Add validation/verification step to confirm migrated data integrity
 - [ ] Document migration process and rollback procedures
 
@@ -46,6 +49,9 @@
   - Added `primaryKey` field to ID map config
   - Created `getPrimaryKeyField()` helper method
   - Updated `getById` and `update` methods to use mapping instead of hardcoded values
+- [x] Fix typo in `CREDIT_STATUS_OPTIONS` ("Accouting" → "Accounting")
+- [x] Register warehouse module in `modules.ts` (status: development)
+- [x] Remove debug `console.log` statements from `_base.repository.ts`
 
 ---
 
@@ -279,7 +285,7 @@
 | Issue | File | Priority | Status |
 |-------|------|----------|--------|
 | ~~Admin validation missing~~ | `lock.controller.ts` | High | ✅ Done |
-| ItemId mapping incomplete | `data-pipeline.ts` | High | Open |
+| ~~ItemId mapping incomplete~~ | `data-pipeline.ts` | High | ✅ Done |
 | ~~Legacy mapping TODO~~ | `legacy.service.ts` | Medium | ✅ Done |
 | LLM integration incomplete | `agent.service.ts` | Low | Open |
 | ~~Company codes undocumented~~ | `company-details.tsx` | Low | ✅ Done |

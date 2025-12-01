@@ -1287,7 +1287,16 @@ async function _migrateQuoteItems(): Promise<MigrationResult> {
       data.createdById = original.CreateInit?.toLowerCase() || "system";
       data.updatedById = original.ModifyInit?.toLowerCase() || "system";
 
-      // TODO: Add logic to map itemId
+      // Map itemId by looking up the Item by model number
+      const modelNumber = original.Model?.toString().trim();
+      if (modelNumber) {
+        const item = await findReferencedRecord("item", {
+          modelNumber: modelNumber,
+        });
+        if (item) {
+          data.itemId = item.id;
+        }
+      }
 
       return data;
     },
@@ -1374,7 +1383,16 @@ async function _migrateCustomQuoteItems(): Promise<MigrationResult> {
       data.createdById = original.CreateInit?.toLowerCase() || "system";
       data.updatedById = original.ModifyInit?.toLowerCase() || "system";
 
-      // TODO: Add logic to map itemId
+      // Map itemId by looking up the Item by model number (if exists in catalog)
+      const modelNumber = original.Model?.toString().trim();
+      if (modelNumber) {
+        const item = await findReferencedRecord("item", {
+          modelNumber: modelNumber,
+        });
+        if (item) {
+          data.itemId = item.id;
+        }
+      }
 
       return data;
     },

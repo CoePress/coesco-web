@@ -29,7 +29,7 @@ export const migrateQuotes: Migration = {
 
         return {
           ...data,
-          status: closed ? QuoteStatus.CLOSED : QuoteStatus.ACTIVE,
+          status: closed ? QuoteStatus.CLOSED : QuoteStatus.OPEN,
           createdAt: new Date(original.CreateDate || original.ModifyDate),
           updatedAt: new Date(original.ModifyDate || original.CreateDate),
           createdById: original.CreateInit?.toLowerCase() || "system",
