@@ -1,15 +1,16 @@
 import { Navigate, Outlet } from "react-router-dom";
 
-import Layout from "./layout";
-import Loader from "../ui/loader";
 import { useAuth } from "@/contexts/auth.context";
+
+import Loader from "../ui/loader";
+import Layout from "./layout";
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
   withLayout?: boolean;
 }
 
-export const PublicRoute = () => {
+export function PublicRoute() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -38,12 +39,12 @@ export const PublicRoute = () => {
   }
 
   return <Outlet />;
-};
+}
 
-export const ProtectedRoute = ({
+export function ProtectedRoute({
   allowedRoles,
   withLayout = true,
-}: ProtectedRouteProps) => {
+}: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -81,9 +82,9 @@ export const ProtectedRoute = ({
       <Outlet />
     </Layout>
   );
-};
+}
 
-export const ProtectedRouteWithoutLayout = () => {
+export function ProtectedRouteWithoutLayout() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -104,8 +105,8 @@ export const ProtectedRouteWithoutLayout = () => {
   }
 
   return <Outlet />;
-};
+}
 
-export const AdminRoute = () => {
+export function AdminRoute() {
   return <ProtectedRoute allowedRoles={["ADMIN"]} />;
-};
+}

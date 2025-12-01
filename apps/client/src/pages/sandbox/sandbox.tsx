@@ -1,9 +1,11 @@
-import { Button, BottomSheet, Table } from "@/components";
+import { useEffect, useRef, useState } from "react";
+
+import type { TableColumn } from "@/components/ui/table";
+
+import { BottomSheet, Button, Table } from "@/components";
 import AddressAutocomplete from "@/components/feature/address-input";
-import { useState, useEffect, useRef } from "react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useToast } from "@/hooks/use-toast";
-import type { TableColumn } from "@/components/ui/table";
 
 // Type definitions
 interface Location {
@@ -47,9 +49,9 @@ interface AddressData {
 
 // Extend the Window interface to include additional Google Maps types
 
-const Sandbox = () => {
+function Sandbox() {
   const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(
-    null
+    null,
   );
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -88,15 +90,16 @@ const Sandbox = () => {
     {
       key: "status",
       header: "Status",
-      render: (value) => (
+      render: value => (
         <span className={`px-2 py-1 rounded text-xs ${
           value === "Active"
             ? "bg-success/20 text-success"
             : "bg-error/20 text-error"
-        }`}>
+        }`}
+        >
           {value as string}
         </span>
-      )
+      ),
     },
     {
       key: "id",
@@ -108,11 +111,12 @@ const Sandbox = () => {
           onClick={(e) => {
             e?.stopPropagation();
             info(`Editing ${row.name}`);
-          }}>
+          }}
+        >
           Edit
         </Button>
-      )
-    }
+      ),
+    },
   ];
 
   const GOOGLE_API_KEY = "AIzaSyAggNUxlA-WkP5yvP_l3kCIQckeQBPEyOU";
@@ -147,7 +151,8 @@ const Sandbox = () => {
       script.defer = true;
       script.onload = initMap;
       document.head.appendChild(script);
-    } else {
+    }
+    else {
       initMap();
     }
   }, []);
@@ -161,12 +166,13 @@ const Sandbox = () => {
 
   // Add marker to map
   const addMarker = (location: Location, title: string, type = "current") => {
-    if (!map) return;
+    if (!map)
+      return;
 
     const marker = new window.google.maps.Marker({
       position: { lat: location.latitude, lng: location.longitude },
-      map: map,
-      title: title,
+      map,
+      title,
       icon: {
         path: window.google.maps.SymbolPath.CIRCLE,
         scale: 8,
@@ -187,23 +193,23 @@ const Sandbox = () => {
         <div style="color: #202020; font-family: 'Roboto Mono', monospace;">
           <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${title}</h3>
           <p style="margin: 4px 0; font-size: 12px;"><strong>Lat:</strong> ${location.latitude.toFixed(
-            6
+            6,
           )}</p>
           <p style="margin: 4px 0; font-size: 12px;"><strong>Lng:</strong> ${location.longitude.toFixed(
-            6
+            6,
           )}</p>
           ${
             location.accuracy
               ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Accuracy:</strong> ${location.accuracy.toFixed(
-                  0
-                )}m</p>`
+                0,
+              )}m</p>`
               : ""
           }
           ${
             location.timestamp
               ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Time:</strong> ${new Date(
-                  location.timestamp
-                ).toLocaleString()}</p>`
+                location.timestamp,
+              ).toLocaleString()}</p>`
               : ""
           }
         </div>
@@ -214,13 +220,13 @@ const Sandbox = () => {
       infoWindow.open(map, marker);
     });
 
-    setMarkers((prev) => [...prev, marker]);
+    setMarkers(prev => [...prev, marker]);
     return marker;
   };
 
   // Clear all markers
   const clearMarkers = () => {
-    markers.forEach((marker) => marker.setMap(null));
+    markers.forEach(marker => marker.setMap(null));
     setMarkers([]);
   };
 
@@ -254,7 +260,7 @@ const Sandbox = () => {
       addMarker(
         addressLocation,
         selectedAddress.formatted_address || "Selected Address",
-        "address"
+        "address",
       );
     }
   };
@@ -309,7 +315,7 @@ const Sandbox = () => {
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 60000,
-      }
+      },
     );
   };
 
@@ -338,9 +344,10 @@ const Sandbox = () => {
         ...currentLocation,
         id: Date.now(),
       };
-      setLocationHistory((prev) => [entry, ...prev]);
+      setLocationHistory(prev => [entry, ...prev]);
       console.log("Current Location:", currentLocation);
-    } else {
+    }
+    else {
       console.log("No location data available");
     }
   };
@@ -348,7 +355,8 @@ const Sandbox = () => {
   const logSelectedAddress = () => {
     if (selectedAddress) {
       console.log("Selected Address:", selectedAddress);
-    } else {
+    }
+    else {
       console.log("No address selected");
     }
   };
@@ -379,7 +387,8 @@ const Sandbox = () => {
         {/* Address Input Section */}
         <div
           className="bg-foreground rounded-lg p-4"
-          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+          style={{ boxShadow: `0 1px 3px var(--shadow)` }}
+        >
           <label className="block text-sm font-medium text-text-muted mb-2">
             Manual Address Entry
           </label>
@@ -390,12 +399,15 @@ const Sandbox = () => {
           />
           <Button
             onClick={logSelectedAddress}
-            className="mt-2 w-full">
+            className="mt-2 w-full"
+          >
             Log Selected Address
           </Button>
           {selectedAddress && (
             <div className="mt-2 p-2 bg-surface rounded text-sm text-text">
-              <strong>Selected:</strong> {selectedAddress.formatted_address}
+              <strong>Selected:</strong>
+              {" "}
+              {selectedAddress.formatted_address}
             </div>
           )}
         </div>
@@ -403,7 +415,8 @@ const Sandbox = () => {
         {/* Toast Testing Section */}
         <div
           className="bg-foreground rounded-lg p-4"
-          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+          style={{ boxShadow: `0 1px 3px var(--shadow)` }}
+        >
           <h3 className="text-lg font-semibold text-text mb-4">
             Toast Testing
           </h3>
@@ -411,25 +424,29 @@ const Sandbox = () => {
             <Button
               onClick={() => success("Operation completed successfully!")}
               variant="primary"
-              size="sm">
+              size="sm"
+            >
               Success
             </Button>
             <Button
               onClick={() => error("Something went wrong!")}
               variant="destructive"
-              size="sm">
+              size="sm"
+            >
               Error
             </Button>
             <Button
               onClick={() => warning("Please check your input!")}
               variant="secondary"
-              size="sm">
+              size="sm"
+            >
               Warning
             </Button>
             <Button
               onClick={() => info("Here's some helpful information.")}
               variant="ghost"
-              size="sm">
+              size="sm"
+            >
               Info
             </Button>
           </div>
@@ -438,7 +455,8 @@ const Sandbox = () => {
               onClick={() => success("This is a toast with a title!", { title: "Success!" })}
               variant="primary-outline"
               size="sm"
-              className="flex-1">
+              className="flex-1"
+            >
               With Title
             </Button>
             <Button onClick={notifyMe} variant="secondary-outline" size="sm" className="flex-1">
@@ -450,7 +468,8 @@ const Sandbox = () => {
         {/* Bottom Sheet Testing Section */}
         <div
           className="bg-foreground rounded-lg p-4"
-          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+          style={{ boxShadow: `0 1px 3px var(--shadow)` }}
+        >
           <h3 className="text-lg font-semibold text-text mb-4">
             Bottom Sheet Testing
           </h3>
@@ -466,7 +485,8 @@ const Sandbox = () => {
                 setBottomSheetOpen(true);
               }}
               variant="primary"
-              size="sm">
+              size="sm"
+            >
               Small
             </Button>
             <Button
@@ -476,7 +496,8 @@ const Sandbox = () => {
                 setBottomSheetOpen(true);
               }}
               variant="primary"
-              size="sm">
+              size="sm"
+            >
               Medium
             </Button>
             <Button
@@ -486,7 +507,8 @@ const Sandbox = () => {
                 setBottomSheetOpen(true);
               }}
               variant="primary"
-              size="sm">
+              size="sm"
+            >
               Large
             </Button>
             <Button
@@ -496,7 +518,8 @@ const Sandbox = () => {
                 setBottomSheetOpen(true);
               }}
               variant="primary"
-              size="sm">
+              size="sm"
+            >
               Full
             </Button>
           </div>
@@ -509,7 +532,8 @@ const Sandbox = () => {
                 setBottomSheetOpen(true);
               }}
               variant="secondary"
-              size="sm">
+              size="sm"
+            >
               Form Example
             </Button>
             <Button
@@ -519,7 +543,8 @@ const Sandbox = () => {
                 setBottomSheetOpen(true);
               }}
               variant="ghost"
-              size="sm">
+              size="sm"
+            >
               List Example
             </Button>
           </div>
@@ -528,7 +553,8 @@ const Sandbox = () => {
         {/* Mobile Table View Testing Section */}
         <div
           className="bg-foreground rounded-lg p-4"
-          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+          style={{ boxShadow: `0 1px 3px var(--shadow)` }}
+        >
           <h3 className="text-lg font-semibold text-text mb-4">
             Mobile Table View
           </h3>
@@ -540,7 +566,7 @@ const Sandbox = () => {
               columns={tableColumns}
               data={sampleTableData}
               total={sampleTableData.length}
-              onRowClick={(row) => info(`Clicked: ${row.name}`)}
+              onRowClick={row => info(`Clicked: ${row.name}`)}
               mobileCardView={true}
             />
           </div>
@@ -549,7 +575,8 @@ const Sandbox = () => {
         {/* Location Tracking Section */}
         <div
           className="bg-foreground rounded-lg p-4"
-          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+          style={{ boxShadow: `0 1px 3px var(--shadow)` }}
+        >
           <h3 className="text-lg font-semibold text-text mb-4">
             Employee Location Tracking
           </h3>
@@ -557,22 +584,27 @@ const Sandbox = () => {
           <div className="flex gap-2 mb-4">
             <Button
               onClick={getCurrentLocation}
-              className="flex-1">
+              className="flex-1"
+            >
               Get Location
             </Button>
-            {!isTracking ? (
-              <Button
-                onClick={startTracking}
-                className="flex-1 bg-success hover:bg-success/80">
-                Start Tracking
-              </Button>
-            ) : (
-              <Button
-                onClick={stopTracking}
-                className="flex-1 bg-error hover:bg-error/80">
-                Stop Tracking
-              </Button>
-            )}
+            {!isTracking
+              ? (
+                  <Button
+                    onClick={startTracking}
+                    className="flex-1 bg-success hover:bg-success/80"
+                  >
+                    Start Tracking
+                  </Button>
+                )
+              : (
+                  <Button
+                    onClick={stopTracking}
+                    className="flex-1 bg-error hover:bg-error/80"
+                  >
+                    Stop Tracking
+                  </Button>
+                )}
           </div>
 
           {locationError && (
@@ -586,28 +618,36 @@ const Sandbox = () => {
               <h4 className="font-medium text-text mb-2">Current Position:</h4>
               <div className="text-sm text-text-muted space-y-1">
                 <p>
-                  <strong>Lat:</strong> {currentLocation.latitude.toFixed(6)}
+                  <strong>Lat:</strong>
+                  {" "}
+                  {currentLocation.latitude.toFixed(6)}
                 </p>
                 <p>
-                  <strong>Lng:</strong> {currentLocation.longitude.toFixed(6)}
+                  <strong>Lng:</strong>
+                  {" "}
+                  {currentLocation.longitude.toFixed(6)}
                 </p>
                 <p>
-                  <strong>Accuracy:</strong>{" "}
-                  {currentLocation.accuracy.toFixed(0)}m
+                  <strong>Accuracy:</strong>
+                  {" "}
+                  {currentLocation.accuracy.toFixed(0)}
+                  m
                 </p>
               </div>
               <div className="flex gap-2 mt-2">
                 <Button
                   onClick={logCurrentLocation}
                   size="sm"
-                  className="flex-1">
+                  className="flex-1"
+                >
                   Log Location
                 </Button>
                 <Button
                   onClick={() => centerOnLocation(currentLocation)}
                   size="sm"
                   variant="ghost"
-                  className="flex-1">
+                  className="flex-1"
+                >
                   Center Map
                 </Button>
               </div>
@@ -630,7 +670,8 @@ const Sandbox = () => {
         {locationHistory.length > 0 && (
           <div
             className="bg-foreground rounded-lg p-4"
-            style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+            style={{ boxShadow: `0 1px 3px var(--shadow)` }}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-text">
                 Location History
@@ -638,27 +679,33 @@ const Sandbox = () => {
               <Button
                 onClick={clearHistory}
                 size="sm"
-                variant="ghost">
+                variant="ghost"
+              >
                 Clear
               </Button>
             </div>
 
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {locationHistory.map((location) => (
+              {locationHistory.map(location => (
                 <div
                   key={location.id}
                   className="bg-surface rounded p-3 cursor-pointer hover:bg-surface/80"
-                  onClick={() => centerOnLocation(location)}>
+                  onClick={() => centerOnLocation(location)}
+                >
                   <div className="text-xs text-text-muted mb-1">
                     {new Date(location.timestamp).toLocaleString()}
                   </div>
                   <div className="text-sm text-text">
                     <p>
-                      {location.latitude.toFixed(6)},{" "}
+                      {location.latitude.toFixed(6)}
+                      ,
+                      {" "}
                       {location.longitude.toFixed(6)}
                     </p>
                     <p className="text-text-muted">
-                      ±{location.accuracy.toFixed(0)}m accuracy
+                      ±
+                      {location.accuracy.toFixed(0)}
+                      m accuracy
                     </p>
                   </div>
                 </div>
@@ -671,7 +718,8 @@ const Sandbox = () => {
       {/* Right Panel - Map */}
       <div
         className="flex-1 bg-foreground rounded-lg overflow-hidden"
-        style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+        style={{ boxShadow: `0 1px 3px var(--shadow)` }}
+      >
         <div className="bg-surface p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-text">Location Map</h2>
           <div className="flex items-center gap-4 mt-2 text-sm">
@@ -691,7 +739,9 @@ const Sandbox = () => {
         </div>
         <div
           ref={mapRef}
-          className="w-full h-full min-h-[600px]"></div>
+          className="w-full h-full min-h-[600px]"
+        >
+        </div>
       </div>
 
       {/* Bottom Sheet Component */}
@@ -702,31 +752,36 @@ const Sandbox = () => {
           bottomSheetContent === "basic"
             ? "Bottom Sheet Example"
             : bottomSheetContent === "form"
-            ? "Quick Form"
-            : "Select an Option"
+              ? "Quick Form"
+              : "Select an Option"
         }
         snapPoint={bottomSheetSize}
         footer={
-          bottomSheetContent === "form" ? (
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setBottomSheetOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                className="flex-1"
-                onClick={() => {
-                  success("Form submitted!");
-                  setBottomSheetOpen(false);
-                }}>
-                Submit
-              </Button>
-            </div>
-          ) : null
-        }>
+          bottomSheetContent === "form"
+            ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => setBottomSheetOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="flex-1"
+                    onClick={() => {
+                      success("Form submitted!");
+                      setBottomSheetOpen(false);
+                    }}
+                  >
+                    Submit
+                  </Button>
+                </div>
+              )
+            : null
+        }
+      >
         {bottomSheetContent === "basic" && (
           <div className="space-y-3">
             <p className="text-text">
@@ -798,7 +853,8 @@ const Sandbox = () => {
                 onClick={() => {
                   info(`Selected: ${item.label}`);
                   setBottomSheetOpen(false);
-                }}>
+                }}
+              >
                 <span className="text-2xl">{item.icon}</span>
                 <span className="text-text font-medium">{item.label}</span>
               </button>
@@ -808,6 +864,6 @@ const Sandbox = () => {
       </BottomSheet>
     </div>
   );
-};
+}
 
 export default Sandbox;

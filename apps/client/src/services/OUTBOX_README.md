@@ -8,7 +8,7 @@ The outbox system provides reliable request queuing and automatic retry for writ
 
 - Automatic queuing of POST/PATCH/PUT/DELETE when offline or on slow connections
 - IndexedDB persistence (survives page reloads)
-- Exponential backoff with jitter (2s * 2^attempts, max 60s)
+- Exponential backoff with jitter (2s \* 2^attempts, max 60s)
 - Idempotency-Key headers to prevent duplicate operations
 - Automatic replay on network recovery
 - Configurable retry attempts (default: 5)

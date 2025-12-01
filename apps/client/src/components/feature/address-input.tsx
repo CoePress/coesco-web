@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface AddressComponent {
   long_name: string;
@@ -61,7 +61,7 @@ const googleMapsLoader = {
       }
 
       const existingScript = document.querySelector(
-        `script[src*="maps.googleapis.com"]`
+        `script[src*="maps.googleapis.com"]`,
       );
       if (existingScript) {
         document.head.removeChild(existingScript);
@@ -78,7 +78,8 @@ const googleMapsLoader = {
             this.isLoaded = true;
             this.isLoading = false;
             resolve();
-          } else {
+          }
+          else {
             this.isLoading = false;
             this.loadPromise = null;
             reject(new Error("Google Maps API failed to load properly"));
@@ -110,11 +111,11 @@ const googleMapsLoader = {
   },
 };
 
-const AddressInput = ({
+function AddressInput({
   onAddressSelect,
   placeholder = "Enter address...",
   apiKey,
-}: AddressInputProps) => {
+}: AddressInputProps) {
   const [input, setInput] = useState("");
   const [predictions, setPredictions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -144,11 +145,12 @@ const AddressInput = ({
         initializeServices();
         setIsGoogleLoaded(true);
         setError(null);
-      } catch (err) {
+      }
+      catch (err) {
         setError(
           err instanceof Error
             ? err.message
-            : "Failed to initialize Google Maps"
+            : "Failed to initialize Google Maps",
         );
         setIsGoogleLoaded(false);
       }
@@ -169,13 +171,14 @@ const AddressInput = ({
         throw new Error("Google Maps API not loaded");
       }
 
-      autocompleteService.current =
-        new window.google.maps.places.AutocompleteService();
+      autocompleteService.current
+        = new window.google.maps.places.AutocompleteService();
       const dummyDiv = document.createElement("div");
       placesService.current = new window.google.maps.places.PlacesService(
-        dummyDiv
+        dummyDiv,
       );
-    } catch (err) {
+    }
+    catch (err) {
       throw new Error("Failed to initialize Google Maps services");
     }
   };
@@ -205,22 +208,24 @@ const AddressInput = ({
         setIsLoading(false);
 
         if (
-          status === window.google.maps.places.PlacesServiceStatus.OK &&
-          predictions
+          status === window.google.maps.places.PlacesServiceStatus.OK
+          && predictions
         ) {
           setPredictions(predictions);
           setShowDropdown(true);
-        } else if (
+        }
+        else if (
           status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS
         ) {
           setPredictions([]);
           setShowDropdown(false);
-        } else {
+        }
+        else {
           setError(`API Error: ${status}`);
           setPredictions([]);
           setShowDropdown(false);
         }
-      }
+      },
     );
   };
 
@@ -245,7 +250,8 @@ const AddressInput = ({
       secondary_text: string;
     };
   }) => {
-    if (!placesService.current) return;
+    if (!placesService.current)
+      return;
 
     setInput(prediction.description);
     setShowDropdown(false);
@@ -266,8 +272,8 @@ const AddressInput = ({
       setIsLoading(false);
 
       if (
-        status === window.google.maps.places.PlacesServiceStatus.OK &&
-        place
+        status === window.google.maps.places.PlacesServiceStatus.OK
+        && place
       ) {
         const addressData = {
           place_id: place.place_id,
@@ -283,14 +289,15 @@ const AddressInput = ({
         };
 
         onAddressSelect?.(addressData);
-      } else {
+      }
+      else {
         setError(`Failed to get place details: ${status}`);
       }
     });
   };
 
   const parseAddressComponents = (
-    components: AddressComponent[]
+    components: AddressComponent[],
   ): ParsedAddress => {
     const parsed: ParsedAddress = {};
 
@@ -325,10 +332,10 @@ const AddressInput = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
+        dropdownRef.current
+        && !dropdownRef.current.contains(event.target as Node)
+        && inputRef.current
+        && !inputRef.current.contains(event.target as Node)
       ) {
         setShowDropdown(false);
       }
@@ -341,7 +348,10 @@ const AddressInput = ({
   if (error) {
     return (
       <div className="w-full max-w-md p-4 bg-red-50 border border-destructive rounded-sm">
-        <p className="text-red-700 text-sm">Error: {error}</p>
+        <p className="text-red-700 text-sm">
+          Error:
+          {error}
+        </p>
       </div>
     );
   }
@@ -358,8 +368,7 @@ const AddressInput = ({
           disabled={!isGoogleLoaded}
           className="w-full p-2 border border-border rounded-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors disabled:bg-surface disabled:cursor-not-allowed text-text"
           onFocus={() =>
-            input.length >= 3 && predictions.length > 0 && setShowDropdown(true)
-          }
+            input.length >= 3 && predictions.length > 0 && setShowDropdown(true)}
         />
 
         {isLoading && (
@@ -372,12 +381,14 @@ const AddressInput = ({
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-foreground border border-border rounded-sm shadow max-h-60 overflow-y-auto">
-          {predictions.map((prediction) => (
+          className="absolute z-50 w-full mt-1 bg-foreground border border-border rounded-sm shadow max-h-60 overflow-y-auto"
+        >
+          {predictions.map(prediction => (
             <div
               key={prediction.place_id}
               onClick={() => handlePredictionSelect(prediction)}
-              className="p-2 hover:bg-surface cursor-pointer border-b border-border last:border-b-0 transition-colors">
+              className="p-2 hover:bg-surface cursor-pointer border-b border-border last:border-b-0 transition-colors"
+            >
               <div className="text-sm font-medium text-text">
                 {prediction.structured_formatting.main_text}
               </div>
@@ -396,6 +407,6 @@ const AddressInput = ({
       )}
     </div>
   );
-};
+}
 
 export default AddressInput;

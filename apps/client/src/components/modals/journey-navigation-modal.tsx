@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import Modal from "@/components/ui/modal";
+
 import { Button } from "@/components";
+import Modal from "@/components/ui/modal";
 
 interface JourneyNavigationModalProps {
   isOpen: boolean;
@@ -9,12 +10,12 @@ interface JourneyNavigationModalProps {
   journeyId: string;
 }
 
-export const JourneyNavigationModal = ({
+export function JourneyNavigationModal({
   isOpen,
   onClose,
   journeyName,
   journeyId,
-}: JourneyNavigationModalProps) => {
+}: JourneyNavigationModalProps) {
   const navigate = useNavigate();
 
   return (
@@ -26,7 +27,9 @@ export const JourneyNavigationModal = ({
     >
       <div className="space-y-4">
         <p className="text-text">
-          Journey "{journeyName}" has been created successfully.
+          Journey "
+          {journeyName}
+          " has been created successfully.
         </p>
         <p className="text-text-muted text-sm">
           Would you like to open the journey details now?
@@ -53,4 +56,4 @@ export const JourneyNavigationModal = ({
       </div>
     </Modal>
   );
-};
+}

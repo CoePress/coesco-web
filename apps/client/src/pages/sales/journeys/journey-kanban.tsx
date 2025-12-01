@@ -1,42 +1,46 @@
-import { useState, useCallback, useMemo, useRef, memo, useEffect } from "react";
-import { MoreHorizontal, Eye, Tags } from "lucide-react";
+import type { CollisionDetection } from "@dnd-kit/core";
+
 import {
+
   DndContext,
   DragOverlay,
+  getFirstCollision,
   KeyboardSensor,
   PointerSensor,
-  useSensor,
-  useSensors,
-  useDroppable,
   pointerWithin,
   rectIntersection,
-  getFirstCollision,
-  type CollisionDetection
+  useDroppable,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 import {
+  arrayMove,
+  SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-  SortableContext,
   verticalListSortingStrategy,
-  arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Eye, MoreHorizontal, Tags } from "lucide-react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatCurrency, formatDate } from "@/utils";
-import { STAGES } from "./constants";
-import { getPriorityConfig } from "./utils";
+
+import { AddTagsModal } from "@/components/modals/add-tags-modal";
 import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { TrackJourneyModal } from "@/components/modals/track-journey-modal";
 import { UntrackJourneyModal } from "@/components/modals/untrack-journey-modal";
-import { AddTagsModal } from "@/components/modals/add-tags-modal";
-import { useJourneyTracking } from "@/hooks/use-journey-tracking";
 import { useApi } from "@/hooks/use-api";
+import { useJourneyTracking } from "@/hooks/use-journey-tracking";
 import { useMobileDetection } from "@/hooks/use-mobile-detection";
+import { formatCurrency, formatDate } from "@/utils";
+
 import { MobileKanbanView } from "./components";
+import { STAGES } from "./constants";
+import { getPriorityConfig } from "./utils";
 
 // const columnIdPrefix = "column-";
 
-const DroppableColumn = ({
+function DroppableColumn({
   id,
   children,
   className = "",
@@ -44,7 +48,7 @@ const DroppableColumn = ({
   id: string;
   children: React.ReactNode;
   className?: string;
-}) => {
+}) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
     <div
@@ -54,7 +58,7 @@ const DroppableColumn = ({
       {children}
     </div>
   );
-};
+}
 
 const JourneyCard = memo(({
   journey,
@@ -96,37 +100,43 @@ const JourneyCard = memo(({
     };
 
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMenuOpen]);
 
   const handleTagsUpdated = () => {
     onTagsUpdated?.();
   };
-  
+
   const priorityConfig = useMemo(() => getPriorityConfig(journey.priority), [journey.priority]);
-  
+
   return (
     <div
       style={style}
       onClick={showDeleteConfirm || showTagsModal ? undefined : onClick}
       className={`bg-foreground rounded shadow-sm border border-border p-3 select-none mb-2 
         hover:shadow-md hover:bg-opacity-90 hover:border-neutral-500 transition-all duration-200 ${
-          showDeleteConfirm || showTagsModal ? 'cursor-default' : 'cursor-move'
-        }`}
+    showDeleteConfirm || showTagsModal ? "cursor-default" : "cursor-move"
+    }`}
       {...dragProps}
     >
       <div className="flex items-center gap-2 mb-1">
-        <div 
+        <div
           className={`w-3 h-3 rounded-full ${priorityConfig.color} relative group cursor-help`}
-          title={`Priority: ${journey.priority || 'None'} (${priorityConfig.label})`}
+          title={`Priority: ${journey.priority || "None"} (${priorityConfig.label})`}
         >
           <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-            Priority: {journey.priority || 'None'} ({priorityConfig.label})
+            Priority:
+            {" "}
+            {journey.priority || "None"}
+            {" "}
+            (
+            {priorityConfig.label}
+            )
           </div>
         </div>
         <div className="text-sm font-medium text-neutral-400 truncate flex-1">
@@ -135,7 +145,9 @@ const JourneyCard = memo(({
       </div>
       {journey.Quote_Number && (
         <div className="text-xs text-neutral-500 mb-1">
-          Quote #: {journey.Quote_Number}
+          Quote #:
+          {" "}
+          {journey.Quote_Number}
         </div>
       )}
       <div className="flex justify-between items-center mb-2">
@@ -148,32 +160,38 @@ const JourneyCard = memo(({
       </div>
       {journey.expectedDecisionDate && (
         <div className="text-xs text-neutral-400">
-          Expected decision: {formatDate(journey.expectedDecisionDate)}
+          Expected decision:
+          {" "}
+          {formatDate(journey.expectedDecisionDate)}
         </div>
       )}
       {showTags && (
         <div className="mt-2">
-          {tags.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {tags.map((tag: any) => (
-                <div
-                  key={tag.id}
-                  className="bg-primary text-white px-2 py-0.5 rounded-full text-xs"
-                >
-                  {tag.description}
+          {tags.length > 0
+            ? (
+                <div className="flex flex-wrap gap-1">
+                  {tags.map((tag: any) => (
+                    <div
+                      key={tag.id}
+                      className="bg-primary text-white px-2 py-0.5 rounded-full text-xs"
+                    >
+                      {tag.description}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-xs text-neutral-400 italic">No tags</div>
-          )}
+              )
+            : (
+                <div className="text-xs text-neutral-400 italic">No tags</div>
+              )}
         </div>
       )}
       <div className="flex justify-between items-center mt-2 pt-2 border-t">
         <div className="flex flex-col flex-1 mr-2">
           {journey.CreateDT && (
             <div className="text-xs text-neutral-400">
-              Created: {formatDate(journey.CreateDT)}
+              Created:
+              {" "}
+              {formatDate(journey.CreateDT)}
             </div>
           )}
         </div>
@@ -192,22 +210,23 @@ const JourneyCard = memo(({
               <div className="absolute right-0 top-6 bg-background border border-border rounded shadow-lg py-1 z-50 min-w-32">
                 <button
                   className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
-                    isTracked 
-                      ? 'text-blue-600 hover:bg-blue-50' 
-                      : 'text-neutral-400 hover:bg-gray-50'
+                    isTracked
+                      ? "text-blue-600 hover:bg-blue-50"
+                      : "text-neutral-400 hover:bg-gray-50"
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsMenuOpen(false);
                     if (isTracked) {
                       setShowUntrackModal(true);
-                    } else {
+                    }
+                    else {
                       setShowTrackModal(true);
                     }
                   }}
                 >
                   <Eye size={14} />
-                  {isTracked ? 'Stop Tracking' : 'Track Journey'}
+                  {isTracked ? "Stop Tracking" : "Track Journey"}
                 </button>
                 <button
                   className="w-full px-3 py-2 text-left text-sm text-neutral-400 hover:bg-gray-50 flex items-center gap-2"
@@ -229,13 +248,14 @@ const JourneyCard = memo(({
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={(e) => {
-          if (e) e.stopPropagation();
+          if (e)
+            e.stopPropagation();
           setShowDeleteConfirm(false);
           onDelete?.(journey.id);
         }}
         journey={journey}
       />
-      
+
       <TrackJourneyModal
         isOpen={showTrackModal}
         onClose={() => setShowTrackModal(false)}
@@ -245,7 +265,7 @@ const JourneyCard = memo(({
           refreshTracking();
         }}
       />
-      
+
       <UntrackJourneyModal
         isOpen={showUntrackModal}
         onClose={() => setShowUntrackModal(false)}
@@ -256,7 +276,7 @@ const JourneyCard = memo(({
           refreshTracking();
         }}
       />
-      
+
       <AddTagsModal
         isOpen={showTagsModal}
         onClose={() => {
@@ -364,7 +384,7 @@ interface KanbanViewProps {
   isLoading?: boolean;
 }
 
-export const KanbanView = ({
+export function KanbanView({
   journeys,
   customersById,
   visibleStageIds,
@@ -378,7 +398,7 @@ export const KanbanView = ({
   employee,
   journeyTags,
   isLoading = false,
-}: KanbanViewProps) => {
+}: KanbanViewProps) {
   const isMobile = useMobileDetection(768);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [originalStage, setOriginalStage] = useState<number | null>(null);
@@ -389,12 +409,11 @@ export const KanbanView = ({
   const stageFromDroppableId = useCallback((droppableId: string): number | undefined =>
     droppableId.startsWith(columnIdPrefix)
       ? Number(droppableId.replace(columnIdPrefix, ""))
-      : undefined,
-  [columnIdPrefix]);
+      : undefined, [columnIdPrefix]);
 
   const findStageByItemId = useCallback((id: string): number | undefined => {
-    const key = Object.keys(idsByStage).find((k) =>
-      (idsByStage[Number(k)] ?? []).includes(id)
+    const key = Object.keys(idsByStage).find(k =>
+      (idsByStage[Number(k)] ?? []).includes(id),
     );
     return key ? Number(key) : undefined;
   }, [idsByStage]);
@@ -405,7 +424,7 @@ export const KanbanView = ({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const collisionDetection = useCallback<CollisionDetection>((args) => {
@@ -418,43 +437,46 @@ export const KanbanView = ({
   const handleDragStart = useCallback(({ active }: any) => {
     setActiveId(active.id.toString());
 
-    const activeContainerId: string | undefined =
-      active?.data?.current?.sortable?.containerId;
-    const fromStage =
-      (activeContainerId && stageFromDroppableId(activeContainerId)) ??
-      findStageByItemId(String(active.id));
+    const activeContainerId: string | undefined
+      = active?.data?.current?.sortable?.containerId;
+    const fromStage
+      = (activeContainerId && stageFromDroppableId(activeContainerId))
+        ?? findStageByItemId(String(active.id));
 
-    setOriginalStage(typeof fromStage === 'number' ? fromStage : null);
+    setOriginalStage(typeof fromStage === "number" ? fromStage : null);
   }, [stageFromDroppableId, findStageByItemId]);
 
   const handleDragOver = useCallback(({ active, over }: any) => {
-    if (!over) return;
+    if (!over)
+      return;
 
-    const activeContainerId: string | undefined =
-      active?.data?.current?.sortable?.containerId;
-    const sourceStage =
-      (activeContainerId && stageFromDroppableId(activeContainerId)) ??
-      findStageByItemId(String(active.id));
+    const activeContainerId: string | undefined
+      = active?.data?.current?.sortable?.containerId;
+    const sourceStage
+      = (activeContainerId && stageFromDroppableId(activeContainerId))
+        ?? findStageByItemId(String(active.id));
 
-    const targetStage =
-      stageFromDroppableId(String(over.id)) ??
-      (over?.data?.current?.sortable?.containerId
-        ? stageFromDroppableId(over.data.current.sortable.containerId)
-        : undefined) ??
-      findStageByItemId(String(over.id));
+    const targetStage
+      = stageFromDroppableId(String(over.id))
+        ?? (over?.data?.current?.sortable?.containerId
+          ? stageFromDroppableId(over.data.current.sortable.containerId)
+          : undefined)
+        ?? findStageByItemId(String(over.id));
 
-    if (!sourceStage || !targetStage || sourceStage === targetStage) return;
+    if (!sourceStage || !targetStage || sourceStage === targetStage)
+      return;
 
     setIdsByStage((prev) => {
       const sourceItems = [...(prev[sourceStage] ?? [])];
       const targetItems = [...(prev[targetStage] ?? [])];
       const activeIndex = sourceItems.indexOf(String(active.id));
-      if (activeIndex === -1) return prev;
+      if (activeIndex === -1)
+        return prev;
 
       sourceItems.splice(activeIndex, 1);
 
-      const isOverAColumn =
-        typeof over.id === "string" && String(over.id).startsWith(columnIdPrefix);
+      const isOverAColumn
+        = typeof over.id === "string" && String(over.id).startsWith(columnIdPrefix);
       const overIndex = isOverAColumn ? 0 : targetItems.indexOf(String(over.id));
       const insertAt = overIndex < 0 ? 0 : overIndex;
 
@@ -473,25 +495,28 @@ export const KanbanView = ({
     setActiveId(null);
     setOriginalStage(null);
 
-    if (!over || !fromStage) return;
+    if (!over || !fromStage)
+      return;
 
-    const toStage =
-      stageFromDroppableId(String(over.id)) ??
-      (over?.data?.current?.sortable?.containerId
-        ? stageFromDroppableId(over.data.current.sortable.containerId)
-        : undefined) ??
-      findStageByItemId(String(over.id));
+    const toStage
+      = stageFromDroppableId(String(over.id))
+        ?? (over?.data?.current?.sortable?.containerId
+          ? stageFromDroppableId(over.data.current.sortable.containerId)
+          : undefined)
+        ?? findStageByItemId(String(over.id));
 
-    if (!toStage) return;
+    if (!toStage)
+      return;
 
-    const isOverAColumn =
-      typeof over.id === "string" && String(over.id).startsWith(columnIdPrefix);
+    const isOverAColumn
+      = typeof over.id === "string" && String(over.id).startsWith(columnIdPrefix);
 
     setIdsByStage((prev) => {
       if (fromStage === toStage) {
         const list = [...(prev[fromStage] ?? [])];
         const fromIndex = list.indexOf(String(active.id));
-        if (fromIndex === -1) return prev;
+        if (fromIndex === -1)
+          return prev;
 
         const rawToIndex = isOverAColumn
           ? list.length - 1
@@ -499,11 +524,13 @@ export const KanbanView = ({
 
         const toIndex = Math.max(0, Math.min(list.length - 1, rawToIndex));
         return { ...prev, [fromStage]: arrayMove(list, fromIndex, toIndex) };
-      } else {
+      }
+      else {
         const fromList = [...(prev[fromStage] ?? [])];
         const toList = [...(prev[toStage] ?? [])];
         const fromIndex = fromList.indexOf(String(active.id));
-        if (fromIndex === -1) return prev;
+        if (fromIndex === -1)
+          return prev;
 
         fromList.splice(fromIndex, 1);
 
@@ -521,33 +548,35 @@ export const KanbanView = ({
     // Call the stage update handler first
     try {
       await onStageUpdate(String(active.id), toStage);
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Failed to update journey stage:", error);
     }
 
     if (fromStage !== toStage && employee?.initials) {
       try {
-        const journey = journeys.find((j) => j.id.toString() === String(active.id));
+        const journey = journeys.find(j => j.id.toString() === String(active.id));
         const journeyId = journey?.ID || journey?.id || String(active.id);
         const fromStageLabel = STAGES.find(s => s.id === fromStage)?.label || `Stage ${fromStage}`;
         const toStageLabel = STAGES.find(s => s.id === toStage)?.label || `Stage ${toStage}`;
 
         await Promise.all([
-          api.post('/legacy/std/Journey_Log', {
+          api.post("/legacy/std/Journey_Log", {
             Jrn_ID: journeyId,
             Action: `Journey_Stage: FROM ${fromStageLabel} TO ${toStageLabel}`,
-            CreateDtTm: new Date().toISOString().replace('T', ' ').substring(0, 23),
-            CreateInit: employee.initials
+            CreateDtTm: new Date().toISOString().replace("T", " ").substring(0, 23),
+            CreateInit: employee.initials,
           }),
-          api.post('/core/notes', {
+          api.post("/core/notes", {
             body: new Date().toISOString(),
             entityId: journeyId,
             entityType: "journey",
             type: "LastActivity",
-            createdBy: employee.initials
-          })
+            createdBy: employee.initials,
+          }),
         ]);
-      } catch (error) {
+      }
+      catch (error) {
         console.error("Failed to log journey stage change:", error);
       }
     }
@@ -603,7 +632,9 @@ export const KanbanView = ({
                 <div className="p-2 pb-1 flex items-center justify-between flex-shrink-0">
                   <div className="text-sm font-semibold text-primary">{stage.label}</div>
                   <div className="text-xs text-neutral-400">
-                    {items.length} Journeys
+                    {items.length}
+                    {" "}
+                    Journeys
                   </div>
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto px-2 pt-8">
@@ -613,18 +644,20 @@ export const KanbanView = ({
                     strategy={verticalListSortingStrategy}
                   >
                     {items.map((itemId: string) => {
-                      const journey = journeys.find((d) => d.id.toString() === itemId);
-                      return journey ? (
-                        <SortableItem
-                          key={itemId}
-                          journey={journey}
-                          customersById={customersById}
-                          onDelete={onDeleteJourney}
-                          showTags={showTags}
-                          onTagsUpdated={onTagsUpdated}
-                          journeyTags={journeyTags}
-                        />
-                      ) : null;
+                      const journey = journeys.find(d => d.id.toString() === itemId);
+                      return journey
+                        ? (
+                            <SortableItem
+                              key={itemId}
+                              journey={journey}
+                              customersById={customersById}
+                              onDelete={onDeleteJourney}
+                              showTags={showTags}
+                              onTagsUpdated={onTagsUpdated}
+                              journeyTags={journeyTags}
+                            />
+                          )
+                        : null;
                     })}
                   </SortableContext>
                 </div>
@@ -635,7 +668,11 @@ export const KanbanView = ({
                       <span className="font-medium">{formatCurrency(stageTotal)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Weighted ({Math.round(stage.weight * 100)}%):</span>
+                      <span>
+                        Weighted (
+                        {Math.round(stage.weight * 100)}
+                        %):
+                      </span>
                       <span className="font-medium text-primary">{formatCurrency(stageWeighted)}</span>
                     </div>
                   </div>
@@ -647,10 +684,10 @@ export const KanbanView = ({
       </div>
       <DragOverlay>
         {activeId && (() => {
-          const journey = journeys.find((d) => d.id.toString() === activeId);
+          const journey = journeys.find(d => d.id.toString() === activeId);
           return journey ? <DragPreview journey={journey} customersById={customersById} showTags={showTags} journeyTags={journeyTags} /> : null;
         })()}
       </DragOverlay>
     </DndContext>
   );
-};
+}

@@ -21,7 +21,7 @@ export const VALID_EQUIPMENT_TYPES = ["Standard", "Custom", "Unknown"];
 export const VALID_QUOTE_TYPES = [
   "Standard more than 6 months",
   "Standard less than 6 months",
-  "Budgetary"
+  "Budgetary",
 ];
 
 export const VALID_LEAD_SOURCES = [
@@ -45,7 +45,7 @@ export const VALID_LEAD_SOURCES = [
   "Email - Dealer",
   "Event - NATM",
   "Event - PMA",
-  "Phone In - Dealer"
+  "Phone In - Dealer",
 ];
 
 export const VALID_JOURNEY_TYPES = [
@@ -73,7 +73,7 @@ export const VALID_DEALERS = [
   "C.J. Smith Machinery",
   "Southern States Machinery Inc.",
   "Stafford Machinery Company",
-  "CNI - Consultamex LLC"
+  "CNI - Consultamex LLC",
 ];
 
 export const VALID_DEALER_CONTACTS = [
@@ -94,7 +94,7 @@ export const VALID_DEALER_CONTACTS = [
   "Clint Ponton",
   "Francisco Oranday",
   "Juan Carlos Estrada",
-  "Kevin Houston"
+  "Kevin Houston",
 ];
 
 export const VALID_INDUSTRIES = [
@@ -119,16 +119,16 @@ export const VALID_INDUSTRIES = [
   "Electrical Components / Lighting",
   "RV / Trailers",
   "Military / Defense",
-  "Medical"
+  "Medical",
 ];
 
 export const VALID_CONFIDENCE_LEVELS = [
   "Closed Won",
-  "Closed Lost", 
+  "Closed Lost",
   "90%",
   "75%",
   "50%",
-  "25%"
+  "25%",
 ];
 
 export const VALID_REASON_WON = [
@@ -136,7 +136,7 @@ export const VALID_REASON_WON = [
   "Customer Relationship",
   "Pricing",
   "Coe Controls",
-  "Lead Time"
+  "Lead Time",
 ];
 
 export const VALID_REASON_LOST = [
@@ -154,12 +154,12 @@ export const VALID_REASON_LOST = [
   "Other",
   "Different COE Equipment Selected",
   "Coe Controls",
-  "Parts/Svc Opportunity"
+  "Parts/Svc Opportunity",
 ];
 
 export const VALID_PRESENTATION_METHODS = [
   "In Person",
   "Web Meeting",
   "Phone",
-  "Email"
+  "Email",
 ];

@@ -1,56 +1,66 @@
+import ExcelJS from "exceljs";
 import {
-  TrendingUp,
-  FileText,
-  Users,
   DollarSign,
+  Download,
+  FileText,
+  Info,
   List,
   RefreshCcw,
-  Info,
-  Download,
+  TrendingUp,
+  Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from "recharts";
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import ExcelJS from "exceljs";
 
 import { Button, Select } from "@/components";
-import { formatCurrency } from "@/utils";
 import PageHeader from "@/components/layout/page-header";
-import Metrics, { MetricsCard } from "@/components/ui/metrics";
-import { useApi } from "@/hooks/use-api";
-import { STAGES } from "./journeys/constants";
 import DatePicker from "@/components/ui/date-picker";
+import Metrics, { MetricsCard } from "@/components/ui/metrics";
 import { useAuth } from "@/contexts/auth.context";
-import { fetchAvailableRsms, Employee } from "./journeys/utils";
+import { useApi } from "@/hooks/use-api";
+import { formatCurrency } from "@/utils";
+
+import type { Employee } from "./journeys/utils";
+
+import { STAGES } from "./journeys/constants";
+import { fetchAvailableRsms } from "./journeys/utils";
 
 type StageId = (typeof STAGES)[number]["id"];
 
-const mapLegacyStageToId = (stage: any): StageId => {
+function mapLegacyStageToId(stage: any): StageId {
   const s = String(stage ?? "").toLowerCase();
-  if (!s) return 1;
-  if (s.includes("qualify") || s.includes("pain") || s.includes("discover")) return 2;
-  if (s.includes("present") || s.includes("demo") || s.includes("proposal") || s.includes("quote")) return 3;
-  if (s.includes("negot")) return 4;
-  if (s.includes("po") || s.includes("won") || s.includes("closedwon") || s.includes("closed won") || s.includes("order")) return 5;
-  if (s.includes("lost") || s.includes("closedlost") || s.includes("closed lost") || s.includes("declin")) return 6;
-  if (s.includes("lead") || s.includes("open") || s.includes("new")) return 1;
+  if (!s)
+    return 1;
+  if (s.includes("qualify") || s.includes("pain") || s.includes("discover"))
+    return 2;
+  if (s.includes("present") || s.includes("demo") || s.includes("proposal") || s.includes("quote"))
+    return 3;
+  if (s.includes("negot"))
+    return 4;
+  if (s.includes("po") || s.includes("won") || s.includes("closedwon") || s.includes("closed won") || s.includes("order"))
+    return 5;
+  if (s.includes("lost") || s.includes("closedlost") || s.includes("closed lost") || s.includes("declin"))
+    return 6;
+  if (s.includes("lead") || s.includes("open") || s.includes("new"))
+    return 1;
   return 1;
-};
+}
 
-const SalesDashboard = () => {
+function SalesDashboard() {
   const [journeys, setJourneys] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'>('weekly');
+  const [timeframe, setTimeframe] = useState<"daily" | "weekly" | "monthly" | "quarterly" | "yearly">("weekly");
   const [showMetricInfo, setShowMetricInfo] = useState(false);
   const api = useApi();
   const navigate = useNavigate();
@@ -63,11 +73,11 @@ const SalesDashboard = () => {
   const getDefaultStartDate = () => {
     const date = new Date();
     date.setMonth(date.getMonth() - 3);
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   };
 
   const getDefaultEndDate = () => {
-    return new Date().toISOString().split('T')[0];
+    return new Date().toISOString().split("T")[0];
   };
 
   const [startDate, setStartDate] = useState<string>(getDefaultStartDate());
@@ -88,14 +98,14 @@ const SalesDashboard = () => {
   const showYearly = dateRangeDays >= 1095;
 
   useEffect(() => {
-    if (!showDaily && timeframe === 'daily') {
-      setTimeframe('weekly');
+    if (!showDaily && timeframe === "daily") {
+      setTimeframe("weekly");
     }
-    if (!showQuarterly && timeframe === 'quarterly') {
-      setTimeframe('monthly');
+    if (!showQuarterly && timeframe === "quarterly") {
+      setTimeframe("monthly");
     }
-    if (!showYearly && timeframe === 'yearly') {
-      setTimeframe('quarterly');
+    if (!showYearly && timeframe === "yearly") {
+      setTimeframe("quarterly");
     }
   }, [dateRangeDays, timeframe, showDaily, showQuarterly, showYearly]);
 
@@ -109,7 +119,7 @@ const SalesDashboard = () => {
           filterConditions.push({
             field: "Journey_Start_Date",
             operator: "gte",
-            value: startDate
+            value: startDate,
           });
         }
 
@@ -117,7 +127,7 @@ const SalesDashboard = () => {
           filterConditions.push({
             field: "Journey_Start_Date",
             operator: "lte",
-            value: endDate
+            value: endDate,
           });
         }
 
@@ -125,14 +135,14 @@ const SalesDashboard = () => {
           filterConditions.push({
             field: "RSM",
             operator: "contains",
-            value: rsmFilter
+            value: rsmFilter,
           });
         }
 
         const params: any = {
           limit: 10000,
           sort: "Journey_Start_Date",
-          order: "desc"
+          order: "desc",
         };
 
         if (filterConditions.length > 0) {
@@ -144,8 +154,8 @@ const SalesDashboard = () => {
           api.get("/legacy/base/Company", {
             limit: 500,
             sort: "Company_ID",
-            order: "desc"
-          })
+            order: "desc",
+          }),
         ]);
 
         if (journeysResponse) {
@@ -157,9 +167,11 @@ const SalesDashboard = () => {
           const companyData = Array.isArray(companiesResponse) ? companiesResponse : (companiesResponse.data || []);
           setCompanies(companyData);
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error("Error fetching dashboard data:", error);
-      } finally {
+      }
+      finally {
         setIsLoading(false);
       }
     };
@@ -173,7 +185,7 @@ const SalesDashboard = () => {
       if (rsms.length > 0) {
         setAvailableRsms(rsms);
         const displayNamesMap = new Map<string, string>();
-        rsms.forEach(rsm => {
+        rsms.forEach((rsm) => {
           displayNamesMap.set(rsm.initials, `${rsm.name} (${rsm.initials})`);
         });
         setRsmDisplayNames(displayNamesMap);
@@ -185,7 +197,7 @@ const SalesDashboard = () => {
   const companiesById = new Map(companies.map(c => [c.Company_ID, c]));
 
   const activeJourneys = journeys.filter(j =>
-    j.Journey_Status === 'open' || !j.Journey_Status
+    j.Journey_Status === "open" || !j.Journey_Status,
   );
 
   const wonJourneys = journeys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
@@ -193,7 +205,7 @@ const SalesDashboard = () => {
   const closedJourneys = [...wonJourneys, ...lostJourneys];
 
   const totalRevenue = journeys
-    .filter(j => j.Journey_Status === 'won')
+    .filter(j => j.Journey_Status === "won")
     .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
   const totalQuotes = activeJourneys.length;
   const totalJourneysWithValue = activeJourneys.filter(j => (j.Journey_Value || 0) > 0).length;
@@ -209,7 +221,7 @@ const SalesDashboard = () => {
     year: number;
   }> = [];
 
-  if (timeframe === 'daily') {
+  if (timeframe === "daily") {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const dayMap = new Map<string, any[]>();
@@ -219,8 +231,9 @@ const SalesDashboard = () => {
       dayMap.set(dateKey, []);
     }
 
-    journeys.forEach(j => {
-      if (!j.Journey_Start_Date) return;
+    journeys.forEach((j) => {
+      if (!j.Journey_Start_Date)
+        return;
       const jDate = new Date(j.Journey_Start_Date);
       const dateKey = jDate.toDateString();
       if (dayMap.has(dateKey)) {
@@ -234,16 +247,16 @@ const SalesDashboard = () => {
       const dayJourneys = dayMap.get(dateKey) || [];
 
       const daySales = dayJourneys
-        .filter(j => j.Journey_Status === 'won')
+        .filter(j => j.Journey_Status === "won")
         .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
 
       const dayQuotes = dayJourneys.length;
-      const dayJourneysWithValue = dayJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
+      const dayJourneysWithValue = dayJourneys.filter((j) => {
+        const stage = String(j.Journey_Stage || "").toLowerCase();
+        return !stage.includes("closed won")
+          && !stage.includes("job lost")
+          && !stage.includes("closed lost")
+          && !stage.includes("post installation");
       }).length;
 
       const dayWonJourneys = dayJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
@@ -259,14 +272,15 @@ const SalesDashboard = () => {
         quotes: dayQuotes * 1000,
         conversion: Math.round(dayConversion),
         journeys: dayJourneysWithValue,
-        year: d.getFullYear()
+        year: d.getFullYear(),
       });
     }
-  } else if (timeframe === 'weekly') {
+  }
+  else if (timeframe === "weekly") {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    let weekStart = new Date(start);
+    const weekStart = new Date(start);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
 
     while (weekStart <= end) {
@@ -275,23 +289,24 @@ const SalesDashboard = () => {
 
       const weekLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()}`;
 
-      const weekJourneys = journeys.filter(j => {
-        if (!j.Journey_Start_Date) return false;
+      const weekJourneys = journeys.filter((j) => {
+        if (!j.Journey_Start_Date)
+          return false;
         const jDate = new Date(j.Journey_Start_Date);
         return jDate >= weekStart && jDate <= weekEnd;
       });
 
       const weekSales = weekJourneys
-        .filter(j => j.Journey_Status === 'won')
+        .filter(j => j.Journey_Status === "won")
         .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
 
       const weekQuotes = weekJourneys.length;
-      const weekJourneysWithValue = weekJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
+      const weekJourneysWithValue = weekJourneys.filter((j) => {
+        const stage = String(j.Journey_Stage || "").toLowerCase();
+        return !stage.includes("closed won")
+          && !stage.includes("job lost")
+          && !stage.includes("closed lost")
+          && !stage.includes("post installation");
       }).length;
 
       const weekWonJourneys = weekJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
@@ -307,16 +322,17 @@ const SalesDashboard = () => {
         quotes: weekQuotes * 1000,
         conversion: Math.round(weekConversion),
         journeys: weekJourneysWithValue,
-        year: weekStart.getFullYear()
+        year: weekStart.getFullYear(),
       });
 
       weekStart.setDate(weekStart.getDate() + 7);
     }
-  } else if (timeframe === 'quarterly') {
+  }
+  else if (timeframe === "quarterly") {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    let currentQuarter = new Date(start.getFullYear(), Math.floor(start.getMonth() / 3) * 3, 1);
+    const currentQuarter = new Date(start.getFullYear(), Math.floor(start.getMonth() / 3) * 3, 1);
     const endQuarter = new Date(end.getFullYear(), Math.floor(end.getMonth() / 3) * 3, 1);
 
     while (currentQuarter <= endQuarter) {
@@ -326,23 +342,24 @@ const SalesDashboard = () => {
       const quarterStart = new Date(currentQuarter);
       const quarterEnd = new Date(currentQuarter.getFullYear(), currentQuarter.getMonth() + 3, 0);
 
-      const quarterJourneys = journeys.filter(j => {
-        if (!j.Journey_Start_Date) return false;
+      const quarterJourneys = journeys.filter((j) => {
+        if (!j.Journey_Start_Date)
+          return false;
         const jDate = new Date(j.Journey_Start_Date);
         return jDate >= quarterStart && jDate <= quarterEnd;
       });
 
       const quarterSales = quarterJourneys
-        .filter(j => j.Journey_Status === 'won')
+        .filter(j => j.Journey_Status === "won")
         .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
 
       const quarterQuotes = quarterJourneys.length;
-      const quarterJourneysWithValue = quarterJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
+      const quarterJourneysWithValue = quarterJourneys.filter((j) => {
+        const stage = String(j.Journey_Stage || "").toLowerCase();
+        return !stage.includes("closed won")
+          && !stage.includes("job lost")
+          && !stage.includes("closed lost")
+          && !stage.includes("post installation");
       }).length;
 
       const quarterWonJourneys = quarterJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
@@ -358,12 +375,13 @@ const SalesDashboard = () => {
         quotes: quarterQuotes * 1000,
         conversion: Math.round(quarterConversion),
         journeys: quarterJourneysWithValue,
-        year: currentQuarter.getFullYear()
+        year: currentQuarter.getFullYear(),
       });
 
       currentQuarter.setMonth(currentQuarter.getMonth() + 3);
     }
-  } else if (timeframe === 'yearly') {
+  }
+  else if (timeframe === "yearly") {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
@@ -373,23 +391,24 @@ const SalesDashboard = () => {
     while (currentYear <= endYear) {
       const yearLabel = currentYear.toString();
 
-      const yearJourneys = journeys.filter(j => {
-        if (!j.Journey_Start_Date) return false;
+      const yearJourneys = journeys.filter((j) => {
+        if (!j.Journey_Start_Date)
+          return false;
         const jDate = new Date(j.Journey_Start_Date);
         return jDate.getFullYear() === currentYear;
       });
 
       const yearSales = yearJourneys
-        .filter(j => j.Journey_Status === 'won')
+        .filter(j => j.Journey_Status === "won")
         .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
 
       const yearQuotes = yearJourneys.length;
-      const yearJourneysWithValue = yearJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
+      const yearJourneysWithValue = yearJourneys.filter((j) => {
+        const stage = String(j.Journey_Stage || "").toLowerCase();
+        return !stage.includes("closed won")
+          && !stage.includes("job lost")
+          && !stage.includes("closed lost")
+          && !stage.includes("post installation");
       }).length;
 
       const yearWonJourneys = yearJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
@@ -405,38 +424,40 @@ const SalesDashboard = () => {
         quotes: yearQuotes * 1000,
         conversion: Math.round(yearConversion),
         journeys: yearJourneysWithValue,
-        year: currentYear
+        year: currentYear,
       });
 
       currentYear++;
     }
-  } else {
+  }
+  else {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    let currentMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+    const currentMonth = new Date(start.getFullYear(), start.getMonth(), 1);
     const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
 
     while (currentMonth <= endMonth) {
-      const monthName = currentMonth.toLocaleDateString('en-US', { month: 'short' });
+      const monthName = currentMonth.toLocaleDateString("en-US", { month: "short" });
 
-      const monthJourneys = journeys.filter(j => {
-        if (!j.Journey_Start_Date) return false;
+      const monthJourneys = journeys.filter((j) => {
+        if (!j.Journey_Start_Date)
+          return false;
         const jDate = new Date(j.Journey_Start_Date);
         return jDate.getMonth() === currentMonth.getMonth() && jDate.getFullYear() === currentMonth.getFullYear();
       });
 
       const monthSales = monthJourneys
-        .filter(j => j.Journey_Status === 'won')
+        .filter(j => j.Journey_Status === "won")
         .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
 
       const monthQuotes = monthJourneys.length;
-      const monthJourneysWithValue = monthJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
+      const monthJourneysWithValue = monthJourneys.filter((j) => {
+        const stage = String(j.Journey_Stage || "").toLowerCase();
+        return !stage.includes("closed won")
+          && !stage.includes("job lost")
+          && !stage.includes("closed lost")
+          && !stage.includes("post installation");
       }).length;
 
       const monthWonJourneys = monthJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
@@ -452,7 +473,7 @@ const SalesDashboard = () => {
         quotes: monthQuotes * 1000,
         conversion: Math.round(monthConversion),
         journeys: monthJourneysWithValue,
-        year: currentMonth.getFullYear()
+        year: currentMonth.getFullYear(),
       });
 
       currentMonth.setMonth(currentMonth.getMonth() + 1);
@@ -464,7 +485,7 @@ const SalesDashboard = () => {
     .filter(j => (j.Journey_Value || 0) > 0)
     .sort((a, b) => (b.Journey_Value || 0) - (a.Journey_Value || 0))
     .slice(0, 4)
-    .map(j => {
+    .map((j) => {
       const company = companiesById.get(j.Company_ID);
       const journeyStageId = mapLegacyStageToId(j.Journey_Stage);
       const stageInfo = STAGES.find(s => s.id === journeyStageId) || STAGES[0];
@@ -473,14 +494,13 @@ const SalesDashboard = () => {
         client: company?.CustDlrName || j.Target_Account || `Company ${j.Company_ID}`,
         value: j.Journey_Value || 0,
         status: stageInfo.label,
-        probability: Math.round((stageInfo.weight * 100))
+        probability: Math.round((stageInfo.weight * 100)),
       };
     });
 
-
   // Calculate stage distribution including closed journeys
-  const allStageDistribution = STAGES.map(stage => {
-    const stageJourneys = journeys.filter(j => {
+  const allStageDistribution = STAGES.map((stage) => {
+    const stageJourneys = journeys.filter((j) => {
       // Map the journey stage to numeric ID for comparison
       const journeyStageId = mapLegacyStageToId(j.Journey_Stage);
       return journeyStageId === stage.id;
@@ -491,14 +511,14 @@ const SalesDashboard = () => {
     return {
       state: stage.label,
       total,
-      percentage
+      percentage,
     };
   });
 
   const stageDistribution = allStageDistribution.filter(stage =>
-    stage.total > 0 || ["Lead", "Qualified", "Presentations", "Negotiation"].includes(stage.state)
+    stage.total > 0 || ["Lead", "Qualified", "Presentations", "Negotiation"].includes(stage.state),
   );
-  
+
   const kpis = [
     {
       title: "Order Intake",
@@ -535,7 +555,7 @@ const SalesDashboard = () => {
         filterConditions.push({
           field: "Journey_Start_Date",
           operator: "gte",
-          value: startDate
+          value: startDate,
         });
       }
 
@@ -543,7 +563,7 @@ const SalesDashboard = () => {
         filterConditions.push({
           field: "Journey_Start_Date",
           operator: "lte",
-          value: endDate
+          value: endDate,
         });
       }
 
@@ -551,14 +571,14 @@ const SalesDashboard = () => {
         filterConditions.push({
           field: "RSM",
           operator: "contains",
-          value: rsmFilter
+          value: rsmFilter,
         });
       }
 
       const params: any = {
         limit: 10000,
         sort: "Journey_Start_Date",
-        order: "desc"
+        order: "desc",
       };
 
       if (filterConditions.length > 0) {
@@ -570,8 +590,8 @@ const SalesDashboard = () => {
         api.get("/legacy/base/Company", {
           limit: 500,
           sort: "Company_ID",
-          order: "desc"
-        })
+          order: "desc",
+        }),
       ]);
 
       if (journeysResponse) {
@@ -583,9 +603,11 @@ const SalesDashboard = () => {
         const companyData = Array.isArray(companiesResponse) ? companiesResponse : (companiesResponse.data || []);
         setCompanies(companyData);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error refreshing dashboard data:", error);
-    } finally {
+    }
+    finally {
       setIsLoading(false);
     }
   };
@@ -645,7 +667,7 @@ const SalesDashboard = () => {
     kpiSheet.getColumn(3).width = 15;
 
     const journeySheet = workbook.addWorksheet("Journey List");
-    const journeyData = journeys.map(j => {
+    const journeyData = journeys.map((j) => {
       const company = companiesById.get(j.Company_ID);
       const journeyStageId = mapLegacyStageToId(j.Journey_Stage);
       const stageInfo = STAGES.find(s => s.id === journeyStageId) || STAGES[0];
@@ -685,9 +707,9 @@ const SalesDashboard = () => {
       const cell = journeySheet.getCell(`A${index + 2}`);
       cell.value = {
         text: j.ID,
-        hyperlink: `https://portal.cpec.com/sales/pipeline/${j.ID}`
+        hyperlink: `https://portal.cpec.com/sales/pipeline/${j.ID}`,
       };
-      cell.font = { color: { argb: 'FF0563C1' }, underline: true };
+      cell.font = { color: { argb: "FF0563C1" }, underline: true };
     });
 
     journeySheet.getColumn(1).width = 38;
@@ -713,24 +735,28 @@ const SalesDashboard = () => {
       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center w-full sm:w-auto">
         <Select
           value={(() => {
-            if (rsmFilterDisplay === 'my-journeys' || rsmFilterDisplay === "") return rsmFilterDisplay;
+            if (rsmFilterDisplay === "my-journeys" || rsmFilterDisplay === "")
+              return rsmFilterDisplay;
 
             if (rsmDisplayNames) {
               for (const [initials, displayName] of rsmDisplayNames) {
-                if (displayName === rsmFilterDisplay) return initials;
+                if (displayName === rsmFilterDisplay)
+                  return initials;
               }
             }
             return rsmFilterDisplay;
           })()}
           onChange={(e) => {
-            if (e.target.value === 'my-journeys') {
+            if (e.target.value === "my-journeys") {
               const userInitials = employee?.number;
               setRsmFilter(userInitials || "");
-              setRsmFilterDisplay('my-journeys');
-            } else if (e.target.value === "") {
+              setRsmFilterDisplay("my-journeys");
+            }
+            else if (e.target.value === "") {
               setRsmFilter("");
               setRsmFilterDisplay("");
-            } else {
+            }
+            else {
               const initials = e.target.value;
               setRsmFilter(initials);
               setRsmFilterDisplay(rsmDisplayNames?.get(initials) || initials);
@@ -739,11 +765,11 @@ const SalesDashboard = () => {
           options={(() => {
             const baseOptions = [
               { value: "", label: "All RSMs" },
-              { value: "my-journeys", label: "My Journeys" }
+              { value: "my-journeys", label: "My Journeys" },
             ];
             const rsmOptions = availableRsms.map((rsm: Employee) => ({
               value: rsm.initials,
-              label: rsmDisplayNames?.get(rsm.initials) || rsm.name
+              label: rsmDisplayNames?.get(rsm.initials) || rsm.name,
             }));
             return [...baseOptions, ...rsmOptions];
           })()}
@@ -820,7 +846,8 @@ const SalesDashboard = () => {
               <h3 className="text-sm text-text-muted">Performance Overview</h3>
               <button
                 onClick={() => setShowMetricInfo(!showMetricInfo)}
-                className="text-text-muted hover:text-primary transition-colors">
+                className="text-text-muted hover:text-primary transition-colors"
+              >
                 <Info size={16} />
               </button>
             </div>
@@ -830,7 +857,7 @@ const SalesDashboard = () => {
                   <input
                     type="checkbox"
                     checked={showRevenue}
-                    onChange={(e) => setShowRevenue(e.target.checked)}
+                    onChange={e => setShowRevenue(e.target.checked)}
                     className="rounded cursor-pointer"
                   />
                   <span className="text-xs text-success whitespace-nowrap">Order Intake</span>
@@ -839,7 +866,7 @@ const SalesDashboard = () => {
                   <input
                     type="checkbox"
                     checked={showActiveJourneys}
-                    onChange={(e) => setShowActiveJourneys(e.target.checked)}
+                    onChange={e => setShowActiveJourneys(e.target.checked)}
                     className="rounded cursor-pointer"
                   />
                   <span className="text-xs text-warning whitespace-nowrap">Active Journeys</span>
@@ -848,7 +875,7 @@ const SalesDashboard = () => {
                   <input
                     type="checkbox"
                     checked={showConversion}
-                    onChange={(e) => setShowConversion(e.target.checked)}
+                    onChange={e => setShowConversion(e.target.checked)}
                     className="rounded cursor-pointer"
                   />
                   <span className="text-xs text-error whitespace-nowrap">Conversion Rate</span>
@@ -857,37 +884,42 @@ const SalesDashboard = () => {
               <div className="flex flex-wrap gap-1">
                 {showDaily && (
                   <Button
-                    variant={timeframe === 'daily' ? 'primary' : 'secondary-outline'}
+                    variant={timeframe === "daily" ? "primary" : "secondary-outline"}
                     size="sm"
-                    onClick={() => setTimeframe('daily')}>
+                    onClick={() => setTimeframe("daily")}
+                  >
                     Daily
                   </Button>
                 )}
                 <Button
-                  variant={timeframe === 'weekly' ? 'primary' : 'secondary-outline'}
+                  variant={timeframe === "weekly" ? "primary" : "secondary-outline"}
                   size="sm"
-                  onClick={() => setTimeframe('weekly')}>
+                  onClick={() => setTimeframe("weekly")}
+                >
                   Weekly
                 </Button>
                 <Button
-                  variant={timeframe === 'monthly' ? 'primary' : 'secondary-outline'}
+                  variant={timeframe === "monthly" ? "primary" : "secondary-outline"}
                   size="sm"
-                  onClick={() => setTimeframe('monthly')}>
+                  onClick={() => setTimeframe("monthly")}
+                >
                   Monthly
                 </Button>
                 {showQuarterly && (
                   <Button
-                    variant={timeframe === 'quarterly' ? 'primary' : 'secondary-outline'}
+                    variant={timeframe === "quarterly" ? "primary" : "secondary-outline"}
                     size="sm"
-                    onClick={() => setTimeframe('quarterly')}>
+                    onClick={() => setTimeframe("quarterly")}
+                  >
                     Quarterly
                   </Button>
                 )}
                 {showYearly && (
                   <Button
-                    variant={timeframe === 'yearly' ? 'primary' : 'secondary-outline'}
+                    variant={timeframe === "yearly" ? "primary" : "secondary-outline"}
                     size="sm"
-                    onClick={() => setTimeframe('yearly')}>
+                    onClick={() => setTimeframe("yearly")}
+                  >
                     Yearly
                   </Button>
                 )}
@@ -898,13 +930,19 @@ const SalesDashboard = () => {
           {showMetricInfo && (
             <div className="p-3 bg-surface border-b text-xs text-text-muted space-y-2">
               <div>
-                <span className="font-medium text-success">Order Intake:</span> Total value of all won journeys within the time period
+                <span className="font-medium text-success">Order Intake:</span>
+                {" "}
+                Total value of all won journeys within the time period
               </div>
               <div>
-                <span className="font-medium text-warning">Active Journeys:</span> Number of journeys excluding Closed Won, Job Lost, Closed Lost, and Post Installation stages
+                <span className="font-medium text-warning">Active Journeys:</span>
+                {" "}
+                Number of journeys excluding Closed Won, Job Lost, Closed Lost, and Post Installation stages
               </div>
               <div>
-                <span className="font-medium text-error">Conversion Rate:</span> Percentage of journeys won out of total journeys in the period
+                <span className="font-medium text-error">Conversion Rate:</span>
+                {" "}
+                Percentage of journeys won out of total journeys in the period
               </div>
             </div>
           )}
@@ -912,10 +950,12 @@ const SalesDashboard = () => {
           <div className="p-2 flex-1">
             <ResponsiveContainer
               width="100%"
-              height="100%">
+              height="100%"
+            >
               <LineChart
                 data={monthlyData}
-                margin={{ left: 0, right: 5, top: 5, bottom: 0 }}>
+                margin={{ left: 0, right: 5, top: 5, bottom: 0 }}
+              >
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--border)"
@@ -938,7 +978,8 @@ const SalesDashboard = () => {
                   tickFormatter={(value) => {
                     if (value >= 1000000) {
                       return `$${(value / 1000000).toFixed(1)}M`;
-                    } else if (value >= 1000) {
+                    }
+                    else if (value >= 1000) {
                       return `$${(value / 1000).toFixed(0)}K`;
                     }
                     return `$${value}`;
@@ -969,24 +1010,27 @@ const SalesDashboard = () => {
                   }}
                   formatter={(value, name) => {
                     const numValue = Number(value);
-                    if (name === 'sales') {
-                      return [formatCurrency(numValue), 'Order Intake'];
+                    if (name === "sales") {
+                      return [formatCurrency(numValue), "Order Intake"];
                     }
-                    if (name === 'journeys') {
-                      return [numValue, 'Active Journeys'];
+                    if (name === "journeys") {
+                      return [numValue, "Active Journeys"];
                     }
-                    if (name === 'conversion') {
-                      return [`${numValue}%`, 'Conversion Rate'];
+                    if (name === "conversion") {
+                      return [`${numValue}%`, "Conversion Rate"];
                     }
                     return [value, name];
                   }}
                 />
                 <Legend
-                  wrapperStyle={{ fontSize: '12px' }}
+                  wrapperStyle={{ fontSize: "12px" }}
                   formatter={(value) => {
-                    if (value === 'sales') return 'Order Intake';
-                    if (value === 'journeys') return 'Active Journeys';
-                    if (value === 'conversion') return 'Conversion Rate';
+                    if (value === "sales")
+                      return "Order Intake";
+                    if (value === "journeys")
+                      return "Active Journeys";
+                    if (value === "conversion")
+                      return "Conversion Rate";
                     return value;
                   }}
                 />
@@ -1040,26 +1084,27 @@ const SalesDashboard = () => {
                     .filter(j => j.CreateDT)
                     .sort((a, b) => new Date(b.CreateDT).getTime() - new Date(a.CreateDT).getTime())
                     .slice(0, 4);
-                  
+
                   return recentJourneys.map((journey) => {
                     const company = companiesById.get(journey.Company_ID);
                     const companyName = company?.CustDlrName || journey.Target_Account || `Company ${journey.Company_ID}`;
                     const journeyStageId = mapLegacyStageToId(journey.Journey_Stage);
                     const stageInfo = STAGES.find(s => s.id === journeyStageId) || STAGES[0];
-                    
+
                     return (
                       <Link
                         key={journey.ID}
                         to={`/sales/pipeline/${journey.ID}`}
-                        className="flex items-center justify-between p-3 bg-surface rounded hover:bg-surface/80 border border-border transition-colors">
+                        className="flex items-center justify-between p-3 bg-surface rounded hover:bg-surface/80 border border-border transition-colors"
+                      >
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-2 h-2 rounded ${
                               journey.Journey_Status === "won"
                                 ? "bg-success"
                                 : journey.Journey_Status === "lost"
-                                ? "bg-error"
-                                : "bg-primary"
+                                  ? "bg-error"
+                                  : "bg-primary"
                             }`}
                           />
                           <div className="flex-1">
@@ -1067,7 +1112,10 @@ const SalesDashboard = () => {
                               {companyName}
                             </span>
                             <div className="text-xs text-text-muted">
-                              {stageInfo.label} • {journey.Journey_Value ? formatCurrency(journey.Journey_Value, false) : 'No value'}
+                              {stageInfo.label}
+                              {" "}
+                              •
+                              {journey.Journey_Value ? formatCurrency(journey.Journey_Value, false) : "No value"}
                             </div>
                           </div>
                         </div>
@@ -1077,12 +1125,16 @@ const SalesDashboard = () => {
                               const date = new Date(journey.CreateDT);
                               const now = new Date();
                               const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 3600 * 24));
-                              
-                              if (diffDays === 0) return "Today";
-                              if (diffDays === 1) return "Yesterday";
-                              if (diffDays < 7) return `${diffDays} days ago`;
+
+                              if (diffDays === 0)
+                                return "Today";
+                              if (diffDays === 1)
+                                return "Yesterday";
+                              if (diffDays < 7)
+                                return `${diffDays} days ago`;
                               return date.toLocaleDateString();
-                            } catch {
+                            }
+                            catch {
                               return "Recently";
                             }
                           })()}
@@ -1101,18 +1153,20 @@ const SalesDashboard = () => {
               <Button
                 variant="secondary-outline"
                 size="sm"
-                onClick={() => navigate('/sales/pipeline?view=list&sort=value&order=desc')}>
+                onClick={() => navigate("/sales/pipeline?view=list&sort=value&order=desc")}
+              >
                 <List size={16} />
                 View All
               </Button>
             </div>
             <div className="p-2">
               <div className="space-y-2">
-                {topJourneys.map((journey) => (
+                {topJourneys.map(journey => (
                   <Link
                     key={journey.client}
                     to={`/sales/pipeline/${journey.id}`}
-                    className="flex items-center justify-between p-3 bg-surface rounded hover:bg-surface/80 border border-border transition-colors">
+                    className="flex items-center justify-between p-3 bg-surface rounded hover:bg-surface/80 border border-border transition-colors"
+                  >
                     <div className="flex-1">
                       <p className="text-sm font-medium text-text-muted hover:text-primary transition-colors">
                         {journey.client}
@@ -1146,13 +1200,18 @@ const SalesDashboard = () => {
               {stageDistribution.map((entry, idx) => (
                 <div
                   key={entry.state}
-                  className="flex flex-col gap-1">
+                  className="flex flex-col gap-1"
+                >
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-text-muted">
                       {entry.state}
                     </span>
                     <span className="text-xs text-text-muted">
-                      {entry.total} journeys ({entry.percentage}%)
+                      {entry.total}
+                      {" "}
+                      journeys (
+                      {entry.percentage}
+                      %)
                     </span>
                   </div>
                   <div className="h-2 w-full bg-surface rounded overflow-hidden">
@@ -1172,6 +1231,6 @@ const SalesDashboard = () => {
       </div>
     </div>
   );
-};
+}
 
 export default SalesDashboard;

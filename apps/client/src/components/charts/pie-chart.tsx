@@ -1,4 +1,4 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 interface PieChartData {
   name: string;
@@ -17,7 +17,7 @@ interface CustomPieChartProps {
   customLegend?: (props: any) => React.ReactNode | null;
 }
 
-const CustomPieChart = ({
+function CustomPieChart({
   data,
   innerRadius = 40,
   outerRadius = 80,
@@ -26,7 +26,7 @@ const CustomPieChart = ({
   showTooltip = true,
   customTooltip,
   customLegend,
-}: CustomPieChartProps) => {
+}: CustomPieChartProps) {
   const defaultTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -35,7 +35,10 @@ const CustomPieChart = ({
           className="bg-foreground border border-border rounded p-2 text-xs text-text-muted"
         >
           <p className="font-medium">{data.name}</p>
-          <p>Value: {data.value}</p>
+          <p>
+            Value:
+            {data.value}
+          </p>
         </div>
       );
     }
@@ -80,6 +83,6 @@ const CustomPieChart = ({
       </PieChart>
     </ResponsiveContainer>
   );
-};
+}
 
 export default CustomPieChart;

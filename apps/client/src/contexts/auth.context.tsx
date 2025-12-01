@@ -1,12 +1,16 @@
+import type {
+  ReactNode,
+} from "react";
+
 import {
   createContext,
-  useState,
-  useEffect,
-  ReactNode,
   useContext,
+  useEffect,
   useRef,
+  useState,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+
 import { useApi } from "@/hooks/use-api";
 
 interface IAuthContextType {
@@ -18,7 +22,7 @@ interface IAuthContextType {
 }
 
 export const AuthContext = createContext<IAuthContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface AuthProviderProps {
@@ -27,7 +31,7 @@ interface AuthProviderProps {
 
 const PUBLIC_ROUTES = new Set(["/login", "/callback", "/forgot-password"]);
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUserState] = useState<any>(null);
   const [employee, setEmployeeState] = useState<any>(null);
   const [sessionId, setSessionIdState] = useState<string | null>(null);
@@ -38,7 +42,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { get } = useApi<{ user: any; employee: any; sessionId?: string }>();
 
   const setUser = (user: any, employee: any, sessionId?: string | null) => {
-    console.log('[Auth Context] setUser called with sessionId:', sessionId);
+    console.log("[Auth Context] setUser called with sessionId:", sessionId);
     setUserState(user);
     setEmployeeState(employee);
     setSessionIdState(sessionId ?? null);
@@ -62,15 +66,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const response = await get("/auth/session");
 
         if (response) {
-          console.log('[Auth Context] Session check response sessionId:', response.sessionId);
+          console.log("[Auth Context] Session check response sessionId:", response.sessionId);
           setUserState(response.user);
           setEmployeeState(response.employee);
           setSessionIdState(response.sessionId ?? null);
-        } else {
+        }
+        else {
           throw new Error("Session check failed");
         }
         hasCheckedSession.current = true;
-      } catch (error: any) {
+      }
+      catch (error: any) {
         setUserState(null);
         setEmployeeState(null);
         setSessionIdState(null);
@@ -79,7 +85,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (!PUBLIC_ROUTES.has(location.pathname)) {
           navigate("/login");
         }
-      } finally {
+      }
+      finally {
         setIsLoading(false);
       }
     };
@@ -92,12 +99,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-};
+}

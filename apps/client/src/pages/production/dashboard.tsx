@@ -1,23 +1,24 @@
-import { startOfToday, isSameDay, formatDistance } from "date-fns";
+import { formatDistance, isSameDay, startOfToday } from "date-fns";
 import {
-  Gauge,
   AlertTriangle,
-  RefreshCcw,
   Clock,
   Filter,
+  Gauge,
+  RefreshCcw,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  LineChart,
+  CartesianGrid,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTheme } from "@/contexts/theme.context";
+
+import type { IApiResponse, IMachineOverview, IMachineTimeline, IOverviewAlarm, IOverviewMachine } from "@/utils/types";
 
 import {
   Button,
@@ -30,11 +31,11 @@ import {
 } from "@/components";
 import CustomPieChart from "@/components/charts/pie-chart";
 import DateRangePicker from "@/components/ui/date-range-picker";
+import Metrics, { MetricsCard } from "@/components/ui/metrics";
 import { useSocket } from "@/contexts/socket.context";
+import { useTheme } from "@/contexts/theme.context";
 import { useApi } from "@/hooks/use-api";
 import { formatDuration, getStatusColor, getVariantFromStatus } from "@/utils";
-import { IApiResponse, IOverviewAlarm, IOverviewMachine, IMachineOverview, IMachineTimeline } from "@/utils/types";
-import Metrics, { MetricsCard } from "@/components/ui/metrics";
 
 type ExpandedMachine = IOverviewMachine & {
   status: string;
@@ -50,14 +51,14 @@ type ExpandedMachine = IOverviewMachine & {
   startTime: string;
 };
 
-type MachineDetailsProps = {
+interface MachineDetailsProps {
   machine: any;
-};
+}
 
-const MachineDetails = ({ machine }: MachineDetailsProps) => {
+function MachineDetails({ machine }: MachineDetailsProps) {
   const { machineStates } = useSocket();
   const realTimeData = machineStates.find(
-    (state) => state.machineId === machine.id
+    state => state.machineId === machine.id,
   );
 
   return (
@@ -116,12 +117,14 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             <span className="font-medium text-right">
               X:
               {Number(realTimeData?.metrics?.axisPositions?.X || 0).toFixed(
-                3
-              )}{" "}
+                3,
+              )}
+              {" "}
               Y:
               {Number(realTimeData?.metrics?.axisPositions?.Y || 0).toFixed(
-                3
-              )}{" "}
+                3,
+              )}
+              {" "}
               Z:
               {Number(realTimeData?.metrics?.axisPositions?.Z || 0).toFixed(3)}
             </span>
@@ -130,14 +133,14 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
       </div>
     </div>
   );
-};
+}
 
-type MachineTimelineProps = {
+interface MachineTimelineProps {
   startDate: Date;
   endDate: Date;
-};
+}
 
-const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
+function MachineTimeline({ startDate, endDate }: MachineTimelineProps) {
   const { get } = useApi<IApiResponse<IMachineTimeline>>();
   const [timeline, setTimeline] = useState<IMachineTimeline | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -150,10 +153,11 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
       startDate: startDate.toISOString().slice(0, 10),
       endDate: endDate.toISOString().slice(0, 10),
     });
-    
+
     if (response?.success) {
       setTimeline(response.data || null);
-    } else {
+    }
+    else {
       setError(response?.error || "Failed to fetch timeline");
     }
     setLoading(false);
@@ -195,7 +199,8 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                   key={i}
                   ref={intervalRef}
                   className="flex-shrink-0 flex-1 text-xs text-text-muted border-l px-1 text-center"
-                  style={{ minWidth: 50 }}>
+                  style={{ minWidth: 50 }}
+                >
                   {label}
                 </div>
               ))}
@@ -203,11 +208,12 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
           </div>
 
           <div className="space-y-1">
-            {timeline &&
-              timeline.machines.map((machine: IOverviewMachine) => (
+            {timeline
+              && timeline.machines.map((machine: IOverviewMachine) => (
                 <div
                   key={machine.id}
-                  className="flex items-center group hover:bg-surface/50">
+                  className="flex items-center group hover:bg-surface/50"
+                >
                   <div className="w-44 flex-shrink-0 p-2 bg-background sticky left-0 z-10">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium whitespace-nowrap truncate">
@@ -301,41 +307,42 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
       </div>
     </div>
   );
-};
+}
 
-type IOverviewKPI = {
+interface IOverviewKPI {
   value: number;
   change: number;
-};
+}
 
-type IOverviewKPIs = {
+interface IOverviewKPIs {
   utilization: IOverviewKPI;
   averageRuntime: IOverviewKPI;
   alarmCount: IOverviewKPI;
-};
+}
 
-type IOverview = {
+interface IOverview {
   kpis: IOverviewKPIs;
   utilization: any[];
   states: any[];
   machines: IOverviewMachine[];
   alarms: IOverviewAlarm[];
-};
+}
 
-const capitalizeFirst = (str: string): string => {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() + "s";
-};
+function capitalizeFirst(str: string): string {
+  return `${str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()}s`;
+}
 
-const ProductionDashboard = () => {
+function ProductionDashboard() {
   const parseDateParam = (param: string | null, fallback: Date) => {
-    if (!param) return fallback;
+    if (!param)
+      return fallback;
     const [year, month, day] = param.split("-").map(Number);
     const d = new Date(year, month - 1, day);
     return isNaN(d.getTime()) ? fallback : d;
   };
 
   const parseChartViewParam = (
-    param: string | null
+    param: string | null,
   ): "all" | "group" | "machine" => {
     if (param === "group" || param === "machine" || param === "all") {
       return param;
@@ -349,7 +356,7 @@ const ProductionDashboard = () => {
   };
 
   const [chartView, setChartView] = useState<"all" | "group" | "machine">(
-    getInitialChartView
+    getInitialChartView,
   );
   const [isChartFilterOpen, setIsChartFilterOpen] = useState(false);
   const chartFilterRef = useRef<HTMLDivElement>(null);
@@ -358,8 +365,8 @@ const ProductionDashboard = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        chartFilterRef.current &&
-        !chartFilterRef.current.contains(event.target as Node)
+        chartFilterRef.current
+        && !chartFilterRef.current.contains(event.target as Node)
       ) {
         setIsChartFilterOpen(false);
       }
@@ -384,12 +391,12 @@ const ProductionDashboard = () => {
 
   useEffect(() => {
     subscribeToMachineStates();
-    
+
     return () => {
       unsubscribeFromMachineStates();
     };
   }, []);
-  
+
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { get } = useApi<IApiResponse<IMachineOverview>>();
@@ -407,12 +414,13 @@ const ProductionDashboard = () => {
       endDate: dateRange.end.toISOString().slice(0, 10),
       view: chartView,
       filter: chartView !== "all" ? chartView : undefined,
-      timezoneOffset: timezoneOffset,
+      timezoneOffset,
     });
-    
+
     if (response?.success) {
       setOverview(response.data as unknown as IOverview || null);
-    } else {
+    }
+    else {
       setError(response?.error || "Failed to fetch overview");
     }
     setLoading(false);
@@ -440,11 +448,13 @@ const ProductionDashboard = () => {
     },
     {
       title: "Total Runtime",
-      value: dateRange.start > startOfToday() ? "-" : formatDuration(
-        overview?.kpis?.averageRuntime?.value
-          ? overview.kpis.averageRuntime.value * 8
-          : 0
-      ),
+      value: dateRange.start > startOfToday()
+        ? "-"
+        : formatDuration(
+            overview?.kpis?.averageRuntime?.value
+              ? overview.kpis.averageRuntime.value * 8
+              : 0,
+          ),
       description: "Total runtime of machines",
       icon: <Clock size={16} />,
       change: 0,
@@ -479,7 +489,7 @@ const ProductionDashboard = () => {
     })
     .map((machine: IOverviewMachine): ExpandedMachine => {
       const realTime = machineStates.find(
-        (state) => state.machineId === machine.id
+        state => state.machineId === machine.id,
       );
       return {
         ...machine,
@@ -500,9 +510,9 @@ const ProductionDashboard = () => {
   useEffect(() => {
     const startStr = dateRange.start.toISOString().slice(0, 10);
     const endStr = dateRange.end.toISOString().slice(0, 10);
-    const isDefaultDate =
-      isSameDay(dateRange.start, startOfToday()) &&
-      isSameDay(dateRange.end, startOfToday());
+    const isDefaultDate
+      = isSameDay(dateRange.start, startOfToday())
+        && isSameDay(dateRange.end, startOfToday());
     const isDefaultChartView = chartView === "all";
 
     const params = new URLSearchParams(window.location.search);
@@ -510,14 +520,16 @@ const ProductionDashboard = () => {
     if (isDefaultDate) {
       params.delete("startDate");
       params.delete("endDate");
-    } else {
+    }
+    else {
       params.set("startDate", startStr);
       params.set("endDate", endStr);
     }
 
     if (isDefaultChartView) {
       params.delete("chartView");
-    } else {
+    }
+    else {
       params.set("chartView", chartView);
     }
 
@@ -532,8 +544,8 @@ const ProductionDashboard = () => {
     const newChartView = parseChartViewParam(params.get("chartView"));
 
     if (
-      newStart.getTime() !== dateRange.start.getTime() ||
-      newEnd.getTime() !== dateRange.end.getTime()
+      newStart.getTime() !== dateRange.start.getTime()
+      || newEnd.getTime() !== dateRange.end.getTime()
     ) {
       setDateRange({ start: newStart, end: newEnd });
     }
@@ -546,12 +558,13 @@ const ProductionDashboard = () => {
 
   useEffect(() => {
     if (chartView === "group" || chartView === "machine") {
-      const keys =
-        utilizationOverTime.length > 0
+      const keys
+        = utilizationOverTime.length > 0
           ? Object.keys(utilizationOverTime[0]?.groups || {})
           : [];
       setVisibleLines(keys);
-    } else {
+    }
+    else {
       setVisibleLines([]);
     }
   }, [utilizationOverTime, chartView]);
@@ -565,7 +578,7 @@ const ProductionDashboard = () => {
       <PageHeader
         title="Production Dashboard"
         description="Real-time machine status and metrics"
-        actions={
+        actions={(
           <div className="flex gap-2 items-center">
             <DateRangePicker
               startDate={dateRange.start}
@@ -576,7 +589,7 @@ const ProductionDashboard = () => {
               <RefreshCcw size={16} />
             </Button>
           </div>
-        }
+        )}
       />
 
       {error && (
@@ -587,7 +600,7 @@ const ProductionDashboard = () => {
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
         <Metrics>
-          {kpis.map((metric) => (
+          {kpis.map(metric => (
             <MetricsCard key={metric.title} {...metric} />
           ))}
         </Metrics>
@@ -606,7 +619,8 @@ const ProductionDashboard = () => {
                       chartView === "all"
                         ? "bg-primary text-primary-foreground"
                         : "bg-surface text-text-muted hover:bg-surface/80"
-                    }`}>
+                    }`}
+                  >
                     All
                   </button>
                   <button
@@ -615,7 +629,8 @@ const ProductionDashboard = () => {
                       chartView === "group"
                         ? "bg-primary text-primary-foreground"
                         : "bg-surface text-text-muted hover:bg-surface/80"
-                    }`}>
+                    }`}
+                  >
                     Group
                   </button>
                   <button
@@ -624,63 +639,68 @@ const ProductionDashboard = () => {
                       chartView === "machine"
                         ? "bg-primary text-primary-foreground"
                         : "bg-surface text-text-muted hover:bg-surface/80"
-                    }`}>
+                    }`}
+                  >
                     Machine
                   </button>
                   <div
                     className="relative"
-                    ref={chartFilterRef}>
+                    ref={chartFilterRef}
+                  >
                     <button
                       onClick={() => setIsChartFilterOpen(!isChartFilterOpen)}
-                      className="px-2 py-1 text-xs rounded cursor-pointer bg-surface text-text-muted hover:bg-surface/80">
+                      className="px-2 py-1 text-xs rounded cursor-pointer bg-surface text-text-muted hover:bg-surface/80"
+                    >
                       <Filter size={12} />
                     </button>
-                    {isChartFilterOpen &&
-                      (chartView === "group" || chartView === "machine") && (
-                        <div className="absolute right-0 mt-1 w-48 bg-foreground border rounded shadow-lg text-text-muted z-50 max-h-[300px] overflow-y-auto">
-                          {chartView === "group"
-                            ? Object.keys(
-                                utilizationOverTime[0]?.groups || {}
-                              ).map((key) => (
-                                <label
-                                  key={key}
-                                  className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={visibleLines.includes(key)}
-                                    onChange={() => {
-                                      setVisibleLines((prev) =>
-                                        prev.includes(key)
-                                          ? prev.filter((k) => k !== key)
-                                          : [...prev, key]
-                                      );
-                                    }}
-                                    className="mr-2"
-                                  />
-                                  {capitalizeFirst(key)}
-                                </label>
-                              ))
-                            : machines.map((machine) => (
-                                <label
-                                  key={machine.id}
-                                  className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={visibleLines.includes(machine.id)}
-                                    onChange={() => {
-                                      setVisibleLines((prev) =>
-                                        prev.includes(machine.id)
-                                          ? prev.filter((k) => k !== machine.id)
-                                          : [...prev, machine.id]
-                                      );
-                                    }}
-                                    className="mr-2"
-                                  />
-                                  {machine.name}
-                                </label>
-                              ))}
-                        </div>
-                      )}
+                    {isChartFilterOpen
+                      && (chartView === "group" || chartView === "machine") && (
+                      <div className="absolute right-0 mt-1 w-48 bg-foreground border rounded shadow-lg text-text-muted z-50 max-h-[300px] overflow-y-auto">
+                        {chartView === "group"
+                          ? Object.keys(
+                              utilizationOverTime[0]?.groups || {},
+                            ).map(key => (
+                              <label
+                                key={key}
+                                className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={visibleLines.includes(key)}
+                                  onChange={() => {
+                                    setVisibleLines(prev =>
+                                      prev.includes(key)
+                                        ? prev.filter(k => k !== key)
+                                        : [...prev, key],
+                                    );
+                                  }}
+                                  className="mr-2"
+                                />
+                                {capitalizeFirst(key)}
+                              </label>
+                            ))
+                          : machines.map(machine => (
+                              <label
+                                key={machine.id}
+                                className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={visibleLines.includes(machine.id)}
+                                  onChange={() => {
+                                    setVisibleLines(prev =>
+                                      prev.includes(machine.id)
+                                        ? prev.filter(k => k !== machine.id)
+                                        : [...prev, machine.id],
+                                    );
+                                  }}
+                                  className="mr-2"
+                                />
+                                {machine.name}
+                              </label>
+                            ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -688,7 +708,8 @@ const ProductionDashboard = () => {
               <div className="flex-1 p-2 min-h-0 overflow-hidden">
                 <ResponsiveContainer
                   width="100%"
-                  height="100%">
+                  height="100%"
+                >
                   <LineChart data={utilizationOverTime}>
                     <CartesianGrid
                       strokeDasharray="3 3"
@@ -702,14 +723,13 @@ const ProductionDashboard = () => {
                       tick={{ fontSize: 12 }}
                       tickMargin={5}
                       tickFormatter={(value, index) =>
-                        index % 2 === 0 ? value : ""
-                      }
+                        index % 2 === 0 ? value : ""}
                       axisLine={false}
                       tickLine={false}
                     />
                     <YAxis
                       domain={[0, 100]}
-                      tickFormatter={(v) => `${v}%`}
+                      tickFormatter={v => `${v}%`}
                       width={35}
                       tick={{ fontSize: 12 }}
                       padding={{ top: 0, bottom: 0 }}
@@ -718,20 +738,21 @@ const ProductionDashboard = () => {
                     />
                     <Tooltip
                       formatter={(v, _name, props) => {
-                        const percentage = `${parseFloat(v as string).toFixed(2)}%`;
+                        const percentage = `${Number.parseFloat(v as string).toFixed(2)}%`;
                         let runtime = 0;
 
                         if (chartView === "all") {
                           runtime = props.payload?.runtime || 0;
-                        } else if (
-                          chartView === "group" ||
-                          chartView === "machine"
+                        }
+                        else if (
+                          chartView === "group"
+                          || chartView === "machine"
                         ) {
                           const dataKey = props.dataKey as string;
                           if (dataKey && dataKey.includes("groups.")) {
                             const key = dataKey.split(".")[1];
-                            runtime =
-                              props.payload?.groups?.[key]?.runtime || 0;
+                            runtime
+                              = props.payload?.groups?.[key]?.runtime || 0;
                           }
                         }
 
@@ -739,9 +760,9 @@ const ProductionDashboard = () => {
                       }}
                       labelFormatter={(label, payload) => {
                         if (
-                          payload &&
-                          payload.length > 0 &&
-                          payload[0]?.payload?.rangeLabel
+                          payload
+                          && payload.length > 0
+                          && payload[0]?.payload?.rangeLabel
                         ) {
                           return payload[0].payload.rangeLabel;
                         }
@@ -776,15 +797,15 @@ const ProductionDashboard = () => {
                       animationDuration={1000}
                       isAnimationActive={false}
                     />
-                    {(chartView === "group" || chartView === "machine") &&
-                      utilizationOverTime.length > 0 &&
-                      Object.entries(utilizationOverTime[0]?.groups || {})
+                    {(chartView === "group" || chartView === "machine")
+                      && utilizationOverTime.length > 0
+                      && Object.entries(utilizationOverTime[0]?.groups || {})
                         .filter(([key]) => visibleLines.includes(key))
                         .map(([key, _], index) => {
                           // Get machine name for tooltip
-                          const machineName =
-                            chartView === "machine"
-                              ? machines.find((m) => m.id === key)?.name || key
+                          const machineName
+                            = chartView === "machine"
+                              ? machines.find(m => m.id === key)?.name || key
                               : capitalizeFirst(key);
 
                           // Use shades of primary color from theme
@@ -825,37 +846,45 @@ const ProductionDashboard = () => {
               </div>
               <div className="flex flex-col flex-1 overflow-hidden">
                 <div className="flex-1 p-2 min-h-0">
-                  {loading ? (
-                    <div className="h-full flex items-center justify-center">
-                      <Loader />
-                    </div>
-                  ) : dateRange.start > startOfToday() ? (
-                    <div className="h-full flex items-center justify-center text-text-muted text-sm">
-                      No data
-                    </div>
-                  ) : (
-                    <CustomPieChart
-                      data={stateDistribution.filter(entry => entry.state !== "UNRECORDED").map(entry => ({
-                        name: entry.state,
-                        value: entry.percentage,
-                        color: getStatusColor(entry.state, theme)
-                      }))}
-                      innerRadius={50}
-                      outerRadius={100}
-                      customTooltip={({ active, payload }: any) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-foreground border border-border rounded p-2 text-xs text-text-muted">
-                              <p className="font-medium">{data.name}</p>
-                              <p>Percentage: {data.value?.toFixed(1)}%</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                  )}
+                  {loading
+                    ? (
+                        <div className="h-full flex items-center justify-center">
+                          <Loader />
+                        </div>
+                      )
+                    : dateRange.start > startOfToday()
+                      ? (
+                          <div className="h-full flex items-center justify-center text-text-muted text-sm">
+                            No data
+                          </div>
+                        )
+                      : (
+                          <CustomPieChart
+                            data={stateDistribution.filter(entry => entry.state !== "UNRECORDED").map(entry => ({
+                              name: entry.state,
+                              value: entry.percentage,
+                              color: getStatusColor(entry.state, theme),
+                            }))}
+                            innerRadius={50}
+                            outerRadius={100}
+                            customTooltip={({ active, payload }: any) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="bg-foreground border border-border rounded p-2 text-xs text-text-muted">
+                                    <p className="font-medium">{data.name}</p>
+                                    <p>
+                                      Percentage:
+                                      {data.value?.toFixed(1)}
+                                      %
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                        )}
                 </div>
               </div>
             </div>
@@ -866,14 +895,15 @@ const ProductionDashboard = () => {
                 <h3 className="text-sm text-text-muted">Machines (Live)</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-1">
-                {machines &&
-                  machines.map((machine: ExpandedMachine) => (
+                {machines
+                  && machines.map((machine: ExpandedMachine) => (
                     <div
                       key={machine.id}
                       onClick={() => {
                         setSelectedMachine(machine);
                       }}
-                      className="flex flex-col flex-1 justify-between p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm">
+                      className="flex flex-col flex-1 justify-between p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm"
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <p className="text-sm font-medium text-text-muted truncate">
@@ -883,10 +913,10 @@ const ProductionDashboard = () => {
                         <StatusBadge
                           variant={
                             getVariantFromStatus(machine.status) as
-                              | "error"
-                              | "success"
-                              | "warning"
-                              | "info"
+                            | "error"
+                            | "success"
+                            | "warning"
+                            | "info"
                           }
                           label={machine.status}
                           size="sm"
@@ -895,7 +925,8 @@ const ProductionDashboard = () => {
 
                       <div className="flex items-center justify-between">
                         <span className="truncate text-xs">
-                          Program:{" "}
+                          Program:
+                          {" "}
                           {machine.program === "NO PROGRAM"
                             ? "-"
                             : machine.program || "-"}
@@ -937,41 +968,46 @@ const ProductionDashboard = () => {
               </div>
 
               <div className="p-2 space-y-2 flex-1 flex flex-col">
-                {loading ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <Loader />
-                  </div>
-                ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
-                  overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
-                    <div
-                      key={idx}
-                      className="p-2 bg-surface rounded border border-border flex justify-between">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle
-                          size={16}
-                          className="text-error"
-                        />
-                        <div>
-                          <p className="text-sm font-medium text-text-muted">
-                            {alarm.message}
-                          </p>
-                          <p className="text-xs text-text-muted">
-                            {alarm.machineId}
-                          </p>
+                {loading
+                  ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <Loader />
+                      </div>
+                    )
+                  : overview?.alarms.length && overview?.alarms.length > 0
+                    ? (
+                        overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
+                          <div
+                            key={idx}
+                            className="p-2 bg-surface rounded border border-border flex justify-between"
+                          >
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle
+                                size={16}
+                                className="text-error"
+                              />
+                              <div>
+                                <p className="text-sm font-medium text-text-muted">
+                                  {alarm.message}
+                                </p>
+                                <p className="text-xs text-text-muted">
+                                  {alarm.machineId}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-xs text-text-muted leading-none">
+                              {formatDistance(new Date(alarm.timestamp), new Date(), {
+                                addSuffix: true,
+                              })}
+                            </div>
+                          </div>
+                        ))
+                      )
+                    : (
+                        <div className="flex-1 text-text-muted text-sm py-2 flex items-center justify-center">
+                          No alarms
                         </div>
-                      </div>
-                      <div className="text-xs text-text-muted leading-none">
-                        {formatDistance(new Date(alarm.timestamp), new Date(), {
-                          addSuffix: true,
-                        })}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex-1 text-text-muted text-sm py-2 flex items-center justify-center">
-                    No alarms
-                  </div>
-                )}
+                      )}
               </div>
             </div>
           </div>
@@ -985,7 +1021,8 @@ const ProductionDashboard = () => {
             setSelectedMachine(null);
           }}
           title={`Machine Details - ${selectedMachine.name}`}
-          size="xs">
+          size="xs"
+        >
           <MachineDetails machine={selectedMachine} />
         </Modal>
       )}
@@ -995,7 +1032,8 @@ const ProductionDashboard = () => {
           isOpen={isMapModalOpen}
           onClose={() => setIsMapModalOpen(false)}
           title="Machine Map"
-          size="md">
+          size="md"
+        >
           <div className="p-2">
             <MachineMap machines={machines} />
           </div>
@@ -1007,7 +1045,8 @@ const ProductionDashboard = () => {
           isOpen={isTimelineModalOpen}
           onClose={() => setIsTimelineModalOpen(false)}
           title="Machine Timeline"
-          size="lg">
+          size="lg"
+        >
           <MachineTimeline
             startDate={dateRange.start}
             endDate={dateRange.end}
@@ -1016,6 +1055,6 @@ const ProductionDashboard = () => {
       )}
     </div>
   );
-};
+}
 
 export default ProductionDashboard;

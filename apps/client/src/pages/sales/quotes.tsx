@@ -1,18 +1,19 @@
-import { PlusCircleIcon} from "lucide-react";
-import { useMemo, useState, useRef, useEffect } from "react";
+import { QuoteRevisionStatus, QuoteStatus } from "@coesco/types";
+import { format } from "date-fns";
+import { PlusCircleIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { AdvancedDropdown, Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
-import { formatQuoteNumber, formatCurrency } from "@/utils";
-import { TableColumn } from "@/components/ui/table";
-import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
-import PageHeader from "@/components/layout/page-header";
-import { Filter } from "@/components/feature/toolbar";
-import { format } from "date-fns";
-import { QuoteStatus, QuoteRevisionStatus } from "@coesco/types";
+import type { Filter } from "@/components/feature/toolbar";
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
 
-const Quotes = () => {
+import { AdvancedDropdown, Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
+import PageHeader from "@/components/layout/page-header";
+import { useApi } from "@/hooks/use-api";
+import { formatCurrency, formatQuoteNumber } from "@/utils";
+
+function Quotes() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { get: getQuotes, response: quotes, loading: quotesLoading, error: quotesError } = useApi<IApiResponse<any[]>>();
   const { post: createQuote, loading: createQuoteLoading, error: createQuoteError } = useApi<IApiResponse<any[]>>();
@@ -26,7 +27,7 @@ const Quotes = () => {
     limit: 25,
     filter: { status: "OPEN" },
     include: [] as string[],
-    search: ""
+    search: "",
   });
 
   const queryParams = useMemo(() => {
@@ -38,7 +39,7 @@ const Quotes = () => {
     };
 
     const activeFilters = Object.fromEntries(
-      Object.entries(params.filter).filter(([_, value]) => value)
+      Object.entries(params.filter).filter(([_, value]) => value),
     );
 
     if (Object.keys(activeFilters).length > 0) {
@@ -101,37 +102,46 @@ const Quotes = () => {
       key: "journey.customer.name",
       header: "Customer",
       render: (_, row) =>
-      row.journey?.customer ? (
-        <Link
-          to={`/sales/companies/${row.journey.customer.id}`}
-          className="hover:underline">
-          {row.journey.customer.name || "-"}
-        </Link>
-      ) : (
-        "-"
-      ),
+        row.journey?.customer
+          ? (
+              <Link
+                to={`/sales/companies/${row.journey.customer.id}`}
+                className="hover:underline"
+              >
+                {row.journey.customer.name || "-"}
+              </Link>
+            )
+          : (
+              "-"
+            ),
     },
     {
       key: "journey.name",
       header: "Journey",
       render: (_, row) =>
-      row.journey ? (
-        <Link
-          to={`/sales/journeys/${row.journey.id}`}
-          className="hover:underline">
-          {row.journey.name || "-"}
-        </Link>
-      ) : (
-        "-"
-      ),
+        row.journey
+          ? (
+              <Link
+                to={`/sales/journeys/${row.journey.id}`}
+                className="hover:underline"
+              >
+                {row.journey.name || "-"}
+              </Link>
+            )
+          : (
+              "-"
+            ),
     },
     {
       key: "latestRevisionStatus",
       header: "Status",
       className: "w-1",
       render: (_, row) => (
-         <div className="flex gap-2 whitespace-nowrap"><StatusBadge label={row.status as string} /><StatusBadge label={row.revisionStatus as string} /></div>
-       )
+        <div className="flex gap-2 whitespace-nowrap">
+          <StatusBadge label={row.status as string} />
+          <StatusBadge label={row.revisionStatus as string} />
+        </div>
+      ),
     },
     {
       key: "priority",
@@ -156,7 +166,7 @@ const Quotes = () => {
       render: (_, row) => {
         return format(row.createdAt as string, "MM/dd/yyyy");
       },
-    }
+    },
   ];
 
   const toggleModal = () => {
@@ -198,7 +208,9 @@ const Quotes = () => {
     return (
       <div className="flex gap-2">
         <Button onClick={toggleModal}>
-          <PlusCircleIcon size={20} /> Create New
+          <PlusCircleIcon size={20} />
+          {" "}
+          Create New
         </Button>
       </div>
     );
@@ -207,27 +219,27 @@ const Quotes = () => {
   const handleSearch = (query: string) => {
     handleParamsChange({
       search: query,
-      page: 1
-    })
-  }
+      page: 1,
+    });
+  };
 
   const handleParamsChange = (updates: Partial<typeof params>) => {
     setParams(prev => ({
       ...prev,
-      ...updates
-    }))
-  }
+      ...updates,
+    }));
+  };
 
   const handleFilterChange = (key: string, value: string) => {
     handleParamsChange({
-      filter: { ...params.filter, [key]: value }
-    })
-  }
+      filter: { ...params.filter, [key]: value },
+    });
+  };
 
-  const quoteRevisionStatuses = Object.keys(QuoteRevisionStatus)
-  const quoteRevisionStatusOptions = quoteRevisionStatuses.map((status) => { return { value: status, label: status } })
-  const quoteStatuses = Object.keys(QuoteStatus)
-  const quoteStatusOptions = quoteStatuses.map((status) =>{ return { value: status, label: status }})
+  const quoteRevisionStatuses = Object.keys(QuoteRevisionStatus);
+  const quoteRevisionStatusOptions = quoteRevisionStatuses.map((status) => { return { value: status, label: status }; });
+  const quoteStatuses = Object.keys(QuoteStatus);
+  const quoteStatusOptions = quoteStatuses.map((status) => { return { value: status, label: status }; });
 
   const employeeOptions = useMemo(
     () =>
@@ -235,39 +247,38 @@ const Quotes = () => {
         value: employee.id,
         label: `${employee.firstName} ${employee.lastName}`,
       })) || [],
-    [employees]
+    [employees],
   );
 
   const filters: Filter[] = [
     {
-      key: 'status',
-      label: 'Quote Status',
+      key: "status",
+      label: "Quote Status",
       options: [
-        { value: '', label: 'All' },
-        ...quoteStatusOptions
+        { value: "", label: "All" },
+        ...quoteStatusOptions,
       ],
-      placeholder: 'Quote Status'
+      placeholder: "Quote Status",
     },
     {
-      key: 'latestRevisionStatus',
-      label: 'Rev. Status',
+      key: "latestRevisionStatus",
+      label: "Rev. Status",
       options: [
-        { value: '', label: 'All' },
-        ...quoteRevisionStatusOptions
+        { value: "", label: "All" },
+        ...quoteRevisionStatusOptions,
       ],
-      placeholder: 'Revision Status'
+      placeholder: "Revision Status",
     },
     {
-      key: 'createdById',
-      label: 'Created By',
+      key: "createdById",
+      label: "Created By",
       options: [
-        { value: '', label: 'All' },
-        ...employeeOptions
+        { value: "", label: "All" },
+        ...employeeOptions,
       ],
-      placeholder: 'Created By'
+      placeholder: "Created By",
     },
-  ]
-
+  ];
 
   return (
     <div className="w-full flex-1 flex flex-col overflow-hidden">
@@ -303,13 +314,13 @@ const Quotes = () => {
             error={quotesError}
             currentPage={quotes?.meta?.page}
             totalPages={quotes?.meta?.totalPages}
-            onPageChange={(page) => handleParamsChange({ page })}
+            onPageChange={page => handleParamsChange({ page })}
             sort={params.sort}
             order={params.order}
             onSortChange={(newSort, newOrder) => {
               handleParamsChange({
                 sort: newSort as any,
-                order: newOrder as any
+                order: newOrder as any,
               });
             }}
             className="rounded border overflow-clip"
@@ -323,16 +334,16 @@ const Quotes = () => {
           isOpen={isModalOpen}
           onClose={toggleModal}
           onSuccess={refresh}
-          createQuote={(data) => createQuote("/sales/quotes", data)}
+          createQuote={data => createQuote("/sales/quotes", data)}
           loading={createQuoteLoading}
           error={createQuoteError}
         />
       )}
     </div>
   );
-};
+}
 
-const CreateQuoteModal = ({
+function CreateQuoteModal({
   isOpen,
   onClose,
   onSuccess,
@@ -346,7 +357,7 @@ const CreateQuoteModal = ({
   createQuote: (params: any) => Promise<any>;
   loading: boolean;
   error: string | null;
-}) => {
+}) {
   const [customerValue, setCustomerValue] = useState<
     string | { create: true; label: string }
   >("");
@@ -354,7 +365,7 @@ const CreateQuoteModal = ({
     string | { create: true; label: string }
   >("");
   const [customerMode, setCustomerMode] = useState<"select" | "create">(
-    "select"
+    "select",
   );
   const [journeyMode, setJourneyMode] = useState<"select" | "create">("select");
   const [isCreateDisabledState, setIsCreateDisabledState] = useState(true);
@@ -366,7 +377,7 @@ const CreateQuoteModal = ({
   const [journeys, setJourneys] = useState<any[]>([]);
   const { get: getCompanies } = useApi<IApiResponse<any[]>>();
   const { get: getJourneys } = useApi<IApiResponse<any[]>>();
-  
+
   const fetchCompanies = async () => {
     const response = await getCompanies("/sales/companies");
     if (response?.success) {
@@ -380,15 +391,15 @@ const CreateQuoteModal = ({
       setJourneys(response.data || []);
     }
   };
-  
+
   const refreshCompanies = () => {
     fetchCompanies();
   };
-  
+
   const refreshJourneys = () => {
     fetchJourneys();
   };
-  
+
   useEffect(() => {
     fetchCompanies();
     fetchJourneys();
@@ -400,7 +411,7 @@ const CreateQuoteModal = ({
         value: company.id,
         label: company.name,
       })) || [],
-    [companies]
+    [companies],
   );
 
   const journeyOptions = useMemo(
@@ -409,22 +420,23 @@ const CreateQuoteModal = ({
         ?.filter((journey: any) =>
           typeof customerValue === "string" && customerValue
             ? journey.customerId === customerValue
-            : false
+            : false,
         )
         ?.map((journey: any) => ({
           value: journey.id,
           label: journey.name || `Journey ${journey.id.slice(-8)}`,
         })) || [],
-    [journeys, customerValue]
+    [journeys, customerValue],
   );
 
   useEffect(() => {
     if (customerValue && typeof customerValue === "string") {
       setCustomerMode("select");
-    } else if (
-      customerValue &&
-      typeof customerValue === "object" &&
-      customerValue.create
+    }
+    else if (
+      customerValue
+      && typeof customerValue === "object"
+      && customerValue.create
     ) {
       setCustomerMode("create");
     }
@@ -432,12 +444,13 @@ const CreateQuoteModal = ({
 
   useEffect(() => {
     const checkDisabled = () => {
-      if (loading) return true;
+      if (loading)
+        return true;
 
       if (typeof customerValue === "object" && customerValue.create) {
         const customerLabel = customerValue.label?.trim();
-        const journeyLabel =
-          typeof journeyValue === "object"
+        const journeyLabel
+          = typeof journeyValue === "object"
             ? journeyValue.label?.trim()
             : typeof journeyValue === "string"
               ? journeyValue.trim()
@@ -446,8 +459,10 @@ const CreateQuoteModal = ({
       }
 
       if (typeof customerValue === "string" && customerValue) {
-        if (!journeyValue) return true;
-        if (typeof journeyValue === "string") return !journeyValue.trim();
+        if (!journeyValue)
+          return true;
+        if (typeof journeyValue === "string")
+          return !journeyValue.trim();
         if (typeof journeyValue === "object")
           return !journeyValue.label?.trim();
       }
@@ -459,29 +474,31 @@ const CreateQuoteModal = ({
   }, [customerValue, journeyValue, loading]);
 
   const handleCreateQuote = async () => {
-    let params: any = {};
+    const params: any = {};
     if (
-      customerValue &&
-      typeof customerValue === "object" &&
-      customerValue.create
+      customerValue
+      && typeof customerValue === "object"
+      && customerValue.create
     ) {
       params.customerName = customerValue.label.trim();
       if (
-        journeyValue &&
-        typeof journeyValue === "object" &&
-        journeyValue.create
+        journeyValue
+        && typeof journeyValue === "object"
+        && journeyValue.create
       ) {
         params.journeyName = journeyValue.label.trim();
       }
-    } else if (typeof customerValue === "string" && customerValue) {
+    }
+    else if (typeof customerValue === "string" && customerValue) {
       params.customerId = customerValue;
       if (
-        journeyValue &&
-        typeof journeyValue === "object" &&
-        journeyValue.create
+        journeyValue
+        && typeof journeyValue === "object"
+        && journeyValue.create
       ) {
         params.journeyName = journeyValue.label.trim();
-      } else if (typeof journeyValue === "string" && journeyValue) {
+      }
+      else if (typeof journeyValue === "string" && journeyValue) {
         params.journeyId = journeyValue;
       }
     }
@@ -495,8 +512,10 @@ const CreateQuoteModal = ({
   };
 
   const isJourneyHidden = () => {
-    if (customerMode === "create") return false;
-    if (customerValue && typeof customerValue === "string") return false;
+    if (customerMode === "create")
+      return false;
+    if (customerValue && typeof customerValue === "string")
+      return false;
     return true;
   };
 
@@ -519,7 +538,8 @@ const CreateQuoteModal = ({
       onClose={onClose}
       title="Create New Quote"
       size="xs"
-      overflow="visible">
+      overflow="visible"
+    >
       {/* Customer Selection */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-text">Customer</label>
@@ -536,12 +556,14 @@ const CreateQuoteModal = ({
                 setJourneyValue({ create: true, label: "" });
                 setJourneyMode("create");
               }
-            } else if (typeof val === "string" && val) {
+            }
+            else if (typeof val === "string" && val) {
               setCustomerValue(val);
               setCustomerMode("select");
               setJourneyValue("");
               setJourneyMode("select");
-            } else {
+            }
+            else {
               setCustomerValue("");
               setCustomerMode("select");
               setJourneyValue("");
@@ -567,10 +589,12 @@ const CreateQuoteModal = ({
                 setJourneyValue("");
                 setJourneyMode("select");
                 setCustomerMode("select");
-              } else if (typeof val === "object") {
+              }
+              else if (typeof val === "object") {
                 setJourneyValue(val);
                 setJourneyMode("create");
-              } else if (typeof val === "string") {
+              }
+              else if (typeof val === "string") {
                 setJourneyValue(val);
                 setJourneyMode("select");
               }
@@ -579,8 +603,8 @@ const CreateQuoteModal = ({
               journeyMode === "create"
                 ? "Enter journey name"
                 : !customerValue
-                  ? "Select a customer first"
-                  : "Select a journey"
+                    ? "Select a customer first"
+                    : "Select a journey"
             }
             createPlaceholder="Enter journey name"
             disabled={!customerValue && customerMode !== "create"}
@@ -589,43 +613,43 @@ const CreateQuoteModal = ({
       )}
 
       <div className="text-xs text-text-muted bg-surface p-3 rounded">
-        {(!customerValue || customerValue === "") &&
-          (!journeyValue || journeyValue === "") &&
-          "Create a standalone draft quote that can be attached to a customer later."}
-        {customerValue &&
-          typeof customerValue === "object" &&
-          (customerValue as { create: true; label: string }).create &&
-          (!journeyValue ||
-            (typeof journeyValue === "object" &&
-              !(
+        {(!customerValue || customerValue === "")
+          && (!journeyValue || journeyValue === "")
+          && "Create a standalone draft quote that can be attached to a customer later."}
+        {customerValue
+          && typeof customerValue === "object"
+          && (customerValue as { create: true; label: string }).create
+          && (!journeyValue
+            || (typeof journeyValue === "object"
+              && !(
                 journeyValue as { create: true; label: string }
-              ).label.trim())) &&
-          "Creating a new customer requires creating a new journey as well."}
-        {customerValue &&
-          typeof customerValue === "object" &&
-          (customerValue as { create: true; label: string }).create &&
-          journeyValue &&
-          typeof journeyValue === "object" &&
-          (journeyValue as { create: true; label: string }).create &&
-          (journeyValue as { create: true; label: string }).label.trim() &&
-          "Quote will be created with the new customer and new journey."}
-        {typeof customerValue === "string" &&
-          customerValue &&
-          (!journeyValue ||
-            (typeof journeyValue === "object" &&
-              !(
+              ).label.trim()))
+              && "Creating a new customer requires creating a new journey as well."}
+        {customerValue
+          && typeof customerValue === "object"
+          && (customerValue as { create: true; label: string }).create
+          && journeyValue
+          && typeof journeyValue === "object"
+          && (journeyValue as { create: true; label: string }).create
+          && (journeyValue as { create: true; label: string }).label.trim()
+          && "Quote will be created with the new customer and new journey."}
+        {typeof customerValue === "string"
+          && customerValue
+          && (!journeyValue
+            || (typeof journeyValue === "object"
+              && !(
                 journeyValue as { create: true; label: string }
-              ).label.trim())) &&
-          "You must select or create a journey to proceed with this customer."}
-        {typeof customerValue === "string" &&
-          customerValue &&
-          ((typeof journeyValue === "string" && journeyValue) ||
-            (typeof journeyValue === "object" &&
-              (journeyValue as { create: true; label: string }).create &&
-              (
+              ).label.trim()))
+              && "You must select or create a journey to proceed with this customer."}
+        {typeof customerValue === "string"
+          && customerValue
+          && ((typeof journeyValue === "string" && journeyValue)
+            || (typeof journeyValue === "object"
+              && (journeyValue as { create: true; label: string }).create
+              && (
                 journeyValue as { create: true; label: string }
-              ).label.trim())) &&
-          "Quote will be created as part of the selected journey."}
+              ).label.trim()))
+              && "Quote will be created as part of the selected journey."}
       </div>
 
       {error && (
@@ -638,11 +662,12 @@ const CreateQuoteModal = ({
         onClick={handleCreateQuote}
         disabled={isCreateDisabledState}
         variant="primary"
-        className="w-full">
+        className="w-full"
+      >
         {loading ? "Creating..." : "Create Quote"}
       </Button>
     </Modal>
   );
-};
+}
 
 export default Quotes;

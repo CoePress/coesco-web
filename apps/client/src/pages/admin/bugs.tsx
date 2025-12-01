@@ -1,7 +1,7 @@
-const Bugs = () => {
+function Bugs() {
   return (
     <div>Bugs</div>
-  )
+  );
 }
 
-export default Bugs
+export default Bugs;

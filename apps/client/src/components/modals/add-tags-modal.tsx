@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { Modal, Button } from "@/components";
-import { useApi } from "@/hooks/use-api";
-import { useAuth } from "@/contexts/auth.context";
 import { Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { Button, Modal } from "@/components";
+import { useAuth } from "@/contexts/auth.context";
+import { useApi } from "@/hooks/use-api";
 
 interface AddTagsModalProps {
   isOpen: boolean;
@@ -11,12 +12,12 @@ interface AddTagsModalProps {
   onTagsUpdated?: () => void;
 }
 
-export const AddTagsModal = ({
+export function AddTagsModal({
   isOpen,
   onClose,
   journeyId,
-  onTagsUpdated
-}: AddTagsModalProps) => {
+  onTagsUpdated,
+}: AddTagsModalProps) {
   const [tags, setTags] = useState<any[]>([]);
   const [newTagInput, setNewTagInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,36 +35,40 @@ export const AddTagsModal = ({
   const fetchTags = async () => {
     setIsLoading(true);
     try {
-      const tagData = await api.get('/core/tags', {
+      const tagData = await api.get("/core/tags", {
         filter: JSON.stringify({
-          parentTable: 'journeys',
-          parentId: journeyId
-        })
+          parentTable: "journeys",
+          parentId: journeyId,
+        }),
       });
-      
+
       if (tagData?.success && Array.isArray(tagData.data)) {
         setTags(tagData.data);
-      } else {
+      }
+      else {
         setTags([]);
       }
-    } catch (error) {
-      console.error('Error fetching tags:', error);
+    }
+    catch (error) {
+      console.error("Error fetching tags:", error);
       setTags([]);
-    } finally {
+    }
+    finally {
       setIsLoading(false);
     }
   };
 
   const handleAddTag = async (e?: React.FormEvent | React.MouseEvent) => {
     e?.preventDefault();
-    
-    if (!newTagInput.trim()) return;
-    
+
+    if (!newTagInput.trim())
+      return;
+
     const tagDescription = newTagInput.trim().toUpperCase();
 
     // Check if tag already exists
-    const existingTag = tags.find(tag => 
-      tag.description.toUpperCase() === tagDescription
+    const existingTag = tags.find(tag =>
+      tag.description.toUpperCase() === tagDescription,
     );
 
     if (existingTag) {
@@ -74,28 +79,31 @@ export const AddTagsModal = ({
 
     setIsSaving(true);
     setErrorMessage("");
-    
+
     try {
-      const newTag = await api.post('/core/tags', {
+      const newTag = await api.post("/core/tags", {
         description: tagDescription,
-        parentTable: 'journeys',
+        parentTable: "journeys",
         parentId: journeyId,
-        createdBy: employee?.initials || 'unknown'
+        createdBy: employee?.initials || "unknown",
       });
 
       if (newTag?.success && newTag.data) {
         setTags(prev => [...prev, newTag.data]);
-        setNewTagInput('');
+        setNewTagInput("");
         onTagsUpdated?.();
-      } else {
-        setErrorMessage('Failed to add tag. Please try again.');
+      }
+      else {
+        setErrorMessage("Failed to add tag. Please try again.");
         setTimeout(() => setErrorMessage(""), 3000);
       }
-    } catch (error) {
-      console.error('Error adding tag:', error);
-      setErrorMessage('Failed to add tag. Please try again.');
+    }
+    catch (error) {
+      console.error("Error adding tag:", error);
+      setErrorMessage("Failed to add tag. Please try again.");
       setTimeout(() => setErrorMessage(""), 3000);
-    } finally {
+    }
+    finally {
       setIsSaving(false);
     }
   };
@@ -103,13 +111,14 @@ export const AddTagsModal = ({
   const handleDeleteTag = async (tagId: string) => {
     try {
       const success = await api.delete(`/core/tags/${tagId}`);
-      
+
       if (success !== null) {
         setTags(prev => prev.filter(tag => tag.id !== tagId));
         onTagsUpdated?.();
       }
-    } catch (error) {
-      console.error('Error deleting tag:', error);
+    }
+    catch (error) {
+      console.error("Error deleting tag:", error);
     }
   };
 
@@ -127,29 +136,33 @@ export const AddTagsModal = ({
           <label className="text-sm font-medium text-text mb-2 block">
             Current Tags
           </label>
-          
-          {isLoading ? (
-            <div className="text-sm text-text-muted">Loading tags...</div>
-          ) : tags.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <div
-                  key={tag.id}
-                  className="bg-primary text-white px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                >
-                  {tag.description}
-                  <button
-                    onClick={() => handleDeleteTag(tag.id)}
-                    className="text-white/80 hover:text-white transition-colors"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-text-muted">No tags yet</div>
-          )}
+
+          {isLoading
+            ? (
+                <div className="text-sm text-text-muted">Loading tags...</div>
+              )
+            : tags.length > 0
+              ? (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map(tag => (
+                      <div
+                        key={tag.id}
+                        className="bg-primary text-white px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                      >
+                        {tag.description}
+                        <button
+                          onClick={() => handleDeleteTag(tag.id)}
+                          className="text-white/80 hover:text-white transition-colors"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              : (
+                  <div className="text-sm text-text-muted">No tags yet</div>
+                )}
         </div>
 
         {/* Add New Tag */}
@@ -161,7 +174,7 @@ export const AddTagsModal = ({
             <input
               type="text"
               value={newTagInput}
-              onChange={(e) => setNewTagInput(e.target.value)}
+              onChange={e => setNewTagInput(e.target.value)}
               placeholder="Enter tag name..."
               className="flex-1 rounded border border-border px-3 py-2 text-sm bg-background text-text"
               disabled={isSaving}
@@ -195,4 +208,4 @@ export const AddTagsModal = ({
       </div>
     </Modal>
   );
-};
+}

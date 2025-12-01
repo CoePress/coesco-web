@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from "react";
-import { FileText, Mail, Clock, Send } from "lucide-react";
+import { Clock, FileText, Mail, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
-import { Button, Card, PageHeader, Modal } from "@/components";
+import type { IApiResponse } from "@/utils/types";
+
+import { Button, Card, Modal, PageHeader } from "@/components";
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
 
-const Reports = () => {
+function Reports() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -23,19 +24,20 @@ const Reports = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { get } = useApi<IApiResponse<any[]>>();
-  
+
   const fetchTemplates = async () => {
     setLoading(true);
     setError(null);
     const response = await get("/email/templates");
     if (response?.success) {
       setTemplates(response.data || []);
-    } else {
+    }
+    else {
       setError(response?.error || "Failed to fetch templates");
     }
     setLoading(false);
   };
-  
+
   useEffect(() => {
     fetchTemplates();
   }, []);
@@ -91,7 +93,7 @@ const Reports = () => {
   ];
 
   const { get: getTemplate } = useApi<IApiResponse<{ html: string }>>();
-  
+
   useEffect(() => {
     const fetchTemplateHtml = async () => {
       if (selectedTemplate) {
@@ -99,14 +101,17 @@ const Reports = () => {
           const response = await getTemplate(`/email/templates/${selectedTemplate}`);
           if (response?.success && response.data) {
             setTemplateHtml(response.data.html);
-          } else {
+          }
+          else {
             setTemplateHtml(null);
           }
-        } catch (error) {
+        }
+        catch (error) {
           console.error("Error fetching template HTML:", error);
           setTemplateHtml(null);
         }
-      } else {
+      }
+      else {
         setTemplateHtml(null);
       }
     };
@@ -257,45 +262,50 @@ const Reports = () => {
               <div className="flex-1 overflow-hidden">
                 <div className="h-full overflow-auto">
                   <div className="divide-y">
-                    {loading ? (
-                      <div className="p-4 text-center text-text-muted">
-                        Loading templates...
-                      </div>
-                    ) : error ? (
-                      <div className="p-4 text-center text-red-500">
-                        {error}
-                      </div>
-                    ) : (
-                      templates?.map((template) => (
-                        <div
-                          key={template.slug}
-                          className={`p-2 cursor-pointer transition-all hover:bg-surface/80 ${
-                            selectedTemplate === template.slug
-                              ? "bg-surface"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            setSelectedTemplate(template.slug);
-                            setSelectedReport(null);
-                          }}>
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 rounded bg-surface">
-                              <FileText size={20} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-medium text-text-muted truncate">
-                                {template.name}
-                              </h3>
-                              {template.subject && (
-                                <p className="text-xs text-text-muted mt-1">
-                                  {template.subject}
-                                </p>
-                              )}
-                            </div>
+                    {loading
+                      ? (
+                          <div className="p-4 text-center text-text-muted">
+                            Loading templates...
                           </div>
-                        </div>
-                      ))
-                    )}
+                        )
+                      : error
+                        ? (
+                            <div className="p-4 text-center text-red-500">
+                              {error}
+                            </div>
+                          )
+                        : (
+                            templates?.map(template => (
+                              <div
+                                key={template.slug}
+                                className={`p-2 cursor-pointer transition-all hover:bg-surface/80 ${
+                                  selectedTemplate === template.slug
+                                    ? "bg-surface"
+                                    : ""
+                                }`}
+                                onClick={() => {
+                                  setSelectedTemplate(template.slug);
+                                  setSelectedReport(null);
+                                }}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="p-2 rounded bg-surface">
+                                    <FileText size={20} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="text-sm font-medium text-text-muted truncate">
+                                      {template.name}
+                                    </h3>
+                                    {template.subject && (
+                                      <p className="text-xs text-text-muted mt-1">
+                                        {template.subject}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          )}
                   </div>
                 </div>
               </div>
@@ -310,14 +320,15 @@ const Reports = () => {
               <div className="flex-1 overflow-hidden">
                 <div className="h-full overflow-auto">
                   <div className="divide-y">
-                    {sentReports.map((report) => (
+                    {sentReports.map(report => (
                       <div
                         key={report.id}
                         className="p-2 hover:bg-surface/50 cursor-pointer"
                         onClick={() => {
                           setSelectedReport(report);
                           setSelectedTemplate(null);
-                        }}>
+                        }}
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
                             <h4 className="text-sm font-medium text-text-muted truncate">
@@ -377,106 +388,113 @@ const Reports = () => {
                 </h3>
               </div>
               <div className="flex-1 overflow-hidden">
-                {selectedTemplate ? (
-                  <div className="h-full">
-                    {templateHtml ? (
-                      <div className="h-full overflow-auto">
-                        <TemplatePreview html={templateHtml} />
+                {selectedTemplate
+                  ? (
+                      <div className="h-full">
+                        {templateHtml
+                          ? (
+                              <div className="h-full overflow-auto">
+                                <TemplatePreview html={templateHtml} />
+                              </div>
+                            )
+                          : (
+                              <div className="h-full flex items-center justify-center">
+                                <div className="text-center">
+                                  <FileText
+                                    size={48}
+                                    className="mx-auto text-text-muted mb-2"
+                                  />
+                                  <p className="text-sm text-text-muted">
+                                    Loading template preview...
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                       </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center">
-                        <div className="text-center">
-                          <FileText
-                            size={48}
-                            className="mx-auto text-text-muted mb-2"
-                          />
-                          <p className="text-sm text-text-muted">
-                            Loading template preview...
-                          </p>
+                    )
+                  : selectedReport
+                    ? (
+                        <div className="p-2 space-y-2">
+                          <div className="grid grid-cols-2 gap-4 text-text text-sm">
+                            <div>
+                              <h4 className="text-sm font-medium text-text-muted mb-2">
+                                Report Information
+                              </h4>
+                              <div className="space-y-2">
+                                <div>
+                                  <span className="text-xs text-text-muted">
+                                    Name
+                                  </span>
+                                  <p className="text-sm">{selectedReport.name}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-text-muted">
+                                    Template
+                                  </span>
+                                  <p className="text-sm">{selectedReport.template}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-text-muted">
+                                    Sent By
+                                  </span>
+                                  <p className="text-sm">{selectedReport.sentBy}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-text-muted">
+                                    Sent At
+                                  </span>
+                                  <p className="text-sm">
+                                    {new Date(selectedReport.sentAt).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-text-muted mb-2">
+                                Recipients
+                              </h4>
+                              <div className="space-y-1">
+                                {selectedReport.recipients.map((email: string) => (
+                                  <div
+                                    key={email}
+                                    className="flex items-center gap-2 text-sm"
+                                  >
+                                    <Mail
+                                      size={14}
+                                      className="text-text-muted"
+                                    />
+                                    <span>{email}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="aspect-[8.5/11] bg-surface rounded border border-dashed flex items-center justify-center">
+                            <div className="text-center">
+                              <FileText
+                                size={48}
+                                className="mx-auto text-text-muted mb-2"
+                              />
+                              <p className="text-sm text-text-muted">
+                                Report preview will be shown here
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ) : selectedReport ? (
-                  <div className="p-2 space-y-2">
-                    <div className="grid grid-cols-2 gap-4 text-text text-sm">
-                      <div>
-                        <h4 className="text-sm font-medium text-text-muted mb-2">
-                          Report Information
-                        </h4>
-                        <div className="space-y-2">
-                          <div>
-                            <span className="text-xs text-text-muted">
-                              Name
-                            </span>
-                            <p className="text-sm">{selectedReport.name}</p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-text-muted">
-                              Template
-                            </span>
-                            <p className="text-sm">{selectedReport.template}</p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-text-muted">
-                              Sent By
-                            </span>
-                            <p className="text-sm">{selectedReport.sentBy}</p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-text-muted">
-                              Sent At
-                            </span>
-                            <p className="text-sm">
-                              {new Date(selectedReport.sentAt).toLocaleString()}
+                      )
+                    : (
+                        <div className="h-full flex items-center justify-center">
+                          <div className="text-center">
+                            <FileText
+                              size={48}
+                              className="mx-auto text-text-muted mb-2"
+                            />
+                            <p className="text-sm text-text-muted">
+                              Select a template or report to preview
                             </p>
                           </div>
                         </div>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-medium text-text-muted mb-2">
-                          Recipients
-                        </h4>
-                        <div className="space-y-1">
-                          {selectedReport.recipients.map((email: string) => (
-                            <div
-                              key={email}
-                              className="flex items-center gap-2 text-sm">
-                              <Mail
-                                size={14}
-                                className="text-text-muted"
-                              />
-                              <span>{email}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="aspect-[8.5/11] bg-surface rounded border border-dashed flex items-center justify-center">
-                      <div className="text-center">
-                        <FileText
-                          size={48}
-                          className="mx-auto text-text-muted mb-2"
-                        />
-                        <p className="text-sm text-text-muted">
-                          Report preview will be shown here
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <div className="text-center">
-                      <FileText
-                        size={48}
-                        className="mx-auto text-text-muted mb-2"
-                      />
-                      <p className="text-sm text-text-muted">
-                        Select a template or report to preview
-                      </p>
-                    </div>
-                  </div>
-                )}
+                      )}
               </div>
             </Card>
           </div>
@@ -487,17 +505,19 @@ const Reports = () => {
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
         title="Schedule Report"
-        size="md">
+        size="md"
+      >
         <div className="space-y-4">
           <div>
             <label className="text-sm text-text-muted mb-2 block">
               Report Template
             </label>
             <select className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
-              {templates?.map((template) => (
+              {templates?.map(template => (
                 <option
                   key={template.slug}
-                  value={template.slug}>
+                  value={template.slug}
+                >
                   {template.name}
                 </option>
               ))}
@@ -510,12 +530,12 @@ const Reports = () => {
             </label>
             <select
               value={scheduleType}
-              onChange={(e) =>
+              onChange={e =>
                 setScheduleType(
-                  e.target.value as "daily" | "weekly" | "monthly"
-                )
-              }
-              className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+                  e.target.value as "daily" | "weekly" | "monthly",
+                )}
+              className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+            >
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -529,12 +549,14 @@ const Reports = () => {
               </label>
               <select
                 value={selectedDay}
-                onChange={(e) => setSelectedDay(Number(e.target.value))}
-                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
-                {weekDays.map((day) => (
+                onChange={e => setSelectedDay(Number(e.target.value))}
+                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+              >
+                {weekDays.map(day => (
                   <option
                     key={day.value}
-                    value={day.value}>
+                    value={day.value}
+                  >
                     {day.label}
                   </option>
                 ))}
@@ -549,12 +571,14 @@ const Reports = () => {
               </label>
               <select
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(Number(e.target.value))}
-                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((date) => (
+                onChange={e => setSelectedDate(Number(e.target.value))}
+                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+              >
+                {Array.from({ length: 31 }, (_, i) => i + 1).map(date => (
                   <option
                     key={date}
-                    value={date}>
+                    value={date}
+                  >
                     {date}
                   </option>
                 ))}
@@ -568,17 +592,19 @@ const Reports = () => {
               <input
                 type="time"
                 value={scheduleTime}
-                onChange={(e) => setScheduleTime(e.target.value)}
+                onChange={e => setScheduleTime(e.target.value)}
                 className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
               />
               <select
                 value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
-                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
-                {timezones.map((tz) => (
+                onChange={e => setTimezone(e.target.value)}
+                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+              >
+                {timezones.map(tz => (
                   <option
                     key={tz}
-                    value={tz}>
+                    value={tz}
+                  >
                     {tz.replace("America/", "")}
                   </option>
                 ))}
@@ -610,7 +636,7 @@ const Reports = () => {
                   variant="secondary-outline"
                   onClick={() => {
                     const input = document.querySelector(
-                      'input[type="text"]'
+                      "input[type=\"text\"]",
                     ) as HTMLInputElement;
                     if (input.value) {
                       setSelectedRecipients([
@@ -619,23 +645,25 @@ const Reports = () => {
                       ]);
                       input.value = "";
                     }
-                  }}>
+                  }}
+                >
                   Add
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {selectedRecipients.map((email) => (
+                {selectedRecipients.map(email => (
                   <div
                     key={email}
-                    className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-1 text-sm">
+                    className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-1 text-sm"
+                  >
                     <span>{email}</span>
                     <button
                       onClick={() =>
                         setSelectedRecipients(
-                          selectedRecipients.filter((e) => e !== email)
-                        )
-                      }
-                      className="text-text-muted hover:text-text">
+                          selectedRecipients.filter(e => e !== email),
+                        )}
+                      className="text-text-muted hover:text-text"
+                    >
                       ×
                     </button>
                   </div>
@@ -647,7 +675,8 @@ const Reports = () => {
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary-outline"
-              onClick={() => setIsScheduleModalOpen(false)}>
+              onClick={() => setIsScheduleModalOpen(false)}
+            >
               Cancel
             </Button>
             <Button>Schedule Report</Button>
@@ -656,6 +685,6 @@ const Reports = () => {
       </Modal>
     </div>
   );
-};
+}
 
 export default Reports;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 interface UseEditModeOptions<T, ID = number | string | boolean | null> {
   onSave: (id: ID | null, data: T) => Promise<any>;
@@ -18,7 +18,7 @@ interface UseEditModeReturn<T, ID = number | string | boolean | null> {
 }
 
 export function useEditMode<T extends Record<string, any>, ID = number | string | boolean | null>(
-  options: UseEditModeOptions<T, ID>
+  options: UseEditModeOptions<T, ID>,
 ): UseEditModeReturn<T, ID> {
   const { onSave, onSuccess, onError } = options;
 
@@ -38,7 +38,8 @@ export function useEditMode<T extends Record<string, any>, ID = number | string 
   };
 
   const save = async () => {
-    if (!isEditing) return;
+    if (!isEditing)
+      return;
 
     try {
       setIsSaving(true);
@@ -50,13 +51,16 @@ export function useEditMode<T extends Record<string, any>, ID = number | string 
 
       setEditingId(null);
       setEditData({} as T);
-    } catch (error) {
+    }
+    catch (error) {
       if (onError) {
         onError(error);
-      } else {
-        console.error('Error saving:', error);
       }
-    } finally {
+      else {
+        console.error("Error saving:", error);
+      }
+    }
+    finally {
       setIsSaving(false);
     }
   };
@@ -74,6 +78,6 @@ export function useEditMode<T extends Record<string, any>, ID = number | string 
     updateField,
     save,
     cancel,
-    isSaving
+    isSaving,
   };
 }

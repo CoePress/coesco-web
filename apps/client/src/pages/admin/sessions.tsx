@@ -1,21 +1,22 @@
-import { useMemo, useState, useEffect } from "react";
+import { format } from "date-fns";
+import { RefreshCcwIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+import type { Filter } from "@/components/feature/toolbar";
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
 
 import {
-  StatusBadge,
-  PageHeader,
-  Table,
   Button,
   Modal,
+  PageHeader,
+  StatusBadge,
+  Table,
   Toolbar,
 } from "@/components";
-import { TableColumn } from "@/components/ui/table";
-import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
-import { format } from "date-fns";
-import { Filter } from "@/components/feature/toolbar";
-import { useToast } from "@/hooks/use-toast";
-import { RefreshCcwIcon } from "lucide-react";
 import { useAuth } from "@/contexts/auth.context";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
 
 interface Session {
   id: string;
@@ -45,7 +46,7 @@ interface Session {
   };
 }
 
-const Sessions = () => {
+function Sessions() {
   const { sessionId: currentSessionId } = useAuth();
   const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -96,7 +97,9 @@ const Sessions = () => {
       render: (_, row) => (
         <p>
           <span>
-            {row.user?.employee?.firstName} {row.user?.employee?.lastName}
+            {row.user?.employee?.firstName}
+            {" "}
+            {row.user?.employee?.lastName}
           </span>
           <br />
           <span className="text-xs text-text-muted">{row.user?.username}</span>
@@ -201,7 +204,7 @@ const Sessions = () => {
   };
 
   const handleParamsChange = (updates: Partial<typeof params>) => {
-    setParams((prev) => ({
+    setParams(prev => ({
       ...prev,
       ...updates,
     }));
@@ -284,7 +287,7 @@ const Sessions = () => {
             error={error}
             currentPage={sessions?.meta?.page}
             totalPages={sessions?.meta?.totalPages}
-            onPageChange={(page) => handleParamsChange({ page })}
+            onPageChange={page => handleParamsChange({ page })}
             sort={params.sort}
             order={params.order}
             onSortChange={(newSort, newOrder) => {
@@ -312,9 +315,9 @@ const Sessions = () => {
       )}
     </div>
   );
-};
+}
 
-const RevokeSessionModal = ({
+function RevokeSessionModal({
   isOpen,
   onClose,
   session,
@@ -324,7 +327,7 @@ const RevokeSessionModal = ({
   onClose: () => void;
   session: Session;
   onSuccess: () => void;
-}) => {
+}) {
   const [reason, setReason] = useState("");
   const { post: revokeSession, loading } = useApi<IApiResponse<any>>();
   const toast = useToast();
@@ -339,10 +342,12 @@ const RevokeSessionModal = ({
         toast.success("Session revoked successfully!");
         onClose();
         onSuccess();
-      } else {
+      }
+      else {
         toast.error("Failed to revoke session. Please try again.");
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error revoking session:", error);
       toast.error("An unexpected error occurred while revoking the session.");
     }
@@ -355,7 +360,9 @@ const RevokeSessionModal = ({
           <div className="flex justify-between">
             <span className="text-text-muted">User:</span>
             <span className="font-medium text-text">
-              {session.user?.employee?.firstName} {session.user?.employee?.lastName}
+              {session.user?.employee?.firstName}
+              {" "}
+              {session.user?.employee?.lastName}
             </span>
           </div>
           <div className="flex justify-between">
@@ -380,7 +387,7 @@ const RevokeSessionModal = ({
           </label>
           <textarea
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={e => setReason(e.target.value)}
             placeholder="Enter reason for revoking this session..."
             className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text placeholder:text-text-muted bg-surface resize-none"
             rows={3}
@@ -398,6 +405,6 @@ const RevokeSessionModal = ({
       </div>
     </Modal>
   );
-};
+}
 
 export default Sessions;

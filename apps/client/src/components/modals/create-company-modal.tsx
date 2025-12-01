@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Modal, Button } from "@/components";
+
+import { Button, Modal } from "@/components";
 import { useApi } from "@/hooks/use-api";
 
 interface CreateCompanyModalProps {
@@ -8,11 +9,11 @@ interface CreateCompanyModalProps {
   onCompanyCreated?: (company: any) => void;
 }
 
-export const CreateCompanyModal = ({ 
-  isOpen, 
-  onClose, 
-  onCompanyCreated
-}: CreateCompanyModalProps) => {
+export function CreateCompanyModal({
+  isOpen,
+  onClose,
+  onCompanyCreated,
+}: CreateCompanyModalProps) {
   const { post, loading } = useApi();
   const [formData, setFormData] = useState({
     CustDlrName: "",
@@ -26,9 +27,8 @@ export const CreateCompanyModal = ({
     const submitData = {
       ...formData,
       Active: 1,
-      IsDealer: formData.IsDealer ? 1 : 0
+      IsDealer: formData.IsDealer ? 1 : 0,
     };
-
 
     try {
       const newCompany = await post("/legacy/std/Company", submitData);
@@ -45,11 +45,13 @@ export const CreateCompanyModal = ({
         }
 
         onClose();
-      } else {
-        alert('Failed to create company. Please try again.');
       }
-    } catch (error) {
-      alert('Error creating company. Please try again.');
+      else {
+        alert("Failed to create company. Please try again.");
+      }
+    }
+    catch (error) {
+      alert("Error creating company. Please try again.");
     }
   };
 
@@ -77,7 +79,7 @@ export const CreateCompanyModal = ({
           <input
             type="text"
             value={formData.CustDlrName}
-            onChange={(e) => setFormData(prev => ({ ...prev, CustDlrName: e.target.value }))}
+            onChange={e => setFormData(prev => ({ ...prev, CustDlrName: e.target.value }))}
             className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             maxLength={30}
             required
@@ -90,7 +92,7 @@ export const CreateCompanyModal = ({
             <input
               type="checkbox"
               checked={formData.IsDealer}
-              onChange={(e) => setFormData(prev => ({ ...prev, IsDealer: e.target.checked }))}
+              onChange={e => setFormData(prev => ({ ...prev, IsDealer: e.target.checked }))}
               className="rounded border border-border focus:ring-1 focus:ring-primary"
             />
             Is Dealer
@@ -103,7 +105,7 @@ export const CreateCompanyModal = ({
           </label>
           <textarea
             value={formData.Notes}
-            onChange={(e) => setFormData(prev => ({ ...prev, Notes: e.target.value }))}
+            onChange={e => setFormData(prev => ({ ...prev, Notes: e.target.value }))}
             className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             maxLength={500}
             rows={4}
@@ -119,7 +121,8 @@ export const CreateCompanyModal = ({
           >
             Cancel
           </Button>
-          <Button disabled
+          <Button
+            disabled
             type="submit"
           >
             {loading ? "Creating..." : "Create Company"}
@@ -128,4 +131,4 @@ export const CreateCompanyModal = ({
       </form>
     </Modal>
   );
-};
+}

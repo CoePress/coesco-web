@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
-import { Clock } from 'lucide-react';
-import { Button } from '@/components';
+import { Clock } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { Button } from "@/components";
 
 interface TimePickerProps {
   value: string;
@@ -10,40 +11,42 @@ interface TimePickerProps {
   disabled?: boolean;
 }
 
-const TimePicker = ({
+function TimePicker({
   value,
   onChange,
-  placeholder = 'Select time',
-  className = '',
-  disabled = false
-}: TimePickerProps) => {
+  placeholder = "Select time",
+  className = "",
+  disabled = false,
+}: TimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [tempHour, setTempHour] = useState<string>('12');
-  const [tempMinute, setTempMinute] = useState<string>('00');
-  const [tempPeriod, setTempPeriod] = useState<'AM' | 'PM'>('AM');
+  const [tempHour, setTempHour] = useState<string>("12");
+  const [tempMinute, setTempMinute] = useState<string>("00");
+  const [tempPeriod, setTempPeriod] = useState<"AM" | "PM">("AM");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const formatTime = (time24: string): string => {
-    if (!time24) return placeholder;
+    if (!time24)
+      return placeholder;
 
-    const [hours, minutes] = time24.split(':');
-    const hour = parseInt(hours);
-    const period = hour >= 12 ? 'PM' : 'AM';
+    const [hours, minutes] = time24.split(":");
+    const hour = Number.parseInt(hours);
+    const period = hour >= 12 ? "PM" : "AM";
     const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
 
     return `${hour12}:${minutes} ${period}`;
   };
 
-  const convertTo24Hour = (hour: string, minute: string, period: 'AM' | 'PM'): string => {
-    let hour24 = parseInt(hour);
+  const convertTo24Hour = (hour: string, minute: string, period: "AM" | "PM"): string => {
+    let hour24 = Number.parseInt(hour);
 
-    if (period === 'AM' && hour24 === 12) {
+    if (period === "AM" && hour24 === 12) {
       hour24 = 0;
-    } else if (period === 'PM' && hour24 !== 12) {
+    }
+    else if (period === "PM" && hour24 !== 12) {
       hour24 += 12;
     }
 
-    return `${hour24.toString().padStart(2, '0')}:${minute}`;
+    return `${hour24.toString().padStart(2, "0")}:${minute}`;
   };
 
   const parseTime = (time24: string) => {
@@ -52,15 +55,15 @@ const TimePicker = ({
       const hour = now.getHours();
       const minute = now.getMinutes();
 
-      setTempHour(hour === 0 ? '12' : hour > 12 ? (hour - 12).toString() : hour.toString());
-      setTempMinute(minute.toString().padStart(2, '0'));
-      setTempPeriod(hour >= 12 ? 'PM' : 'AM');
+      setTempHour(hour === 0 ? "12" : hour > 12 ? (hour - 12).toString() : hour.toString());
+      setTempMinute(minute.toString().padStart(2, "0"));
+      setTempPeriod(hour >= 12 ? "PM" : "AM");
       return;
     }
 
-    const [hours, minutes] = time24.split(':');
-    const hour = parseInt(hours);
-    const period = hour >= 12 ? 'PM' : 'AM';
+    const [hours, minutes] = time24.split(":");
+    const hour = Number.parseInt(hours);
+    const period = hour >= 12 ? "PM" : "AM";
     const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
 
     setTempHour(hour12.toString());
@@ -75,12 +78,13 @@ const TimePicker = ({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleOpen = () => {
-    if (disabled) return;
+    if (disabled)
+      return;
     parseTime(value);
     setIsOpen(true);
   };
@@ -96,23 +100,23 @@ const TimePicker = ({
   };
 
   const incrementHour = () => {
-    const hour = parseInt(tempHour);
-    setTempHour(hour === 12 ? '1' : (hour + 1).toString());
+    const hour = Number.parseInt(tempHour);
+    setTempHour(hour === 12 ? "1" : (hour + 1).toString());
   };
 
   const decrementHour = () => {
-    const hour = parseInt(tempHour);
-    setTempHour(hour === 1 ? '12' : (hour - 1).toString());
+    const hour = Number.parseInt(tempHour);
+    setTempHour(hour === 1 ? "12" : (hour - 1).toString());
   };
 
   const incrementMinute = () => {
-    const minute = parseInt(tempMinute);
-    setTempMinute(minute === 59 ? '00' : (minute + 1).toString().padStart(2, '0'));
+    const minute = Number.parseInt(tempMinute);
+    setTempMinute(minute === 59 ? "00" : (minute + 1).toString().padStart(2, "0"));
   };
 
   const decrementMinute = () => {
-    const minute = parseInt(tempMinute);
-    setTempMinute(minute === 0 ? '59' : (minute - 1).toString().padStart(2, '0'));
+    const minute = Number.parseInt(tempMinute);
+    setTempMinute(minute === 0 ? "59" : (minute - 1).toString().padStart(2, "0"));
   };
 
   const setCurrentTime = () => {
@@ -120,9 +124,9 @@ const TimePicker = ({
     const hour = now.getHours();
     const minute = now.getMinutes();
 
-    setTempHour(hour === 0 ? '12' : hour > 12 ? (hour - 12).toString() : hour.toString());
-    setTempMinute(minute.toString().padStart(2, '0'));
-    setTempPeriod(hour >= 12 ? 'PM' : 'AM');
+    setTempHour(hour === 0 ? "12" : hour > 12 ? (hour - 12).toString() : hour.toString());
+    setTempMinute(minute.toString().padStart(2, "0"));
+    setTempPeriod(hour >= 12 ? "PM" : "AM");
   };
 
   return (
@@ -160,13 +164,13 @@ const TimePicker = ({
                     type="text"
                     value={tempHour}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      if (val === '' || (parseInt(val) >= 1 && parseInt(val) <= 12)) {
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val === "" || (Number.parseInt(val) >= 1 && Number.parseInt(val) <= 12)) {
                         setTempHour(val);
                       }
                     }}
                     onBlur={() => {
-                      const hour = parseInt(tempHour) || 12;
+                      const hour = Number.parseInt(tempHour) || 12;
                       setTempHour(Math.max(1, Math.min(12, hour)).toString());
                     }}
                     className="w-12 text-center text-2xl font-medium bg-surface border border-border rounded py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -194,14 +198,14 @@ const TimePicker = ({
                     type="text"
                     value={tempMinute}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
-                        setTempMinute(val.padStart(2, '0'));
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val === "" || (Number.parseInt(val) >= 0 && Number.parseInt(val) <= 59)) {
+                        setTempMinute(val.padStart(2, "0"));
                       }
                     }}
                     onBlur={() => {
-                      const minute = parseInt(tempMinute) || 0;
-                      setTempMinute(Math.max(0, Math.min(59, minute)).toString().padStart(2, '0'));
+                      const minute = Number.parseInt(tempMinute) || 0;
+                      setTempMinute(Math.max(0, Math.min(59, minute)).toString().padStart(2, "0"));
                     }}
                     className="w-12 text-center text-2xl font-medium bg-surface border border-border rounded py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
@@ -217,22 +221,22 @@ const TimePicker = ({
                 <div className="flex flex-col gap-1 ml-2">
                   <button
                     type="button"
-                    onClick={() => setTempPeriod('AM')}
+                    onClick={() => setTempPeriod("AM")}
                     className={`px-2 py-1 text-xs font-medium rounded transition-colors cursor-pointer ${
-                      tempPeriod === 'AM'
-                        ? 'bg-primary text-background'
-                        : 'bg-surface text-text-muted hover:bg-surface/80'
+                      tempPeriod === "AM"
+                        ? "bg-primary text-background"
+                        : "bg-surface text-text-muted hover:bg-surface/80"
                     }`}
                   >
                     AM
                   </button>
                   <button
                     type="button"
-                    onClick={() => setTempPeriod('PM')}
+                    onClick={() => setTempPeriod("PM")}
                     className={`px-2 py-1 text-xs font-medium rounded transition-colors cursor-pointer ${
-                      tempPeriod === 'PM'
-                        ? 'bg-primary text-background'
-                        : 'bg-surface text-text-muted hover:bg-surface/80'
+                      tempPeriod === "PM"
+                        ? "bg-primary text-background"
+                        : "bg-surface text-text-muted hover:bg-surface/80"
                     }`}
                   >
                     PM
@@ -272,6 +276,6 @@ const TimePicker = ({
       )}
     </div>
   );
-};
+}
 
 export default TimePicker;

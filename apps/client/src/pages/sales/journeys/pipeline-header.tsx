@@ -1,7 +1,9 @@
+import { ChevronDown, Filter, Info, Tags } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
 import { Button, Input, Select } from "@/components";
-import { Filter, Tags, Info, ChevronDown } from "lucide-react";
-import { Employee } from "./utils";
-import { useState, useRef, useEffect } from "react";
+
+import type { Employee } from "./utils";
 
 interface PipelineHeaderProps {
   searchTerm: string;
@@ -23,7 +25,7 @@ interface PipelineHeaderProps {
   validJourneyStatuses: string[];
 }
 
-export const PipelineHeader = ({
+export function PipelineHeader({
   searchTerm,
   setSearchTerm,
   rsmFilterDisplay,
@@ -40,8 +42,8 @@ export const PipelineHeader = ({
   kanbanBatchSize,
   setKanbanBatchSize,
   viewMode,
-  validJourneyStatuses
-}: PipelineHeaderProps) => {
+  validJourneyStatuses,
+}: PipelineHeaderProps) {
   const [showSearchHelp, setShowSearchHelp] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
@@ -54,18 +56,19 @@ export const PipelineHeader = ({
     };
 
     if (isStatusDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isStatusDropdownOpen]);
 
   const handleStatusToggle = (status: string) => {
     if (journeyStatusFilter.includes(status)) {
       setJourneyStatusFilter(journeyStatusFilter.filter(s => s !== status));
-    } else {
+    }
+    else {
       setJourneyStatusFilter([...journeyStatusFilter, status]);
     }
   };
@@ -79,7 +82,7 @@ export const PipelineHeader = ({
             <Input
               placeholder="Search journeys..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="w-full md:w-64"
             />
           </div>
@@ -101,14 +104,39 @@ export const PipelineHeader = ({
                   <p className="font-medium text-text">Search Options:</p>
                   <ul className="space-y-1 text-text-muted text-xs md:text-sm">
                     <li>• Regular search: Type any text to search journey names and companies</li>
-                    <li>• Tag search: Use <code className="px-1 py-0.5 bg-background-secondary rounded">tag:</code> prefix to search by tags</li>
+                    <li>
+                      • Tag search: Use
+                      <code className="px-1 py-0.5 bg-background-secondary rounded">tag:</code>
+                      {" "}
+                      prefix to search by tags
+                    </li>
                   </ul>
                   <p className="font-medium text-text mt-2">Examples:</p>
                   <ul className="space-y-1 text-text-muted text-xs md:text-sm">
-                    <li>• <code className="px-1 py-0.5 bg-background-secondary rounded">metalsa</code> - Find journeys with "metalsa" in name/company</li>
-                    <li>• <code className="px-1 py-0.5 bg-background-secondary rounded">tag:</code> - Show all journeys that have any tags</li>
-                    <li>• <code className="px-1 py-0.5 bg-background-secondary rounded">tag:test</code> - Find all journeys with tag "TEST"</li>
-                    <li>• <code className="px-1 py-0.5 bg-background-secondary rounded">metalsa tag:test</code> - Find "metalsa" journeys with tag "TEST"</li>
+                    <li>
+                      •
+                      <code className="px-1 py-0.5 bg-background-secondary rounded">metalsa</code>
+                      {" "}
+                      - Find journeys with "metalsa" in name/company
+                    </li>
+                    <li>
+                      •
+                      <code className="px-1 py-0.5 bg-background-secondary rounded">tag:</code>
+                      {" "}
+                      - Show all journeys that have any tags
+                    </li>
+                    <li>
+                      •
+                      <code className="px-1 py-0.5 bg-background-secondary rounded">tag:test</code>
+                      {" "}
+                      - Find all journeys with tag "TEST"
+                    </li>
+                    <li>
+                      •
+                      <code className="px-1 py-0.5 bg-background-secondary rounded">metalsa tag:test</code>
+                      {" "}
+                      - Find "metalsa" journeys with tag "TEST"
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -121,24 +149,28 @@ export const PipelineHeader = ({
             <label className="text-xs font-medium text-text-muted">RSM</label>
             <Select
               value={(() => {
-                if (rsmFilterDisplay === 'my-journeys' || rsmFilterDisplay === "") return rsmFilterDisplay;
+                if (rsmFilterDisplay === "my-journeys" || rsmFilterDisplay === "")
+                  return rsmFilterDisplay;
 
                 if (rsmDisplayNames) {
                   for (const [initials, displayName] of rsmDisplayNames) {
-                    if (displayName === rsmFilterDisplay) return initials;
+                    if (displayName === rsmFilterDisplay)
+                      return initials;
                   }
                 }
                 return rsmFilterDisplay;
               })()}
               onChange={(e) => {
-                if (e.target.value === 'my-journeys') {
+                if (e.target.value === "my-journeys") {
                   const userInitials = employee?.number;
                   setRsmFilter(userInitials || "");
-                  setRsmFilterDisplay('my-journeys');
-                } else if (e.target.value === "") {
+                  setRsmFilterDisplay("my-journeys");
+                }
+                else if (e.target.value === "") {
                   setRsmFilter("");
                   setRsmFilterDisplay("");
-                } else {
+                }
+                else {
                   const initials = e.target.value;
                   setRsmFilter(initials);
                   setRsmFilterDisplay(rsmDisplayNames?.get(initials) || initials);
@@ -147,11 +179,11 @@ export const PipelineHeader = ({
               options={(() => {
                 const baseOptions = [
                   { value: "", label: "All" },
-                  { value: "my-journeys", label: "Me    " }
+                  { value: "my-journeys", label: "Me    " },
                 ];
                 const rsmOptions = availableRsms.map((rsm: Employee) => ({
                   value: rsm.initials,
-                  label: rsmDisplayNames?.get(rsm.initials) || rsm.name
+                  label: rsmDisplayNames?.get(rsm.initials) || rsm.name,
                 }));
                 return [...baseOptions, ...rsmOptions];
               })()}
@@ -171,8 +203,8 @@ export const PipelineHeader = ({
                   {journeyStatusFilter.length === 0
                     ? "All"
                     : journeyStatusFilter.length === 1
-                    ? journeyStatusFilter[0]
-                    : `${journeyStatusFilter.length} selected`}
+                      ? journeyStatusFilter[0]
+                      : `${journeyStatusFilter.length} selected`}
                 </span>
                 <ChevronDown size={16} className="ml-2 flex-shrink-0" />
               </button>
@@ -213,12 +245,12 @@ export const PipelineHeader = ({
               <label className="text-xs font-medium text-text-muted">Show</label>
               <Select
                 value={kanbanBatchSize.toString()}
-                onChange={(e) => setKanbanBatchSize(Number(e.target.value))}
+                onChange={e => setKanbanBatchSize(Number(e.target.value))}
                 options={[
                   { value: "25", label: "25" },
                   { value: "50", label: "50" },
                   { value: "75", label: "75" },
-                  { value: "100", label: "100" }
+                  { value: "100", label: "100" },
                 ]}
                 className="w-full"
               />
@@ -226,30 +258,30 @@ export const PipelineHeader = ({
           )}
         </div>
       </div>
-    <div className="flex flex-wrap items-end gap-2 w-full md:w-auto">
-      {viewMode === "kanban" && showTags !== undefined && setShowTags && (
+      <div className="flex flex-wrap items-end gap-2 w-full md:w-auto">
+        {viewMode === "kanban" && showTags !== undefined && setShowTags && (
+          <Button
+            variant={showTags ? "secondary" : "secondary-outline"}
+            size="sm"
+            onClick={() => setShowTags(!showTags)}
+            className="flex items-center gap-2 justify-center flex-1 sm:flex-initial"
+          >
+            <Tags size={14} />
+            <span className="hidden sm:inline">{showTags ? "Hide Tags" : "Show Tags"}</span>
+            <span className="sm:hidden">Tags</span>
+          </Button>
+        )}
         <Button
-          variant={showTags ? "secondary" : "secondary-outline"}
+          variant="secondary-outline"
           size="sm"
-          onClick={() => setShowTags(!showTags)}
+          onClick={() => setIsFilterModalOpen(true)}
           className="flex items-center gap-2 justify-center flex-1 sm:flex-initial"
         >
-          <Tags size={14} />
-          <span className="hidden sm:inline">{showTags ? "Hide Tags" : "Show Tags"}</span>
-          <span className="sm:hidden">Tags</span>
+          <Filter size={14} />
+          <span className="hidden sm:inline">Advanced Filters</span>
+          <span className="sm:hidden">Filters</span>
         </Button>
-      )}
-      <Button
-        variant="secondary-outline"
-        size="sm"
-        onClick={() => setIsFilterModalOpen(true)}
-        className="flex items-center gap-2 justify-center flex-1 sm:flex-initial"
-      >
-        <Filter size={14} />
-        <span className="hidden sm:inline">Advanced Filters</span>
-        <span className="sm:hidden">Filters</span>
-      </Button>
+      </div>
     </div>
-  </div>
   );
-};
+}

@@ -1,16 +1,17 @@
-import { useMemo, useState, useEffect } from "react";
+import { FormStatus } from "@coesco/types";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-import { Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
-import { TableColumn } from "@/components/ui/table";
-import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
-import PageHeader from "@/components/layout/page-header";
-import { Filter } from "@/components/feature/toolbar";
-import { useToast } from "@/hooks/use-toast";
-import { FormStatus } from "@coesco/types";
+import type { Filter } from "@/components/feature/toolbar";
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
 
-const Forms = () => {
+import { Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
+import PageHeader from "@/components/layout/page-header";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
+
+function Forms() {
   const location = useLocation();
   const isAdminContext = location.pathname.startsWith("/admin");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,7 +24,7 @@ const Forms = () => {
     page: 1,
     limit: 25,
     filter: { status: "" },
-    include: [] as string[]
+    include: [] as string[],
   });
 
   const queryParams = useMemo(() => {
@@ -35,9 +36,9 @@ const Forms = () => {
     };
 
     const activeFilters = Object.fromEntries(
-      Object.entries(params.filter).filter(([_, value]) => value)
+      Object.entries(params.filter).filter(([_, value]) => value),
     );
-    
+
     if (Object.keys(activeFilters).length > 0) {
       q.filter = JSON.stringify(activeFilters);
     }
@@ -52,7 +53,7 @@ const Forms = () => {
   const fetchForms = async () => {
     await getForms("/forms", queryParams);
   };
-  
+
   const columns: TableColumn<any>[] = [
     {
       key: "name",
@@ -65,7 +66,7 @@ const Forms = () => {
     {
       key: "status",
       header: "Status",
-      render: (value) => <StatusBadge label={value as string} />,
+      render: value => <StatusBadge label={value as string} />,
     },
     {
       key: "submissions",
@@ -76,13 +77,15 @@ const Forms = () => {
       key: "createdBy.name",
       header: "Created By",
       render: (_, row) =>
-        row.createdBy ? (
-          <span className="text-text">
-            {`${row.createdBy.firstName} ${row.createdBy.lastName}`}
-          </span>
-        ) : (
-          "-"
-        ),
+        row.createdBy
+          ? (
+              <span className="text-text">
+                {`${row.createdBy.firstName} ${row.createdBy.lastName}`}
+              </span>
+            )
+          : (
+              "-"
+            ),
     },
   ];
 
@@ -91,40 +94,40 @@ const Forms = () => {
   };
 
   const handleSearch = (query: string) => {
-    console.log('Searching for:', query)
-  }
+    console.log("Searching for:", query);
+  };
 
   const handleParamsChange = (updates: Partial<typeof params>) => {
     setParams(prev => ({
       ...prev,
-      ...updates
-    }))
-  }
+      ...updates,
+    }));
+  };
 
   const handleFilterChange = (key: string, value: string) => {
     handleParamsChange({
-      filter: { ...params.filter, [key]: value }
-    })
-  }
+      filter: { ...params.filter, [key]: value },
+    });
+  };
 
   const handleExport = () => {
-    console.log('Exporting forms...', forms)
-  }
+    console.log("Exporting forms...", forms);
+  };
 
-  const formStatuses = Object.keys(FormStatus)
-  const formStatusOptions = formStatuses.map((status) =>{ return { value: status, label: status }})
+  const formStatuses = Object.keys(FormStatus);
+  const formStatusOptions = formStatuses.map((status) => { return { value: status, label: status }; });
 
   const filters: Filter[] = [
     {
-      key: 'status',
-      label: 'Status',
+      key: "status",
+      label: "Status",
       options: [
-        { value: '', label: 'All Statuses' },
-        ...formStatusOptions
+        { value: "", label: "All Statuses" },
+        ...formStatusOptions,
       ],
-      placeholder: 'Form Status'
+      placeholder: "Form Status",
     },
-  ]
+  ];
 
   useEffect(() => {
     fetchForms();
@@ -158,13 +161,13 @@ const Forms = () => {
           error={formsError}
           currentPage={forms?.meta?.page}
           totalPages={forms?.meta?.totalPages}
-          onPageChange={(page) => handleParamsChange({ page })}
+          onPageChange={page => handleParamsChange({ page })}
           sort={params.sort}
           order={params.order}
           onSortChange={(newSort, newOrder) => {
             handleParamsChange({
               sort: newSort as any,
-              order: newOrder as any
+              order: newOrder as any,
             });
           }}
           className="rounded border overflow-clip"
@@ -178,15 +181,15 @@ const Forms = () => {
           isOpen={isModalOpen}
           onClose={toggleModal}
           onSuccess={fetchForms}
-          createForm={(data) => createForm("/forms", data)}
+          createForm={data => createForm("/forms", data)}
           loading={createFormLoading}
         />
       )}
     </div>
   );
-};
+}
 
-const CreateFormModal = ({
+function CreateFormModal({
   isOpen,
   onClose,
   onSuccess,
@@ -198,22 +201,21 @@ const CreateFormModal = ({
   onSuccess: () => void;
   createForm: (params: any) => Promise<any>;
   loading: boolean;
-  }) => {
-  
+}) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     status: FormStatus.DRAFT,
-  })
-  
+  });
+
   const toast = useToast();
 
   const handleChange = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({
       ...prev,
-      ...updates
-    }))
-  }
+      ...updates,
+    }));
+  };
 
   const handleCreateForm = async () => {
     try {
@@ -222,11 +224,13 @@ const CreateFormModal = ({
         toast.success(`Form "${formData.name}" created successfully!`);
         onClose();
         onSuccess();
-      } else {
-        toast.error('Failed to create form. Please try again.');
       }
-    } catch (error) {
-      toast.error('An unexpected error occurred while creating the form.');
+      else {
+        toast.error("Failed to create form. Please try again.");
+      }
+    }
+    catch (error) {
+      toast.error("An unexpected error occurred while creating the form.");
     }
   };
 
@@ -235,7 +239,7 @@ const CreateFormModal = ({
       name: "",
       description: "",
       status: FormStatus.DRAFT,
-    })
+    });
   };
 
   useEffect(() => {
@@ -249,24 +253,24 @@ const CreateFormModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Create New Form"
-      size="xs">
+      size="xs"
+    >
       <div className="space-y-2">
         <label className="text-sm font-medium text-text">Form Name *</label>
         <input
           type="text"
           value={formData.name}
-          onChange={(e) => handleChange({ name: e.target.value })}
+          onChange={e => handleChange({ name: e.target.value })}
           placeholder="Enter form name"
           className="w-full px-3 py-2 border rounded-md"
         />
       </div>
 
-
       <div className="space-y-2">
         <label className="text-sm font-medium text-text">Description (Optional)</label>
         <textarea
           value={formData.description}
-          onChange={(e) => handleChange({ description: e.target.value })}
+          onChange={e => handleChange({ description: e.target.value })}
           placeholder="Enter form description"
           className="w-full px-3 py-2 border rounded-md h-20 resize-none"
         />
@@ -276,11 +280,12 @@ const CreateFormModal = ({
         onClick={handleCreateForm}
         disabled={formData.name === ""}
         variant="primary"
-        className="w-full">
+        className="w-full"
+      >
         {loading ? "Creating..." : "Create Form"}
       </Button>
     </Modal>
   );
-};
+}
 
 export default Forms;

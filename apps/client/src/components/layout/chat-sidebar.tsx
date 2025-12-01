@@ -1,11 +1,14 @@
+import { EllipsisIcon, FileText, MessageCircle, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { EllipsisIcon, Plus, FileText, MessageCircle } from "lucide-react";
+
+import type { IApiResponse } from "@/utils/types";
+
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
+
 import Loader from "../ui/loader";
 
-type Chat = {
+interface Chat {
   id: string;
   employeeId: string;
   name: string;
@@ -14,15 +17,15 @@ type Chat = {
   deletedAt: string | null;
   createdById: string;
   updatedById: string;
-};
+}
 
 const trimmer = (path: string) => path.replace(/\/$/, "");
 
-type ChatSidebarProps = {
+interface ChatSidebarProps {
   isOpen: boolean;
   onTooltipMouseEnter?: (e: React.MouseEvent, text: string) => void;
   onTooltipMouseLeave?: () => void;
-};
+}
 
 export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMouseLeave }: ChatSidebarProps) {
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
@@ -32,23 +35,23 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
-  
+
   const editInputRef = useRef<HTMLInputElement | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
   const { id: routeId } = useParams<{ id?: string }>();
-  
+
   const { get, delete: deleteChat, patch: patchChat } = useApi<IApiResponse<Chat[]>>();
-  
+
   const refresh = () => setRefreshToggle(prev => !prev);
-  
+
   // Fetch chats
   useEffect(() => {
     const fetchChats = async () => {
       setLoading(true);
       setError(null);
-      
+
       const response = await get("/chat", {
         sort: "createdAt",
         order: "desc",
@@ -57,10 +60,11 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
 
       if (response?.success) {
         setChats(response.data || []);
-      } else {
+      }
+      else {
         setError(response?.error || "Failed to load chats");
       }
-      
+
       setLoading(false);
     };
 
@@ -74,12 +78,16 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
 
   const handleDeleteChat = async (chatId: string) => {
     try {
-      if (!chatId) throw new Error("Missing chat id");
+      if (!chatId)
+        throw new Error("Missing chat id");
       await deleteChat(`/chat/${chatId}`);
-      if (routeId === chatId) navigate("/chat");
-    } catch (e) {
+      if (routeId === chatId)
+        navigate("/chat");
+    }
+    catch (e) {
       console.error((e as any)?.message || "Failed to delete chat");
-    } finally {
+    }
+    finally {
       refresh();
     }
   };
@@ -92,14 +100,17 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
   };
 
   const saveEditing = async () => {
-    if (!editingChatId) return;
+    if (!editingChatId)
+      return;
     try {
       await patchChat(`/chat/${editingChatId}`, {
         name: editingName.trim(),
       });
-    } catch (e) {
+    }
+    catch (e) {
       console.error((e as any)?.message || "Failed to rename chat");
-    } finally {
+    }
+    finally {
       setEditingChatId(null);
       setEditingName("");
       refresh();
@@ -112,7 +123,8 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
   };
 
   useEffect(() => {
-    if (!menuOpenFor) return;
+    if (!menuOpenFor)
+      return;
     const onDocClick = () => setMenuOpenFor(null);
     document.addEventListener("click", onDocClick);
     return () => document.removeEventListener("click", onDocClick);
@@ -124,9 +136,9 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
       refresh();
     };
 
-    window.addEventListener('chat:created', handleChatCreated);
+    window.addEventListener("chat:created", handleChatCreated);
     return () => {
-      window.removeEventListener('chat:created', handleChatCreated);
+      window.removeEventListener("chat:created", handleChatCreated);
     };
   }, []);
 
@@ -135,18 +147,21 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
       <div className="space-y-2">
         <button
           onClick={() => navigate("/chat")}
-          onMouseEnter={(e) => onTooltipMouseEnter?.(e, "New Chat")}
+          onMouseEnter={e => onTooltipMouseEnter?.(e, "New Chat")}
           onMouseLeave={onTooltipMouseLeave}
           className="flex items-center gap-3 p-2 rounded transition-all duration-300 hover:bg-primary/75 w-full cursor-pointer bg-primary text-background"
         >
           <Plus size={18} className="flex-shrink-0" />
           <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
             isOpen ? "opacity-100" : "opacity-0"
-          }`}>New Chat</span>
+          }`}
+          >
+            New Chat
+          </span>
         </button>
         <button
           onClick={() => navigate("/chat/recent")}
-          onMouseEnter={(e) => onTooltipMouseEnter?.(e, "Chats")}
+          onMouseEnter={e => onTooltipMouseEnter?.(e, "Chats")}
           onMouseLeave={onTooltipMouseLeave}
           className={`flex items-center gap-3 p-2 rounded transition-all duration-300 w-full cursor-pointer ${
             trimmer(location.pathname) === "/chat/recent"
@@ -157,11 +172,14 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
           <MessageCircle size={18} className="flex-shrink-0" />
           <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
             isOpen ? "opacity-100" : "opacity-0"
-          }`}>Chats</span>
+          }`}
+          >
+            Chats
+          </span>
         </button>
         <button
           onClick={() => navigate("/chat/resources")}
-          onMouseEnter={(e) => onTooltipMouseEnter?.(e, "Resources")}
+          onMouseEnter={e => onTooltipMouseEnter?.(e, "Resources")}
           onMouseLeave={onTooltipMouseLeave}
           className={`flex items-center gap-3 p-2 rounded transition-all duration-300 w-full cursor-pointer ${
             trimmer(location.pathname) === "/chat/resources"
@@ -172,102 +190,112 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
           <FileText size={18} className="flex-shrink-0" />
           <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
             isOpen ? "opacity-100" : "opacity-0"
-          }`}>Resources</span>
+          }`}
+          >
+            Resources
+          </span>
         </button>
 
         {isOpen && (
           <nav className="space-y-1 text-sm">
-          <h2 className="text-text-muted text-xs">Recent</h2>
-          {loading && (
-            <div className="px-4 py-2 flex items-center justify-center">
-              <Loader size="sm" />
-            </div>
-          )}
-          {!loading && error && (
-            <div className="px-4 py-2 text-red-600">Error: {error}</div>
-          )}
-          {!loading && !error && chats.length === 0 && (
-            <div className="px-4 py-2 text-text-muted text-center text-nowrap">
-              No recent chats
-            </div>
-          )}
-          {!loading &&
-            !error &&
-            chats.length > 0 &&
-            chats.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => handleSelectChat(c.id)}
-                className={`relative flex w-full items-center justify-between
+            <h2 className="text-text-muted text-xs">Recent</h2>
+            {loading && (
+              <div className="px-4 py-2 flex items-center justify-center">
+                <Loader size="sm" />
+              </div>
+            )}
+            {!loading && error && (
+              <div className="px-4 py-2 text-red-600">
+                Error:
+                {error}
+              </div>
+            )}
+            {!loading && !error && chats.length === 0 && (
+              <div className="px-4 py-2 text-text-muted text-center text-nowrap">
+                No recent chats
+              </div>
+            )}
+            {!loading
+              && !error
+              && chats.length > 0
+              && chats.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => handleSelectChat(c.id)}
+                  className={`relative flex w-full items-center justify-between
                             px-4 py-2 rounded cursor-pointer
                             ${isActive(c.id)
-                              ? "bg-background text-primary"
-                              : "text-text-muted hover:bg-surface"
-                            }`}
-                aria-current={isActive(c.id) ? "page" : undefined}
-              >
-                {editingChatId === c.id ? (
-                  <input
-                    ref={editInputRef}
-                    autoFocus
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    onBlur={saveEditing}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveEditing();
-                      if (e.key === "Escape") cancelEditing();
-                    }}
-                    className="flex-1 border-none bg-transparent text-sm focus:outline-none"
-                  />
-                ) : (
-                  <span className="truncate pr-8 font-medium text-sm">{c.name}</span>
-                )}
-
-                <button
-                  type="button"
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpenFor === c.id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setMenuOpenFor((open) => (open === c.id ? null : c.id));
-                  }}
-                  className="absolute right-2 inline-flex items-center justify-center rounded p-1
-                             text-text-muted hover:text-text"
+                  ? "bg-background text-primary"
+                  : "text-text-muted hover:bg-surface"
+                }`}
+                  aria-current={isActive(c.id) ? "page" : undefined}
                 >
-                  <EllipsisIcon size={16} />
-                </button>
+                  {editingChatId === c.id
+                    ? (
+                        <input
+                          ref={editInputRef}
+                          autoFocus
+                          value={editingName}
+                          onChange={e => setEditingName(e.target.value)}
+                          onBlur={saveEditing}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              saveEditing();
+                            if (e.key === "Escape")
+                              cancelEditing();
+                          }}
+                          className="flex-1 border-none bg-transparent text-sm focus:outline-none"
+                        />
+                      )
+                    : (
+                        <span className="truncate pr-8 font-medium text-sm">{c.name}</span>
+                      )}
 
-                {menuOpenFor === c.id && (
-                  <div
-                    role="menu"
-                    aria-label="Chat actions"
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute right-2 top-9 z-50 w-36 overflow-hidden rounded-md
-                               bg-background shadow-lg border border-border"
+                  <button
+                    type="button"
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpenFor === c.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMenuOpenFor(open => (open === c.id ? null : c.id));
+                    }}
+                    className="absolute right-2 inline-flex items-center justify-center rounded p-1
+                             text-text-muted hover:text-text"
                   >
-                    <button
-                      role="menuitem"
-                      type="button"
-                      onClick={() => startEditing(c)}
-                      className="w-full px-3 py-2 text-left text-sm
+                    <EllipsisIcon size={16} />
+                  </button>
+
+                  {menuOpenFor === c.id && (
+                    <div
+                      role="menu"
+                      aria-label="Chat actions"
+                      onClick={e => e.stopPropagation()}
+                      className="absolute right-2 top-9 z-50 w-36 overflow-hidden rounded-md
+                               bg-background shadow-lg border border-border"
+                    >
+                      <button
+                        role="menuitem"
+                        type="button"
+                        onClick={() => startEditing(c)}
+                        className="w-full px-3 py-2 text-left text-sm
                                  hover:bg-surface text-text"
-                    >
-                      Rename
-                    </button>
-                    <button
-                      role="menuitem"
-                      type="button"
-                      onClick={() => handleDeleteChat(c.id)}
-                      className="w-full px-3 py-2 text-left text-sm
+                      >
+                        Rename
+                      </button>
+                      <button
+                        role="menuitem"
+                        type="button"
+                        onClick={() => handleDeleteChat(c.id)}
+                        className="w-full px-3 py-2 text-left text-sm
                                  text-red-600 hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </button>
-            ))}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </button>
+              ))}
           </nav>
         )}
       </div>

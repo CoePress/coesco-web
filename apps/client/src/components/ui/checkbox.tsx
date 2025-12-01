@@ -11,7 +11,7 @@ interface CheckboxProps {
   className?: string;
 }
 
-const Checkbox = ({
+function Checkbox({
   label,
   name,
   checked = false,
@@ -20,7 +20,7 @@ const Checkbox = ({
   error,
   disabled = false,
   className = "",
-}: CheckboxProps) => {
+}: CheckboxProps) {
   return (
     <div className={`w-full flex items-center ${className}`}>
       <input
@@ -49,6 +49,6 @@ const Checkbox = ({
       {error && <p className="mt-1 text-sm text-error w-full">{error}</p>}
     </div>
   );
-};
+}
 
-export default Checkbox; 
+export default Checkbox;

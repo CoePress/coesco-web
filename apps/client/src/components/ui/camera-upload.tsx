@@ -1,8 +1,10 @@
-import React, { useRef, useState } from 'react';
-import { Camera, X, RotateCcw } from 'lucide-react';
-import Button from './button';
-import { useApi } from '@/hooks/use-api';
-import { useToast } from '@/hooks/use-toast';
+import { Camera, RotateCcw, X } from "lucide-react";
+import React, { useRef, useState } from "react";
+
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
+
+import Button from "./button";
 
 interface UploadedFile {
   id: string;
@@ -27,7 +29,7 @@ export const CameraUpload: React.FC<CameraUploadProps> = ({
   onChange,
   maxFiles = 10,
   disabled = false,
-  className = '',
+  className = "",
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -35,7 +37,8 @@ export const CameraUpload: React.FC<CameraUploadProps> = ({
   const toast = useToast();
 
   const handleFileSelect = async (files: FileList) => {
-    if (files.length === 0) return;
+    if (files.length === 0)
+      return;
 
     const remainingSlots = maxFiles - value.length;
     const filesToUpload = Array.from(files).slice(0, remainingSlots);
@@ -48,16 +51,16 @@ export const CameraUpload: React.FC<CameraUploadProps> = ({
 
     try {
       const formData = new FormData();
-      filesToUpload.forEach(file => {
-        formData.append('files', file);
+      filesToUpload.forEach((file) => {
+        formData.append("files", file);
       });
-      formData.append('tags', JSON.stringify([`form:${formId}`, 'form-submission']));
-      formData.append('isPublic', 'false');
-      formData.append('generateThumbnail', 'true');
+      formData.append("tags", JSON.stringify([`form:${formId}`, "form-submission"]));
+      formData.append("isPublic", "false");
+      formData.append("generateThumbnail", "true");
 
       const response = await post(`/assets/upload-multiple`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -72,13 +75,16 @@ export const CameraUpload: React.FC<CameraUploadProps> = ({
 
         onChange([...value, ...uploadedFiles]);
         toast.success(`${uploadedFiles.length} file(s) uploaded successfully`);
-      } else {
-        toast.error(response?.error || 'Upload failed');
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload files');
-    } finally {
+      else {
+        toast.error(response?.error || "Upload failed");
+      }
+    }
+    catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload files");
+    }
+    finally {
       setUploading(false);
     }
   };
@@ -97,16 +103,17 @@ export const CameraUpload: React.FC<CameraUploadProps> = ({
   const clearAll = () => {
     onChange([]);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0)
+      return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
   };
 
   return (
@@ -124,27 +131,39 @@ export const CameraUpload: React.FC<CameraUploadProps> = ({
       {/* Upload Area */}
       <div
         className={`border-2 border-dashed rounded-sm p-6 text-center transition-colors cursor-pointer ${
-          value.length > 0 ? 'border-success bg-success/5' : 'border-border hover:border-primary/50'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          value.length > 0 ? "border-success bg-success/5" : "border-border hover:border-primary/50"
+        } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
         onClick={() => !disabled && !uploading && fileInputRef.current?.click()}
       >
         <div className="flex flex-col items-center gap-3">
-          {uploading ? (
-            <>
-              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-              <p className="text-text-muted">Uploading files...</p>
-            </>
-          ) : (
-            <>
-              <Camera className="text-text-muted" size={32} />
-              <div>
-                <p className="text-text-muted mb-1">Click to upload photos</p>
-                <p className="text-xs text-text-muted">
-                  or drag and drop • Max {maxFiles} files • {value.length}/{maxFiles} uploaded
-                </p>
-              </div>
-            </>
-          )}
+          {uploading
+            ? (
+                <>
+                  <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+                  <p className="text-text-muted">Uploading files...</p>
+                </>
+              )
+            : (
+                <>
+                  <Camera className="text-text-muted" size={32} />
+                  <div>
+                    <p className="text-text-muted mb-1">Click to upload photos</p>
+                    <p className="text-xs text-text-muted">
+                      or drag and drop • Max
+                      {" "}
+                      {maxFiles}
+                      {" "}
+                      files •
+                      {" "}
+                      {value.length}
+                      /
+                      {maxFiles}
+                      {" "}
+                      uploaded
+                    </p>
+                  </div>
+                </>
+              )}
         </div>
       </div>
 
@@ -153,7 +172,9 @@ export const CameraUpload: React.FC<CameraUploadProps> = ({
         <div className="mt-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-text">
-              Uploaded Photos ({value.length})
+              Uploaded Photos (
+              {value.length}
+              )
             </span>
             <Button
               variant="secondary-outline"
@@ -168,7 +189,7 @@ export const CameraUpload: React.FC<CameraUploadProps> = ({
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {value.map((file) => (
+            {value.map(file => (
               <div
                 key={file.id}
                 className="relative group border border-border rounded-sm overflow-hidden"

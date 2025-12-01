@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import { Button } from "@/components";
 import Input from "@/components/ui/input";
 import Select from "@/components/ui/select";
 
-type MachineFormProps = {
+interface MachineFormProps {
   machine?: any;
   onClose: () => void;
-};
+}
 
-const MachineForm = ({ machine, onClose }: MachineFormProps) => {
+function MachineForm({ machine, onClose }: MachineFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     type: "",
@@ -37,7 +38,7 @@ const MachineForm = ({ machine, onClose }: MachineFormProps) => {
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -47,7 +48,7 @@ const MachineForm = ({ machine, onClose }: MachineFormProps) => {
         <label className="block text-sm font-medium mb-1">Name</label>
         <Input
           value={formData.name}
-          onChange={(e) => handleChange("name", e.target.value)}
+          onChange={e => handleChange("name", e.target.value)}
           placeholder="Enter machine name"
           required
         />
@@ -57,7 +58,7 @@ const MachineForm = ({ machine, onClose }: MachineFormProps) => {
         <label className="block text-sm font-medium mb-1">Type</label>
         <Input
           value={formData.type}
-          onChange={(e) => handleChange("type", e.target.value)}
+          onChange={e => handleChange("type", e.target.value)}
           placeholder="Enter machine type"
           required
         />
@@ -70,10 +71,10 @@ const MachineForm = ({ machine, onClose }: MachineFormProps) => {
             { value: "PLC", label: "PLC" },
             { value: "DCS", label: "DCS" },
             { value: "SCADA", label: "SCADA" },
-            { value: "HMI", label: "HMI" }
+            { value: "HMI", label: "HMI" },
           ]}
           value={formData.controllerType}
-          onChange={(e) => handleChange("controllerType", e.target.value)}
+          onChange={e => handleChange("controllerType", e.target.value)}
           placeholder="Select controller type"
         />
       </div>
@@ -82,7 +83,7 @@ const MachineForm = ({ machine, onClose }: MachineFormProps) => {
         <label className="block text-sm font-medium mb-1">Connection URL</label>
         <Input
           value={formData.connectionUrl}
-          onChange={(e) => handleChange("connectionUrl", e.target.value)}
+          onChange={e => handleChange("connectionUrl", e.target.value)}
           placeholder="Enter connection URL"
           required
         />
@@ -93,7 +94,7 @@ const MachineForm = ({ machine, onClose }: MachineFormProps) => {
           type="checkbox"
           id="enabled"
           checked={formData.enabled}
-          onChange={(e) => handleChange("enabled", e.target.checked)}
+          onChange={e => handleChange("enabled", e.target.checked)}
           className="w-4 h-4"
         />
         <label htmlFor="enabled" className="text-sm font-medium">
@@ -106,11 +107,13 @@ const MachineForm = ({ machine, onClose }: MachineFormProps) => {
           Cancel
         </Button>
         <button type="submit" className="border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5">
-          {machine ? "Update" : "Create"} Machine
+          {machine ? "Update" : "Create"}
+          {" "}
+          Machine
         </button>
       </div>
     </form>
   );
-};
+}
 
 export default MachineForm;

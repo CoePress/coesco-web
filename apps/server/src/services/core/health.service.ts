@@ -1,3 +1,5 @@
+import process from "node:process";
+
 import { cacheService } from "@/services";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
@@ -119,7 +121,7 @@ export class HealthService {
       status: anyDown ? "unhealthy" : allUp ? "healthy" : "degraded",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      version: process.env.npm_package_version || "unknown",
+      version: "1.0.0",
       checks,
     };
   }

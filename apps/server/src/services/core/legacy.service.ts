@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import process from "node:process";
 import odbc from "odbc";
 
 import { env } from "@/config/env";

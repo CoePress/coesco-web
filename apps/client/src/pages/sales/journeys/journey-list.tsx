@@ -1,16 +1,18 @@
-import { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+
 import { StatusBadge } from "@/components";
-import Table from "@/components/ui/table";
-import { formatCurrency, formatDate } from "@/utils";
-import { getPriorityConfig } from "./utils";
 import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { TrackJourneyModal } from "@/components/modals/track-journey-modal";
 import { UntrackJourneyModal } from "@/components/modals/untrack-journey-modal";
+import Table from "@/components/ui/table";
 import { useJourneyTracking } from "@/hooks/use-journey-tracking";
+import { formatCurrency, formatDate } from "@/utils";
 
-const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: string) => void }) => {
+import { getPriorityConfig } from "./utils";
+
+function TableActionsCell({ journey, onDelete }: { journey: any; onDelete: (id: string) => void }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTrackModal, setShowTrackModal] = useState(false);
@@ -26,18 +28,18 @@ const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: 
     };
 
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMenuOpen]);
 
   return (
     <div className="text-right">
       <div className="relative" ref={menuRef}>
-        <button 
+        <button
           className="text-neutral-400 hover:text-neutral-600 p-1"
           onClick={(e) => {
             e.stopPropagation();
@@ -50,22 +52,23 @@ const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: 
           <div className="absolute right-0 top-8 bg-background border border-border rounded shadow-lg py-1 z-50 min-w-32">
             <button
               className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
-                isTracked 
-                  ? 'text-blue-600 hover:bg-blue-50' 
-                  : 'text-neutral-400 hover:bg-gray-50'
+                isTracked
+                  ? "text-blue-600 hover:bg-blue-50"
+                  : "text-neutral-400 hover:bg-gray-50"
               }`}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMenuOpen(false);
                 if (isTracked) {
                   setShowUntrackModal(true);
-                } else {
+                }
+                else {
                   setShowTrackModal(true);
                 }
               }}
             >
               <Eye size={14} />
-              {isTracked ? 'Stop Tracking' : 'Track Journey'}
+              {isTracked ? "Stop Tracking" : "Track Journey"}
             </button>
             <button
               className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
@@ -90,7 +93,7 @@ const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: 
         }}
         journey={journey}
       />
-      
+
       <TrackJourneyModal
         isOpen={showTrackModal}
         onClose={() => setShowTrackModal(false)}
@@ -100,7 +103,7 @@ const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: 
           refreshTracking();
         }}
       />
-      
+
       <UntrackJourneyModal
         isOpen={showUntrackModal}
         onClose={() => setShowUntrackModal(false)}
@@ -113,7 +116,7 @@ const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: 
       />
     </div>
   );
-};
+}
 
 interface ListViewProps {
   journeys: any[];
@@ -126,14 +129,14 @@ interface ListViewProps {
   };
   onPageChange: (page: number) => void;
   onDeleteJourney: (journeyId: string) => void;
-  onSort: (field: string, order?: 'asc' | 'desc') => void;
+  onSort: (field: string, order?: "asc" | "desc") => void;
   stageLabel: (id?: number) => string;
   sortField?: string;
-  sortDirection?: 'asc' | 'desc';
+  sortDirection?: "asc" | "desc";
   isLoading?: boolean;
 }
 
-export const ListView = ({
+export function ListView({
   journeys,
   customersById,
   pagination,
@@ -144,7 +147,7 @@ export const ListView = ({
   sortField,
   sortDirection,
   isLoading,
-}: ListViewProps) => {
+}: ListViewProps) {
   const listContainerRef = useRef<HTMLDivElement>(null);
 
   const tableColumns = [
@@ -157,11 +160,14 @@ export const ListView = ({
 
         if (value && value !== "0" && customer?.name) {
           companyDisplay = customer.name;
-        } else if (row.companyName) {
+        }
+        else if (row.companyName) {
           companyDisplay = row.companyName;
-        } else if (row.target_account) {
+        }
+        else if (row.target_account) {
           companyDisplay = row.target_account;
-        } else {
+        }
+        else {
           companyDisplay = "NA";
         }
 
@@ -169,7 +175,7 @@ export const ListView = ({
           <Link
             to={`/sales/pipeline/${row.id}`}
             className="hover:underline"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="text-sm font-medium text-primary">
               {companyDisplay}
@@ -177,7 +183,7 @@ export const ListView = ({
             <div className="text-xs text-neutral-400">{row.contact}</div>
           </Link>
         );
-      }
+      },
     },
     {
       key: "stage",
@@ -208,12 +214,17 @@ export const ListView = ({
                 (value ?? 0) >= 70
                   ? "bg-green-500"
                   : (value ?? 0) >= 40
-                    ? "bg-yellow-500"
-                    : "bg-red-500"
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
               }`}
-              style={{ width: `${(value ?? 0)}%` }}></div>
+              style={{ width: `${(value ?? 0)}%` }}
+            >
+            </div>
           </div>
-          <span className="text-xs text-neutral-400">{value ?? 0}%</span>
+          <span className="text-xs text-neutral-400">
+            {value ?? 0}
+            %
+          </span>
         </div>
       ),
     },
@@ -266,4 +277,4 @@ export const ListView = ({
       </div>
     </div>
   );
-};
+}

@@ -1,12 +1,12 @@
 import React from "react";
 
-type Option = {
+interface Option {
   value: string;
   label: string;
   disabled?: boolean;
-};
+}
 
-type SelectProps = {
+interface SelectProps {
   options: Option[];
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -18,9 +18,9 @@ type SelectProps = {
   label?: string;
   placeholder?: string;
   error?: string;
-};
+}
 
-const Select = ({
+function Select({
   options,
   value,
   onChange,
@@ -32,13 +32,14 @@ const Select = ({
   label,
   placeholder,
   error,
-}: SelectProps) => {
+}: SelectProps) {
   return (
     <div>
       {label && (
         <label
           htmlFor={id}
-          className="block mb-2 text-sm font-medium text-text">
+          className="block mb-2 text-sm font-medium text-text"
+        >
           {label}
           {required && <span className="text-error ml-1">*</span>}
         </label>
@@ -57,19 +58,22 @@ const Select = ({
           disabled:bg-surface disabled:text-text-muted
           ${error ? "border-error" : "border-border"}
           ${className}
-        `}>
+        `}
+      >
         {placeholder && (
           <option
             value=""
-            disabled>
+            disabled
+          >
             {placeholder}
           </option>
         )}
-        {options.map((option) => (
+        {options.map(option => (
           <option
             key={option.value}
             value={option.value}
-            disabled={option.disabled}>
+            disabled={option.disabled}
+          >
             {option.label}
           </option>
         ))}
@@ -77,6 +81,6 @@ const Select = ({
       {error && <p className="mt-1 text-sm text-error">{error}</p>}
     </div>
   );
-};
+}
 
 export default Select;

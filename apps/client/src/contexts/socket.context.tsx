@@ -1,17 +1,21 @@
-import { env } from "@/config/env";
+import type { Socket } from "socket.io-client";
+
 import {
   createContext,
-  useContext,
-  useRef,
-  useEffect,
-  useState,
-  useMemo,
   useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
-import { Socket, Manager } from "socket.io-client";
+import { Manager } from "socket.io-client";
+
+import { env } from "@/config/env";
+
 import { useAuth } from "./auth.context";
 
-type SocketContextType = {
+interface SocketContextType {
   systemSocket: Socket | null;
   systemStatus: string;
   isSystemConnected: boolean;
@@ -35,17 +39,17 @@ type SocketContextType = {
   performanceSocket: Socket | null;
   isPerformanceConnected: boolean;
   calculatePerformanceSheet: (formData: Record<string, any>, scriptName: string, callback?: (result: any) => void) => void;
-};
+}
 
 export const SocketContext = createContext<SocketContextType | undefined>(
-  undefined
+  undefined,
 );
 
-type SocketProviderProps = {
+interface SocketProviderProps {
   children: React.ReactNode;
-};
+}
 
-export const SocketProvider = ({ children }: SocketProviderProps) => {
+export function SocketProvider({ children }: SocketProviderProps) {
   const { user } = useAuth();
   const managerRef = useRef<Manager | null>(null);
   const systemSocketRef = useRef<Socket | null>(null);
@@ -95,7 +99,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.on("system_status", (status: string) => {
         setSystemStatus(status);
       });
-    } else if (systemSocketRef.current?.connected) {
+    }
+    else if (systemSocketRef.current?.connected) {
       systemSocketRef.current.emit("system_status:subscribe");
     }
   }, []);
@@ -127,7 +132,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.on("machine_states", (data: any[]) => {
         setMachineStates(data);
       });
-    } else if (iotSocketRef.current?.connected && !isSubscribed) {
+    }
+    else if (iotSocketRef.current?.connected && !isSubscribed) {
       iotSocketRef.current.emit("machine_states:subscribe");
     }
   }, [isSubscribed]);
@@ -157,7 +163,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           setIsLockConnected(false);
         });
       }
-    } else {
+    }
+    else {
       if (lockSocketRef.current) {
         lockSocketRef.current.disconnect();
         lockSocketRef.current = null;
@@ -174,7 +181,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   useEffect(() => {
     if (user?.id) {
       initializeSessionSocket(user.id);
-    } else {
+    }
+    else {
       if (sessionSocketRef.current) {
         sessionSocketRef.current.disconnect();
         sessionSocketRef.current = null;
@@ -201,7 +209,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           setIsPerformanceConnected(false);
         });
       }
-    } else {
+    }
+    else {
       if (performanceSocketRef.current) {
         performanceSocketRef.current.disconnect();
         performanceSocketRef.current = null;
@@ -326,12 +335,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       {children}
     </SocketContext.Provider>
   );
-};
+}
 
-export const useSocket = () => {
+export function useSocket() {
   const context = useContext(SocketContext);
   if (context === undefined) {
     throw new Error("useSocket must be used within a SocketProvider");
   }
   return context;
-};
+}

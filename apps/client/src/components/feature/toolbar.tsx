@@ -1,21 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Search, Download } from 'lucide-react'
-import Select from '../ui/select'
-import Button from '../ui/button'
+import { Download, Search } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 
-export type FilterOption = {
+import Button from "../ui/button";
+import Select from "../ui/select";
+
+export interface FilterOption {
   value: string;
   label: string;
 }
 
-export type Filter = {
+export interface Filter {
   key: string;
   label: string;
   options: FilterOption[];
   placeholder?: string;
 }
 
-type Props = {
+interface Props {
   onSearch?: (query: string) => void;
   searchPlaceholder?: string;
   searchValue?: string;
@@ -29,7 +30,7 @@ type Props = {
   className?: string;
 }
 
-const Toolbar = ({
+function Toolbar({
   onSearch,
   searchPlaceholder = "Search...",
   searchValue,
@@ -40,50 +41,50 @@ const Toolbar = ({
   onExport,
   actions,
   children,
-  className = ""
-}: Props) => {
-  const [searchQuery, setSearchQuery] = useState(searchValue || '')
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
+  className = "",
+}: Props) {
+  const [searchQuery, setSearchQuery] = useState(searchValue || "");
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (searchValue !== undefined) {
-      setSearchQuery(searchValue)
+      setSearchQuery(searchValue);
     }
-  }, [searchValue])
+  }, [searchValue]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setSearchQuery(value)
+    const value = e.target.value;
+    setSearchQuery(value);
 
     if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current)
+      clearTimeout(debounceTimeout.current);
     }
 
     debounceTimeout.current = setTimeout(() => {
-      onSearch?.(value)
-    }, 300)
-  }
+      onSearch?.(value);
+    }, 300);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current)
+        clearTimeout(debounceTimeout.current);
       }
-      onSearch?.(searchQuery)
+      onSearch?.(searchQuery);
     }
-  }
+  };
 
   useEffect(() => {
     return () => {
       if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current)
+        clearTimeout(debounceTimeout.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const handleFilterChange = (key: string) => (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onFilterChange?.(key, e.target.value)
-  }
+    onFilterChange?.(key, e.target.value);
+  };
 
   return (
     <div className={`flex flex-col md:flex-row md:items-center gap-2 ${className}`}>
@@ -106,11 +107,11 @@ const Toolbar = ({
       )}
 
       <div className="flex items-center gap-2 flex-wrap">
-        {filters && filters.map((filter) => (
+        {filters && filters.map(filter => (
           <div key={filter.key} className="min-w-[150px]">
             <Select
               options={filter.options}
-              value={filterValues[filter.key] || ''}
+              value={filterValues[filter.key] || ""}
               onChange={handleFilterChange(filter.key)}
               placeholder={filter.placeholder || `Filter by ${filter.label}`}
               className="h-[38px]"
@@ -129,7 +130,7 @@ const Toolbar = ({
         {children}
       </div>
     </div>
-  )
+  );
 }
 
 export default Toolbar;

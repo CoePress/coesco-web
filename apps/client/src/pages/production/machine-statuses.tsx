@@ -1,18 +1,23 @@
-import { Button, Loader, PageHeader, StatusBadge } from "@/components";
-import Table, { TableColumn } from "@/components/ui/table";
-import Select from "@/components/ui/select";
-import DateRangePicker from "@/components/ui/date-range-picker";
-import { useApi } from "@/hooks/use-api";
-import { formatDuration, getVariantFromStatus } from "@/utils";
-import {  IApiResponse } from "@/utils/types";
-import { MachineStatus } from "@coesco/types";
-import { format, startOfToday, isSameDay } from "date-fns";
+import type { MachineStatus } from "@coesco/types";
+
+import { format, isSameDay, startOfToday } from "date-fns";
 import { RefreshCcw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const MachineStatuses = () => {
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
+
+import { Button, Loader, PageHeader, StatusBadge } from "@/components";
+import DateRangePicker from "@/components/ui/date-range-picker";
+import Select from "@/components/ui/select";
+import Table from "@/components/ui/table";
+import { useApi } from "@/hooks/use-api";
+import { formatDuration, getVariantFromStatus } from "@/utils";
+
+function MachineStatuses() {
   const parseDateParam = (param: string | null, fallback: Date) => {
-    if (!param) return fallback;
+    if (!param)
+      return fallback;
     const [year, month, day] = param.split("-").map(Number);
     const d = new Date(year, month - 1, day);
     return isNaN(d.getTime()) ? fallback : d;
@@ -23,7 +28,7 @@ const MachineStatuses = () => {
     return {
       machine: params.get("machine") || "",
       startDate: parseDateParam(params.get("startDate"), startOfToday()),
-      endDate: parseDateParam(params.get("endDate"), new Date())
+      endDate: parseDateParam(params.get("endDate"), new Date()),
     };
   };
 
@@ -36,7 +41,7 @@ const MachineStatuses = () => {
   const [selectedMachine, setSelectedMachine] = useState(initialValues.machine);
   const [dateRange, setDateRange] = useState({
     start: initialValues.startDate,
-    end: initialValues.endDate
+    end: initialValues.endDate,
   });
   const [machineStatuses, setMachineStatuses] = useState<MachineStatus[]>([]);
   const [machines, setMachines] = useState<any[]>([]);
@@ -44,11 +49,10 @@ const MachineStatuses = () => {
     page: 1,
     totalPages: 0,
     total: 0,
-    limit: 25
+    limit: 25,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
 
   const api = useApi<IApiResponse<MachineStatus[]>>();
   const machinesApi = useApi<IApiResponse<any[]>>();
@@ -81,14 +85,14 @@ const MachineStatuses = () => {
             order,
             ...(selectedMachine ? { "filter[machineId]": selectedMachine } : {}),
             ...(dateRange.start ? { "filter[startTime][gte]": dateRange.start.toISOString() } : {}),
-            ...(dateRange.end ? { "filter[startTime][lte]": dateRange.end.toISOString() } : {})
+            ...(dateRange.end ? { "filter[startTime][lte]": dateRange.end.toISOString() } : {}),
           }),
           machinesApi.get("/production/machines", {
             page: 1,
             limit: 100,
             sort: "name",
-            order: "asc"
-          })
+            order: "asc",
+          }),
         ]);
 
         if (statusesResponse) {
@@ -99,7 +103,7 @@ const MachineStatuses = () => {
               page: statusData.meta.page || 1,
               totalPages: statusData.meta.totalPages || 0,
               total: statusData.meta.total || 0,
-              limit: statusData.meta.limit || 25
+              limit: statusData.meta.limit || 25,
             });
           }
         }
@@ -108,9 +112,11 @@ const MachineStatuses = () => {
           const machineData = machinesResponse as IApiResponse<any[]>;
           setMachines(machineData.data || []);
         }
-      } catch (err) {
+      }
+      catch (err) {
         setError(api.error || machinesApi.error || "Failed to fetch data");
-      } finally {
+      }
+      finally {
         setLoading(false);
       }
     };
@@ -132,14 +138,14 @@ const MachineStatuses = () => {
             order,
             ...(selectedMachine ? { "filter[machineId]": selectedMachine } : {}),
             ...(dateRange.start ? { "filter[startTime][gte]": dateRange.start.toISOString() } : {}),
-            ...(dateRange.end ? { "filter[startTime][lte]": dateRange.end.toISOString() } : {})
+            ...(dateRange.end ? { "filter[startTime][lte]": dateRange.end.toISOString() } : {}),
           }),
           machinesApi.get("/production/machines", {
             page: 1,
             limit: 100,
             sort: "name",
-            order: "asc"
-          })
+            order: "asc",
+          }),
         ]);
 
         if (statusesResponse) {
@@ -150,7 +156,7 @@ const MachineStatuses = () => {
               page: statusData.meta.page || 1,
               totalPages: statusData.meta.totalPages || 0,
               total: statusData.meta.total || 0,
-              limit: statusData.meta.limit || 25
+              limit: statusData.meta.limit || 25,
             });
           }
         }
@@ -159,9 +165,11 @@ const MachineStatuses = () => {
           const machineData = machinesResponse as IApiResponse<any[]>;
           setMachines(machineData.data || []);
         }
-      } catch (err) {
+      }
+      catch (err) {
         setError(api.error || machinesApi.error || "Failed to fetch data");
-      } finally {
+      }
+      finally {
         setLoading(false);
       }
     };
@@ -180,7 +188,7 @@ const MachineStatuses = () => {
 
   const machineOptions = [
     { label: "All Machines", value: "" },
-    ...(machines?.map((machine) => ({
+    ...(machines?.map(machine => ({
       label: machine.name,
       value: machine.id,
     })) || []),
@@ -192,7 +200,7 @@ const MachineStatuses = () => {
       header: "Machine",
       render: (_: any, row: MachineStatus) => {
         const machine = machines?.find(
-          (machine) => machine.id === row.machineId
+          machine => machine.id === row.machineId,
         );
         return <div>{machine?.name}</div>;
       },
@@ -272,7 +280,7 @@ const MachineStatuses = () => {
   }
 
   if (error) {
-    return <div>{error}</div>
+    return <div>{error}</div>;
   }
 
   const updateURL = (machine: string, startDate: Date, endDate: Date) => {
@@ -280,7 +288,8 @@ const MachineStatuses = () => {
 
     if (machine) {
       params.set("machine", machine);
-    } else {
+    }
+    else {
       params.delete("machine");
     }
 
@@ -291,13 +300,14 @@ const MachineStatuses = () => {
     if (isDefaultDate) {
       params.delete("startDate");
       params.delete("endDate");
-    } else {
+    }
+    else {
       params.set("startDate", startStr);
       params.set("endDate", endStr);
     }
 
-    const newURL = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
-    window.history.replaceState({}, '', newURL);
+    const newURL = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+    window.history.replaceState({}, "", newURL);
   };
 
   const handleDateRangeChange = (startDate: Date, endDate: Date) => {
@@ -382,7 +392,7 @@ const MachineStatuses = () => {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default MachineStatuses
+export default MachineStatuses;

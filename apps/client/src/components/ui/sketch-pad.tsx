@@ -1,8 +1,10 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PenTool, Eraser, RotateCcw, Save, X } from 'lucide-react';
-import Button from './button';
-import { useApi } from '@/hooks/use-api';
-import { useToast } from '@/hooks/use-toast';
+import { Eraser, PenTool, RotateCcw, Save, X } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
+
+import Button from "./button";
 
 interface SketchPadProps {
   formId: string;
@@ -19,7 +21,7 @@ export const SketchPad: React.FC<SketchPadProps> = ({
   value,
   onChange,
   disabled = false,
-  className = '',
+  className = "",
   width = 600,
   height = 400,
 }) => {
@@ -27,9 +29,9 @@ export const SketchPad: React.FC<SketchPadProps> = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSketch, setHasSketch] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
+  const [tool, setTool] = useState<"pen" | "eraser">("pen");
   const [brushSize, setBrushSize] = useState(2);
-  const [color, setColor] = useState('#000000');
+  const [color, setColor] = useState("#000000");
   const [saving, setSaving] = useState(false);
 
   const { post } = useApi();
@@ -37,21 +39,23 @@ export const SketchPad: React.FC<SketchPadProps> = ({
 
   const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas)
+      return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx)
+      return;
 
     // Set canvas size
     canvas.width = width;
     canvas.height = height;
 
     // Set drawing styles
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
     // Clear canvas with white background
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Load existing sketch if available
@@ -74,19 +78,21 @@ export const SketchPad: React.FC<SketchPadProps> = ({
 
   const getEventPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
+    if (!canvas)
+      return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
-    if ('touches' in e) {
+    if ("touches" in e) {
       const touch = e.touches[0] || e.changedTouches[0];
       return {
         x: (touch.clientX - rect.left) * scaleX,
         y: (touch.clientY - rect.top) * scaleY,
       };
-    } else {
+    }
+    else {
       return {
         x: (e.clientX - rect.left) * scaleX,
         y: (e.clientY - rect.top) * scaleY,
@@ -95,22 +101,25 @@ export const SketchPad: React.FC<SketchPadProps> = ({
   };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (disabled) return;
+    if (disabled)
+      return;
 
     e.preventDefault();
     setIsDrawing(true);
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx)
+      return;
 
     const pos = getEventPos(e);
 
-    if (tool === 'eraser') {
-      ctx.globalCompositeOperation = 'destination-out';
+    if (tool === "eraser") {
+      ctx.globalCompositeOperation = "destination-out";
       ctx.lineWidth = brushSize * 2;
-    } else {
-      ctx.globalCompositeOperation = 'source-over';
+    }
+    else {
+      ctx.globalCompositeOperation = "source-over";
       ctx.strokeStyle = color;
       ctx.lineWidth = brushSize;
     }
@@ -120,13 +129,15 @@ export const SketchPad: React.FC<SketchPadProps> = ({
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || disabled) return;
+    if (!isDrawing || disabled)
+      return;
 
     e.preventDefault();
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx)
+      return;
 
     const pos = getEventPos(e);
     ctx.lineTo(pos.x, pos.y);
@@ -140,17 +151,19 @@ export const SketchPad: React.FC<SketchPadProps> = ({
 
   const clearSketch = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx || !canvas) return;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx || !canvas)
+      return;
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     setHasSketch(false);
   };
 
   const saveSketch = async () => {
     const canvas = canvasRef.current;
-    if (!canvas || !hasSketch) return;
+    if (!canvas || !hasSketch)
+      return;
 
     setSaving(true);
 
@@ -158,20 +171,20 @@ export const SketchPad: React.FC<SketchPadProps> = ({
       // Convert canvas to blob
       canvas.toBlob(async (blob) => {
         if (!blob) {
-          toast.error('Failed to create sketch data');
+          toast.error("Failed to create sketch data");
           setSaving(false);
           return;
         }
 
         const formData = new FormData();
-        formData.append('files', blob, `sketch-${Date.now()}.png`);
-        formData.append('tags', JSON.stringify([`form:${formId}`, 'form-submission', 'sketch']));
-        formData.append('isPublic', 'false');
-        formData.append('generateThumbnail', 'false');
+        formData.append("files", blob, `sketch-${Date.now()}.png`);
+        formData.append("tags", JSON.stringify([`form:${formId}`, "form-submission", "sketch"]));
+        formData.append("isPublic", "false");
+        formData.append("generateThumbnail", "false");
 
         const response = await post(`/assets/upload-multiple`, formData, {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         });
 
@@ -180,15 +193,18 @@ export const SketchPad: React.FC<SketchPadProps> = ({
           const sketchUrl = uploadedAsset.cdnUrl || uploadedAsset.url;
           onChange(sketchUrl);
           setIsModalOpen(false);
-          toast.success('Sketch saved successfully');
-        } else {
-          toast.error(response?.error || 'Failed to save sketch');
+          toast.success("Sketch saved successfully");
         }
-      }, 'image/png');
-    } catch (error) {
-      console.error('Sketch save error:', error);
-      toast.error('Failed to save sketch');
-    } finally {
+        else {
+          toast.error(response?.error || "Failed to save sketch");
+        }
+      }, "image/png");
+    }
+    catch (error) {
+      console.error("Sketch save error:", error);
+      toast.error("Failed to save sketch");
+    }
+    finally {
       setSaving(false);
     }
   };
@@ -198,9 +214,18 @@ export const SketchPad: React.FC<SketchPadProps> = ({
   };
 
   const colors = [
-    '#000000', '#FF0000', '#00FF00', '#0000FF',
-    '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500',
-    '#800080', '#008000', '#800000', '#808080'
+    "#000000",
+    "#FF0000",
+    "#00FF00",
+    "#0000FF",
+    "#FFFF00",
+    "#FF00FF",
+    "#00FFFF",
+    "#FFA500",
+    "#800080",
+    "#008000",
+    "#800000",
+    "#808080",
   ];
 
   return (
@@ -213,23 +238,25 @@ export const SketchPad: React.FC<SketchPadProps> = ({
           disabled={disabled}
           className={`w-full border-2 border-dashed rounded-sm p-8 text-center transition-colors cursor-pointer ${
             hasSketch || value
-              ? 'border-success bg-success/5'
-              : 'border-border hover:border-primary/50'
-          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              ? "border-success bg-success/5"
+              : "border-border hover:border-primary/50"
+          } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          {hasSketch || value ? (
-            <div className="flex flex-col items-center gap-2">
-              <PenTool className="text-success" size={32} />
-              <p className="text-success font-medium">Sketch saved</p>
-              <p className="text-xs text-text-muted">Click to edit sketch</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <PenTool className="text-text-muted" size={32} />
-              <p className="text-text-muted">Click to create sketch</p>
-              <p className="text-xs text-text-muted">Draw or markup images</p>
-            </div>
-          )}
+          {hasSketch || value
+            ? (
+                <div className="flex flex-col items-center gap-2">
+                  <PenTool className="text-success" size={32} />
+                  <p className="text-success font-medium">Sketch saved</p>
+                  <p className="text-xs text-text-muted">Click to edit sketch</p>
+                </div>
+              )
+            : (
+                <div className="flex flex-col items-center gap-2">
+                  <PenTool className="text-text-muted" size={32} />
+                  <p className="text-text-muted">Click to create sketch</p>
+                  <p className="text-xs text-text-muted">Draw or markup images</p>
+                </div>
+              )}
         </button>
       </div>
 
@@ -251,16 +278,16 @@ export const SketchPad: React.FC<SketchPadProps> = ({
             <div className="flex items-center gap-4 p-4 border-b border-border bg-background">
               <div className="flex items-center gap-2">
                 <Button
-                  variant={tool === 'pen' ? 'primary' : 'secondary-outline'}
+                  variant={tool === "pen" ? "primary" : "secondary-outline"}
                   size="sm"
-                  onClick={() => setTool('pen')}
+                  onClick={() => setTool("pen")}
                 >
                   <PenTool size={16} />
                 </Button>
                 <Button
-                  variant={tool === 'eraser' ? 'primary' : 'secondary-outline'}
+                  variant={tool === "eraser" ? "primary" : "secondary-outline"}
                   size="sm"
-                  onClick={() => setTool('eraser')}
+                  onClick={() => setTool("eraser")}
                 >
                   <Eraser size={16} />
                 </Button>
@@ -273,7 +300,7 @@ export const SketchPad: React.FC<SketchPadProps> = ({
                   min="1"
                   max="20"
                   value={brushSize}
-                  onChange={(e) => setBrushSize(Number(e.target.value))}
+                  onChange={e => setBrushSize(Number(e.target.value))}
                   className="w-16"
                 />
                 <div
@@ -285,16 +312,16 @@ export const SketchPad: React.FC<SketchPadProps> = ({
                 />
               </div>
 
-              {tool === 'pen' && (
+              {tool === "pen" && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-text-muted">Color:</span>
                   <div className="flex gap-1">
-                    {colors.map((c) => (
+                    {colors.map(c => (
                       <button
                         key={c}
                         onClick={() => setColor(c)}
                         className={`w-6 h-6 rounded border-2 ${
-                          color === c ? 'border-text' : 'border-border'
+                          color === c ? "border-text" : "border-border"
                         }`}
                         style={{ backgroundColor: c }}
                       />
@@ -311,7 +338,7 @@ export const SketchPad: React.FC<SketchPadProps> = ({
                   width={width}
                   height={height}
                   className="block max-w-full h-auto cursor-crosshair touch-none"
-                  style={{ width: '100%', height: 'auto' }}
+                  style={{ width: "100%", height: "auto" }}
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
                   onMouseUp={stopDrawing}
@@ -346,7 +373,7 @@ export const SketchPad: React.FC<SketchPadProps> = ({
                   className="flex items-center gap-2"
                 >
                   <Save size={16} />
-                  {saving ? 'Saving...' : 'Save Sketch'}
+                  {saving ? "Saving..." : "Save Sketch"}
                 </Button>
               </div>
             </div>

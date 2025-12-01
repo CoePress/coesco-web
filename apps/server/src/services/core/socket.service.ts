@@ -333,7 +333,7 @@ export class SocketService {
             const result = JSON.parse(outputData);
             resolve(result);
           }
-          catch (err) {
+          catch {
             logger.error("Failed to parse Python script output:", outputData);
             reject(new Error("Invalid JSON output from Python script"));
           }

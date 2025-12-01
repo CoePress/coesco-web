@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { Button } from '@/components';
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
+
+import { Button } from "@/components";
 
 interface DateRangePickerProps {
   startDate: Date;
@@ -9,38 +10,48 @@ interface DateRangePickerProps {
   className?: string;
 }
 
-const DateRangePicker = ({
+function DateRangePicker({
   startDate,
   endDate,
   onChange,
-  className = ''
-}: DateRangePickerProps) => {
+  className = "",
+}: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [tempStart, setTempStart] = useState<Date | null>(null);
   const [tempEnd, setTempEnd] = useState<Date | null>(null);
   const [viewMonth, setViewMonth] = useState<Date>(new Date());
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
-  const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   const formatDateRange = (): string => {
     const today = new Date();
-    const isToday = startDate.toDateString() === today.toDateString() &&
-                    endDate.toDateString() === today.toDateString();
+    const isToday = startDate.toDateString() === today.toDateString()
+      && endDate.toDateString() === today.toDateString();
 
     if (isToday) {
-      return 'Today';
+      return "Today";
     }
 
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
       });
     };
 
@@ -85,14 +96,17 @@ const DateRangePicker = ({
     if (!tempStart) {
       setTempStart(clickedDate);
       setTempEnd(null);
-    } else if (!tempEnd) {
+    }
+    else if (!tempEnd) {
       if (clickedDate < tempStart) {
         setTempEnd(tempStart);
         setTempStart(clickedDate);
-      } else {
+      }
+      else {
         setTempEnd(clickedDate);
       }
-    } else {
+    }
+    else {
       setTempStart(clickedDate);
       setTempEnd(null);
     }
@@ -101,7 +115,8 @@ const DateRangePicker = ({
   const applyDateRange = () => {
     if (tempStart && tempEnd) {
       onChange(tempStart, tempEnd);
-    } else if (tempStart) {
+    }
+    else if (tempStart) {
       onChange(tempStart, tempStart);
     }
     setIsOpen(false);
@@ -119,8 +134,10 @@ const DateRangePicker = ({
     const date = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day);
     const dateStr = date.toDateString();
 
-    if (tempStart && tempStart.toDateString() === dateStr) return true;
-    if (tempEnd && tempEnd.toDateString() === dateStr) return true;
+    if (tempStart && tempStart.toDateString() === dateStr)
+      return true;
+    if (tempEnd && tempEnd.toDateString() === dateStr)
+      return true;
 
     return false;
   };
@@ -140,9 +157,9 @@ const DateRangePicker = ({
   const isToday = (day: number): boolean => {
     const today = new Date();
     return (
-      today.getFullYear() === viewMonth.getFullYear() &&
-      today.getMonth() === viewMonth.getMonth() &&
-      today.getDate() === day
+      today.getFullYear() === viewMonth.getFullYear()
+      && today.getMonth() === viewMonth.getMonth()
+      && today.getDate() === day
     );
   };
 
@@ -177,17 +194,17 @@ const DateRangePicker = ({
             h-7 w-full rounded text-xs font-medium
             transition-colors cursor-pointer
             ${isSelected
-              ? 'bg-primary text-background'
-              : inRange
-              ? 'bg-primary/20 text-text'
-              : isCurrentDay
-              ? 'text-primary hover:bg-surface'
-              : 'text-text-muted hover:bg-surface'
+                ? "bg-primary text-background"
+                : inRange
+                  ? "bg-primary/20 text-text"
+                  : isCurrentDay
+                    ? "text-primary hover:bg-surface"
+                    : "text-text-muted hover:bg-surface"
             }
           `}
         >
           {day}
-        </button>
+        </button>,
       );
     }
 
@@ -226,7 +243,9 @@ const DateRangePicker = ({
                   </button>
 
                   <div className="text-xs font-medium text-text-muted">
-                    {monthNames[viewMonth.getMonth()]} {viewMonth.getFullYear()}
+                    {monthNames[viewMonth.getMonth()]}
+                    {" "}
+                    {viewMonth.getFullYear()}
                   </div>
 
                   <button
@@ -278,15 +297,19 @@ const DateRangePicker = ({
                   </div>
                 </div>
 
-                {!tempStart ? (
-                  <div className="mt-2 text-xs text-text-muted text-center">
-                    Select start date
-                  </div>
-                ) : !tempEnd ? (
-                  <div className="mt-2 text-xs text-text-muted text-center">
-                    Select end date (or click Apply for single day)
-                  </div>
-                ) : null}
+                {!tempStart
+                  ? (
+                      <div className="mt-2 text-xs text-text-muted text-center">
+                        Select start date
+                      </div>
+                    )
+                  : !tempEnd
+                      ? (
+                          <div className="mt-2 text-xs text-text-muted text-center">
+                            Select end date (or click Apply for single day)
+                          </div>
+                        )
+                      : null}
               </div>
             </div>
           </>
@@ -298,6 +321,6 @@ const DateRangePicker = ({
       </Button>
     </div>
   );
-};
+}
 
 export default DateRangePicker;

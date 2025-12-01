@@ -1,21 +1,23 @@
+import type { AuditLog } from "@coesco/types";
+
+import { format } from "date-fns";
 import { RefreshCcwIcon } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
+
 import {
-  StatusBadge,
-  PageHeader,
-  Table,
   Button,
   Modal,
+  PageHeader,
+  StatusBadge,
+  Table,
 } from "@/components";
-import { TableColumn } from "@/components/ui/table";
-import { useApi, instance } from "@/hooks/use-api";
-import { IApiResponse} from "@/utils/types";
-import { format } from "date-fns";
-import { AuditLog } from "@coesco/types";
+import { instance, useApi } from "@/hooks/use-api";
 
-type EmailLog = {
+interface EmailLog {
   id: string;
   to: string;
   subject: string;
@@ -25,9 +27,9 @@ type EmailLog = {
   error: string | null;
   createdAt: string;
   updatedAt: string;
-};
+}
 
-type BugReport = {
+interface BugReport {
   id: string;
   title: string;
   description: string;
@@ -40,9 +42,9 @@ type BugReport = {
   status: "SUBMITTED" | "IN_JIRA" | "FAILED";
   createdAt: string;
   createdById: string | null;
-};
+}
 
-type LoginAttempt = {
+interface LoginAttempt {
   id: string;
   userId: string | null;
   username: string | null;
@@ -53,31 +55,31 @@ type LoginAttempt = {
   userAgent: string | null;
   location: any;
   timestamp: string;
-};
+}
 
-type LogFile = {
+interface LogFile {
   name: string;
   size?: number;
   modified?: string;
-};
+}
 
-type BackupFile = {
+interface BackupFile {
   name: string;
   size?: number;
   modified?: string;
-};
+}
 
 type LogView = "audit" | "email" | "bugs" | "login" | "system" | "backups";
 
-const Logs = () => {
+function Logs() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const getInitialView = (): LogView => {
-    const view = searchParams.get('view');
-    if (view && ['email', 'bugs', 'login', 'system', 'backups'].includes(view)) {
-      return view as 'email' | 'bugs' | 'login' | 'system' | 'backups';
+    const view = searchParams.get("view");
+    if (view && ["email", "bugs", "login", "system", "backups"].includes(view)) {
+      return view as "email" | "bugs" | "login" | "system" | "backups";
     }
-    return 'audit';
+    return "audit";
   };
 
   const [view, setView] = useState<LogView>(getInitialView);
@@ -207,9 +209,9 @@ const Logs = () => {
       header: "Timestamp",
       render: (_, row) => (
         <div className="flex flex-col">
-          <span>{row.createdAt ? format(new Date(row.createdAt), "MM/dd/yyyy") : 'N/A'}</span>
+          <span>{row.createdAt ? format(new Date(row.createdAt), "MM/dd/yyyy") : "N/A"}</span>
           <span className="text-xs text-text-muted">
-            {row.createdAt ? format(new Date(row.createdAt), "hh:mm:ss a") : 'N/A'}
+            {row.createdAt ? format(new Date(row.createdAt), "hh:mm:ss a") : "N/A"}
           </span>
         </div>
       ),
@@ -250,7 +252,8 @@ const Logs = () => {
           onClick={() => {
             setSelectedLog(row);
             setIsDetailsModalOpen(true);
-          }}>
+          }}
+        >
           View
         </Button>
       ),
@@ -263,9 +266,9 @@ const Logs = () => {
       header: "Timestamp",
       render: (_, row) => (
         <div className="flex flex-col">
-          <span>{row.createdAt ? format(new Date(row.createdAt), "MM/dd/yyyy") : 'N/A'}</span>
+          <span>{row.createdAt ? format(new Date(row.createdAt), "MM/dd/yyyy") : "N/A"}</span>
           <span className="text-xs text-text-muted">
-            {row.createdAt ? format(new Date(row.createdAt), "hh:mm:ss a") : 'N/A'}
+            {row.createdAt ? format(new Date(row.createdAt), "hh:mm:ss a") : "N/A"}
           </span>
         </div>
       ),
@@ -294,8 +297,8 @@ const Logs = () => {
             row.status === "SENT"
               ? "success"
               : row.status === "FAILED"
-              ? "error"
-              : "default"
+                ? "error"
+                : "default"
           }
         />
       ),
@@ -305,16 +308,18 @@ const Logs = () => {
       header: "Sent At",
       render: (_, row) => (
         <div className="flex flex-col">
-          {row.sentAt ? (
-            <>
-              <span>{format(new Date(row.sentAt), "MM/dd/yyyy")}</span>
-              <span className="text-xs text-text-muted">
-                {format(new Date(row.sentAt), "hh:mm:ss a")}
-              </span>
-            </>
-          ) : (
-            <span className="text-text-muted text-sm">-</span>
-          )}
+          {row.sentAt
+            ? (
+                <>
+                  <span>{format(new Date(row.sentAt), "MM/dd/yyyy")}</span>
+                  <span className="text-xs text-text-muted">
+                    {format(new Date(row.sentAt), "hh:mm:ss a")}
+                  </span>
+                </>
+              )
+            : (
+                <span className="text-text-muted text-sm">-</span>
+              )}
         </div>
       ),
     },
@@ -330,7 +335,8 @@ const Logs = () => {
           onClick={() => {
             setSelectedEmailLog(row);
             setIsEmailDetailsModalOpen(true);
-          }}>
+          }}
+        >
           View
         </Button>
       ),
@@ -354,7 +360,8 @@ const Logs = () => {
         <Button
           variant="secondary-outline"
           size="sm"
-          onClick={() => handleViewLogFile(row.name)}>
+          onClick={() => handleViewLogFile(row.name)}
+        >
           View
         </Button>
       ),
@@ -377,9 +384,9 @@ const Logs = () => {
       header: "Timestamp",
       render: (_, row) => (
         <div className="flex flex-col">
-          <span>{row.createdAt ? format(new Date(row.createdAt), "MM/dd/yyyy") : 'N/A'}</span>
+          <span>{row.createdAt ? format(new Date(row.createdAt), "MM/dd/yyyy") : "N/A"}</span>
           <span className="text-xs text-text-muted">
-            {row.createdAt ? format(new Date(row.createdAt), "hh:mm:ss a") : 'N/A'}
+            {row.createdAt ? format(new Date(row.createdAt), "hh:mm:ss a") : "N/A"}
           </span>
         </div>
       ),
@@ -395,7 +402,7 @@ const Logs = () => {
       key: "userName",
       header: "Reported By",
       render: (_, row) => (
-        <span className="text-sm">{row.userName || row.userEmail || '-'}</span>
+        <span className="text-sm">{row.userName || row.userEmail || "-"}</span>
       ),
     },
     {
@@ -408,8 +415,8 @@ const Logs = () => {
             row.status === "IN_JIRA"
               ? "success"
               : row.status === "FAILED"
-              ? "error"
-              : "default"
+                ? "error"
+                : "default"
           }
         />
       ),
@@ -418,13 +425,15 @@ const Logs = () => {
       key: "issueKey",
       header: "Jira Issue",
       render: (_, row) => (
-        row.issueKey && row.issueUrl ? (
-          <a href={row.issueUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
-            {row.issueKey}
-          </a>
-        ) : (
-          <span className="text-text-muted text-sm">-</span>
-        )
+        row.issueKey && row.issueUrl
+          ? (
+              <a href={row.issueUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
+                {row.issueKey}
+              </a>
+            )
+          : (
+              <span className="text-text-muted text-sm">-</span>
+            )
       ),
     },
     {
@@ -439,7 +448,8 @@ const Logs = () => {
           onClick={() => {
             setSelectedBugReport(row);
             setIsBugDetailsModalOpen(true);
-          }}>
+          }}
+        >
           View
         </Button>
       ),
@@ -452,9 +462,9 @@ const Logs = () => {
       header: "Timestamp",
       render: (_, row) => (
         <div className="flex flex-col">
-          <span>{row.timestamp ? format(new Date(row.timestamp), "MM/dd/yyyy") : 'N/A'}</span>
+          <span>{row.timestamp ? format(new Date(row.timestamp), "MM/dd/yyyy") : "N/A"}</span>
           <span className="text-xs text-text-muted">
-            {row.timestamp ? format(new Date(row.timestamp), "hh:mm:ss a") : 'N/A'}
+            {row.timestamp ? format(new Date(row.timestamp), "hh:mm:ss a") : "N/A"}
           </span>
         </div>
       ),
@@ -463,7 +473,7 @@ const Logs = () => {
       key: "username",
       header: "Username",
       render: (_, row) => (
-        <span className="text-sm">{row.username || '-'}</span>
+        <span className="text-sm">{row.username || "-"}</span>
       ),
     },
     {
@@ -490,7 +500,7 @@ const Logs = () => {
       key: "ipAddress",
       header: "IP Address",
       render: (_, row) => (
-        <span className="font-mono text-sm">{row.ipAddress || '-'}</span>
+        <span className="font-mono text-sm">{row.ipAddress || "-"}</span>
       ),
     },
     {
@@ -505,7 +515,8 @@ const Logs = () => {
           onClick={() => {
             setSelectedLoginAttempt(row);
             setIsLoginDetailsModalOpen(true);
-          }}>
+          }}
+        >
           View
         </Button>
       ),
@@ -539,13 +550,14 @@ const Logs = () => {
   const handleViewLogFile = async (filename: string) => {
     try {
       const response = await instance.get(`/admin/logs/files/${encodeURIComponent(filename)}`, {
-        responseType: 'text',
+        responseType: "text",
       });
       const content = response.data || "";
       setLogFileContent(content.trim() === "" ? "Log file is empty" : content);
       setSelectedLogFile(filename);
       setIsLogFileModalOpen(true);
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Failed to load log file:", error);
       setLogFileContent("Error loading log file. Please try again.");
     }
@@ -595,7 +607,8 @@ const Logs = () => {
           <span className={levelColor}>{line}</span>
         </div>
       );
-    } catch {
+    }
+    catch {
       return (
         <div key={index} className="font-mono text-xs text-text whitespace-nowrap">
           {line}
@@ -607,15 +620,20 @@ const Logs = () => {
   const refresh = () => {
     if (view === "audit") {
       fetchAuditLogs();
-    } else if (view === "email") {
+    }
+    else if (view === "email") {
       fetchEmailLogs();
-    } else if (view === "bugs") {
+    }
+    else if (view === "bugs") {
       fetchBugReports();
-    } else if (view === "login") {
+    }
+    else if (view === "login") {
       fetchLoginAttempts();
-    } else if (view === "system") {
+    }
+    else if (view === "system") {
       fetchLogFiles();
-    } else if (view === "backups") {
+    }
+    else if (view === "backups") {
       fetchBackupFiles();
     }
   };
@@ -657,9 +675,9 @@ const Logs = () => {
   }, [backupParams]);
 
   useEffect(() => {
-    const view = searchParams.get('view');
-    const newView: LogView =
-      (view && ['email', 'bugs', 'login', 'system', 'backups'].includes(view)) ? view as 'email' | 'bugs' | 'login' | 'system' | 'backups' : 'audit';
+    const view = searchParams.get("view");
+    const newView: LogView
+      = (view && ["email", "bugs", "login", "system", "backups"].includes(view)) ? view as "email" | "bugs" | "login" | "system" | "backups" : "audit";
 
     setView(newView);
   }, [searchParams]);
@@ -667,15 +685,20 @@ const Logs = () => {
   useEffect(() => {
     if (view === "audit") {
       fetchAuditLogs();
-    } else if (view === "email") {
+    }
+    else if (view === "email") {
       fetchEmailLogs();
-    } else if (view === "bugs") {
+    }
+    else if (view === "bugs") {
       fetchBugReports();
-    } else if (view === "login") {
+    }
+    else if (view === "login") {
       fetchLoginAttempts();
-    } else if (view === "system") {
+    }
+    else if (view === "system") {
       fetchLogFiles();
-    } else if (view === "backups") {
+    }
+    else if (view === "backups") {
       fetchBackupFiles();
     }
   }, [view]);
@@ -683,53 +706,54 @@ const Logs = () => {
   const handleParamsChange = (updates: Partial<typeof params>) => {
     setParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
   const handleEmailParamsChange = (updates: Partial<typeof emailParams>) => {
     setEmailParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
   const handleBugParamsChange = (updates: Partial<typeof bugParams>) => {
     setBugParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
   const handleLoginParamsChange = (updates: Partial<typeof loginParams>) => {
     setLoginParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
   const handleSystemParamsChange = (updates: Partial<typeof systemParams>) => {
     setSystemParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
   const handleBackupParamsChange = (updates: Partial<typeof backupParams>) => {
     setBackupParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
   const handleViewChange = (newView: LogView) => {
     setView(newView);
-    setSearchParams(prev => {
+    setSearchParams((prev) => {
       const newParams = new URLSearchParams(prev);
-      if (newView === 'audit') {
-        newParams.delete('view');
-      } else {
-        newParams.set('view', newView);
+      if (newView === "audit") {
+        newParams.delete("view");
+      }
+      else {
+        newParams.set("view", newView);
       }
       return newParams;
     });
@@ -740,61 +764,61 @@ const Logs = () => {
       <div className="flex gap-2">
         <div className="flex gap-1 bg-surface p-1 rounded border border-border">
           <button
-            onClick={() => handleViewChange('audit')}
+            onClick={() => handleViewChange("audit")}
             className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-              view === 'audit'
-                ? 'bg-primary text-background'
-                : 'text-text-muted hover:text-text'
+              view === "audit"
+                ? "bg-primary text-background"
+                : "text-text-muted hover:text-text"
             }`}
           >
             Records
           </button>
           <button
-            onClick={() => handleViewChange('email')}
+            onClick={() => handleViewChange("email")}
             className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-              view === 'email'
-                ? 'bg-primary text-background'
-                : 'text-text-muted hover:text-text'
+              view === "email"
+                ? "bg-primary text-background"
+                : "text-text-muted hover:text-text"
             }`}
           >
             Emails
           </button>
           <button
-            onClick={() => handleViewChange('bugs')}
+            onClick={() => handleViewChange("bugs")}
             className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-              view === 'bugs'
-                ? 'bg-primary text-background'
-                : 'text-text-muted hover:text-text'
+              view === "bugs"
+                ? "bg-primary text-background"
+                : "text-text-muted hover:text-text"
             }`}
           >
             Bugs
           </button>
           <button
-            onClick={() => handleViewChange('login')}
+            onClick={() => handleViewChange("login")}
             className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-              view === 'login'
-                ? 'bg-primary text-background'
-                : 'text-text-muted hover:text-text'
+              view === "login"
+                ? "bg-primary text-background"
+                : "text-text-muted hover:text-text"
             }`}
           >
             Login
           </button>
           <button
-            onClick={() => handleViewChange('system')}
+            onClick={() => handleViewChange("system")}
             className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-              view === 'system'
-                ? 'bg-primary text-background'
-                : 'text-text-muted hover:text-text'
+              view === "system"
+                ? "bg-primary text-background"
+                : "text-text-muted hover:text-text"
             }`}
           >
             System
           </button>
           <button
-            onClick={() => handleViewChange('backups')}
+            onClick={() => handleViewChange("backups")}
             className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-              view === 'backups'
-                ? 'bg-primary text-background'
-                : 'text-text-muted hover:text-text'
+              view === "backups"
+                ? "bg-primary text-background"
+                : "text-text-muted hover:text-text"
             }`}
           >
             Backups
@@ -817,129 +841,139 @@ const Logs = () => {
 
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
         <div className="flex-1 overflow-hidden">
-          {view === "audit" ? (
-            <Table<AuditLog>
-              columns={columns}
-              data={auditLogs?.data || []}
-              total={auditLogs?.meta?.total || 0}
-              idField="id"
-              pagination
-              loading={loading}
-              error={error}
-              currentPage={auditLogs?.meta?.page}
-              totalPages={auditLogs?.meta?.totalPages}
-              onPageChange={(page) => handleParamsChange({ page })}
-              sort={params.sort}
-              order={params.order}
-              onSortChange={(newSort, newOrder) => {
-                handleParamsChange({
-                  sort: newSort as any,
-                  order: newOrder as any
-                });
-              }}
-              className="rounded border overflow-clip"
-              emptyMessage="No audit logs found"
-            />
-          ) : view === "email" ? (
-            <Table<EmailLog>
-              columns={emailColumns}
-              data={emailLogs?.data || []}
-              total={emailLogs?.meta?.total || 0}
-              idField="id"
-              pagination
-              loading={emailLoading}
-              error={emailError}
-              currentPage={emailLogs?.meta?.page}
-              totalPages={emailLogs?.meta?.totalPages}
-              onPageChange={(page) => handleEmailParamsChange({ page })}
-              sort={emailParams.sort}
-              order={emailParams.order}
-              onSortChange={(newSort, newOrder) => {
-                handleEmailParamsChange({
-                  sort: newSort as any,
-                  order: newOrder as any
-                });
-              }}
-              className="rounded border overflow-clip"
-              emptyMessage="No email logs found"
-            />
-          ) : view === "bugs" ? (
-            <Table<BugReport>
-              columns={bugColumns}
-              data={bugReports?.data || []}
-              total={bugReports?.meta?.total || 0}
-              idField="id"
-              pagination
-              loading={bugsLoading}
-              error={bugsError}
-              currentPage={bugReports?.meta?.page}
-              totalPages={bugReports?.meta?.totalPages}
-              onPageChange={(page) => handleBugParamsChange({ page })}
-              sort={bugParams.sort}
-              order={bugParams.order}
-              onSortChange={(newSort, newOrder) => {
-                handleBugParamsChange({
-                  sort: newSort as any,
-                  order: newOrder as any
-                });
-              }}
-              className="rounded border overflow-clip"
-              emptyMessage="No bug reports found"
-            />
-          ) : view === "login" ? (
-            <Table<LoginAttempt>
-              columns={loginColumns}
-              data={loginAttempts?.data || []}
-              total={loginAttempts?.meta?.total || 0}
-              idField="id"
-              pagination
-              loading={loginsLoading}
-              error={loginsError}
-              currentPage={loginAttempts?.meta?.page}
-              totalPages={loginAttempts?.meta?.totalPages}
-              onPageChange={(page) => handleLoginParamsChange({ page })}
-              sort={loginParams.sort}
-              order={loginParams.order}
-              onSortChange={(newSort, newOrder) => {
-                handleLoginParamsChange({
-                  sort: newSort as any,
-                  order: newOrder as any
-                });
-              }}
-              className="rounded border overflow-clip"
-              emptyMessage="No login attempts found"
-            />
-          ) : view === "system" ? (
-            <Table<LogFile>
-              columns={logFileColumns}
-              data={(logFiles?.data || []).map(name => ({ name }))}
-              total={logFiles?.meta?.total || logFiles?.data?.length || 0}
-              idField="name"
-              pagination
-              loading={logFilesLoading}
-              error={logFilesError}
-              currentPage={logFiles?.meta?.page || systemParams.page}
-              totalPages={logFiles?.meta?.totalPages || Math.ceil((logFiles?.data?.length || 0) / systemParams.limit)}
-              onPageChange={(page) => handleSystemParamsChange({ page })}
-              className="rounded border overflow-clip"
-              emptyMessage="No log files found"
-            />
-          ) : (
-            <Table<BackupFile>
-              columns={backupFileColumns}
-              data={(backupFiles?.data || []).map(name => ({ name }))}
-              total={backupFiles?.meta?.total || backupFiles?.data?.length || 0}
-              idField="name"
-              pagination
-              loading={backupFilesLoading}
-              error={backupFilesError}
-              currentPage={backupFiles?.meta?.page || backupParams.page}
-              totalPages={backupFiles?.meta?.totalPages || Math.ceil((backupFiles?.data?.length || 0) / backupParams.limit)}
-              onPageChange={(page) => handleBackupParamsChange({ page })}
-              className="rounded border overflow-clip"
-              emptyMessage="No backup files found"
-            />
-          )}
+          {view === "audit"
+            ? (
+                <Table<AuditLog>
+                  columns={columns}
+                  data={auditLogs?.data || []}
+                  total={auditLogs?.meta?.total || 0}
+                  idField="id"
+                  pagination
+                  loading={loading}
+                  error={error}
+                  currentPage={auditLogs?.meta?.page}
+                  totalPages={auditLogs?.meta?.totalPages}
+                  onPageChange={page => handleParamsChange({ page })}
+                  sort={params.sort}
+                  order={params.order}
+                  onSortChange={(newSort, newOrder) => {
+                    handleParamsChange({
+                      sort: newSort as any,
+                      order: newOrder as any,
+                    });
+                  }}
+                  className="rounded border overflow-clip"
+                  emptyMessage="No audit logs found"
+                />
+              )
+            : view === "email"
+              ? (
+                  <Table<EmailLog>
+                    columns={emailColumns}
+                    data={emailLogs?.data || []}
+                    total={emailLogs?.meta?.total || 0}
+                    idField="id"
+                    pagination
+                    loading={emailLoading}
+                    error={emailError}
+                    currentPage={emailLogs?.meta?.page}
+                    totalPages={emailLogs?.meta?.totalPages}
+                    onPageChange={page => handleEmailParamsChange({ page })}
+                    sort={emailParams.sort}
+                    order={emailParams.order}
+                    onSortChange={(newSort, newOrder) => {
+                      handleEmailParamsChange({
+                        sort: newSort as any,
+                        order: newOrder as any,
+                      });
+                    }}
+                    className="rounded border overflow-clip"
+                    emptyMessage="No email logs found"
+                  />
+                )
+              : view === "bugs"
+                ? (
+                    <Table<BugReport>
+                      columns={bugColumns}
+                      data={bugReports?.data || []}
+                      total={bugReports?.meta?.total || 0}
+                      idField="id"
+                      pagination
+                      loading={bugsLoading}
+                      error={bugsError}
+                      currentPage={bugReports?.meta?.page}
+                      totalPages={bugReports?.meta?.totalPages}
+                      onPageChange={page => handleBugParamsChange({ page })}
+                      sort={bugParams.sort}
+                      order={bugParams.order}
+                      onSortChange={(newSort, newOrder) => {
+                        handleBugParamsChange({
+                          sort: newSort as any,
+                          order: newOrder as any,
+                        });
+                      }}
+                      className="rounded border overflow-clip"
+                      emptyMessage="No bug reports found"
+                    />
+                  )
+                : view === "login"
+                  ? (
+                      <Table<LoginAttempt>
+                        columns={loginColumns}
+                        data={loginAttempts?.data || []}
+                        total={loginAttempts?.meta?.total || 0}
+                        idField="id"
+                        pagination
+                        loading={loginsLoading}
+                        error={loginsError}
+                        currentPage={loginAttempts?.meta?.page}
+                        totalPages={loginAttempts?.meta?.totalPages}
+                        onPageChange={page => handleLoginParamsChange({ page })}
+                        sort={loginParams.sort}
+                        order={loginParams.order}
+                        onSortChange={(newSort, newOrder) => {
+                          handleLoginParamsChange({
+                            sort: newSort as any,
+                            order: newOrder as any,
+                          });
+                        }}
+                        className="rounded border overflow-clip"
+                        emptyMessage="No login attempts found"
+                      />
+                    )
+                  : view === "system"
+                    ? (
+                        <Table<LogFile>
+                          columns={logFileColumns}
+                          data={(logFiles?.data || []).map(name => ({ name }))}
+                          total={logFiles?.meta?.total || logFiles?.data?.length || 0}
+                          idField="name"
+                          pagination
+                          loading={logFilesLoading}
+                          error={logFilesError}
+                          currentPage={logFiles?.meta?.page || systemParams.page}
+                          totalPages={logFiles?.meta?.totalPages || Math.ceil((logFiles?.data?.length || 0) / systemParams.limit)}
+                          onPageChange={page => handleSystemParamsChange({ page })}
+                          className="rounded border overflow-clip"
+                          emptyMessage="No log files found"
+                        />
+                      )
+                    : (
+                        <Table<BackupFile>
+                          columns={backupFileColumns}
+                          data={(backupFiles?.data || []).map(name => ({ name }))}
+                          total={backupFiles?.meta?.total || backupFiles?.data?.length || 0}
+                          idField="name"
+                          pagination
+                          loading={backupFilesLoading}
+                          error={backupFilesError}
+                          currentPage={backupFiles?.meta?.page || backupParams.page}
+                          totalPages={backupFiles?.meta?.totalPages || Math.ceil((backupFiles?.data?.length || 0) / backupParams.limit)}
+                          onPageChange={page => handleBackupParamsChange({ page })}
+                          className="rounded border overflow-clip"
+                          emptyMessage="No backup files found"
+                        />
+                      )}
         </div>
       </div>
 
@@ -950,14 +984,15 @@ const Logs = () => {
           setSelectedLog(null);
         }}
         title="Audit Log Details"
-        size="lg">
+        size="lg"
+      >
         {selectedLog && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-text-muted mb-2 block">Timestamp</label>
                 <div className="text-sm">
-                  {selectedLog.createdAt ? format(new Date(selectedLog.createdAt), "MM/dd/yyyy hh:mm:ss a") : 'N/A'}
+                  {selectedLog.createdAt ? format(new Date(selectedLog.createdAt), "MM/dd/yyyy hh:mm:ss a") : "N/A"}
                 </div>
               </div>
               <div>
@@ -977,48 +1012,56 @@ const Logs = () => {
             <div>
               <label className="text-sm text-text-muted mb-2 block">Changes</label>
               <div className="bg-surface border border-border rounded-lg p-4 max-h-96 overflow-y-auto">
-                {selectedLog.diff && typeof selectedLog.diff === 'object' ? (
-                  Object.keys(selectedLog.diff).length > 0 ? (
-                    <div className="space-y-4">
-                      {Object.entries(selectedLog.diff).map(([key, value]) => {
-                        const beforeVal = (value as any)?.before;
-                        const afterVal = (value as any)?.after;
+                {selectedLog.diff && typeof selectedLog.diff === "object"
+                  ? (
+                      Object.keys(selectedLog.diff).length > 0
+                        ? (
+                            <div className="space-y-4">
+                              {Object.entries(selectedLog.diff).map(([key, value]) => {
+                                const beforeVal = (value as any)?.before;
+                                const afterVal = (value as any)?.after;
 
-                        const formatValue = (val: any) => {
-                          if (val === null || val === undefined) return 'null';
-                          if (typeof val === 'string') return val;
-                          if (typeof val === 'boolean') return val.toString();
-                          if (typeof val === 'number') return val.toString();
-                          return JSON.stringify(val, null, 2);
-                        };
+                                const formatValue = (val: any) => {
+                                  if (val === null || val === undefined)
+                                    return "null";
+                                  if (typeof val === "string")
+                                    return val;
+                                  if (typeof val === "boolean")
+                                    return val.toString();
+                                  if (typeof val === "number")
+                                    return val.toString();
+                                  return JSON.stringify(val, null, 2);
+                                };
 
-                        return (
-                          <div key={key} className="border-b border-border pb-3 last:border-b-0">
-                            <div className="text-sm font-medium text-text mb-2">{key}</div>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div>
-                                <div className="text-xs text-error font-medium mb-1">Before:</div>
-                                <div className="bg-error/10 border border-error/50 rounded p-2 font-mono text-xs text-text">
-                                  {formatValue(beforeVal)}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-success font-medium mb-1">After:</div>
-                                <div className="bg-success/10 border border-success/50 rounded p-2 font-mono text-xs text-text">
-                                  {formatValue(afterVal)}
-                                </div>
-                              </div>
+                                return (
+                                  <div key={key} className="border-b border-border pb-3 last:border-b-0">
+                                    <div className="text-sm font-medium text-text mb-2">{key}</div>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                      <div>
+                                        <div className="text-xs text-error font-medium mb-1">Before:</div>
+                                        <div className="bg-error/10 border border-error/50 rounded p-2 font-mono text-xs text-text">
+                                          {formatValue(beforeVal)}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-success font-medium mb-1">After:</div>
+                                        <div className="bg-success/10 border border-success/50 rounded p-2 font-mono text-xs text-text">
+                                          {formatValue(afterVal)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-text-muted text-sm">No changes recorded</div>
-                  )
-                ) : (
-                  <div className="text-text-muted text-sm">Invalid change data</div>
-                )}
+                          )
+                        : (
+                            <div className="text-text-muted text-sm">No changes recorded</div>
+                          )
+                    )
+                  : (
+                      <div className="text-text-muted text-sm">Invalid change data</div>
+                    )}
               </div>
             </div>
           </div>
@@ -1032,14 +1075,15 @@ const Logs = () => {
           setSelectedEmailLog(null);
         }}
         title="Email Log Details"
-        size="lg">
+        size="lg"
+      >
         {selectedEmailLog && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-text-muted mb-2 block">Timestamp</label>
                 <div className="text-sm">
-                  {selectedEmailLog.createdAt ? format(new Date(selectedEmailLog.createdAt), "MM/dd/yyyy hh:mm:ss a") : 'N/A'}
+                  {selectedEmailLog.createdAt ? format(new Date(selectedEmailLog.createdAt), "MM/dd/yyyy hh:mm:ss a") : "N/A"}
                 </div>
               </div>
               <div>
@@ -1050,8 +1094,8 @@ const Logs = () => {
                     selectedEmailLog.status === "SENT"
                       ? "success"
                       : selectedEmailLog.status === "FAILED"
-                      ? "error"
-                      : "default"
+                        ? "error"
+                        : "default"
                   }
                 />
               </div>
@@ -1099,14 +1143,15 @@ const Logs = () => {
           setSelectedBugReport(null);
         }}
         title="Bug Report Details"
-        size="lg">
+        size="lg"
+      >
         {selectedBugReport && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-text-muted mb-2 block">Timestamp</label>
                 <div className="text-sm">
-                  {selectedBugReport.createdAt ? format(new Date(selectedBugReport.createdAt), "MM/dd/yyyy hh:mm:ss a") : 'N/A'}
+                  {selectedBugReport.createdAt ? format(new Date(selectedBugReport.createdAt), "MM/dd/yyyy hh:mm:ss a") : "N/A"}
                 </div>
               </div>
               <div>
@@ -1117,8 +1162,8 @@ const Logs = () => {
                     selectedBugReport.status === "IN_JIRA"
                       ? "success"
                       : selectedBugReport.status === "FAILED"
-                      ? "error"
-                      : "default"
+                        ? "error"
+                        : "default"
                   }
                 />
               </div>
@@ -1182,14 +1227,15 @@ const Logs = () => {
           setSelectedLoginAttempt(null);
         }}
         title="Login Attempt Details"
-        size="lg">
+        size="lg"
+      >
         {selectedLoginAttempt && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-text-muted mb-2 block">Timestamp</label>
                 <div className="text-sm">
-                  {selectedLoginAttempt.timestamp ? format(new Date(selectedLoginAttempt.timestamp), "MM/dd/yyyy hh:mm:ss a") : 'N/A'}
+                  {selectedLoginAttempt.timestamp ? format(new Date(selectedLoginAttempt.timestamp), "MM/dd/yyyy hh:mm:ss a") : "N/A"}
                 </div>
               </div>
               <div>
@@ -1255,30 +1301,36 @@ const Logs = () => {
         title={`Log File: ${selectedLogFile || ""}`}
         size="xl"
         overflow="auto"
-        headerActions={
+        headerActions={(
           <Button
             variant={isPrettyPrint ? "primary" : "secondary-outline"}
             size="sm"
-            onClick={() => setIsPrettyPrint(!isPrettyPrint)}>
+            onClick={() => setIsPrettyPrint(!isPrettyPrint)}
+          >
             Pretty
           </Button>
-        }>
+        )}
+      >
         <div className="bg-surface border border-border rounded-lg p-4 overflow-auto">
-          {logFileContent ? (
-            logFileContent === "Log file is empty" || logFileContent === "Error loading log file. Please try again." ? (
-              <div className="text-text-muted text-sm">{logFileContent}</div>
-            ) : (
-              <div className="space-y-0.5">
-                {logFileContent.split('\n').map((line, index) => renderLogLine(line, index))}
-              </div>
-            )
-          ) : (
-            <div className="text-text-muted text-sm">Loading...</div>
-          )}
+          {logFileContent
+            ? (
+                logFileContent === "Log file is empty" || logFileContent === "Error loading log file. Please try again."
+                  ? (
+                      <div className="text-text-muted text-sm">{logFileContent}</div>
+                    )
+                  : (
+                      <div className="space-y-0.5">
+                        {logFileContent.split("\n").map((line, index) => renderLogLine(line, index))}
+                      </div>
+                    )
+              )
+            : (
+                <div className="text-text-muted text-sm">Loading...</div>
+              )}
         </div>
       </Modal>
     </div>
   );
-};
+}
 
-export default Logs
+export default Logs;

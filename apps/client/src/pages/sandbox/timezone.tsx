@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import { Button } from "@/components";
 import { useApi } from "@/hooks/use-api";
 
-const Timezone = () => {
+function Timezone() {
   const { get } = useApi();
   const [results, setResults] = useState<any>({});
   const [hourResults, setHourResults] = useState<any>(null);
@@ -104,6 +105,6 @@ const Timezone = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Timezone;

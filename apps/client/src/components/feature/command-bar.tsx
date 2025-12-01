@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ModulePage {
   path: string;
@@ -36,13 +36,13 @@ interface CommandBarProps {
   isOpen?: boolean;
 }
 
-export const openPopup = (module: string, params: string[]) => {
+export function openPopup(module: string, params: string[]) {
   window.open(
     `/${module}/popup?${params.join("&")}`,
     "_blank",
-    "width=800,height=600"
+    "width=800,height=600",
   );
-};
+}
 
 const moduleConfig: ModuleConfig = {
   sales: {
@@ -105,11 +105,11 @@ const moduleConfig: ModuleConfig = {
   },
 };
 
-const CommandBar = ({
+function CommandBar({
   onNavigate,
   defaultModule = "sales",
   isOpen: externalIsOpen = false,
-}: CommandBarProps) => {
+}: CommandBarProps) {
   const [input, setInput] = useState<string>("");
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
@@ -130,9 +130,9 @@ const CommandBar = ({
 
   useEffect(() => {
     if (
-      isOpen &&
-      suggestionsRef.current &&
-      suggestionItemsRef.current[selectedIndex]
+      isOpen
+      && suggestionsRef.current
+      && suggestionItemsRef.current[selectedIndex]
     ) {
       const container = suggestionsRef.current;
       const selectedElement = suggestionItemsRef.current[selectedIndex];
@@ -143,7 +143,8 @@ const CommandBar = ({
 
         if (selectedRect.bottom > containerRect.bottom) {
           container.scrollTop += selectedRect.bottom - containerRect.bottom;
-        } else if (selectedRect.top < containerRect.top) {
+        }
+        else if (selectedRect.top < containerRect.top) {
           container.scrollTop -= containerRect.top - selectedRect.top;
         }
       }
@@ -153,30 +154,33 @@ const CommandBar = ({
   const getIdSuggestions = (
     entity: string,
     type: "page" | "popup",
-    query = ""
+    query = "",
   ): SuggestionItem[] => {
     const module = moduleConfig[defaultModule];
-    if (!module) return [];
+    if (!module)
+      return [];
 
     const normalizedQuery = query.toLowerCase();
 
     let sampleIds: string[] | undefined;
 
     if (type === "page") {
-      const page = module.pages.find((p) => p.label === entity && p.requiresId);
+      const page = module.pages.find(p => p.label === entity && p.requiresId);
       sampleIds = page?.sampleIds;
-    } else {
+    }
+    else {
       const popup = module.popups.find(
-        (p) => p.label === entity && p.requiresId
+        p => p.label === entity && p.requiresId,
       );
       sampleIds = popup?.sampleIds;
     }
 
-    if (!sampleIds) return [];
+    if (!sampleIds)
+      return [];
 
     return sampleIds
-      .filter((id) => id.toLowerCase().includes(normalizedQuery))
-      .map((id) => ({
+      .filter(id => id.toLowerCase().includes(normalizedQuery))
+      .map(id => ({
         text: id,
         description: `${type === "page" ? "Go to" : "Open"} ${entity} ${id}`,
         type,
@@ -187,7 +191,8 @@ const CommandBar = ({
 
   const getSuggestions = (query: string): SuggestionItem[] => {
     const module = moduleConfig[defaultModule];
-    if (!module) return [];
+    if (!module)
+      return [];
 
     const normalizedQuery = query.toLowerCase();
     const suggestions: SuggestionItem[] = [];
@@ -206,9 +211,9 @@ const CommandBar = ({
 
     module.pages
       .filter(
-        (page) =>
-          page.label.toLowerCase().includes(normalizedQuery) ||
-          normalizedQuery === ""
+        page =>
+          page.label.toLowerCase().includes(normalizedQuery)
+          || normalizedQuery === "",
       )
       .forEach((page) => {
         suggestions.push({
@@ -229,9 +234,9 @@ const CommandBar = ({
 
     module.popups
       .filter(
-        (popup) =>
-          popup.label.toLowerCase().includes(normalizedQuery) ||
-          normalizedQuery === ""
+        popup =>
+          popup.label.toLowerCase().includes(normalizedQuery)
+          || normalizedQuery === "",
       )
       .forEach((popup) => {
         suggestions.push({
@@ -249,10 +254,11 @@ const CommandBar = ({
 
   const navigateToPage = (page: string, id?: string) => {
     const module = moduleConfig[defaultModule];
-    if (!module) return;
+    if (!module)
+      return;
 
     const pageConfig = module.pages.find(
-      (p) => p.label === page && (id ? p.requiresId : !p.requiresId)
+      p => p.label === page && (id ? p.requiresId : !p.requiresId),
     );
 
     if (pageConfig) {
@@ -263,7 +269,8 @@ const CommandBar = ({
 
       if (onNavigate) {
         onNavigate(path);
-      } else {
+      }
+      else {
         window.location.href = path;
       }
     }
@@ -271,10 +278,11 @@ const CommandBar = ({
 
   const openPopupView = (popupName: string, id?: string) => {
     const module = moduleConfig[defaultModule];
-    if (!module) return;
+    if (!module)
+      return;
 
     const popupConfig = module.popups.find(
-      (p) => p.label === popupName && (id ? p.requiresId : !p.requiresId)
+      p => p.label === popupName && (id ? p.requiresId : !p.requiresId),
     );
 
     if (popupConfig) {
@@ -300,7 +308,8 @@ const CommandBar = ({
 
     if (item.type === "page") {
       navigateToPage(item.text, id);
-    } else if (item.type === "popup") {
+    }
+    else if (item.type === "popup") {
       openPopupView(item.text, id);
     }
 
@@ -318,7 +327,7 @@ const CommandBar = ({
       const idSuggestions = getIdSuggestions(
         activeItem.text,
         activeItem.type,
-        value
+        value,
       );
       setSuggestions(idSuggestions);
       setIsOpen(idSuggestions.length > 0);
@@ -343,18 +352,20 @@ const CommandBar = ({
 
         if (selectedItem.isId && activeItem) {
           executeItem(activeItem, selectedItem.text);
-        } else {
+        }
+        else {
           executeItem(selectedItem);
         }
         e.preventDefault();
       }
-    } else if (e.key === "ArrowDown" && isOpen) {
+    }
+    else if (e.key === "ArrowDown" && isOpen) {
       let newIndex = selectedIndex + 1;
 
       while (
-        newIndex < suggestions.length &&
-        (suggestions[newIndex].text === "Pages" ||
-          suggestions[newIndex].text === "Popups")
+        newIndex < suggestions.length
+        && (suggestions[newIndex].text === "Pages"
+          || suggestions[newIndex].text === "Popups")
       ) {
         newIndex++;
       }
@@ -362,9 +373,9 @@ const CommandBar = ({
       if (newIndex >= suggestions.length) {
         newIndex = 0;
         while (
-          newIndex < suggestions.length &&
-          (suggestions[newIndex].text === "Pages" ||
-            suggestions[newIndex].text === "Popups")
+          newIndex < suggestions.length
+          && (suggestions[newIndex].text === "Pages"
+            || suggestions[newIndex].text === "Popups")
         ) {
           newIndex++;
         }
@@ -372,13 +383,14 @@ const CommandBar = ({
 
       setSelectedIndex(newIndex);
       e.preventDefault();
-    } else if (e.key === "ArrowUp" && isOpen) {
+    }
+    else if (e.key === "ArrowUp" && isOpen) {
       let newIndex = selectedIndex - 1;
 
       while (
-        newIndex >= 0 &&
-        (suggestions[newIndex].text === "Pages" ||
-          suggestions[newIndex].text === "Popups")
+        newIndex >= 0
+        && (suggestions[newIndex].text === "Pages"
+          || suggestions[newIndex].text === "Popups")
       ) {
         newIndex--;
       }
@@ -386,9 +398,9 @@ const CommandBar = ({
       if (newIndex < 0) {
         newIndex = suggestions.length - 1;
         while (
-          newIndex >= 0 &&
-          (suggestions[newIndex].text === "Pages" ||
-            suggestions[newIndex].text === "Popups")
+          newIndex >= 0
+          && (suggestions[newIndex].text === "Pages"
+            || suggestions[newIndex].text === "Popups")
         ) {
           newIndex--;
         }
@@ -396,7 +408,8 @@ const CommandBar = ({
 
       setSelectedIndex(newIndex);
       e.preventDefault();
-    } else if (e.key === "Escape") {
+    }
+    else if (e.key === "Escape") {
       if (waitingForId) {
         setWaitingForId(false);
         setActiveItem(null);
@@ -405,10 +418,12 @@ const CommandBar = ({
         setSuggestions(newSuggestions);
         setIsOpen(true);
         setSelectedIndex(0);
-      } else {
+      }
+      else {
         setIsOpen(false);
       }
-    } else if (!isOpen) {
+    }
+    else if (!isOpen) {
       const newSuggestions = getSuggestions("");
       setSuggestions(newSuggestions);
       setIsOpen(true);
@@ -423,7 +438,8 @@ const CommandBar = ({
 
     if (item.isId && activeItem) {
       executeItem(activeItem, item.text);
-    } else {
+    }
+    else {
       executeItem(item);
     }
   };
@@ -457,7 +473,7 @@ const CommandBar = ({
   useEffect(() => {
     suggestionItemsRef.current = suggestionItemsRef.current.slice(
       0,
-      suggestions.length
+      suggestions.length,
     );
   }, [suggestions]);
 
@@ -465,13 +481,19 @@ const CommandBar = ({
     <div className="relative w-full max-w-2xl">
       <div className="mt-2 text-sm text-center opacity-70 select-none text-text-muted">
         <div className="bg-foreground rounded p-2 flex items-center gap-2 w-max mx-auto">
-          <kbd className="bg-surface px-2 py-1 rounded text-xs">Esc</kbd> to
+          <kbd className="bg-surface px-2 py-1 rounded text-xs">Esc</kbd>
+          {" "}
+          to
           close
           <span>|</span>
-          <kbd className="bg-surface px-2 py-1 rounded text-xs">↑↓</kbd> to
+          <kbd className="bg-surface px-2 py-1 rounded text-xs">↑↓</kbd>
+          {" "}
+          to
           navigate
           <span>|</span>
-          <kbd className="bg-surface px-2 py-1 rounded text-xs">Enter</kbd> to
+          <kbd className="bg-surface px-2 py-1 rounded text-xs">Enter</kbd>
+          {" "}
+          to
           select
         </div>
       </div>
@@ -500,10 +522,11 @@ const CommandBar = ({
       {isOpen && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-10 w-full mt-1 overflow-y-auto bg-foreground border border-border rounded shadow-lg max-h-64">
+          className="absolute z-10 w-full mt-1 overflow-y-auto bg-foreground border border-border rounded shadow-lg max-h-64"
+        >
           {suggestions.map((suggestion, index) => {
-            const isHeader =
-              suggestion.text === "Pages" || suggestion.text === "Popups";
+            const isHeader
+              = suggestion.text === "Pages" || suggestion.text === "Popups";
 
             return (
               <div
@@ -528,12 +551,14 @@ const CommandBar = ({
                   if (!isHeader) {
                     handleSuggestionClick(suggestion);
                   }
-                }}>
+                }}
+              >
                 <div className="flex justify-between items-center">
                   <span
                     className={
                       isHeader ? "text-text-muted" : "font-medium text-text"
-                    }>
+                    }
+                  >
                     {suggestion.text}
                   </span>
                   {!isHeader && suggestion.description && (
@@ -549,6 +574,6 @@ const CommandBar = ({
       )}
     </div>
   );
-};
+}
 
 export default CommandBar;

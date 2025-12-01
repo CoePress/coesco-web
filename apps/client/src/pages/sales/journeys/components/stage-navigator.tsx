@@ -1,5 +1,6 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatCurrency } from '@/utils';
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { formatCurrency } from "@/utils";
 
 interface StageNavigatorProps {
   currentStage: {
@@ -18,7 +19,7 @@ interface StageNavigatorProps {
   allStages: Array<{ id: number; label: string }>;
 }
 
-export const StageNavigator = ({
+export function StageNavigator({
   currentStage,
   currentIndex,
   totalStages,
@@ -29,7 +30,7 @@ export const StageNavigator = ({
   onPrev,
   onSelectStage,
   allStages,
-}: StageNavigatorProps) => {
+}: StageNavigatorProps) {
   return (
     <div className="bg-foreground border-b border-border sticky top-0 z-20">
       <div className="flex items-center justify-between px-4 py-3">
@@ -47,7 +48,19 @@ export const StageNavigator = ({
             {currentStage.label}
           </div>
           <div className="text-xs text-text-muted">
-            Stage {currentIndex + 1} of {totalStages} • {journeyCount} {journeyCount === 1 ? 'journey' : 'journeys'}
+            Stage
+            {" "}
+            {currentIndex + 1}
+            {" "}
+            of
+            {" "}
+            {totalStages}
+            {" "}
+            •
+            {" "}
+            {journeyCount}
+            {" "}
+            {journeyCount === 1 ? "journey" : "journeys"}
           </div>
         </div>
 
@@ -68,8 +81,8 @@ export const StageNavigator = ({
             onClick={() => onSelectStage?.(index)}
             className={`h-1.5 rounded-full transition-all ${
               index === currentIndex
-                ? 'w-6 bg-primary'
-                : 'w-1.5 bg-border hover:bg-primary/50'
+                ? "w-6 bg-primary"
+                : "w-1.5 bg-border hover:bg-primary/50"
             }`}
             aria-label={`Go to ${stage.label}`}
           />
@@ -78,14 +91,20 @@ export const StageNavigator = ({
 
       <div className="px-4 pb-3 flex justify-between text-xs text-text-muted border-t border-border pt-2">
         <div>
-          <span className="font-medium">Total:</span>{' '}
+          <span className="font-medium">Total:</span>
+          {" "}
           <span className="text-text">{formatCurrency(stageTotal)}</span>
         </div>
         <div>
-          <span className="font-medium">Weighted ({Math.round(currentStage.weight * 100)}%):</span>{' '}
+          <span className="font-medium">
+            Weighted (
+            {Math.round(currentStage.weight * 100)}
+            %):
+          </span>
+          {" "}
           <span className="text-primary font-medium">{formatCurrency(stageWeighted)}</span>
         </div>
       </div>
     </div>
   );
-};
+}

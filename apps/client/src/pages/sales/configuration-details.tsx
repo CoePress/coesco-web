@@ -1,7 +1,7 @@
-const ConfigurationDetails = () => {
+function ConfigurationDetails() {
   return (
     <div>ConfigurationDetails</div>
-  )
+  );
 }
 
-export default ConfigurationDetails
+export default ConfigurationDetails;

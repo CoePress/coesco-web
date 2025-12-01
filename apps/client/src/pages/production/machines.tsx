@@ -1,16 +1,18 @@
-import { Button, PageHeader, Table, Modal, ToggleSwitch } from "@/components";
-import { TableColumn } from "@/components/ui/table";
-import StatusBadge from "@/components/ui/status-badge";
-import { useApi } from "@/hooks/use-api";
-import { useSocket } from "@/contexts/socket.context";
-import { getVariantFromStatus } from "@/utils";
-import { PlusIcon } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
-import type { IApiResponse } from "@/utils/types";
-import { useToast } from "@/hooks/use-toast";
 import { MachineControllerType, MachineType } from "@coesco/types";
+import { PlusIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-const Machines = () => {
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
+
+import { Button, Modal, PageHeader, Table, ToggleSwitch } from "@/components";
+import StatusBadge from "@/components/ui/status-badge";
+import { useSocket } from "@/contexts/socket.context";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
+import { getVariantFromStatus } from "@/utils";
+
+function Machines() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMachine, setSelectedMachine] = useState<any>(null);
   const { get: getMachines, response: machines, loading, error } = useApi<IApiResponse<any[]>>();
@@ -22,7 +24,7 @@ const Machines = () => {
     page: 1,
     limit: 25,
     filter: {},
-    include: [] as string[]
+    include: [] as string[],
   });
 
   const queryParams = useMemo(() => {
@@ -34,7 +36,7 @@ const Machines = () => {
     };
 
     const activeFilters = Object.fromEntries(
-      Object.entries(params.filter).filter(([_, value]) => value)
+      Object.entries(params.filter).filter(([_, value]) => value),
     );
 
     if (Object.keys(activeFilters).length > 0) {
@@ -68,7 +70,6 @@ const Machines = () => {
     fetchMachines();
   }, [params]);
 
-
   const columns: TableColumn<any>[] = [
     {
       key: "name",
@@ -94,14 +95,14 @@ const Machines = () => {
           label={row.enabled ? "True" : "False"}
           variant={row.enabled ? "success" : "default"}
         />
-      )
+      ),
     },
     {
       key: "realTimeStatus",
       header: "Live Status",
       render: (_, row) => {
         const realTimeData = machineStates.find(
-          (state) => state.machineId === row.id
+          state => state.machineId === row.id,
         );
         const status = realTimeData?.state || "OFFLINE";
         return (
@@ -110,7 +111,7 @@ const Machines = () => {
             variant={getVariantFromStatus(status) as "error" | "success" | "warning" | "info"}
           />
         );
-      }
+      },
     },
     {
       key: "actions",
@@ -124,7 +125,8 @@ const Machines = () => {
           onClick={() => {
             setSelectedMachine(row);
             setIsModalOpen(true);
-          }}>
+          }}
+        >
           Edit
         </Button>
       ),
@@ -134,14 +136,16 @@ const Machines = () => {
   const Actions = () => {
     return (
       <div className="flex gap-2">
-        <Button 
+        <Button
           onClick={() => {
             setSelectedMachine(null);
             setIsModalOpen(true);
-          }} 
+          }}
           variant="primary"
         >
-          <PlusIcon size={16} /> New Machine
+          <PlusIcon size={16} />
+          {" "}
+          New Machine
         </Button>
       </div>
     );
@@ -155,7 +159,7 @@ const Machines = () => {
   const handleParamsChange = (updates: Partial<typeof params>) => {
     setParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
@@ -179,13 +183,13 @@ const Machines = () => {
             error={error}
             currentPage={machines?.meta?.page}
             totalPages={machines?.meta?.totalPages}
-            onPageChange={(page) => handleParamsChange({ page })}
+            onPageChange={page => handleParamsChange({ page })}
             sort={params.sort}
             order={params.order}
             onSortChange={(newSort, newOrder) => {
               handleParamsChange({
                 sort: newSort as any,
-                order: newOrder as any
+                order: newOrder as any,
               });
             }}
             className="rounded border overflow-clip"
@@ -204,9 +208,9 @@ const Machines = () => {
       )}
     </div>
   );
-};
+}
 
-const EditMachineModal = ({
+function EditMachineModal({
   isOpen,
   onClose,
   machine,
@@ -216,7 +220,7 @@ const EditMachineModal = ({
   onClose: () => void;
   machine: any;
   onSuccess: () => void;
-}) => {
+}) {
   const [formData, setFormData] = useState({
     name: machine?.name || "",
     type: machine?.type || "",
@@ -232,17 +236,17 @@ const EditMachineModal = ({
   const handleChange = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
   const hasChanges = () => {
     return (
-      formData.name !== machine?.name ||
-      formData.type !== machine?.type ||
-      formData.controllerType !== machine?.controllerType ||
-      formData.connectionUrl !== machine?.connectionUrl ||
-      formData.enabled !== machine?.enabled
+      formData.name !== machine?.name
+      || formData.type !== machine?.type
+      || formData.controllerType !== machine?.controllerType
+      || formData.connectionUrl !== machine?.connectionUrl
+      || formData.enabled !== machine?.enabled
     );
   };
 
@@ -254,12 +258,14 @@ const EditMachineModal = ({
         toast.success(`Machine "${machine.name}" updated successfully!`);
         onClose();
         onSuccess();
-      } else {
-        toast.error('Failed to update machine. Please try again.');
       }
-    } catch (error) {
-      console.error('Error updating machine:', error);
-      toast.error('An unexpected error occurred while updating the machine.');
+      else {
+        toast.error("Failed to update machine. Please try again.");
+      }
+    }
+    catch (error) {
+      console.error("Error updating machine:", error);
+      toast.error("An unexpected error occurred while updating the machine.");
     }
   };
 
@@ -277,7 +283,8 @@ const EditMachineModal = ({
   useEffect(() => {
     if (!isOpen) {
       resetForm();
-    } else {
+    }
+    else {
       setFormData({
         name: machine?.name || "",
         type: machine?.type || "",
@@ -294,21 +301,27 @@ const EditMachineModal = ({
         isOpen={isOpen}
         onClose={onClose}
         title="Confirm Changes"
-        size="xs">
+        size="xs"
+      >
         <div className="space-y-4">
           <p className="text-sm text-text">
-            Are you sure you want to update <span className="font-semibold">{machine?.name}</span>?
+            Are you sure you want to update
+            {" "}
+            <span className="font-semibold">{machine?.name}</span>
+            ?
           </p>
 
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary-outline"
-              onClick={() => setShowConfirmation(false)}>
+              onClick={() => setShowConfirmation(false)}
+            >
               Back
             </Button>
             <Button
               onClick={handleUpdateMachine}
-              disabled={loading}>
+              disabled={loading}
+            >
               {loading ? "Saving..." : "Confirm"}
             </Button>
           </div>
@@ -322,7 +335,8 @@ const EditMachineModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Edit Machine"
-      size="xs">
+      size="xs"
+    >
       <div className="space-y-4">
         <div>
           <label className="text-sm text-text-muted mb-2 block">
@@ -331,7 +345,7 @@ const EditMachineModal = ({
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => handleChange({ name: e.target.value })}
+            onChange={e => handleChange({ name: e.target.value })}
             className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
           />
         </div>
@@ -340,10 +354,11 @@ const EditMachineModal = ({
           <label className="text-sm text-text-muted mb-2 block">Type</label>
           <select
             value={formData.type}
-            onChange={(e) => handleChange({ type: e.target.value })}
-            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+            onChange={e => handleChange({ type: e.target.value })}
+            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+          >
             <option value="">Select type</option>
-            {Object.keys(MachineType).map((type) => (
+            {Object.keys(MachineType).map(type => (
               <option key={type} value={type}>
                 {type}
               </option>
@@ -355,10 +370,11 @@ const EditMachineModal = ({
           <label className="text-sm text-text-muted mb-2 block">Controller Type</label>
           <select
             value={formData.controllerType}
-            onChange={(e) => handleChange({ controllerType: e.target.value })}
-            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+            onChange={e => handleChange({ controllerType: e.target.value })}
+            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+          >
             <option value="">Select controller type</option>
-            {Object.keys(MachineControllerType).map((type) => (
+            {Object.keys(MachineControllerType).map(type => (
               <option key={type} value={type}>
                 {type}
               </option>
@@ -371,14 +387,14 @@ const EditMachineModal = ({
           <input
             type="text"
             value={formData.connectionUrl}
-            onChange={(e) => handleChange({ connectionUrl: e.target.value })}
+            onChange={e => handleChange({ connectionUrl: e.target.value })}
             className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
           />
         </div>
 
         <ToggleSwitch
           checked={formData.enabled}
-          onChange={(checked) => handleChange({ enabled: checked })}
+          onChange={checked => handleChange({ enabled: checked })}
           label="Enabled"
           id="enabled"
         />
@@ -386,18 +402,20 @@ const EditMachineModal = ({
         <div className="flex justify-end gap-2">
           <Button
             variant="secondary-outline"
-            onClick={onClose}>
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
             onClick={() => setShowConfirmation(true)}
-            disabled={!hasChanges()}>
+            disabled={!hasChanges()}
+          >
             Save Changes
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}
 
 export default Machines;

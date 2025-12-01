@@ -1,30 +1,32 @@
-import { Download, Plus, Layout, List as ListIcon, BarChart3, Upload, Save, Bookmark, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import ExcelJS from "exceljs";
+import { BarChart3, Bookmark, Download, Layout, List as ListIcon, Plus, Save, Trash2, Upload } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import ExcelJS from 'exceljs';
 
-import { PageHeader, Modal, Button, Select, Input } from "@/components";
+import { Button, Input, Modal, PageHeader, Select } from "@/components";
 import { CreateJourneyModal } from "@/components/modals/create-journey-modal";
-import { ImportExcelModal } from "@/components/modals/import-excel-modal";
 import { ExportExcelModal } from "@/components/modals/export-excel-modal";
+import { ImportExcelModal } from "@/components/modals/import-excel-modal";
+import { useAuth } from "@/contexts/auth.context";
+import { useApi } from "@/hooks/use-api";
+import { formatCurrency } from "@/utils";
+
+import type { Employee } from "./journeys/utils";
+
+import { STAGES } from "./journeys/constants";
 import { KanbanView } from "./journeys/journey-kanban";
 import { ListView } from "./journeys/journey-list";
 import { ProjectionsView } from "./journeys/journey-projections";
 import { PipelineHeader } from "./journeys/pipeline-header";
-import { STAGES } from "./journeys/constants";
-import { fuzzyMatch, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
-import { formatCurrency } from "@/utils";
-import { useApi } from "@/hooks/use-api";
-import { useAuth } from "@/contexts/auth.context";
+import { fetchAvailableRsms, fetchDemographicCategory, fuzzyMatch } from "./journeys/utils";
 
 type StageId = (typeof STAGES)[number]["id"];
 
-const stageLabel = (id?: number) =>
-  STAGES.find(s => s.id === Number(id))?.label ?? `Stage ${id ?? ""}`;
+function stageLabel(id?: number) {
+  return STAGES.find(s => s.id === Number(id))?.label ?? `Stage ${id ?? ""}`;
+}
 
-
-
-const Pipeline = () => {
+function Pipeline() {
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const toggleJourneyModal = () => setIsJourneyModalOpen(prev => !prev);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -44,7 +46,8 @@ const Pipeline = () => {
 
   const fetchJourneyTags = async (journeyIds: string[]) => {
     const tagsMap = new Map<string, any[]>();
-    if (journeyIds.length === 0) return tagsMap;
+    if (journeyIds.length === 0)
+      return tagsMap;
 
     const BATCH_SIZE = 50;
     const batches = [];
@@ -55,11 +58,11 @@ const Pipeline = () => {
     try {
       await Promise.all(
         batches.map(async (batch) => {
-          const response = await get('/core/tags', {
+          const response = await get("/core/tags", {
             filter: JSON.stringify({
-              parentTable: 'journeys',
-              parentId: { in: batch }
-            })
+              parentTable: "journeys",
+              parentId: { in: batch },
+            }),
           });
 
           if (response?.success && Array.isArray(response.data)) {
@@ -71,16 +74,17 @@ const Pipeline = () => {
               tagsMap.get(journeyId)?.push(tag);
             });
           }
-        })
+        }),
       );
 
-      journeyIds.forEach(id => {
+      journeyIds.forEach((id) => {
         if (!tagsMap.has(id)) {
           tagsMap.set(id, []);
         }
       });
-    } catch (error) {
-      console.error('Error fetching journey tags:', error);
+    }
+    catch (error) {
+      console.error("Error fetching journey tags:", error);
     }
 
     return tagsMap;
@@ -88,50 +92,68 @@ const Pipeline = () => {
 
   const mapLegacyStageToId = (stage: any): StageId => {
     const s = String(stage ?? "").toLowerCase();
-    if (!s) return 1;
-    if (s.includes("qualify") || s.includes("qualifi") || s.includes("pain") || s.includes("discover")) return 2;
-    if (s.includes("present") || s.includes("demo") || s.includes("proposal") || s.includes("quote")) return 3;
-    if (s.includes("negot")) return 4;
-    if (s.includes("po") || s.includes("won") || s.includes("closedwon") || s.includes("closed won") || s.includes("order")) return 5;
-    if (s.includes("lost") || s.includes("closedlost") || s.includes("closed lost") || s.includes("declin")) return 6;
-    if (s.includes("lead") || s.includes("open") || s.includes("new")) return 1;
+    if (!s)
+      return 1;
+    if (s.includes("qualify") || s.includes("qualifi") || s.includes("pain") || s.includes("discover"))
+      return 2;
+    if (s.includes("present") || s.includes("demo") || s.includes("proposal") || s.includes("quote"))
+      return 3;
+    if (s.includes("negot"))
+      return 4;
+    if (s.includes("po") || s.includes("won") || s.includes("closedwon") || s.includes("closed won") || s.includes("order"))
+      return 5;
+    if (s.includes("lost") || s.includes("closedlost") || s.includes("closed lost") || s.includes("declin"))
+      return 6;
+    if (s.includes("lead") || s.includes("open") || s.includes("new"))
+      return 1;
     return 1;
   };
 
   const normalizeDate = (d: any) => {
-    if (!d) return undefined;
+    if (!d)
+      return undefined;
     const s = String(d);
 
-    if (s.startsWith("0000-00-00") || s === "0000-00-00") return undefined;
+    if (s.startsWith("0000-00-00") || s === "0000-00-00")
+      return undefined;
 
     let normalized = s;
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
       normalized = `${s}T00:00:00`;
-    } else if (s.includes(" ")) {
+    }
+    else if (s.includes(" ")) {
       normalized = s.replace(" ", "T");
     }
 
     const testDate = new Date(normalized);
-    if (isNaN(testDate.getTime())) return undefined;
+    if (isNaN(testDate.getTime()))
+      return undefined;
 
     return normalized;
   };
 
   const parseConfidence = (v: any) => {
-    if (v == null || v === "") return undefined;
+    if (v == null || v === "")
+      return undefined;
     const str = String(v);
-    if (str === "Closed Won") return 100;
-    if (str === "Closed Lost") return 0;
+    if (str === "Closed Won")
+      return 100;
+    if (str === "Closed Lost")
+      return 0;
     const m = str.match(/\d+/);
     return m ? Math.min(100, Math.max(0, Number(m[0]))) : undefined;
   };
 
   const normalizePriority = (v: any): string => {
     const s = String(v ?? "").toUpperCase().trim();
-    if (s === "A" || s === "B" || s === "C" || s === "D") return s;
-    if (s.startsWith("H")) return "A"; // High -> A
-    if (s.startsWith("L")) return "D"; // Low -> D
-    if (s.startsWith("M")) return "C"; // Medium -> C
+    if (s === "A" || s === "B" || s === "C" || s === "D")
+      return s;
+    if (s.startsWith("H"))
+      return "A"; // High -> A
+    if (s.startsWith("L"))
+      return "D"; // Low -> D
+    if (s.startsWith("M"))
+      return "C"; // Medium -> C
     return "C"; // Default to medium priority
   };
 
@@ -145,9 +167,9 @@ const Pipeline = () => {
     const value = Number(raw.Journey_Value ?? 0);
     const priority = normalizePriority(raw.Priority);
 
-    const expectedDecisionDate =
-      normalizeDate(raw.Expected_Decision_Date) ??
-      null
+    const expectedDecisionDate
+      = normalizeDate(raw.Expected_Decision_Date)
+        ?? null;
 
     const customerId = String(raw.Company_ID ?? "");
     const companyName = raw.Target_Account || undefined;
@@ -192,16 +214,16 @@ const Pipeline = () => {
     (async () => {
       try {
         const [journeysData, customersData, rsms, statuses] = await Promise.all([
-          get('/legacy/base/Journey', {
+          get("/legacy/base/Journey", {
             page: 1,
             limit: 200,
-            sort: 'CreateDT',
-            order: 'desc',
-            fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+            sort: "CreateDT",
+            order: "desc",
+            fields: "ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status",
           }),
-          get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' }),
+          get("/legacy/base/Company", { sort: "Company_ID", order: "desc" }),
           fetchAvailableRsms({ get }),
-          fetchDemographicCategory({ get }, 'Journey_status')
+          fetchDemographicCategory({ get }, "Journey_status"),
         ]);
 
         if (!cancelled && journeysData) {
@@ -219,7 +241,7 @@ const Pipeline = () => {
         if (!cancelled && rsms.length > 0) {
           setAvailableRsms(rsms);
           const displayNamesMap = new Map<string, string>();
-          rsms.forEach(rsm => {
+          rsms.forEach((rsm) => {
             displayNamesMap.set(rsm.initials, `${rsm.name} (${rsm.initials})`);
           });
           setRsmDisplayNames(displayNamesMap);
@@ -228,7 +250,8 @@ const Pipeline = () => {
         if (!cancelled && statuses.length > 0) {
           setValidJourneyStatuses(statuses);
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error("Error fetching data:", error);
       }
     })();
@@ -241,7 +264,7 @@ const Pipeline = () => {
   const customersById = useMemo(() => {
     const map = new Map<string, any>((customers ?? []).map(c => [String(c.id), c]));
     if (isLegacyData) {
-      baseJourneys.forEach(j => {
+      baseJourneys.forEach((j) => {
         const cid = String(j.customerId ?? "");
         const name = j.companyName;
         if (cid && cid !== "0" && name && !map.has(cid)) {
@@ -255,7 +278,8 @@ const Pipeline = () => {
     try {
       const stored = localStorage.getItem(`pipeline_${key}`);
       return stored ? JSON.parse(stored) : defaultValue;
-    } catch {
+    }
+    catch {
       return defaultValue;
     }
   };
@@ -263,12 +287,13 @@ const Pipeline = () => {
   const saveToLocalStorage = (key: string, value: any) => {
     try {
       localStorage.setItem(`pipeline_${key}`, JSON.stringify(value));
-    } catch {
+    }
+    catch {
     }
   };
 
-  const [searchTerm, setSearchTerm] = useState(() => getFromLocalStorage('searchTerm', ''));
-  const [filters, setFilters] = useState(() => getFromLocalStorage('filters', {
+  const [searchTerm, setSearchTerm] = useState(() => getFromLocalStorage("searchTerm", ""));
+  const [filters, setFilters] = useState(() => getFromLocalStorage("filters", {
     confidenceLevels: [] as number[],
     dateRange: ["", ""] as [string, string],
     dateField: "expectedDecisionDate" as string,
@@ -278,18 +303,18 @@ const Pipeline = () => {
     visibleStages: STAGES.map(s => s.id) as number[],
   }));
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [navigationModal, setNavigationModal] = useState<{ isOpen: boolean; journeyName: string; journeyId: string }>({ isOpen: false, journeyName: '', journeyId: '' });
-  const [rsmFilter, setRsmFilter] = useState<string>(() => getFromLocalStorage('rsmFilter', ''));
-  const [rsmFilterDisplay, setRsmFilterDisplay] = useState<string>(() => getFromLocalStorage('rsmFilterDisplay', ''));
+  const [navigationModal, setNavigationModal] = useState<{ isOpen: boolean; journeyName: string; journeyId: string }>({ isOpen: false, journeyName: "", journeyId: "" });
+  const [rsmFilter, setRsmFilter] = useState<string>(() => getFromLocalStorage("rsmFilter", ""));
+  const [rsmFilterDisplay, setRsmFilterDisplay] = useState<string>(() => getFromLocalStorage("rsmFilterDisplay", ""));
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
   const [rsmDisplayNames, setRsmDisplayNames] = useState<Map<string, string>>(new Map());
   const [validJourneyStatuses, setValidJourneyStatuses] = useState<string[]>([]);
-  const [journeyStatusFilter, setJourneyStatusFilter] = useState<string[]>(() => getFromLocalStorage('journeyStatusFilter', []));
-  const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
-  const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => getFromLocalStorage('sortDirection', 'asc'));
-  const [showTags, setShowTags] = useState<boolean>(() => getFromLocalStorage('showTags', false));
-  const [kanbanBatchSize, setKanbanBatchSize] = useState<number>(() => getFromLocalStorage('kanbanBatchSize', 50));
+  const [journeyStatusFilter, setJourneyStatusFilter] = useState<string[]>(() => getFromLocalStorage("journeyStatusFilter", []));
+  const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage("viewMode", "kanban"));
+  const [sortField, setSortField] = useState<string>(() => getFromLocalStorage("sortField", ""));
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(() => getFromLocalStorage("sortDirection", "asc"));
+  const [showTags, setShowTags] = useState<boolean>(() => getFromLocalStorage("showTags", false));
+  const [kanbanBatchSize, setKanbanBatchSize] = useState<number>(() => getFromLocalStorage("kanbanBatchSize", 50));
   const [listPage, setListPage] = useState(1);
   const [listPageSize] = useState(25);
   const [listViewJourneys, setListViewJourneys] = useState<any[]>([]);
@@ -297,38 +322,40 @@ const Pipeline = () => {
   const [isLoadingListView, setIsLoadingListView] = useState(false);
   const [kanbanViewJourneys, setKanbanViewJourneys] = useState<any[]>([]);
   const [isLoadingKanbanView, setIsLoadingKanbanView] = useState(false);
-  const [savedPresets, setSavedPresets] = useState<any[]>(() => getFromLocalStorage('savedPresets', []));
+  const [savedPresets, setSavedPresets] = useState<any[]>(() => getFromLocalStorage("savedPresets", []));
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
-  const [newPresetName, setNewPresetName] = useState('');
+  const [newPresetName, setNewPresetName] = useState("");
 
   const filteredJourneys = useMemo(() => {
     let results = baseJourneys ?? [];
     const q = searchTerm.trim();
     if (q) {
-      if (q.toLowerCase() === 'tag:') {
+      if (q.toLowerCase() === "tag:") {
         results = results.filter(j => (journeyTags.get(j.id.toString()) || []).length > 0);
-      } else {
+      }
+      else {
         const tagMatch = q.match(/tag:(\S+)/i);
         if (tagMatch) {
           const tagSearch = tagMatch[1].toUpperCase();
-          const remainingSearch = q.replace(tagMatch[0], '').trim();
+          const remainingSearch = q.replace(tagMatch[0], "").trim();
 
           if (tagSearch) {
-            results = results.filter(j => {
+            results = results.filter((j) => {
               const tags = journeyTags.get(j.id.toString()) || [];
               return tags.some(tag => tag.description?.toUpperCase().includes(tagSearch));
             });
           }
 
           if (remainingSearch) {
-            results = results.filter(j => {
-              const searchableText = [j.companyName ?? '', customersById?.get(String(j.customerId))?.name ?? ''].join(' ');
+            results = results.filter((j) => {
+              const searchableText = [j.companyName ?? "", customersById?.get(String(j.customerId))?.name ?? ""].join(" ");
               return fuzzyMatch(searchableText, remainingSearch);
             });
           }
-        } else {
-          results = results.filter(j => {
-            const searchableText = [j.companyName ?? '', customersById?.get(String(j.customerId))?.name ?? ''].join(' ');
+        }
+        else {
+          results = results.filter((j) => {
+            const searchableText = [j.companyName ?? "", customersById?.get(String(j.customerId))?.name ?? ""].join(" ");
             return fuzzyMatch(searchableText, q);
           });
         }
@@ -340,15 +367,18 @@ const Pipeline = () => {
     }
 
     if (filters.dateRange[0] || filters.dateRange[1]) {
-      results = results.filter(j => {
+      results = results.filter((j) => {
         const dateValue = j[filters.dateField] ? new Date(j[filters.dateField]) : null;
-        if (!dateValue) return false;
+        if (!dateValue)
+          return false;
 
         const startDate = filters.dateRange[0] ? new Date(filters.dateRange[0]) : null;
         const endDate = filters.dateRange[1] ? new Date(filters.dateRange[1]) : null;
 
-        if (startDate && dateValue < startDate) return false;
-        if (endDate && dateValue > endDate) return false;
+        if (startDate && dateValue < startDate)
+          return false;
+        if (endDate && dateValue > endDate)
+          return false;
         return true;
       });
     }
@@ -358,13 +388,15 @@ const Pipeline = () => {
     }
 
     if (filters.minValue) {
-      const minVal = parseFloat(filters.minValue);
-      if (!isNaN(minVal)) results = results.filter(j => (j.value ?? 0) >= minVal);
+      const minVal = Number.parseFloat(filters.minValue);
+      if (!isNaN(minVal))
+        results = results.filter(j => (j.value ?? 0) >= minVal);
     }
 
     if (filters.maxValue) {
-      const maxVal = parseFloat(filters.maxValue);
-      if (!isNaN(maxVal)) results = results.filter(j => (j.value ?? 0) <= maxVal);
+      const maxVal = Number.parseFloat(filters.maxValue);
+      if (!isNaN(maxVal))
+        results = results.filter(j => (j.value ?? 0) <= maxVal);
     }
 
     results = results.filter(j => filters.visibleStages.includes(j.stage ?? 1));
@@ -375,7 +407,7 @@ const Pipeline = () => {
 
     if (journeyStatusFilter.length > 0) {
       results = results.filter(j =>
-        journeyStatusFilter.some(status => (j.Journey_Status ?? "").toLowerCase() === status.toLowerCase())
+        journeyStatusFilter.some(status => (j.Journey_Status ?? "").toLowerCase() === status.toLowerCase()),
       );
     }
 
@@ -386,34 +418,34 @@ const Pipeline = () => {
       1: { operator: "or", conditions: [
         { field: "Journey_Stage", operator: "contains", value: "LEAD" },
         { field: "Journey_Stage", operator: "contains", value: "OPEN" },
-        { field: "Journey_Stage", operator: "contains", value: "NEW" }
-      ]},
+        { field: "Journey_Stage", operator: "contains", value: "NEW" },
+      ] },
       2: { operator: "or", conditions: [
         { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
         { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
         { field: "Journey_Stage", operator: "contains", value: "PAIN" },
-        { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
-      ]},
+        { field: "Journey_Stage", operator: "contains", value: "DISCOVER" },
+      ] },
       3: { operator: "or", conditions: [
         { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
         { field: "Journey_Stage", operator: "contains", value: "DEMO" },
         { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
-        { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
-      ]},
+        { field: "Journey_Stage", operator: "contains", value: "QUOTE" },
+      ] },
       4: { field: "Journey_Stage", operator: "contains", value: "NEGOT" },
       5: { operator: "or", conditions: [
         { field: "Journey_Stage", operator: "contains", value: "PO" },
         { field: "Journey_Stage", operator: "contains", value: "WON" },
         { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
         { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
-        { field: "Journey_Stage", operator: "contains", value: "ORDER" }
-      ]},
+        { field: "Journey_Stage", operator: "contains", value: "ORDER" },
+      ] },
       6: { operator: "or", conditions: [
         { field: "Journey_Stage", operator: "contains", value: "LOST" },
         { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
         { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
-        { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
-      ]}
+        { field: "Journey_Stage", operator: "contains", value: "DECLIN" },
+      ] },
     };
     return stageMap[stageId] || null;
   };
@@ -422,11 +454,11 @@ const Pipeline = () => {
     const filterConditions: any[] = [];
     const trimmedSearch = searchTerm.trim();
 
-    if (includeSearch && searchTerm && trimmedSearch.toLowerCase() !== 'tag:') {
+    if (includeSearch && searchTerm && trimmedSearch.toLowerCase() !== "tag:") {
       filterConditions.push({
         field: "Target_Account",
         operator: "contains",
-        value: trimmedSearch
+        value: trimmedSearch,
       });
     }
 
@@ -444,8 +476,10 @@ const Pipeline = () => {
 
     if (filters.confidenceLevels.length > 0) {
       const confidenceValues = filters.confidenceLevels.map((level: number) => {
-        if (level === 0) return "Closed Lost";
-        if (level === 100) return "Closed Won";
+        if (level === 0)
+          return "Closed Lost";
+        if (level === 100)
+          return "Closed Won";
         return `${level}%`;
       });
       filterConditions.push({ field: "Chance_To_Secure_order", operator: "in", values: confidenceValues });
@@ -453,15 +487,15 @@ const Pipeline = () => {
 
     if (filters.dateRange[0] || filters.dateRange[1]) {
       const fieldMap: Record<string, string> = {
-        'expectedDecisionDate': 'Expected_Decision_Date',
-        'Action_Date': 'Action_Date',
-        'Journey_Start_Date': 'Journey_Start_Date',
-        'Quote_Presentation_Date': 'Quote_Presentation_Date',
-        'Expected_Decision_Date': 'Expected_Decision_Date',
-        'Date_PO_Received': 'Date_PO_Received',
-        'Date_Lost': 'Date_Lost'
+        expectedDecisionDate: "Expected_Decision_Date",
+        Action_Date: "Action_Date",
+        Journey_Start_Date: "Journey_Start_Date",
+        Quote_Presentation_Date: "Quote_Presentation_Date",
+        Expected_Decision_Date: "Expected_Decision_Date",
+        Date_PO_Received: "Date_PO_Received",
+        Date_Lost: "Date_Lost",
       };
-      const dbField = fieldMap[filters.dateField] || 'Expected_Decision_Date';
+      const dbField = fieldMap[filters.dateField] || "Expected_Decision_Date";
 
       if (filters.dateRange[0]) {
         filterConditions.push({ field: dbField, operator: "gte", value: filters.dateRange[0] });
@@ -472,11 +506,11 @@ const Pipeline = () => {
     }
 
     if (filters.minValue) {
-      filterConditions.push({ field: "Journey_Value", operator: "gte", value: parseFloat(filters.minValue) });
+      filterConditions.push({ field: "Journey_Value", operator: "gte", value: Number.parseFloat(filters.minValue) });
     }
 
     if (filters.maxValue) {
-      filterConditions.push({ field: "Journey_Value", operator: "lte", value: parseFloat(filters.maxValue) });
+      filterConditions.push({ field: "Journey_Value", operator: "lte", value: Number.parseFloat(filters.maxValue) });
     }
 
     if (filters.visibleStages.length !== STAGES.length) {
@@ -490,32 +524,33 @@ const Pipeline = () => {
   };
 
   const fetchListViewJourneys = useCallback(async () => {
-    if (isLoadingListView) return;
+    if (isLoadingListView)
+      return;
 
     setIsLoadingListView(true);
     try {
       const sortFieldMap: Record<string, string> = {
-        'customerId': 'Target_Account',
-        'stage': 'Journey_Stage',
-        'value': 'Journey_Value',
-        'confidence': `CASE
+        customerId: "Target_Account",
+        stage: "Journey_Stage",
+        value: "Journey_Value",
+        confidence: `CASE
           WHEN Chance_To_Secure_order = 'Closed Won' THEN 100
           WHEN Chance_To_Secure_order = 'Closed Lost' THEN 0
           WHEN Chance_To_Secure_order LIKE '%[0-9]%' THEN CAST(REPLACE(Chance_To_Secure_order, '%', '') AS INT)
           ELSE 0
         END`,
-        'priority': 'Priority',
-        'updatedAt': 'Action_Date'
+        priority: "Priority",
+        updatedAt: "Action_Date",
       };
 
-      const dbSortField = sortField ? (sortFieldMap[sortField] || sortField) : 'CreateDT';
+      const dbSortField = sortField ? (sortFieldMap[sortField] || sortField) : "CreateDT";
 
       const params: any = {
         page: listPage,
         limit: listPageSize,
         sort: dbSortField,
         order: sortDirection,
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+        fields: "ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status",
       };
 
       const filterConditions = buildFilterConditions();
@@ -523,7 +558,7 @@ const Pipeline = () => {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await get('/legacy/base/Journey', params);
+      const raw = await get("/legacy/base/Journey", params);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
@@ -536,22 +571,25 @@ const Pipeline = () => {
             page: raw.meta.page,
             totalPages: raw.meta.totalPages,
             total: raw.meta.total,
-            limit: raw.meta.limit
+            limit: raw.meta.limit,
           });
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error fetching list view journeys:", error);
-    } finally {
+    }
+    finally {
       setIsLoadingListView(false);
     }
   }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, get, searchTerm, rsmFilter, journeyStatusFilter, filters]);
 
   const fetchKanbanViewJourneys = useCallback(async () => {
-    if (isLoadingKanbanView) return;
+    if (isLoadingKanbanView)
+      return;
 
     const trimmedSearch = searchTerm.trim();
-    const hasTagSearch = trimmedSearch.toLowerCase().startsWith('tag:');
+    const hasTagSearch = trimmedSearch.toLowerCase().startsWith("tag:");
 
     if (hasTagSearch) {
       setKanbanViewJourneys(filteredJourneys.slice(0, kanbanBatchSize));
@@ -563,9 +601,9 @@ const Pipeline = () => {
       const params: any = {
         page: 1,
         limit: kanbanBatchSize,
-        sort: 'CreateDT',
-        order: 'desc',
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+        sort: "CreateDT",
+        order: "desc",
+        fields: "ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status",
       };
 
       const filterConditions = buildFilterConditions();
@@ -573,28 +611,30 @@ const Pipeline = () => {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await get('/legacy/base/Journey', params);
+      const raw = await get("/legacy/base/Journey", params);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
         const mapped = journeysArray.map(adaptLegacyJourney);
         setKanbanViewJourneys(mapped);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error fetching kanban view journeys:", error);
-    } finally {
+    }
+    finally {
       setIsLoadingKanbanView(false);
     }
   }, [isLoadingKanbanView, kanbanBatchSize, get, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys]);
 
   useEffect(() => {
-    if (viewMode === 'list') {
+    if (viewMode === "list") {
       fetchListViewJourneys();
     }
   }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters]);
 
   useEffect(() => {
-    if (viewMode === 'kanban') {
+    if (viewMode === "kanban") {
       fetchKanbanViewJourneys();
     }
   }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters]);
@@ -607,33 +647,33 @@ const Pipeline = () => {
     setListPage(1);
   }, [searchTerm]);
   useEffect(() => {
-    saveToLocalStorage('searchTerm', searchTerm);
-    saveToLocalStorage('filters', filters);
-    saveToLocalStorage('rsmFilter', rsmFilter);
-    saveToLocalStorage('rsmFilterDisplay', rsmFilterDisplay);
-    saveToLocalStorage('journeyStatusFilter', journeyStatusFilter);
-    saveToLocalStorage('viewMode', viewMode);
-    saveToLocalStorage('sortField', sortField);
-    saveToLocalStorage('sortDirection', sortDirection);
-    saveToLocalStorage('showTags', showTags);
-    saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
+    saveToLocalStorage("searchTerm", searchTerm);
+    saveToLocalStorage("filters", filters);
+    saveToLocalStorage("rsmFilter", rsmFilter);
+    saveToLocalStorage("rsmFilterDisplay", rsmFilterDisplay);
+    saveToLocalStorage("journeyStatusFilter", journeyStatusFilter);
+    saveToLocalStorage("viewMode", viewMode);
+    saveToLocalStorage("sortField", sortField);
+    saveToLocalStorage("sortDirection", sortDirection);
+    saveToLocalStorage("showTags", showTags);
+    saveToLocalStorage("kanbanBatchSize", kanbanBatchSize);
   }, [searchTerm, filters, rsmFilter, rsmFilterDisplay, journeyStatusFilter, viewMode, sortField, sortDirection, showTags, kanbanBatchSize]);
 
   useEffect(() => {
-    if (showTags && viewMode === 'kanban' && kanbanViewJourneys.length > 0) {
+    if (showTags && viewMode === "kanban" && kanbanViewJourneys.length > 0) {
       const journeyIds = kanbanViewJourneys.map((j: any) => j.id.toString());
-      fetchJourneyTags(journeyIds).then(tagsMap => {
+      fetchJourneyTags(journeyIds).then((tagsMap) => {
         setJourneyTags(tagsMap);
       });
     }
   }, [showTags, viewMode, kanbanViewJourneys]);
 
   useEffect(() => {
-    const view = searchParams.get('view');
-    const sort = searchParams.get('sort');
-    const order = searchParams.get('order');
+    const view = searchParams.get("view");
+    const sort = searchParams.get("sort");
+    const order = searchParams.get("order");
 
-    if (view === 'list' || view === 'kanban' || view === 'projections') {
+    if (view === "list" || view === "kanban" || view === "projections") {
       setViewMode(view);
     }
 
@@ -641,7 +681,7 @@ const Pipeline = () => {
       setSortField(sort);
     }
 
-    if (order === 'asc' || order === 'desc') {
+    if (order === "asc" || order === "desc") {
       setSortDirection(order);
     }
 
@@ -682,9 +722,10 @@ const Pipeline = () => {
     }, {} as Record<number, string[]>);
 
     const journeysForStaging = viewMode === "kanban" ? kanbanViewJourneys : filteredJourneys;
-    (journeysForStaging ?? []).forEach(j => {
+    (journeysForStaging ?? []).forEach((j) => {
       const sid: StageId = (j.stage as StageId) ?? 1;
-      if (!next[sid]) next[sid] = [];
+      if (!next[sid])
+        next[sid] = [];
       next[sid].push(String(j.id));
     });
 
@@ -697,23 +738,26 @@ const Pipeline = () => {
 
       if (success) {
         setLegacyJourneys(prev =>
-          prev ? prev.filter(j => j.id.toString() !== journeyId) : prev
+          prev ? prev.filter(j => j.id.toString() !== journeyId) : prev,
         );
         setJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
         setKanbanViewJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
-      } else {
+      }
+      else {
         alert("Failed to delete journey. Please try again.");
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error deleting journey:", error);
       alert("Failed to delete journey. Please try again.");
     }
   }, [del]);
 
   const handleTagsUpdated = useCallback(async () => {
-    if (!showTags) return;
+    if (!showTags)
+      return;
 
-    const journeysToUpdate = viewMode === 'kanban' ? kanbanViewJourneys : (legacyJourneys || journeys);
+    const journeysToUpdate = viewMode === "kanban" ? kanbanViewJourneys : (legacyJourneys || journeys);
     if (journeysToUpdate && journeysToUpdate.length > 0) {
       const journeyIds = journeysToUpdate.map((j: any) => j.id.toString());
       const tagsMap = await fetchJourneyTags(journeyIds);
@@ -729,19 +773,19 @@ const Pipeline = () => {
     }
 
     const updateLocalState = () => {
-      setLegacyJourneys((prev) =>
-        (prev ?? []).map((j) =>
+      setLegacyJourneys(prev =>
+        (prev ?? []).map(j =>
           j.id.toString() === journeyId
             ? { ...j, stage: newStage, updatedAt: new Date().toISOString() }
-            : j
-        )
+            : j,
+        ),
       );
-      setKanbanViewJourneys((prev) =>
-        prev.map((j) =>
+      setKanbanViewJourneys(prev =>
+        prev.map(j =>
           j.id.toString() === journeyId
             ? { ...j, stage: newStage, updatedAt: new Date().toISOString() }
-            : j
-        )
+            : j,
+        ),
       );
     };
 
@@ -749,20 +793,23 @@ const Pipeline = () => {
 
     try {
       await patch(`/legacy/base/Journey/${journeyId}`, { Journey_Stage: stageLabel });
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error updating journey stage:", error);
     }
   }, [patch]);
 
-  const handleSort = useCallback((field: string, order?: 'asc' | 'desc') => {
+  const handleSort = useCallback((field: string, order?: "asc" | "desc") => {
     if (order) {
       setSortField(field);
       setSortDirection(order);
-    } else if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
+    }
+    else if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    }
+    else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   }, [sortField, sortDirection]);
 
@@ -774,27 +821,28 @@ const Pipeline = () => {
     journeyStatusFilter,
     sortField,
     sortDirection,
-    viewMode
+    viewMode,
   });
 
   const handleSavePreset = () => {
-    if (!newPresetName.trim()) return;
+    if (!newPresetName.trim())
+      return;
 
     const newPreset = {
       id: Date.now().toString(),
       name: newPresetName.trim(),
       createdAt: new Date().toISOString(),
-      ...getCurrentFilterState()
+      ...getCurrentFilterState(),
     };
 
     const updatedPresets = [...savedPresets, newPreset];
     setSavedPresets(updatedPresets);
-    saveToLocalStorage('savedPresets', updatedPresets);
-    setNewPresetName('');
+    saveToLocalStorage("savedPresets", updatedPresets);
+    setNewPresetName("");
   };
 
   const handleLoadPreset = (preset: any) => {
-    setSearchTerm(preset.searchTerm || '');
+    setSearchTerm(preset.searchTerm || "");
     setFilters(preset.filters || {
       confidenceLevels: [],
       dateRange: ["", ""],
@@ -804,19 +852,19 @@ const Pipeline = () => {
       maxValue: "",
       visibleStages: STAGES.map(s => s.id),
     });
-    setRsmFilter(preset.rsmFilter || '');
-    setRsmFilterDisplay(preset.rsmFilterDisplay || '');
+    setRsmFilter(preset.rsmFilter || "");
+    setRsmFilterDisplay(preset.rsmFilterDisplay || "");
     setJourneyStatusFilter(preset.journeyStatusFilter || []);
-    setSortField(preset.sortField || '');
-    setSortDirection(preset.sortDirection || 'asc');
-    setViewMode(preset.viewMode || 'kanban');
+    setSortField(preset.sortField || "");
+    setSortDirection(preset.sortDirection || "asc");
+    setViewMode(preset.viewMode || "kanban");
     setIsPresetModalOpen(false);
   };
 
   const handleDeletePreset = (presetId: string) => {
     const updatedPresets = savedPresets.filter(p => p.id !== presetId);
     setSavedPresets(updatedPresets);
-    saveToLocalStorage('savedPresets', updatedPresets);
+    saveToLocalStorage("savedPresets", updatedPresets);
   };
 
   const totalPipelineValue = filteredJourneys.reduce((sum, j) => sum + Number(j.value ?? 0), 0);
@@ -836,52 +884,53 @@ const Pipeline = () => {
       ? `Showing ${kanbanViewJourneys.length} of ${filteredJourneys.length} Journeys`
       : `${filteredJourneys.length} Journeys`;
 
-
   const exportToExcel = useCallback(async (options: { includePrimaryContactOnly: boolean }) => {
-    const headers = ['Quote Number', 'CreateDate', 'ActionDate', 'Confidence', 'Est PO Date', 'Stage', 'RSM', 'Industry', 'Dealer', 'Customer', 'Equipment', 'Lead Source', 'Projected Value', 'Journey Steps', 'Contact Name', 'Contact Email', 'Contact Position', 'Address'];
+    const headers = ["Quote Number", "CreateDate", "ActionDate", "Confidence", "Est PO Date", "Stage", "RSM", "Industry", "Dealer", "Customer", "Equipment", "Lead Source", "Projected Value", "Journey Steps", "Contact Name", "Contact Email", "Contact Position", "Address"];
 
     const rsmFullNames = new Map(
-      [...new Set(filteredJourneys.map(j => j.RSM).filter(Boolean))].map(initials => {
+      [...new Set(filteredJourneys.map(j => j.RSM).filter(Boolean))].map((initials) => {
         const displayName = rsmDisplayNames.get(initials);
         const nameMatch = displayName?.match(/^(.+?)\s*\(/);
         return [initials, nameMatch ? nameMatch[1].trim() : initials];
-      })
+      }),
     );
 
     const journeyContacts = new Map();
     const journeyAddresses = new Map();
-    const emptyContact = [{ Contact_Name: '', Contact_Email: '', Contact_Position: '' }];
+    const emptyContact = [{ Contact_Name: "", Contact_Email: "", Contact_Position: "" }];
 
     await Promise.all(
       filteredJourneys.map(async (journey) => {
         try {
-          const contactData = await get('/legacy/base/Journey_Contact/filter/custom', {
-            filterField: 'Jrn_ID',
+          const contactData = await get("/legacy/base/Journey_Contact/filter/custom", {
+            filterField: "Jrn_ID",
             filterValue: journey.id,
-            fields: 'Contact_Name,Contact_Email,Contact_Position,IsPrimary'
+            fields: "Contact_Name,Contact_Email,Contact_Position,IsPrimary",
           });
           if (contactData?.length) {
             const contacts = options.includePrimaryContactOnly
-              ? [contactData.find((c: any) => c.IsPrimary === true || c.IsPrimary === 'true' || c.IsPrimary === 1) || contactData[0]]
+              ? [contactData.find((c: any) => c.IsPrimary === true || c.IsPrimary === "true" || c.IsPrimary === 1) || contactData[0]]
               : contactData;
             journeyContacts.set(journey.id.toString(), contacts.map((c: any) => ({
-              Contact_Name: c.Contact_Name || '',
-              Contact_Email: c.Contact_Email || '',
-              Contact_Position: c.Contact_Position || ''
+              Contact_Name: c.Contact_Name || "",
+              Contact_Email: c.Contact_Email || "",
+              Contact_Position: c.Contact_Position || "",
             })));
-          } else {
+          }
+          else {
             journeyContacts.set(journey.id.toString(), emptyContact);
           }
-        } catch (error) {
+        }
+        catch (error) {
           console.error(`Error fetching contact data for journey ${journey.id}:`, error);
           journeyContacts.set(journey.id.toString(), emptyContact);
         }
 
         if (journey.Address_ID && journey.Company_ID) {
           try {
-            const addressesData = await get('/legacy/std/Address/filter/custom', {
-              filterField: 'Company_ID',
-              filterValue: journey.Company_ID
+            const addressesData = await get("/legacy/std/Address/filter/custom", {
+              filterField: "Company_ID",
+              filterValue: journey.Company_ID,
             });
 
             const matchingAddress = Array.isArray(addressesData)
@@ -890,72 +939,73 @@ const Pipeline = () => {
 
             if (matchingAddress) {
               journeyAddresses.set(journey.id.toString(), {
-                AddressName: matchingAddress.AddressName || '',
-                Address1: matchingAddress.Address1 || '',
-                Address2: matchingAddress.Address2 || '',
-                Address3: matchingAddress.Address3 || '',
-                City: matchingAddress.City || '',
-                State: matchingAddress.State || '',
-                Country: matchingAddress.Country || '',
-                ZipCode: matchingAddress.ZipCode || ''
+                AddressName: matchingAddress.AddressName || "",
+                Address1: matchingAddress.Address1 || "",
+                Address2: matchingAddress.Address2 || "",
+                Address3: matchingAddress.Address3 || "",
+                City: matchingAddress.City || "",
+                State: matchingAddress.State || "",
+                Country: matchingAddress.Country || "",
+                ZipCode: matchingAddress.ZipCode || "",
               });
             }
-          } catch (error) {
+          }
+          catch (error) {
             console.error(`Error fetching address data for journey ${journey.id}:`, error);
           }
         }
-      })
+      }),
     );
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Pipeline Export');
+    const worksheet = workbook.addWorksheet("Pipeline Export");
 
-    const formatDateOnly = (d: any) => d ? new Date(d).toLocaleDateString('en-US') : '';
+    const formatDateOnly = (d: any) => d ? new Date(d).toLocaleDateString("en-US") : "";
 
-    const dataRows = filteredJourneys.map(journey => {
-      const contacts = journeyContacts.get(journey.id.toString()) || [{ Contact_Name: '', Contact_Email: '', Contact_Position: '' }];
+    const dataRows = filteredJourneys.map((journey) => {
+      const contacts = journeyContacts.get(journey.id.toString()) || [{ Contact_Name: "", Contact_Email: "", Contact_Position: "" }];
       const address = journeyAddresses.get(journey.id.toString());
 
       return [
-        journey.Quote_Number || '',
+        journey.Quote_Number || "",
         formatDateOnly(journey.CreateDT),
         formatDateOnly(journey.Action_Date),
-        journey.Chance_To_Secure_order || '',
+        journey.Chance_To_Secure_order || "",
         formatDateOnly(journey.Expected_Decision_Date),
         journey.Journey_Stage || stageLabel(journey.stage),
-        journey.RSM ? rsmFullNames.get(journey.RSM) || journey.RSM : '',
-        journey.Industry || '',
-        journey.Dealer || journey.Dealer_Name || journey.dealer || '',
-        customersById.get(String(journey.customerId))?.name || journey.companyName || journey.Target_Account || '',
-        journey.Equipment_Type || '',
-        journey.Lead_Source || '',
+        journey.RSM ? rsmFullNames.get(journey.RSM) || journey.RSM : "",
+        journey.Industry || "",
+        journey.Dealer || journey.Dealer_Name || journey.dealer || "",
+        customersById.get(String(journey.customerId))?.name || journey.companyName || journey.Target_Account || "",
+        journey.Equipment_Type || "",
+        journey.Lead_Source || "",
         Number(journey.Journey_Value || journey.value || 0),
-        journey.Next_Steps || '',
-        contacts.map((c: any) => c.Contact_Name).filter(Boolean).join('\n'),
-        contacts.map((c: any) => c.Contact_Email || '').join('\n'),
-        contacts.map((c: any) => c.Contact_Position || '').join('\n'),
-        address ? [address.AddressName, address.Address1, address.Address2, address.Address3, [address.City, address.State, address.ZipCode].filter(Boolean).join(', '), address.Country].filter(Boolean).join('\n') : ''
+        journey.Next_Steps || "",
+        contacts.map((c: any) => c.Contact_Name).filter(Boolean).join("\n"),
+        contacts.map((c: any) => c.Contact_Email || "").join("\n"),
+        contacts.map((c: any) => c.Contact_Position || "").join("\n"),
+        address ? [address.AddressName, address.Address1, address.Address2, address.Address3, [address.City, address.State, address.ZipCode].filter(Boolean).join(", "), address.Country].filter(Boolean).join("\n") : "",
       ];
     });
     const lastColumn = String.fromCharCode(64 + headers.length);
     const lastRow = dataRows.length + 1;
 
     worksheet.addTable({
-      name: 'PipelineTable',
+      name: "PipelineTable",
       ref: `A1:${lastColumn}${lastRow}`,
       headerRow: true,
       totalsRow: false,
       style: {
-        theme: 'TableStyleLight16',
+        theme: "TableStyleLight16",
         showRowStripes: true,
       },
       columns: headers.map(header => ({ name: header, filterButton: true })),
-      rows: dataRows
+      rows: dataRows,
     });
     worksheet.columns.forEach((column: any, index: any) => {
       let maxLength = headers[index].length;
       worksheet.getColumn(index + 1).eachCell({ includeEmpty: false }, (cell: any) => {
-        const lines = String(cell.value || '').split('\n');
+        const lines = String(cell.value || "").split("\n");
         maxLength = Math.max(maxLength, ...lines.map(line => line.length));
       });
       column.width = Math.min(Math.max(maxLength + 2, 10), 50);
@@ -964,25 +1014,28 @@ const Pipeline = () => {
       row.height = 15;
       let maxLines = 1;
       row.eachCell((cell: any, colNumber: any) => {
-        cell.alignment = { wrapText: true, vertical: 'top' };
+        cell.alignment = { wrapText: true, vertical: "top" };
         if (rowNumber === 1) {
           cell.font = { bold: true };
-        } else {
-          if (headers[colNumber - 1] === 'Projected Value') cell.numFmt = '$#,##0.00';
-          const cellValue = String(cell.value || '');
+        }
+        else {
+          if (headers[colNumber - 1] === "Projected Value")
+            cell.numFmt = "$#,##0.00";
+          const cellValue = String(cell.value || "");
           const columnWidth = worksheet.getColumn(colNumber).width || 10;
-          const totalLines = cellValue.split('\n').reduce((sum, line) =>
+          const totalLines = cellValue.split("\n").reduce((sum, line) =>
             sum + (line.length === 0 ? 1 : Math.ceil(line.length / Math.floor(columnWidth))), 0);
           maxLines = Math.max(maxLines, totalLines);
         }
       });
-      if (rowNumber > 1) row.height = Math.max(maxLines * 15, 15);
+      if (rowNumber > 1)
+        row.height = Math.max(maxLines * 15, 15);
     });
-    const fileName = `pipeline-export-${new Date().toISOString().split('T')[0]}.xlsx`;
+    const fileName = `pipeline-export-${new Date().toISOString().split("T")[0]}.xlsx`;
     const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = fileName;
     link.click();
@@ -1057,7 +1110,7 @@ const Pipeline = () => {
         description={pageDescription}
         actions={<HeaderActions />}
       />
-      
+
       {/* Pipeline Value Summary - Only show for kanban and list views */}
       {viewMode !== "projections" && (
         <div className="border-b px-6 py-4 bg-gray-50 dark:bg-gray-800">
@@ -1146,7 +1199,7 @@ const Pipeline = () => {
       )}
 
       {viewMode === "projections" && (
-        <ProjectionsView 
+        <ProjectionsView
           journeys={filteredJourneys}
           customersById={customersById}
         />
@@ -1158,21 +1211,21 @@ const Pipeline = () => {
           onSuccess={(newJourney) => {
             if (newJourney) {
               const adaptedJourney = adaptLegacyJourney(newJourney);
-              setLegacyJourneys(prev => {
+              setLegacyJourneys((prev) => {
                 const updated = prev ? [adaptedJourney, ...prev] : [adaptedJourney];
                 return updated;
               });
-              setJourneys(prev => {
+              setJourneys((prev) => {
                 const updated = [adaptedJourney, ...prev];
                 return updated;
               });
-              if (viewMode === 'kanban') {
+              if (viewMode === "kanban") {
                 fetchKanbanViewJourneys();
               }
               setNavigationModal({
                 isOpen: true,
-                journeyName: adaptedJourney.name || adaptedJourney.Project_Name || adaptedJourney.Target_Account || 'New Journey',
-                journeyId: adaptedJourney.id
+                journeyName: adaptedJourney.name || adaptedJourney.Project_Name || adaptedJourney.Target_Account || "New Journey",
+                journeyId: adaptedJourney.id,
               });
             }
           }}
@@ -1184,21 +1237,22 @@ const Pipeline = () => {
           isOpen={isImportModalOpen}
           onClose={toggleImportModal}
           onSuccess={() => {
-            if (viewMode === 'kanban') {
+            if (viewMode === "kanban") {
               fetchKanbanViewJourneys();
-            } else if (viewMode === 'list') {
+            }
+            else if (viewMode === "list") {
               fetchListViewJourneys();
             }
 
             const fetchData = async () => {
               const [journeysData] = await Promise.all([
-                get('/legacy/base/Journey', {
+                get("/legacy/base/Journey", {
                   page: 1,
                   limit: 200,
-                  sort: 'CreateDT',
-                  order: 'desc',
-                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
-                })
+                  sort: "CreateDT",
+                  order: "desc",
+                  fields: "ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status",
+                }),
               ]);
 
               if (journeysData) {
@@ -1223,13 +1277,15 @@ const Pipeline = () => {
       {navigationModal.isOpen && (
         <Modal
           isOpen={navigationModal.isOpen}
-          onClose={() => setNavigationModal({ isOpen: false, journeyName: '', journeyId: '' })}
+          onClose={() => setNavigationModal({ isOpen: false, journeyName: "", journeyId: "" })}
           title="Journey Created Successfully!"
           size="sm"
         >
           <div className="space-y-4">
             <p className="text-text">
-              Journey "{navigationModal.journeyName}" has been created successfully.
+              Journey "
+              {navigationModal.journeyName}
+              " has been created successfully.
             </p>
             <p className="text-text-muted text-sm">
               Would you like to open the journey details now?
@@ -1238,7 +1294,7 @@ const Pipeline = () => {
               <Button
                 variant="secondary-outline"
                 size="sm"
-                onClick={() => setNavigationModal({ isOpen: false, journeyName: '', journeyId: '' })}
+                onClick={() => setNavigationModal({ isOpen: false, journeyName: "", journeyId: "" })}
               >
                 Stay Here
               </Button>
@@ -1246,7 +1302,7 @@ const Pipeline = () => {
                 variant="primary"
                 size="sm"
                 onClick={() => {
-                  setNavigationModal({ isOpen: false, journeyName: '', journeyId: '' });
+                  setNavigationModal({ isOpen: false, journeyName: "", journeyId: "" });
                   navigate(`/sales/pipeline/${navigationModal.journeyId}`);
                 }}
               >
@@ -1276,7 +1332,7 @@ const Pipeline = () => {
           isOpen={isPresetModalOpen}
           onClose={() => {
             setIsPresetModalOpen(false);
-            setNewPresetName('');
+            setNewPresetName("");
           }}
           title="Search Presets"
           size="md"
@@ -1288,7 +1344,7 @@ const Pipeline = () => {
                 <Input
                   placeholder="e.g., High Priority Open Journeys"
                   value={newPresetName}
-                  onChange={(e) => setNewPresetName(e.target.value)}
+                  onChange={e => setNewPresetName(e.target.value)}
                   className="flex-1"
                 />
                 <Button
@@ -1304,47 +1360,51 @@ const Pipeline = () => {
 
             <div>
               <h3 className="text-sm font-semibold text-text mb-3">Saved Presets</h3>
-              {savedPresets.length > 0 ? (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {savedPresets.map((preset) => (
-                    <div
-                      key={preset.id}
-                      className="flex items-center justify-between p-3 bg-surface rounded border border-border hover:bg-background transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-text">{preset.name}</div>
-                        <div className="text-xs text-text-muted">
-                          Saved on {new Date(preset.createdAt).toLocaleDateString()}
+              {savedPresets.length > 0
+                ? (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {savedPresets.map(preset => (
+                        <div
+                          key={preset.id}
+                          className="flex items-center justify-between p-3 bg-surface rounded border border-border hover:bg-background transition-colors"
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium text-text">{preset.name}</div>
+                            <div className="text-xs text-text-muted">
+                              Saved on
+                              {" "}
+                              {new Date(preset.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleLoadPreset(preset)}
+                            >
+                              Load
+                            </Button>
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`Delete preset "${preset.name}"?`)) {
+                                  handleDeletePreset(preset.id);
+                                }
+                              }}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleLoadPreset(preset)}
-                        >
-                          Load
-                        </Button>
-                        <Button
-                          variant="secondary-outline"
-                          size="sm"
-                          onClick={() => {
-                            if (confirm(`Delete preset "${preset.name}"?`)) {
-                              handleDeletePreset(preset.id);
-                            }
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-text-muted">
-                  No saved presets yet. Save your current search configuration above.
-                </div>
-              )}
+                  )
+                : (
+                    <div className="text-center py-8 text-text-muted">
+                      No saved presets yet. Save your current search configuration above.
+                    </div>
+                  )}
             </div>
 
             <div className="flex justify-end pt-2 border-t border-border">
@@ -1352,7 +1412,7 @@ const Pipeline = () => {
                 variant="secondary-outline"
                 onClick={() => {
                   setIsPresetModalOpen(false);
-                  setNewPresetName('');
+                  setNewPresetName("");
                 }}
               >
                 Close
@@ -1363,9 +1423,9 @@ const Pipeline = () => {
       )}
     </div>
   );
-};
+}
 
-const FilterModal = ({
+function FilterModal({
   isOpen,
   filters,
   onApply,
@@ -1383,13 +1443,13 @@ const FilterModal = ({
   };
   onApply: (filters: any) => void;
   onClose: () => void;
-}) => {
+}) {
   const [localFilters, setLocalFilters] = useState(filters);
-  
+
   useEffect(() => {
     setLocalFilters(filters);
   }, [filters, isOpen]);
-  
+
   const handleReset = () => {
     setLocalFilters({
       confidenceLevels: [],
@@ -1401,16 +1461,16 @@ const FilterModal = ({
       visibleStages: STAGES.map(s => s.id),
     });
   };
-  
-  const hasActiveFilters = 
-    localFilters.confidenceLevels.length > 0 ||
-    localFilters.dateRange[0] ||
-    localFilters.dateRange[1] ||
-    localFilters.priority ||
-    localFilters.minValue ||
-    localFilters.maxValue ||
-    localFilters.visibleStages.length !== STAGES.length;
-  
+
+  const hasActiveFilters
+    = localFilters.confidenceLevels.length > 0
+      || localFilters.dateRange[0]
+      || localFilters.dateRange[1]
+      || localFilters.priority
+      || localFilters.minValue
+      || localFilters.maxValue
+      || localFilters.visibleStages.length !== STAGES.length;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Filter Pipeline" size="md">
       <div className="space-y-4">
@@ -1426,28 +1486,32 @@ const FilterModal = ({
                     if (e.target.checked) {
                       setLocalFilters(prev => ({
                         ...prev,
-                        confidenceLevels: [...prev.confidenceLevels, level]
+                        confidenceLevels: [...prev.confidenceLevels, level],
                       }));
-                    } else {
+                    }
+                    else {
                       setLocalFilters(prev => ({
                         ...prev,
-                        confidenceLevels: prev.confidenceLevels.filter(l => l !== level)
+                        confidenceLevels: prev.confidenceLevels.filter(l => l !== level),
                       }));
                     }
                   }}
                   className="rounded"
                 />
-                <span className="text-sm">{level}%</span>
+                <span className="text-sm">
+                  {level}
+                  %
+                </span>
               </label>
             ))}
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <Select
             label="Date Field"
             value={localFilters.dateField}
-            onChange={(e) => setLocalFilters(prev => ({ ...prev, dateField: e.target.value }))}
+            onChange={e => setLocalFilters(prev => ({ ...prev, dateField: e.target.value }))}
             options={[
               { value: "expectedDecisionDate", label: "Expected Decision Date" },
               { value: "Action_Date", label: "Action Date" },
@@ -1455,20 +1519,20 @@ const FilterModal = ({
               { value: "Quote_Presentation_Date", label: "Quote Presentation Date" },
               { value: "Expected_Decision_Date", label: "Expected Decision Date (Raw)" },
               { value: "Date_PO_Received", label: "PO Received Date" },
-              { value: "Date_Lost", label: "Date Lost" }
+              { value: "Date_Lost", label: "Date Lost" },
             ]}
           />
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-text">Date From</label>
             <input
               type="date"
               value={localFilters.dateRange[0]}
-              onChange={(e) => setLocalFilters(prev => ({
+              onChange={e => setLocalFilters(prev => ({
                 ...prev,
-                dateRange: [e.target.value, prev.dateRange[1]]
+                dateRange: [e.target.value, prev.dateRange[1]],
               }))}
               className="w-full rounded border border-border px-3 py-2 text-sm"
             />
@@ -1478,20 +1542,20 @@ const FilterModal = ({
             <input
               type="date"
               value={localFilters.dateRange[1]}
-              onChange={(e) => setLocalFilters(prev => ({
+              onChange={e => setLocalFilters(prev => ({
                 ...prev,
-                dateRange: [prev.dateRange[0], e.target.value]
+                dateRange: [prev.dateRange[0], e.target.value],
               }))}
               className="w-full rounded border border-border px-3 py-2 text-sm"
             />
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <Select
             label="Priority"
             value={localFilters.priority}
-            onChange={(e) => setLocalFilters(prev => ({ ...prev, priority: e.target.value }))}
+            onChange={e => setLocalFilters(prev => ({ ...prev, priority: e.target.value }))}
             options={[
               { value: "", label: "All priorities" },
               { value: "A", label: "A (Highest)" },
@@ -1501,14 +1565,14 @@ const FilterModal = ({
             ]}
           />
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Input
               label="Min Value ($)"
               placeholder="0"
               value={localFilters.minValue}
-              onChange={(e) => setLocalFilters(prev => ({ ...prev, minValue: e.target.value }))}
+              onChange={e => setLocalFilters(prev => ({ ...prev, minValue: e.target.value }))}
               type="number"
             />
           </div>
@@ -1517,12 +1581,12 @@ const FilterModal = ({
               label="Max Value ($)"
               placeholder="No limit"
               value={localFilters.maxValue}
-              onChange={(e) => setLocalFilters(prev => ({ ...prev, maxValue: e.target.value }))}
+              onChange={e => setLocalFilters(prev => ({ ...prev, maxValue: e.target.value }))}
               type="number"
             />
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <label className="text-sm font-medium text-text">Visible Stages</label>
           <div className="flex items-center justify-between gap-2 mb-2">
@@ -1552,12 +1616,13 @@ const FilterModal = ({
                       if (e.target.checked) {
                         setLocalFilters(prev => ({
                           ...prev,
-                          visibleStages: [...prev.visibleStages, stage.id]
+                          visibleStages: [...prev.visibleStages, stage.id],
                         }));
-                      } else {
+                      }
+                      else {
                         setLocalFilters(prev => ({
                           ...prev,
-                          visibleStages: prev.visibleStages.filter(id => id !== stage.id)
+                          visibleStages: prev.visibleStages.filter(id => id !== stage.id),
                         }));
                       }
                     }}
@@ -1569,7 +1634,7 @@ const FilterModal = ({
             </div>
           </div>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row justify-between gap-2 pt-4 border-t">
           <Button
             variant="secondary-outline"
@@ -1591,7 +1656,6 @@ const FilterModal = ({
       </div>
     </Modal>
   );
-};
-
+}
 
 export default Pipeline;

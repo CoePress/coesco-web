@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
-import { Modal, Button } from "@/components";
-import { useApi } from "@/hooks/use-api";
+import { useEffect, useState } from "react";
+
+import { Button, Modal } from "@/components";
 import { useAuth } from "@/contexts/auth.context";
+import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
 
 interface AddContactModalProps {
@@ -14,15 +15,15 @@ interface AddContactModalProps {
   showPrimaryOption?: boolean;
 }
 
-export const AddContactModal = ({
+export function AddContactModal({
   isOpen,
   onClose,
   onContactAdded,
   companyId,
   addressId,
   journeyId,
-  showPrimaryOption = false
-}: AddContactModalProps) => {
+  showPrimaryOption = false,
+}: AddContactModalProps) {
   const api = useApi();
   const { employee } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,19 +70,21 @@ export const AddContactModal = ({
           filter: JSON.stringify({
             OR: [
               { firstName: { contains: searchQuery, mode: "insensitive" } },
-              { lastName: { contains: searchQuery, mode: "insensitive" } }
-            ]
+              { lastName: { contains: searchQuery, mode: "insensitive" } },
+            ],
           }),
-          limit: 10
+          limit: 10,
         });
 
         if (results?.success && Array.isArray(results.data)) {
           setSearchResults(results.data);
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error("Error searching contacts:", error);
         setSearchResults([]);
-      } finally {
+      }
+      finally {
         setIsSearching(false);
       }
     }, 300);
@@ -94,7 +97,7 @@ export const AddContactModal = ({
     setIsSubmitting(true);
 
     try {
-      const DUMMY_LEGACY_COMPANY_UUID = '00000000-0000-0000-0000-000000000000';
+      const DUMMY_LEGACY_COMPANY_UUID = "00000000-0000-0000-0000-000000000000";
 
       const trimmedData = {
         companyId: companyId || DUMMY_LEGACY_COMPANY_UUID,
@@ -124,19 +127,23 @@ export const AddContactModal = ({
         }
 
         onClose();
-      } else {
+      }
+      else {
         alert("Failed to create contact. Please try again.");
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error creating contact:", error);
       alert("Error creating contact. Please try again.");
-    } finally {
+    }
+    finally {
       setIsSubmitting(false);
     }
   };
 
   const handleLinkContact = async () => {
-    if (!selectedContact || !journeyId) return;
+    if (!selectedContact || !journeyId)
+      return;
 
     setIsSubmitting(true);
     try {
@@ -149,10 +156,12 @@ export const AddContactModal = ({
       }
 
       onClose();
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error linking contact:", error);
       alert("Error linking contact. Please try again.");
-    } finally {
+    }
+    finally {
       setIsSubmitting(false);
     }
   };
@@ -237,255 +246,280 @@ export const AddContactModal = ({
         </div>
       )}
 
-      {activeTab === "create" ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              First Name <span className="text-error">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.firstName}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value.length === 0 || value[0] !== ' ') {
-                  setFormData(prev => ({ ...prev, firstName: value }));
-                }
-              }}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={100}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Last Name <span className="text-error">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.lastName}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value.length === 0 || value[0] !== ' ') {
-                  setFormData(prev => ({ ...prev, lastName: value }));
-                }
-              }}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={100}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Contact Type <span className="text-error">*</span>
-            </label>
-            <select
-              value={formData.type}
-              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              required
-            >
-              <option value="">Select Type</option>
-              <option value={ContactType.Accounting}>Accounting</option>
-              <option value={ContactType.Engineering}>Engineering</option>
-              <option value={ContactType.Sales}>Sales</option>
-              <option value={ContactType.Parts_Service}>Parts/Service</option>
-              <option value={ContactType.Inactive}>Inactive</option>
-              <option value={ContactType.Left_Company}>Left Company</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Title
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={100}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={255}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Phone Number
-            </label>
-            <input
-              type="text"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={50}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Phone Extension
-            </label>
-            <input
-              type="text"
-              value={formData.phoneExtension}
-              onChange={(e) => setFormData(prev => ({ ...prev, phoneExtension: e.target.value }))}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              maxLength={20}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Address ID
-            </label>
-            <input
-              type="text"
-              value={formData.addressId}
-              onChange={(e) => setFormData(prev => ({ ...prev, addressId: e.target.value }))}
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-            />
-          </div>
-        </div>
-
-        {showPrimaryOption && journeyId && (
-          <div className="flex items-center gap-2 pt-2">
-            <input
-              type="checkbox"
-              id="isPrimary"
-              checked={isPrimary}
-              onChange={(e) => setIsPrimary(e.target.checked)}
-              className="text-primary focus:ring-primary"
-            />
-            <label htmlFor="isPrimary" className="text-sm text-text">
-              Set as Primary Contact
-            </label>
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2 pt-4">
-          <Button
-            variant="secondary-outline"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max px-3 py-1.5 border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? "Creating..." : "Create Contact"}
-          </button>
-        </div>
-      </form>
-      ) : (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1">
-              Search by Name
-            </label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Enter first or last name..."
-              className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-            />
-          </div>
-
-          {isSearching && (
-            <div className="text-center py-4 text-text-muted">
-              Searching...
-            </div>
-          )}
-
-          {!isSearching && searchResults.length > 0 && (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {searchResults.map((contact) => (
-                <div
-                  key={contact.id}
-                  onClick={() => setSelectedContact(contact)}
-                  className={`p-3 border rounded cursor-pointer transition-colors ${
-                    selectedContact?.id === contact.id
-                      ? "border-primary bg-gray"
-                      : "border-border hover:bg-gray"
-                  }`}
-                >
-                  <div className="font-medium text-text">
-                    {contact.firstName} {contact.lastName}
-                  </div>
-                  <div className="text-xs text-text-muted">
-                    {contact.email && <div>Email: {contact.email}</div>}
-                    {contact.phone && <div>Phone: {contact.phone}</div>}
-                    {contact.type && <div>Type: {contact.type}</div>}
-                  </div>
+      {activeTab === "create"
+        ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    First Name
+                    {" "}
+                    <span className="text-error">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length === 0 || value[0] !== " ") {
+                        setFormData(prev => ({ ...prev, firstName: value }));
+                      }
+                    }}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    maxLength={100}
+                    required
+                  />
                 </div>
-              ))}
+
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    Last Name
+                    {" "}
+                    <span className="text-error">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length === 0 || value[0] !== " ") {
+                        setFormData(prev => ({ ...prev, lastName: value }));
+                      }
+                    }}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    maxLength={100}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    Contact Type
+                    {" "}
+                    <span className="text-error">*</span>
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={e => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    required
+                  >
+                    <option value="">Select Type</option>
+                    <option value={ContactType.Accounting}>Accounting</option>
+                    <option value={ContactType.Engineering}>Engineering</option>
+                    <option value={ContactType.Sales}>Sales</option>
+                    <option value={ContactType.Parts_Service}>Parts/Service</option>
+                    <option value={ContactType.Inactive}>Inactive</option>
+                    <option value={ContactType.Left_Company}>Left Company</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    maxLength={100}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    maxLength={255}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    maxLength={50}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    Phone Extension
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.phoneExtension}
+                    onChange={e => setFormData(prev => ({ ...prev, phoneExtension: e.target.value }))}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    maxLength={20}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    Address ID
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.addressId}
+                    onChange={e => setFormData(prev => ({ ...prev, addressId: e.target.value }))}
+                    className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              {showPrimaryOption && journeyId && (
+                <div className="flex items-center gap-2 pt-2">
+                  <input
+                    type="checkbox"
+                    id="isPrimary"
+                    checked={isPrimary}
+                    onChange={e => setIsPrimary(e.target.checked)}
+                    className="text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="isPrimary" className="text-sm text-text">
+                    Set as Primary Contact
+                  </label>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="secondary-outline"
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max px-3 py-1.5 border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? "Creating..." : "Create Contact"}
+                </button>
+              </div>
+            </form>
+          )
+        : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Search by Name
+                </label>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Enter first or last name..."
+                  className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                />
+              </div>
+
+              {isSearching && (
+                <div className="text-center py-4 text-text-muted">
+                  Searching...
+                </div>
+              )}
+
+              {!isSearching && searchResults.length > 0 && (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {searchResults.map(contact => (
+                    <div
+                      key={contact.id}
+                      onClick={() => setSelectedContact(contact)}
+                      className={`p-3 border rounded cursor-pointer transition-colors ${
+                        selectedContact?.id === contact.id
+                          ? "border-primary bg-gray"
+                          : "border-border hover:bg-gray"
+                      }`}
+                    >
+                      <div className="font-medium text-text">
+                        {contact.firstName}
+                        {" "}
+                        {contact.lastName}
+                      </div>
+                      <div className="text-xs text-text-muted">
+                        {contact.email && (
+                          <div>
+                            Email:
+                            {contact.email}
+                          </div>
+                        )}
+                        {contact.phone && (
+                          <div>
+                            Phone:
+                            {contact.phone}
+                          </div>
+                        )}
+                        {contact.type && (
+                          <div>
+                            Type:
+                            {contact.type}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!isSearching && searchQuery && searchResults.length === 0 && (
+                <div className="text-center py-4 text-text-muted">
+                  No contacts found
+                </div>
+              )}
+
+              {showPrimaryOption && journeyId && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isPrimarySearch"
+                    checked={isPrimary}
+                    onChange={e => setIsPrimary(e.target.checked)}
+                    className="text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="isPrimarySearch" className="text-sm text-text">
+                    Set as Primary Contact
+                  </label>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="secondary-outline"
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleLinkContact}
+                  disabled={isSubmitting || !selectedContact}
+                >
+                  {isSubmitting ? "Linking..." : "Link Contact"}
+                </Button>
+              </div>
             </div>
           )}
-
-          {!isSearching && searchQuery && searchResults.length === 0 && (
-            <div className="text-center py-4 text-text-muted">
-              No contacts found
-            </div>
-          )}
-
-          {showPrimaryOption && journeyId && (
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isPrimarySearch"
-                checked={isPrimary}
-                onChange={(e) => setIsPrimary(e.target.checked)}
-                className="text-primary focus:ring-primary"
-              />
-              <label htmlFor="isPrimarySearch" className="text-sm text-text">
-                Set as Primary Contact
-              </label>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              variant="secondary-outline"
-              onClick={handleCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleLinkContact}
-              disabled={isSubmitting || !selectedContact}
-            >
-              {isSubmitting ? "Linking..." : "Link Contact"}
-            </Button>
-          </div>
-        </div>
-      )}
     </Modal>
   );
-};
+}

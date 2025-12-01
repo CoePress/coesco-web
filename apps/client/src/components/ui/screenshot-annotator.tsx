@@ -1,19 +1,19 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
-type ScreenshotAnnotatorProps = {
+interface ScreenshotAnnotatorProps {
   screenshot: string;
   onAnnotatedScreenshot: (annotatedDataUrl: string) => void;
   clearTrigger?: number;
-};
+}
 
-type Rectangle = {
+interface Rectangle {
   startX: number;
   startY: number;
   width: number;
   height: number;
-};
+}
 
-const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot, clearTrigger }: ScreenshotAnnotatorProps) => {
+function ScreenshotAnnotator({ screenshot, onAnnotatedScreenshot, clearTrigger }: ScreenshotAnnotatorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -29,12 +29,14 @@ const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot, clearTrigger }
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas)
+      return;
 
     const img = new Image();
     img.onload = () => {
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx)
+        return;
 
       canvas.width = img.width;
       canvas.height = img.height;
@@ -47,22 +49,23 @@ const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot, clearTrigger }
 
   const redrawAnnotations = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx)
+      return;
 
     const img = new Image();
     img.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
-      
-      ctx.strokeStyle = '#ef4444';
+
+      ctx.strokeStyle = "#ef4444";
       ctx.lineWidth = 3;
-      
-      [...rectangles, ...(currentRect ? [currentRect] : [])].forEach(rect => {
+
+      [...rectangles, ...(currentRect ? [currentRect] : [])].forEach((rect) => {
         ctx.strokeRect(rect.startX, rect.startY, rect.width, rect.height);
       });
-      
-      onAnnotatedScreenshot(canvas.toDataURL('image/png'));
+
+      onAnnotatedScreenshot(canvas.toDataURL("image/png"));
     };
     img.src = screenshot;
   };
@@ -73,15 +76,16 @@ const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot, clearTrigger }
 
   const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    
+    if (!canvas)
+      return { x: 0, y: 0 };
+
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
+
     return {
       x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY
+      y: (e.clientY - rect.top) * scaleY,
     };
   };
 
@@ -92,23 +96,25 @@ const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot, clearTrigger }
       startX: pos.x,
       startY: pos.y,
       width: 0,
-      height: 0
+      height: 0,
     });
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !currentRect) return;
+    if (!isDrawing || !currentRect)
+      return;
 
     const pos = getMousePos(e);
     setCurrentRect({
       ...currentRect,
       width: pos.x - currentRect.startX,
-      height: pos.y - currentRect.startY
+      height: pos.y - currentRect.startY,
     });
   };
 
   const handleMouseUp = () => {
-    if (!isDrawing || !currentRect) return;
+    if (!isDrawing || !currentRect)
+      return;
 
     if (Math.abs(currentRect.width) > 5 && Math.abs(currentRect.height) > 5) {
       setRectangles([...rectangles, currentRect]);
@@ -126,10 +132,10 @@ const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot, clearTrigger }
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         className="w-full h-auto cursor-crosshair"
-        style={{ display: 'block' }}
+        style={{ display: "block" }}
       />
     </div>
   );
-};
+}
 
 export default ScreenshotAnnotator;

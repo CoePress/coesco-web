@@ -10,6 +10,8 @@
  * (Migrated from client to server - storage mechanism needs to be adapted for server use)
  */
 
+import { env } from "@/config/env";
+
 import type { PerformanceData } from "../types/performance-data.types";
 
 export interface FieldCompletionState {
@@ -177,7 +179,7 @@ export class InitialAutofillTriggerService {
       return hasVal;
     });
 
-    if (process.env.NODE_ENV === "development" && incompleteFields.length > 0) {
+    if (env.NODE_ENV === "development" && incompleteFields.length > 0) {
       console.log("RFQ Incomplete Fields:", incompleteFields);
     }
 
@@ -197,7 +199,7 @@ export class InitialAutofillTriggerService {
       return hasVal;
     });
 
-    if (process.env.NODE_ENV === "development" && incompleteFields.length > 0) {
+    if (env.NODE_ENV === "development" && incompleteFields.length > 0) {
       console.log("Material Specs Incomplete Fields:", incompleteFields);
     }
 
@@ -217,7 +219,7 @@ export class InitialAutofillTriggerService {
       return hasVal;
     });
 
-    if (process.env.NODE_ENV === "development" && incompleteFields.length > 0) {
+    if (env.NODE_ENV === "development" && incompleteFields.length > 0) {
       console.log("RFQ Minimal Calculation Fields Incomplete:", incompleteFields);
     }
 
@@ -255,7 +257,7 @@ export class InitialAutofillTriggerService {
     const materialSpecsComplete = this.areMaterialSpecsFieldsComplete(data);
     const rfqMinimalComplete = this.areRfqMinimalFieldsComplete(data);
 
-    if (process.env.NODE_ENV === "development") {
+    if (env.NODE_ENV === "development") {
       console.log("Initial Autofill Check:", {
         rfqComplete,
         materialSpecsComplete,
@@ -351,7 +353,7 @@ export class InitialAutofillTriggerService {
     };
 
     // Debug log for troubleshooting
-    if (process.env.NODE_ENV === "development") {
+    if (env.NODE_ENV === "development") {
       // Log missing fields for debugging
       const rfqMissing = this.RFQ_REQUIRED_FIELDS.filter(field => !this.hasValue(data, field));
       const materialMissing = this.MATERIAL_SPECS_REQUIRED_FIELDS.filter(field => !this.hasValue(data, field));

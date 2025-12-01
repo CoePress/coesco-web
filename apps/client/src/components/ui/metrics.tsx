@@ -1,33 +1,35 @@
-type MetricsProps = {
+interface MetricsProps {
   children: React.ReactNode;
-};
+}
 
-const Metrics = ({ children }: MetricsProps) => {
+function Metrics({ children }: MetricsProps) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
       {children}
     </div>
   );
-};
+}
 
-type MetricsCardProps = {
+interface MetricsCardProps {
   title: string;
   value: number | string;
   description: string;
   icon: React.ReactNode;
   change?: number;
-};
+}
 
-export const MetricsCard = ({ title, value, description, icon, change }: MetricsCardProps) => {
+export function MetricsCard({ title, value, description, icon, change }: MetricsCardProps) {
   let color;
 
   const hasChange = change !== undefined && change !== null;
 
   if (hasChange && change > 0) {
     color = "text-success bg-success/10";
-  } else if (hasChange && change < 0) {
+  }
+  else if (hasChange && change < 0) {
     color = "text-error bg-error/10";
-  } else {
+  }
+  else {
     color = "text-text-muted bg-surface";
   }
 
@@ -40,7 +42,8 @@ export const MetricsCard = ({ title, value, description, icon, change }: Metrics
         </div>
         {hasChange && (
           <span className={`text-xs ${color} px-2 py-1 rounded`}>
-            {change}%
+            {change}
+            %
           </span>
         )}
       </div>
@@ -50,6 +53,6 @@ export const MetricsCard = ({ title, value, description, icon, change }: Metrics
       </p>
     </div>
   );
-};
+}
 
 export default Metrics;

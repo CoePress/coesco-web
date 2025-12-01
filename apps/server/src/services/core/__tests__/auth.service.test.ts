@@ -829,7 +829,7 @@ describe("authService", () => {
       mockMsalClient.acquireTokenByCode = jest.fn();
 
       mockFetch = jest.fn();
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       jest.mocked(sign).mockReturnValue("mock-token" as any);
     });

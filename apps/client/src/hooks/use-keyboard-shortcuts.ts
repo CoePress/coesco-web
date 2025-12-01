@@ -1,26 +1,27 @@
 import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
-type UseKeyboardShortcutsProps = {
+interface UseKeyboardShortcutsProps {
   isCommandBarOpen: boolean;
   setIsCommandBarOpen: (open: boolean) => void;
   toggleTheme: () => void;
   toggleSidebar: () => void;
-};
+}
 
-export const useKeyboardShortcuts = ({
+export function useKeyboardShortcuts({
   isCommandBarOpen,
   setIsCommandBarOpen,
   toggleTheme,
   toggleSidebar,
-}: UseKeyboardShortcutsProps) => {
+}: UseKeyboardShortcutsProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const navigateUpOneLevel = () => {
     const currentPath = location.pathname;
 
-    if (currentPath === "/") return;
+    if (currentPath === "/")
+      return;
 
     const pathWithoutTrailingSlash = currentPath.endsWith("/")
       ? currentPath.slice(0, -1)
@@ -30,7 +31,8 @@ export const useKeyboardShortcuts = ({
 
     if (lastSlashIndex <= 0) {
       navigate("/");
-    } else {
+    }
+    else {
       const parentPath = pathWithoutTrailingSlash.slice(0, lastSlashIndex);
       navigate(parentPath);
     }
@@ -64,7 +66,6 @@ export const useKeyboardShortcuts = ({
 
       if (e.key === "Escape" && isCommandBarOpen) {
         setIsCommandBarOpen(false);
-        return;
       }
     };
 
@@ -74,4 +75,4 @@ export const useKeyboardShortcuts = ({
       document.removeEventListener("keydown", handleKeyDown, { capture: true });
     };
   }, [isCommandBarOpen, location.pathname, toggleTheme, toggleSidebar]);
-};
+}

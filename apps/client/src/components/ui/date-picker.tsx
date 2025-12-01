@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface DatePickerProps {
   value?: string;
@@ -15,42 +15,53 @@ interface DatePickerProps {
   required?: boolean;
 }
 
-const DatePicker = ({
+function DatePicker({
   value,
   onChange,
-  placeholder = 'Select date',
+  placeholder = "Select date",
   minDate,
   maxDate,
-  className = '',
+  className = "",
   disabled = false,
   label,
   id,
   name,
-  required = false
-}: DatePickerProps) => {
+  required = false,
+}: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMonth, setViewMonth] = useState<Date>(new Date());
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const pickerRef = useRef<HTMLDivElement>(null);
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
-  const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   useEffect(() => {
     if (value) {
-      const [year, month, day] = value.split('-').map(Number);
+      const [year, month, day] = value.split("-").map(Number);
       const date = new Date(year, month - 1, day);
       setSelectedDate(date);
       setViewMonth(date);
       setInputValue(formatDateForDisplay(date));
-    } else {
+    }
+    else {
       setSelectedDate(null);
-      setInputValue('');
+      setInputValue("");
     }
   }, [value]);
 
@@ -61,20 +72,20 @@ const DatePicker = ({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const formatDateForDisplay = (date: Date): string => {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
     const year = date.getFullYear();
     return `${month}/${day}/${year}`;
   };
 
   const formatDateForValue = (date: Date): string => {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
     const year = date.getFullYear();
     return `${year}-${month}-${day}`;
   };
@@ -87,17 +98,16 @@ const DatePicker = ({
     const match = input.match(datePattern);
 
     if (match) {
-      const month = parseInt(match[1], 10) - 1;
-      const day = parseInt(match[2], 10);
-      const year = parseInt(match[3], 10);
+      const month = Number.parseInt(match[1], 10) - 1;
+      const day = Number.parseInt(match[2], 10);
+      const year = Number.parseInt(match[3], 10);
 
       const date = new Date(year, month, day);
 
-      if (!isNaN(date.getTime()) &&
-          date.getMonth() === month &&
-          date.getDate() === day &&
-          date.getFullYear() === year) {
-
+      if (!isNaN(date.getTime())
+        && date.getMonth() === month
+        && date.getDate() === day
+        && date.getFullYear() === year) {
         if (isDateInRange(date)) {
           setSelectedDate(date);
           setViewMonth(date);
@@ -110,11 +120,13 @@ const DatePicker = ({
   const isDateInRange = (date: Date): boolean => {
     if (minDate) {
       const min = new Date(minDate);
-      if (date < min) return false;
+      if (date < min)
+        return false;
     }
     if (maxDate) {
       const max = new Date(maxDate);
-      if (date > max) return false;
+      if (date > max)
+        return false;
     }
     return true;
   };
@@ -147,20 +159,21 @@ const DatePicker = ({
   };
 
   const isSelectedDate = (day: number): boolean => {
-    if (!selectedDate) return false;
+    if (!selectedDate)
+      return false;
     return (
-      selectedDate.getFullYear() === viewMonth.getFullYear() &&
-      selectedDate.getMonth() === viewMonth.getMonth() &&
-      selectedDate.getDate() === day
+      selectedDate.getFullYear() === viewMonth.getFullYear()
+      && selectedDate.getMonth() === viewMonth.getMonth()
+      && selectedDate.getDate() === day
     );
   };
 
   const isToday = (day: number): boolean => {
     const today = new Date();
     return (
-      today.getFullYear() === viewMonth.getFullYear() &&
-      today.getMonth() === viewMonth.getMonth() &&
-      today.getDate() === day
+      today.getFullYear() === viewMonth.getFullYear()
+      && today.getMonth() === viewMonth.getMonth()
+      && today.getDate() === day
     );
   };
 
@@ -193,17 +206,17 @@ const DatePicker = ({
             h-8 w-8 rounded-sm text-sm font-medium
             transition-all duration-150
             ${isSelected
-              ? 'bg-primary text-background cursor-pointer'
-              : isCurrentDay
-              ? 'bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer'
-              : isDisabled
-              ? 'text-text-muted cursor-not-allowed opacity-40'
-              : 'text-text hover:bg-foreground cursor-pointer'
+                ? "bg-primary text-background cursor-pointer"
+                : isCurrentDay
+                  ? "bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer"
+                  : isDisabled
+                    ? "text-text-muted cursor-not-allowed opacity-40"
+                    : "text-text hover:bg-foreground cursor-pointer"
             }
           `}
         >
           {day}
-        </button>
+        </button>,
       );
     }
 
@@ -264,7 +277,9 @@ const DatePicker = ({
               </button>
 
               <div className="text-sm font-semibold text-text">
-                {monthNames[viewMonth.getMonth()]} {viewMonth.getFullYear()}
+                {monthNames[viewMonth.getMonth()]}
+                {" "}
+                {viewMonth.getFullYear()}
               </div>
 
               <button
@@ -309,8 +324,8 @@ const DatePicker = ({
                 type="button"
                 onClick={() => {
                   setSelectedDate(null);
-                  setInputValue('');
-                  onChange('');
+                  setInputValue("");
+                  onChange("");
                   setIsOpen(false);
                 }}
                 className="text-xs text-text-muted hover:text-text transition-colors cursor-pointer"
@@ -323,6 +338,6 @@ const DatePicker = ({
       )}
     </div>
   );
-};
+}
 
 export default DatePicker;

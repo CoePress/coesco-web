@@ -1,7 +1,8 @@
-import { Card, Button } from "@/components";
 import { X } from "lucide-react";
 
-type ModalProps = {
+import { Button, Card } from "@/components";
+
+interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
@@ -11,9 +12,9 @@ type ModalProps = {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   overflow?: "visible" | "auto";
   backdropClosable?: boolean;
-};
+}
 
-const Modal = ({
+function Modal({
   isOpen,
   onClose,
   title,
@@ -23,8 +24,9 @@ const Modal = ({
   size = "md",
   overflow = "auto",
   backdropClosable = false,
-}: ModalProps) => {
-  if (!isOpen) return null;
+}: ModalProps) {
+  if (!isOpen)
+    return null;
 
   const sizeClass = {
     xs: "w-full max-w-[400px]",
@@ -46,7 +48,8 @@ const Modal = ({
       onClick={handleOverlayClick}
     >
       <Card
-        className={`max-h-[90vh] md:max-h-[70vh] flex flex-col ${sizeClass[size]}`}>
+        className={`max-h-[90vh] md:max-h-[70vh] flex flex-col ${sizeClass[size]}`}
+      >
         <div className="flex items-center justify-between mb-2 flex-shrink-0">
           <h2 className="font-medium">{title}</h2>
           <div className="flex items-center gap-2">
@@ -54,7 +57,8 @@ const Modal = ({
             <Button
               variant="secondary-outline"
               size="sm"
-              onClick={onClose}>
+              onClick={onClose}
+            >
               <X size={16} />
             </Button>
           </div>
@@ -68,6 +72,6 @@ const Modal = ({
       </Card>
     </div>
   );
-};
+}
 
 export default Modal;

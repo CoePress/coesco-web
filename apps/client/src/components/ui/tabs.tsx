@@ -1,4 +1,4 @@
-type TabsProps = {
+interface TabsProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   tabs: {
@@ -6,13 +6,13 @@ type TabsProps = {
     value: string;
     disabled?: boolean;
   }[];
-};
+}
 
-const Tabs = ({ activeTab, setActiveTab, tabs }: TabsProps) => {
+function Tabs({ activeTab, setActiveTab, tabs }: TabsProps) {
   return (
     <div className="bg-foreground border-b border-border">
       <div className="flex px-2">
-        {tabs.map((tab) => (
+        {tabs.map(tab => (
           <button
             key={tab.value}
             className={`px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
@@ -21,13 +21,14 @@ const Tabs = ({ activeTab, setActiveTab, tabs }: TabsProps) => {
                 : "text-text-muted hover:text-text"
             } ${tab.disabled ? "cursor-not-allowed opacity-50 pointer-events-none" : ""}`}
             onClick={() => setActiveTab(tab.value)}
-            disabled={tab.disabled}>
+            disabled={tab.disabled}
+          >
             {tab.label}
           </button>
         ))}
       </div>
     </div>
   );
-};
+}
 
 export default Tabs;

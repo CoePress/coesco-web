@@ -1,17 +1,18 @@
-import { PlusCircleIcon, Lock } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { Lock, PlusCircleIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { Button, Modal, Table, Toolbar, Input } from "@/components";
-import { TableColumn } from "@/components/ui/table";
-import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
-import PageHeader from "@/components/layout/page-header";
-import { useToast } from "@/hooks/use-toast";
-import { Filter } from "@/components/feature/toolbar";
-import { useSocket } from "@/contexts/socket.context";
+import type { Filter } from "@/components/feature/toolbar";
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
 
-const PerformanceSheets = () => {
+import { Button, Input, Modal, Table, Toolbar } from "@/components";
+import PageHeader from "@/components/layout/page-header";
+import { useSocket } from "@/contexts/socket.context";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
+
+function PerformanceSheets() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [locks, setLocks] = useState<Record<string, any>>({});
   const { get: getSheets, response: sheets, loading: sheetsLoading, error: sheetsError } = useApi<IApiResponse<any[]>>();
@@ -27,7 +28,7 @@ const PerformanceSheets = () => {
     limit: 25,
     filter: { versionId: "" },
     include: [] as string[],
-    search: ""
+    search: "",
   });
 
   const queryParams = useMemo(() => {
@@ -39,7 +40,7 @@ const PerformanceSheets = () => {
     };
 
     const activeFilters = Object.fromEntries(
-      Object.entries(params.filter).filter(([_, value]) => value)
+      Object.entries(params.filter).filter(([_, value]) => value),
     );
 
     if (Object.keys(activeFilters).length > 0) {
@@ -77,18 +78,19 @@ const PerformanceSheets = () => {
         });
         setLocks(lockMap);
       }
-    } catch (err) {
+    }
+    catch (err) {
       setLocks({});
     }
   };
 
   const versionOptions = useMemo(() => {
-    const options = [{ value: '', label: 'All Versions' }];
+    const options = [{ value: "", label: "All Versions" }];
     if (versions?.data) {
       versions.data.forEach((version: any) => {
         options.push({
           value: version.id,
-          label: `Version ${version.id.slice(-8)}`
+          label: `Version ${version.id.slice(-8)}`,
         });
       });
     }
@@ -97,10 +99,10 @@ const PerformanceSheets = () => {
 
   const filters: Filter[] = [
     {
-      key: 'versionId',
-      label: 'Version',
+      key: "versionId",
+      label: "Version",
       options: versionOptions,
-      placeholder: 'Version'
+      placeholder: "Version",
     },
   ];
 
@@ -119,15 +121,17 @@ const PerformanceSheets = () => {
       className: "w-fit",
       sortable: false,
       render: (_, row) =>
-        locks[row.id] ? (
-          <div className="flex items-center gap-1 text-error text-sm">
-            <Lock
-              size={16}
-              aria-label="Locked"
-            />
-            <span>{locks[row.id]?.userName || "Locked"}</span>
-          </div>
-        ) : null,
+        locks[row.id]
+          ? (
+              <div className="flex items-center gap-1 text-error text-sm">
+                <Lock
+                  size={16}
+                  aria-label="Locked"
+                />
+                <span>{locks[row.id]?.userName || "Locked"}</span>
+              </div>
+            )
+          : null,
     },
   ];
 
@@ -139,7 +143,9 @@ const PerformanceSheets = () => {
     return (
       <div className="flex gap-2">
         <Button onClick={toggleModal}>
-          <PlusCircleIcon size={20} /> Create New
+          <PlusCircleIcon size={20} />
+          {" "}
+          Create New
         </Button>
       </div>
     );
@@ -148,22 +154,22 @@ const PerformanceSheets = () => {
   const handleSearch = (query: string) => {
     handleParamsChange({
       search: query,
-      page: 1
-    })
-  }
+      page: 1,
+    });
+  };
 
   const handleParamsChange = (updates: Partial<typeof params>) => {
     setParams(prev => ({
       ...prev,
-      ...updates
-    }))
-  }
+      ...updates,
+    }));
+  };
 
   const handleFilterChange = (key: string, value: string) => {
     handleParamsChange({
-      filter: { ...params.filter, [key]: value }
-    })
-  }
+      filter: { ...params.filter, [key]: value },
+    });
+  };
 
   useEffect(() => {
     fetchVersions();
@@ -184,11 +190,12 @@ const PerformanceSheets = () => {
       const { recordType, recordId, lockInfo } = data;
 
       if (recordType === "performance-sheets") {
-        setLocks(prev => {
+        setLocks((prev) => {
           const updated = { ...prev };
           if (lockInfo) {
             updated[recordId] = lockInfo;
-          } else {
+          }
+          else {
             delete updated[recordId];
           }
           return updated;
@@ -226,13 +233,13 @@ const PerformanceSheets = () => {
           error={sheetsError}
           currentPage={sheets?.meta?.page}
           totalPages={sheets?.meta?.totalPages}
-          onPageChange={(page) => handleParamsChange({ page })}
+          onPageChange={page => handleParamsChange({ page })}
           sort={params.sort}
           order={params.order}
           onSortChange={(newSort, newOrder) => {
             handleParamsChange({
               sort: newSort as any,
-              order: newOrder as any
+              order: newOrder as any,
             });
           }}
           className="rounded border overflow-clip"
@@ -245,7 +252,7 @@ const PerformanceSheets = () => {
           isOpen={isModalOpen}
           onClose={toggleModal}
           onSuccess={fetchSheets}
-          createSheet={(data) => createSheet("/sales/performance-sheets", data)}
+          createSheet={data => createSheet("/sales/performance-sheets", data)}
           loading={createSheetLoading}
           error={createSheetError}
           versions={versions?.data || []}
@@ -253,9 +260,9 @@ const PerformanceSheets = () => {
       )}
     </div>
   );
-};
+}
 
-const CreateSheetModal = ({
+function CreateSheetModal({
   isOpen,
   onClose,
   onSuccess,
@@ -271,12 +278,11 @@ const CreateSheetModal = ({
   loading: boolean;
   error: string | null;
   versions: any[];
-  }) => {
-
+}) {
   const [formData, setFormData] = useState({
     name: "",
     versionId: "",
-  })
+  });
 
   const navigate = useNavigate();
   const toast = useToast();
@@ -284,33 +290,35 @@ const CreateSheetModal = ({
   const versionOptions = useMemo(() => {
     return versions.map((version: any) => ({
       value: version.id,
-      label: `Version ${version.id.slice(-8)}`
+      label: `Version ${version.id.slice(-8)}`,
     }));
   }, [versions]);
 
   const handleChange = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({
       ...prev,
-      ...updates
-    }))
-  }
+      ...updates,
+    }));
+  };
 
   const handleCreateSheet = async () => {
     try {
       const response = await createSheet({
         ...formData,
-        data: {}
+        data: {},
       });
       if (response?.success) {
         toast.success(`Performance Sheet "${formData.name}" created successfully!`);
         onClose();
         onSuccess();
         navigate(`/sales/performance-sheets/${response.data.id}`);
-      } else {
-        toast.error('Failed to create performance sheet. Please try again.');
       }
-    } catch (error) {
-      toast.error('An unexpected error occurred while creating the performance sheet.');
+      else {
+        toast.error("Failed to create performance sheet. Please try again.");
+      }
+    }
+    catch (error) {
+      toast.error("An unexpected error occurred while creating the performance sheet.");
     }
   };
 
@@ -318,7 +326,7 @@ const CreateSheetModal = ({
     setFormData({
       name: "",
       versionId: "",
-    })
+    });
   };
 
   useEffect(() => {
@@ -334,13 +342,14 @@ const CreateSheetModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Create New Performance Sheet"
-      size="xs">
+      size="xs"
+    >
       <div className="space-y-2">
         <label className="text-sm font-medium text-text">Sheet Name *</label>
         <Input
           type="text"
           value={formData.name}
-          onChange={(e) => handleChange({ name: e.target.value })}
+          onChange={e => handleChange({ name: e.target.value })}
           placeholder="Enter sheet name"
         />
       </div>
@@ -349,10 +358,11 @@ const CreateSheetModal = ({
         <label className="text-sm font-medium text-text">Version *</label>
         <select
           value={formData.versionId}
-          onChange={(e) => handleChange({ versionId: e.target.value })}
-          className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text placeholder:text-text-muted bg-surface">
+          onChange={e => handleChange({ versionId: e.target.value })}
+          className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text placeholder:text-text-muted bg-surface"
+        >
           <option value="">Select a version</option>
-          {versionOptions.map((option) => (
+          {versionOptions.map(option => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -377,11 +387,12 @@ const CreateSheetModal = ({
         onClick={handleCreateSheet}
         disabled={isCreateDisabled || loading}
         variant="primary"
-        className="w-full">
+        className="w-full"
+      >
         {loading ? "Creating..." : "Create Performance Sheet"}
       </Button>
     </Modal>
   );
-};
+}
 
 export default PerformanceSheets;

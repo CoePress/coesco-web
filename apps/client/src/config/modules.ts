@@ -31,7 +31,7 @@ import {
   WarehouseIcon,
 } from "lucide-react";
 
-import { AdminDashboard, AssetManager, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, DeletedRecords, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmit, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { AdminDashboard, AssetManager, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, DataPipeline, DeletedRecords, EmployeeDetails, Employees, FormBuilder, Forms, FormSubmit, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, PerformanceSheetVersions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import ImageManager from "@/pages/sandbox/image-manager";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";

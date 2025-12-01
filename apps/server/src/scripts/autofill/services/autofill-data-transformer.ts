@@ -104,7 +104,6 @@ export function transformDataForAutofill(data: PerformanceData): any {
     }
     const fieldName = pathParts[pathParts.length - 1];
     if (current[fieldName] === "true" || current[fieldName] === "false") {
-      const oldValue = current[fieldName];
       current[fieldName] = current[fieldName] === "true";
     }
   };

@@ -1,13 +1,15 @@
-import { useParams } from "react-router-dom";
+import { AlertCircleIcon, CheckCircleIcon, DollarSignIcon, PackageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Card, StatusBadge } from "@/components";
-import { formatCurrency } from "@/utils";
-import PageHeader from "@/components/layout/page-header";
-import { PackageIcon, DollarSignIcon, AlertCircleIcon, CheckCircleIcon } from "lucide-react";
-import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
+import { useParams } from "react-router-dom";
 
-const ProductDetails = () => {
+import type { IApiResponse } from "@/utils/types";
+
+import { Card, StatusBadge } from "@/components";
+import PageHeader from "@/components/layout/page-header";
+import { useApi } from "@/hooks/use-api";
+import { formatCurrency } from "@/utils";
+
+function ProductDetails() {
   const { id } = useParams();
   const { get } = useApi<IApiResponse<any>>();
   const [product, setProduct] = useState<any>(null);
@@ -15,7 +17,8 @@ const ProductDetails = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!id) return;
+      if (!id)
+        return;
 
       setLoading(true);
       const response = await get(`/catalog/items/${id}`);
@@ -65,7 +68,8 @@ const ProductDetails = () => {
                 {Array.from({ length: 5 }, (_, i) => (
                   <div
                     key={i}
-                    className="aspect-square bg-surface rounded border border-border flex items-center justify-center cursor-pointer hover:bg-foreground transition-colors">
+                    className="aspect-square bg-surface rounded border border-border flex items-center justify-center cursor-pointer hover:bg-foreground transition-colors"
+                  >
                     <PackageIcon size={20} className="text-text-muted" />
                   </div>
                 ))}
@@ -148,15 +152,21 @@ const ProductDetails = () => {
                   <div>
                     <div className="text-xs text-text-muted">Stock Level</div>
                     <div className={`text-sm font-medium flex items-center gap-1 ${
-                      (product.legacy?.stock || 0) < 10 ? 'text-error' :
-                      (product.legacy?.stock || 0) < 50 ? 'text-warning' : 'text-success'
-                    }`}>
-                      {(product.legacy?.stock || 0) < 10 ? (
-                        <AlertCircleIcon size={16} />
-                      ) : (
-                        <CheckCircleIcon size={16} />
-                      )}
-                      {product.legacy?.stock || 0} units
+                      (product.legacy?.stock || 0) < 10
+                        ? "text-error"
+                        : (product.legacy?.stock || 0) < 50 ? "text-warning" : "text-success"
+                    }`}
+                    >
+                      {(product.legacy?.stock || 0) < 10
+                        ? (
+                            <AlertCircleIcon size={16} />
+                          )
+                        : (
+                            <CheckCircleIcon size={16} />
+                          )}
+                      {product.legacy?.stock || 0}
+                      {" "}
+                      units
                     </div>
                   </div>
                   <div>
@@ -180,18 +190,23 @@ const ProductDetails = () => {
                   Specifications
                 </div>
                 <div className="space-y-2">
-                  {product.legacy?.specifications ? (
-                    Object.entries(product.legacy.specifications).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-sm">
-                        <span className="text-text-muted capitalize">{key}:</span>
-                        <span className="text-text">{value as string}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-text-muted">
-                      No specifications available
-                    </div>
-                  )}
+                  {product.legacy?.specifications
+                    ? (
+                        Object.entries(product.legacy.specifications).map(([key, value]) => (
+                          <div key={key} className="flex justify-between text-sm">
+                            <span className="text-text-muted capitalize">
+                              {key}
+                              :
+                            </span>
+                            <span className="text-text">{value as string}</span>
+                          </div>
+                        ))
+                      )
+                    : (
+                        <div className="text-sm text-text-muted">
+                          No specifications available
+                        </div>
+                      )}
                 </div>
               </div>
 
@@ -212,6 +227,6 @@ const ProductDetails = () => {
       </div>
     </div>
   );
-};
+}
 
 export default ProductDetails;

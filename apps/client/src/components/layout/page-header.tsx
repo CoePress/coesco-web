@@ -1,16 +1,18 @@
-import { ReactNode, useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { MoreVertical } from "lucide-react";
+import type { ReactNode } from "react";
 
-type Props = {
+import { MoreVertical } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+interface Props {
   title: string;
   description: string;
   actions?: ReactNode;
   goBack?: boolean;
   goBackTo?: string;
-};
+}
 
-const PageHeader = ({ title, description, actions, goBack = false, goBackTo }: Props) => {
+function PageHeader({ title, description, actions, goBack = false, goBackTo }: Props) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -18,7 +20,8 @@ const PageHeader = ({ title, description, actions, goBack = false, goBackTo }: P
   const handleGoBack = () => {
     if (goBackTo) {
       navigate(goBackTo);
-    } else {
+    }
+    else {
       navigate(-1);
     }
   };
@@ -28,10 +31,10 @@ const PageHeader = ({ title, description, actions, goBack = false, goBackTo }: P
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
+        menuRef.current
+        && !menuRef.current.contains(event.target as Node)
+        && buttonRef.current
+        && !buttonRef.current.contains(event.target as Node)
       ) {
         setIsMenuOpen(false);
       }
@@ -56,7 +59,8 @@ const PageHeader = ({ title, description, actions, goBack = false, goBackTo }: P
               <>
                 <button
                   onClick={handleGoBack}
-                  className="leading-none text-xs text-text-muted cursor-pointer hover:underline">
+                  className="leading-none text-xs text-text-muted cursor-pointer hover:underline"
+                >
                   Go Back
                 </button>
                 <span className="text-xs text-text-muted leading-none">|</span>
@@ -76,7 +80,8 @@ const PageHeader = ({ title, description, actions, goBack = false, goBackTo }: P
               <button
                 ref={buttonRef}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 rounded hover:bg-surface text-text-muted">
+                className="p-2 rounded hover:bg-surface text-text-muted"
+              >
                 <MoreVertical size={20} />
               </button>
             </div>
@@ -90,7 +95,8 @@ const PageHeader = ({ title, description, actions, goBack = false, goBackTo }: P
           ref={menuRef}
           className={`md:hidden w-full bg-foreground border-b border-border shadow-lg overflow-hidden transition-all duration-300 ease-in-out ${
             isMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-          }`}>
+          }`}
+        >
           <div className="p-4">
             {actions}
           </div>
@@ -98,6 +104,6 @@ const PageHeader = ({ title, description, actions, goBack = false, goBackTo }: P
       )}
     </>
   );
-};
+}
 
 export default PageHeader;

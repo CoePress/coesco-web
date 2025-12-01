@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { DownloadIcon, EyeIcon, FileIcon, FileTextIcon, ImageIcon, UploadIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import type { TableColumn } from "@/components/ui/table";
+
 import { Button, PageHeader } from "@/components";
-import { DownloadIcon, EyeIcon, FileIcon, ImageIcon, FileTextIcon, UploadIcon } from "lucide-react";
-import Table, { TableColumn } from "@/components/ui/table";
 import Modal from "@/components/ui/modal";
+import Table from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 
-type Resource = {
+interface Resource {
   id: string;
   originalName: string;
   fileName: string;
@@ -15,9 +18,9 @@ type Resource = {
   tags?: string[];
   category?: string;
   uploadedBy?: string;
-};
+}
 
-const Resources = () => {
+function Resources() {
   const { get, post, loading, error } = useApi();
 
   const [resources, setResources] = useState<Resource[]>([]);
@@ -44,10 +47,10 @@ const Resources = () => {
       page: currentPage,
       limit: 25,
       sortBy,
-      sortOrder
+      sortOrder,
     };
 
-    const response = await get('/files/resources', params);
+    const response = await get("/files/resources", params);
     if (response) {
       setResources(response.data);
       setTotalResources(response.total);
@@ -56,7 +59,7 @@ const Resources = () => {
   };
 
   const fetchRecentResources = async () => {
-    const response = await get('/files/resources/recent', { limit: 6 });
+    const response = await get("/files/resources/recent", { limit: 6 });
     if (response) {
       setRecentResources(response);
     }
@@ -66,12 +69,12 @@ const Resources = () => {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
 
-    const response = await post('/files/upload', buffer, {
+    const response = await post("/files/upload", buffer, {
       headers: {
-        'Content-Type': file.type,
-        'X-File-Name': file.name
+        "Content-Type": file.type,
+        "X-File-Name": file.name,
       },
-      transformRequest: [(data) => data]
+      transformRequest: [data => data],
     });
 
     if (response) {
@@ -80,7 +83,6 @@ const Resources = () => {
       fetchRecentResources();
     }
   };
-
 
   const columns: TableColumn<Resource>[] = [
     {
@@ -97,25 +99,25 @@ const Resources = () => {
             ))}
           </div>
         </div>
-      )
+      ),
     },
     {
       key: "mimeType",
       header: "Type",
-      render: (value) => (
+      render: value => (
         <span className="text-text-muted">
-          {(value as string).split('/')[1] || value}
+          {(value as string).split("/")[1] || value}
         </span>
-      )
+      ),
     },
     {
       key: "uploadedAt",
       header: "Uploaded",
-      render: (value) => (
+      render: value => (
         <span className="text-text-muted">
           {new Date(value as string).toLocaleDateString()}
         </span>
-      )
+      ),
     },
     {
       key: "actions",
@@ -134,7 +136,7 @@ const Resources = () => {
             variant="secondary-outline"
             size="sm"
             onClick={() => {
-              const link = document.createElement('a');
+              const link = document.createElement("a");
               link.href = `/files/resources/${row.id}/download`;
               link.download = row.originalName;
               link.click();
@@ -144,8 +146,8 @@ const Resources = () => {
             Download
           </Button>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   const handleSortChange = (sort: string, order: "asc" | "desc") => {
@@ -154,16 +156,19 @@ const Resources = () => {
   };
 
   const getFileIcon = (type: string) => {
-    if (type.startsWith('image/')) return <ImageIcon size={24} className="text-blue-500" />;
-    if (type.includes('pdf')) return <FileTextIcon size={24} className="text-red-500" />;
-    if (type.includes('word') || type.includes('document')) return <FileTextIcon size={24} className="text-blue-600" />;
+    if (type.startsWith("image/"))
+      return <ImageIcon size={24} className="text-blue-500" />;
+    if (type.includes("pdf"))
+      return <FileTextIcon size={24} className="text-red-500" />;
+    if (type.includes("word") || type.includes("document"))
+      return <FileTextIcon size={24} className="text-blue-600" />;
     return <FileIcon size={24} className="text-gray-500" />;
   };
 
   const RecentlyAdded = () => (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-        {recentResources.map((resource) => (
+        {recentResources.map(resource => (
           <div
             key={resource.id}
             className="bg-foreground border border-border rounded-lg p-4 hover:bg-surface cursor-pointer transition-colors"
@@ -183,7 +188,7 @@ const Resources = () => {
                   </span>
                 ))}
               </div>
-              <div className="flex gap-2 w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="flex gap-2 w-full" onClick={e => e.stopPropagation()}>
                 <Button
                   variant="secondary-outline"
                   size="sm"
@@ -197,7 +202,7 @@ const Resources = () => {
                   size="sm"
                   className="flex-1"
                   onClick={() => {
-                    const link = document.createElement('a');
+                    const link = document.createElement("a");
                     link.href = `/files/resources/${resource.id}/download`;
                     link.download = resource.originalName;
                     link.click();
@@ -214,7 +219,7 @@ const Resources = () => {
   );
 
   const renderPreview = (resource: Resource) => {
-    if (resource.mimeType.startsWith('image/')) {
+    if (resource.mimeType.startsWith("image/")) {
       return (
         <div className="flex justify-center items-center h-full">
           <img
@@ -224,7 +229,8 @@ const Resources = () => {
           />
         </div>
       );
-    } else if (resource.mimeType.includes('pdf')) {
+    }
+    else if (resource.mimeType.includes("pdf")) {
       return (
         <iframe
           src={`/files/resources/${resource.id}/preview`}
@@ -232,7 +238,8 @@ const Resources = () => {
           title={resource.originalName}
         />
       );
-    } else {
+    }
+    else {
       return (
         <div className="flex flex-col items-center justify-center h-[300px] gap-4">
           <div className="mb-3">
@@ -242,7 +249,7 @@ const Resources = () => {
           <Button
             variant="primary"
             onClick={() => {
-              const link = document.createElement('a');
+              const link = document.createElement("a");
               link.href = `/files/resources/${resource.id}/download`;
               link.download = resource.originalName;
               link.click();
@@ -261,23 +268,25 @@ const Resources = () => {
       <PageHeader
         title="Resources"
         description="Manage and access your uploaded files"
-        actions={
+        actions={(
           <Button onClick={() => setUploadModalOpen(true)}>
             <UploadIcon size={16} />
             Upload File
           </Button>
-        }
+        )}
       />
 
       <div className="w-full flex flex-1 flex-col p-2 gap-2">
-        {loading ? (
-          <div className="flex justify-center items-center h-32">
-            <span>Loading resources...</span>
-          </div>
-        ) : (
-          <RecentlyAdded />
-        )}
-        
+        {loading
+          ? (
+              <div className="flex justify-center items-center h-32">
+                <span>Loading resources...</span>
+              </div>
+            )
+          : (
+              <RecentlyAdded />
+            )}
+
         <div className="flex flex-col flex-1">
           <Table<Resource>
             columns={columns}
@@ -285,7 +294,7 @@ const Resources = () => {
             total={totalResources}
             selectable={false}
             selectedItems={selectedResources}
-            onSelectionChange={(ids) => setSelectedResources(ids as string[])}
+            onSelectionChange={ids => setSelectedResources(ids as string[])}
             pagination={true}
             currentPage={currentPage}
             totalPages={totalPages}
@@ -332,6 +341,6 @@ const Resources = () => {
       </Modal>
     </div>
   );
-};
+}
 
 export default Resources;

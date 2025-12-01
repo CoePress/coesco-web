@@ -32,7 +32,7 @@ let failedQueue: Array<{
   reject: (reason?: any) => void;
 }> = [];
 
-const processQueue = (error: any = null) => {
+function processQueue(error: any = null) {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -43,10 +43,10 @@ const processQueue = (error: any = null) => {
   });
 
   failedQueue = [];
-};
+}
 
 instance.interceptors.response.use(
-  (response) => response,
+  response => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as ExtendedAxiosConfig;
 

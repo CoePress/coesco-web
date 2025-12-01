@@ -1,25 +1,27 @@
-import { useMemo, useState, useEffect } from "react";
+import type { Employee } from "@coesco/types";
+
+import { format } from "date-fns";
+import { RefreshCcwIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import type { Filter } from "@/components/feature/toolbar";
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
+
 import {
-  StatusBadge,
-  PageHeader,
-  Table,
   Button,
   Modal,
-  Toolbar,
+  PageHeader,
+  StatusBadge,
+  Table,
   ToggleSwitch,
+  Toolbar,
 } from "@/components";
-import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
-import { format } from "date-fns";
-import { Employee } from "@coesco/types";
-import { Filter } from "@/components/feature/toolbar";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCcwIcon } from "lucide-react";
 
-const Employees = () => {
+function Employees() {
   const navigate = useNavigate();
   const toast = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -35,7 +37,7 @@ const Employees = () => {
     limit: 25,
     filter: { isActive: "true" },
     include: ["user"] as string[],
-    search: ""
+    search: "",
   });
 
   const queryParams = useMemo(() => {
@@ -47,7 +49,7 @@ const Employees = () => {
     };
 
     const activeFilters = Object.fromEntries(
-      Object.entries(params.filter).filter(([_, value]) => value)
+      Object.entries(params.filter).filter(([_, value]) => value),
     );
 
     if (Object.keys(activeFilters).length > 0) {
@@ -72,7 +74,9 @@ const Employees = () => {
       render: (_, row) => (
         <p>
           <span>
-            {row.firstName} {row.lastName}
+            {row.firstName}
+            {" "}
+            {row.lastName}
           </span>
         </p>
       ),
@@ -105,7 +109,8 @@ const Employees = () => {
       key: "user.lastLogin",
       header: "Last Login",
       render: (_, row) => {
-        if (!row.user.lastLogin) return null;
+        if (!row.user.lastLogin)
+          return null;
         return format(row.user.lastLogin as string, "MM/dd/yyyy hh:mm a");
       },
     },
@@ -122,7 +127,8 @@ const Employees = () => {
             e?.stopPropagation();
             setSelectedEmployee(row);
             setIsEditModalOpen(true);
-          }}>
+          }}
+        >
           Edit
         </Button>
       ),
@@ -144,10 +150,12 @@ const Employees = () => {
       if (response?.success) {
         toast.success("Employee sync completed successfully!");
         refresh();
-      } else {
+      }
+      else {
         toast.error("Employee sync failed. Please try again.");
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error syncing employees:", error);
       toast.error("An unexpected error occurred during sync.");
     }
@@ -160,43 +168,43 @@ const Employees = () => {
   const handleSearch = (query: string) => {
     handleParamsChange({
       search: query,
-      page: 1
+      page: 1,
     });
   };
 
   const handleParamsChange = (updates: Partial<typeof params>) => {
     setParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
   const handleFilterChange = (key: string, value: string) => {
     handleParamsChange({
-      filter: { ...params.filter, [key]: value }
+      filter: { ...params.filter, [key]: value },
     });
   };
 
   const filters: Filter[] = [
     {
-      key: 'isActive',
-      label: 'Status',
+      key: "isActive",
+      label: "Status",
       options: [
-        { value: '', label: 'All' },
-        { value: 'true', label: 'Active' },
-        { value: 'false', label: 'Inactive' }
+        { value: "", label: "All" },
+        { value: "true", label: "Active" },
+        { value: "false", label: "Inactive" },
       ],
-      placeholder: 'Status'
+      placeholder: "Status",
     },
     {
-      key: 'user.role',
-      label: 'Role',
+      key: "user.role",
+      label: "Role",
       options: [
-        { value: '', label: 'All' },
-        { value: 'USER', label: 'User' },
-        { value: 'ADMIN', label: 'Admin' }
+        { value: "", label: "All" },
+        { value: "USER", label: "User" },
+        { value: "ADMIN", label: "Admin" },
       ],
-      placeholder: 'Role'
+      placeholder: "Role",
     },
   ];
 
@@ -245,16 +253,16 @@ const Employees = () => {
             error={error}
             currentPage={employees?.meta?.page}
             totalPages={employees?.meta?.totalPages}
-            onPageChange={(page) => handleParamsChange({ page })}
+            onPageChange={page => handleParamsChange({ page })}
             sort={params.sort}
             order={params.order}
             onSortChange={(newSort, newOrder) => {
               handleParamsChange({
                 sort: newSort as any,
-                order: newOrder as any
+                order: newOrder as any,
               });
             }}
-            onRowClick={(row) => navigate(`/admin/employees/${row.id}`)}
+            onRowClick={row => navigate(`/admin/employees/${row.id}`)}
             className="rounded border overflow-clip"
             emptyMessage="No employees found"
             mobileCardView={true}
@@ -272,9 +280,9 @@ const Employees = () => {
       )}
     </div>
   );
-};
+}
 
-const EditEmployeeModal = ({
+function EditEmployeeModal({
   isOpen,
   onClose,
   employee,
@@ -284,7 +292,7 @@ const EditEmployeeModal = ({
   onClose: () => void;
   employee: any;
   onSuccess: () => void;
-}) => {
+}) {
   const [formData, setFormData] = useState({
     role: employee?.user?.role || "USER",
     isActive: employee?.user?.isActive ?? true,
@@ -297,7 +305,7 @@ const EditEmployeeModal = ({
   const handleChange = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
@@ -316,12 +324,14 @@ const EditEmployeeModal = ({
         toast.success(`Employee "${employee.firstName} ${employee.lastName}" updated successfully!`);
         onClose();
         onSuccess();
-      } else {
-        toast.error('Failed to update employee. Please try again.');
       }
-    } catch (error) {
-      console.error('Error updating employee:', error);
-      toast.error('An unexpected error occurred while updating the employee.');
+      else {
+        toast.error("Failed to update employee. Please try again.");
+      }
+    }
+    catch (error) {
+      console.error("Error updating employee:", error);
+      toast.error("An unexpected error occurred while updating the employee.");
     }
   };
 
@@ -336,7 +346,8 @@ const EditEmployeeModal = ({
   useEffect(() => {
     if (!isOpen) {
       resetForm();
-    } else {
+    }
+    else {
       setFormData({
         role: employee?.user?.role || "USER",
         isActive: employee?.user?.isActive ?? true,
@@ -350,10 +361,18 @@ const EditEmployeeModal = ({
         isOpen={isOpen}
         onClose={onClose}
         title="Confirm Changes"
-        size="xs">
+        size="xs"
+      >
         <div className="space-y-4">
           <p className="text-sm text-text">
-            Are you sure you want to update <span className="font-semibold">{employee?.firstName} {employee?.lastName}</span>'s account?
+            Are you sure you want to update
+            {" "}
+            <span className="font-semibold">
+              {employee?.firstName}
+              {" "}
+              {employee?.lastName}
+            </span>
+            's account?
           </p>
 
           <div className="bg-surface border border-border rounded p-3 space-y-2 text-sm">
@@ -370,12 +389,14 @@ const EditEmployeeModal = ({
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary-outline"
-              onClick={() => setShowConfirmation(false)}>
+              onClick={() => setShowConfirmation(false)}
+            >
               Back
             </Button>
             <Button
               onClick={handleUpdateEmployee}
-              disabled={loading}>
+              disabled={loading}
+            >
               {loading ? "Saving..." : "Confirm"}
             </Button>
           </div>
@@ -389,14 +410,17 @@ const EditEmployeeModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Edit Employee Role"
-      size="xs">
+      size="xs"
+    >
       <div className="space-y-4">
         <div>
           <label className="text-sm text-text-muted mb-2 block">
             Employee
           </label>
           <div className="block w-full rounded border border-border px-3 py-2 text-sm text-text-muted bg-surface">
-            {employee?.firstName} {employee?.lastName}
+            {employee?.firstName}
+            {" "}
+            {employee?.lastName}
           </div>
         </div>
 
@@ -404,8 +428,9 @@ const EditEmployeeModal = ({
           <label className="text-sm text-text-muted mb-2 block">Role</label>
           <select
             value={formData.role}
-            onChange={(e) => handleChange({ role: e.target.value })}
-            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+            onChange={e => handleChange({ role: e.target.value })}
+            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+          >
             <option value="ADMIN">Admin</option>
             <option value="USER">User</option>
           </select>
@@ -413,7 +438,7 @@ const EditEmployeeModal = ({
 
         <ToggleSwitch
           checked={formData.isActive}
-          onChange={(checked) => handleChange({ isActive: checked })}
+          onChange={checked => handleChange({ isActive: checked })}
           label="Active"
           id="isActive"
         />
@@ -421,18 +446,20 @@ const EditEmployeeModal = ({
         <div className="flex justify-end gap-2">
           <Button
             variant="secondary-outline"
-            onClick={onClose}>
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
             onClick={() => setShowConfirmation(true)}
-            disabled={!hasChanges()}>
+            disabled={!hasChanges()}
+          >
             Save Changes
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}
 
 export default Employees;

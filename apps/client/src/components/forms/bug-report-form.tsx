@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { ToggleSwitch, Button } from "@/components";
-import Textarea from "@/components/ui/text-area";
-import ScreenshotAnnotator from "@/components/ui/screenshot-annotator";
 import { Trash2 } from "lucide-react";
+import { useState } from "react";
 
-type BugReportFormProps = {
+import { Button, ToggleSwitch } from "@/components";
+import ScreenshotAnnotator from "@/components/ui/screenshot-annotator";
+import Textarea from "@/components/ui/text-area";
+
+interface BugReportFormProps {
   screenshot?: string | null;
   formData: {
     description: string;
@@ -12,9 +13,9 @@ type BugReportFormProps = {
     includeScreenshot: boolean;
   };
   onFormDataChange: (data: any) => void;
-};
+}
 
-const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportFormProps) => {
+function BugReportForm({ screenshot, formData, onFormDataChange }: BugReportFormProps) {
   const [clearTrigger, setClearTrigger] = useState(0);
 
   return (
@@ -25,7 +26,7 @@ const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportForm
       <Textarea
         id="bug-description"
         value={formData.description}
-        onChange={(e) => onFormDataChange({ ...formData, description: e.target.value })}
+        onChange={e => onFormDataChange({ ...formData, description: e.target.value })}
         placeholder="Detailed description of the bug, including steps to reproduce"
         rows={4}
         autoComplete="off"
@@ -37,7 +38,7 @@ const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportForm
           <div className="flex items-center justify-between gap-4">
             <ToggleSwitch
               checked={formData.includeScreenshot}
-              onChange={(checked) => onFormDataChange({ ...formData, includeScreenshot: checked })}
+              onChange={checked => onFormDataChange({ ...formData, includeScreenshot: checked })}
               label="Include Screenshot"
               id="include-screenshot"
             />
@@ -52,7 +53,8 @@ const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportForm
                   onClick={() => {
                     setClearTrigger(prev => prev + 1);
                     onFormDataChange({ ...formData, annotatedScreenshot: null });
-                  }}>
+                  }}
+                >
                   <Trash2 size={14} />
                 </Button>
               </div>
@@ -61,7 +63,7 @@ const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportForm
           {formData.includeScreenshot && (
             <ScreenshotAnnotator
               screenshot={screenshot}
-              onAnnotatedScreenshot={(screenshot) => onFormDataChange({ ...formData, annotatedScreenshot: screenshot })}
+              onAnnotatedScreenshot={screenshot => onFormDataChange({ ...formData, annotatedScreenshot: screenshot })}
               clearTrigger={clearTrigger}
             />
           )}
@@ -69,6 +71,6 @@ const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportForm
       )}
     </>
   );
-};
+}
 
 export default BugReportForm;

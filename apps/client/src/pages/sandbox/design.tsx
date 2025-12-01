@@ -1,19 +1,19 @@
+import PageHeader from "@/components/layout/page-header";
 import Button from "@/components/ui/button";
-import Text from "@/components/ui/text";
 import Input from "@/components/ui/input";
 import Select from "@/components/ui/select";
-import PageHeader from "@/components/layout/page-header";
+import Text from "@/components/ui/text";
 
-const Actions = () => {
+function Actions() {
   return (
     <div className="flex gap-2">
       <Button>Add</Button>
       <Button>Delete</Button>
     </div>
   );
-};
+}
 
-const Design = () => {
+function Design() {
   return (
     <div className="flex flex-col gap-2 flex-1">
       <PageHeader
@@ -27,7 +27,8 @@ const Design = () => {
         <div>
           <Text
             as="h3"
-            className="mb-2">
+            className="mb-2"
+          >
             Buttons
           </Text>
           <div className="flex flex-wrap gap-2 items-center">
@@ -44,7 +45,8 @@ const Design = () => {
         <div>
           <Text
             as="h3"
-            className="mb-2">
+            className="mb-2"
+          >
             Typography
           </Text>
           <div className="flex flex-wrap gap-2 items-center">
@@ -59,7 +61,8 @@ const Design = () => {
         <div>
           <Text
             as="h3"
-            className="mb-2">
+            className="mb-2"
+          >
             Inputs
           </Text>
           <div className="flex flex-wrap gap-2">
@@ -113,6 +116,6 @@ const Design = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Design;

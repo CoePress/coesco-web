@@ -1,7 +1,7 @@
-const LoginForm = () => {
+function LoginForm() {
   return (
     <div>LoginForm</div>
-  )
+  );
 }
 
-export default LoginForm
+export default LoginForm;

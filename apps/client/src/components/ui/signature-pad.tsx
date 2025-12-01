@@ -1,6 +1,7 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import Button from './button';
-import { X, RotateCcw, Check } from 'lucide-react';
+import { Check, RotateCcw, X } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import Button from "./button";
 
 interface SignaturePadProps {
   value?: string;
@@ -15,7 +16,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
   value,
   onChange,
   disabled = false,
-  className = '',
+  className = "",
   width = 400,
   height = 200,
 }) => {
@@ -27,7 +28,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
   useEffect(() => {
     if (value && canvasRef.current) {
       const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (ctx) {
         const img = new Image();
         img.onload = () => {
@@ -42,23 +43,25 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
 
   const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas)
+      return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx)
+      return;
 
     // Set canvas size
     canvas.width = width;
     canvas.height = height;
 
     // Set drawing styles
-    ctx.strokeStyle = '#000000';
+    ctx.strokeStyle = "#000000";
     ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
     // Clear canvas with white background
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, [width, height]);
 
@@ -68,20 +71,22 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
 
   const getEventPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
+    if (!canvas)
+      return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
-    if ('touches' in e) {
+    if ("touches" in e) {
       // Touch event
       const touch = e.touches[0] || e.changedTouches[0];
       return {
         x: (touch.clientX - rect.left) * scaleX,
         y: (touch.clientY - rect.top) * scaleY,
       };
-    } else {
+    }
+    else {
       // Mouse event
       return {
         x: (e.clientX - rect.left) * scaleX,
@@ -91,14 +96,16 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
   };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (disabled) return;
+    if (disabled)
+      return;
 
     e.preventDefault();
     setIsDrawing(true);
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx)
+      return;
 
     const pos = getEventPos(e);
     ctx.beginPath();
@@ -106,13 +113,15 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || disabled) return;
+    if (!isDrawing || disabled)
+      return;
 
     e.preventDefault();
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx)
+      return;
 
     const pos = getEventPos(e);
     ctx.lineTo(pos.x, pos.y);
@@ -126,12 +135,14 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
 
   const clearSignature = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas)
+      return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx)
+      return;
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
     onChange(null);
@@ -139,9 +150,10 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
 
   const saveSignature = () => {
     const canvas = canvasRef.current;
-    if (!canvas || !hasSignature) return;
+    if (!canvas || !hasSignature)
+      return;
 
-    const dataURL = canvas.toDataURL('image/png');
+    const dataURL = canvas.toDataURL("image/png");
     onChange(dataURL);
     setIsModalOpen(false);
   };
@@ -153,7 +165,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
       setupCanvas();
       if (value) {
         const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
+        const ctx = canvas?.getContext("2d");
         if (ctx && canvas) {
           const img = new Image();
           img.onload = () => {
@@ -177,25 +189,27 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
           disabled={disabled}
           className={`w-full border-2 border-dashed ${
             hasSignature || value
-              ? 'border-success bg-success/5'
-              : 'border-border hover:border-primary/50'
+              ? "border-success bg-success/5"
+              : "border-border hover:border-primary/50"
           } rounded-sm p-8 text-center transition-colors cursor-pointer ${
-            disabled ? 'opacity-50 cursor-not-allowed' : ''
+            disabled ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          {hasSignature || value ? (
-            <div className="flex flex-col items-center gap-2">
-              <Check className="text-success" size={32} />
-              <p className="text-success font-medium">Signature captured</p>
-              <p className="text-xs text-text-muted">Click to edit signature</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 border-2 border-text-muted rounded border-dashed" />
-              <p className="text-text-muted">Click to add signature</p>
-              <p className="text-xs text-text-muted">Draw your signature</p>
-            </div>
-          )}
+          {hasSignature || value
+            ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Check className="text-success" size={32} />
+                  <p className="text-success font-medium">Signature captured</p>
+                  <p className="text-xs text-text-muted">Click to edit signature</p>
+                </div>
+              )
+            : (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-8 h-8 border-2 border-text-muted rounded border-dashed" />
+                  <p className="text-text-muted">Click to add signature</p>
+                  <p className="text-xs text-text-muted">Draw your signature</p>
+                </div>
+              )}
         </button>
       </div>
 
@@ -220,7 +234,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                   width={width}
                   height={height}
                   className="block max-w-full h-auto cursor-crosshair touch-none"
-                  style={{ width: '100%', height: 'auto' }}
+                  style={{ width: "100%", height: "auto" }}
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
                   onMouseUp={stopDrawing}

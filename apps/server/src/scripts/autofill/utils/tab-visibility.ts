@@ -117,7 +117,7 @@ function determineAdditionalTabs(config: TabVisibilityConfig): VisibleTab[] {
  * Determines if TDDBHD tab should be visible
  */
 function shouldShowTDDBHD(config: TabVisibilityConfig): boolean {
-  const { lineApplication, controlsLevel, lineType } = config;
+  const { lineApplication, lineType } = config;
 
   // For Press Feed and Cut to Length
   if ((lineApplication === "pressFeed" || lineApplication === "cutToLength")) {

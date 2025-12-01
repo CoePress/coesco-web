@@ -1,13 +1,15 @@
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import type { IApiResponse } from "@/utils/types";
+
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import { useState } from "react";
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
-import { IApiResponse } from "@/utils/types";
-import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
 
-const ChangePassword = () => {
+function ChangePassword() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,7 +24,7 @@ const ChangePassword = () => {
     minLength: newPassword.length >= 8,
     hasUpperCase: /[A-Z]/.test(newPassword),
     hasLowerCase: /[a-z]/.test(newPassword),
-    hasNumber: /[0-9]/.test(newPassword),
+    hasNumber: /\d/.test(newPassword),
     hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
     passwordsMatch: confirmPassword.length > 0 && newPassword === confirmPassword,
   };
@@ -42,7 +44,7 @@ const ChangePassword = () => {
 
     const response = await changePassword("/settings/change-password", {
       currentPassword,
-      newPassword
+      newPassword,
     });
 
     if (response?.success) {
@@ -51,7 +53,8 @@ const ChangePassword = () => {
       setNewPassword("");
       setConfirmPassword("");
       navigate("/settings?tab=security");
-    } else {
+    }
+    else {
       toast.error(response?.error || "Failed to change password");
     }
   };
@@ -72,7 +75,7 @@ const ChangePassword = () => {
                 <Input
                   type={showCurrentPassword ? "text" : "password"}
                   value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  onChange={e => setCurrentPassword(e.target.value)}
                   placeholder="Enter current password"
                   disabled={isChanging}
                 />
@@ -92,7 +95,7 @@ const ChangePassword = () => {
                 <Input
                   type={showNewPassword ? "text" : "password"}
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={e => setNewPassword(e.target.value)}
                   placeholder="Enter new password"
                   disabled={isChanging}
                 />
@@ -112,7 +115,7 @@ const ChangePassword = () => {
                 <Input
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
                   disabled={isChanging}
                 />
@@ -183,6 +186,6 @@ const ChangePassword = () => {
       </div>
     </div>
   );
-};
+}
 
 export default ChangePassword;

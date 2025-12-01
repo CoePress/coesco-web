@@ -1,15 +1,16 @@
-import { useState, useEffect } from "react";
-import { RefreshCw, Shield, Users, Eye, CheckCircle } from "lucide-react";
+import { CheckCircle, Eye, RefreshCw, Shield, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import type { TableColumn } from "@/components/ui/table";
 
 import {
-  PageHeader,
   Button,
   Loader,
+  Modal,
+  PageHeader,
   StatusBadge,
   Table,
-  Modal,
 } from "@/components";
-import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 
 interface Permission {
@@ -27,13 +28,13 @@ interface UserPermissions {
   rawPermissions: string[];
 }
 
-const Permissions = () => {
-  const [activeTab, setActiveTab] = useState<'all' | 'roles' | 'me' | 'check'>('all');
+function Permissions() {
+  const [activeTab, setActiveTab] = useState<"all" | "roles" | "me" | "check">("all");
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions>({});
   const [userPermissions, setUserPermissions] = useState<UserPermissions | null>(null);
   const [loading, setLoading] = useState(false);
-  const [checkPermissions, setCheckPermissions] = useState<string[]>(['']);
+  const [checkPermissions, setCheckPermissions] = useState<string[]>([""]);
   const [checkResults, setCheckResults] = useState<any>(null);
   const [requireAll, setRequireAll] = useState(false);
   const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
@@ -50,7 +51,7 @@ const Permissions = () => {
       Object.entries(structure).forEach(([category, perms]) => {
         permissions.push({
           category,
-          permissions: Array.isArray(perms) ? perms : Object.values(perms as object).flat()
+          permissions: Array.isArray(perms) ? perms : Object.values(perms as object).flat(),
         });
       });
 
@@ -78,12 +79,13 @@ const Permissions = () => {
   };
 
   const checkUserPermissions = async () => {
-    if (!checkPermissions.some(p => p.trim())) return;
+    if (!checkPermissions.some(p => p.trim()))
+      return;
 
     const validPermissions = checkPermissions.filter(p => p.trim());
     const response = await post("/permissions/check", {
       permissions: validPermissions,
-      requireAll
+      requireAll,
     });
 
     if (response?.success) {
@@ -93,9 +95,12 @@ const Permissions = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'all') fetchAllPermissions();
-    else if (activeTab === 'roles') fetchRolePermissions();
-    else if (activeTab === 'me') fetchUserPermissions();
+    if (activeTab === "all")
+      fetchAllPermissions();
+    else if (activeTab === "roles")
+      fetchRolePermissions();
+    else if (activeTab === "me")
+      fetchUserPermissions();
   }, [activeTab]);
 
   const permissionColumns: TableColumn<any>[] = [
@@ -107,7 +112,7 @@ const Permissions = () => {
           <Shield size={16} className="text-primary" />
           <span className="font-medium capitalize">{row.category}</span>
         </div>
-      )
+      ),
     },
     {
       key: "permissions",
@@ -123,15 +128,15 @@ const Permissions = () => {
             />
           ))}
         </div>
-      )
+      ),
     },
     {
       key: "count",
       header: "Count",
       render: (_, row) => (
         <span className="text-sm text-text-muted">{row.permissions.length}</span>
-      )
-    }
+      ),
+    },
   ];
 
   const roleColumns: TableColumn<any>[] = [
@@ -143,10 +148,10 @@ const Permissions = () => {
           <Users size={16} className="text-primary" />
           <StatusBadge
             label={row.role}
-            variant={row.role === 'ADMIN' ? 'error' : 'success'}
+            variant={row.role === "ADMIN" ? "error" : "success"}
           />
         </div>
-      )
+      ),
     },
     {
       key: "permissions",
@@ -169,24 +174,24 @@ const Permissions = () => {
             />
           )}
         </div>
-      )
+      ),
     },
     {
       key: "count",
       header: "Total",
       render: (_, row) => (
         <span className="text-sm text-text-muted">{row.permissions.length}</span>
-      )
-    }
+      ),
+    },
   ];
 
-  const TabButton = ({ tab, label, icon: Icon }: { tab: string, label: string, icon: any }) => (
+  const TabButton = ({ tab, label, icon: Icon }: { tab: string; label: string; icon: any }) => (
     <button
       onClick={() => setActiveTab(tab as any)}
       className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer flex items-center gap-2 ${
         activeTab === tab
-          ? 'bg-primary text-background'
-          : 'text-text-muted hover:text-text'
+          ? "bg-primary text-background"
+          : "text-text-muted hover:text-text"
       }`}
     >
       <Icon size={16} />
@@ -199,9 +204,12 @@ const Permissions = () => {
       <Button
         variant="secondary-outline"
         onClick={() => {
-          if (activeTab === 'all') fetchAllPermissions();
-          else if (activeTab === 'roles') fetchRolePermissions();
-          else if (activeTab === 'me') fetchUserPermissions();
+          if (activeTab === "all")
+            fetchAllPermissions();
+          else if (activeTab === "roles")
+            fetchRolePermissions();
+          else if (activeTab === "me")
+            fetchUserPermissions();
         }}
       >
         <RefreshCw size={16} />
@@ -235,7 +243,7 @@ const Permissions = () => {
         </div>
 
         <div className="flex-1 overflow-hidden">
-          {activeTab === 'all' && (
+          {activeTab === "all" && (
             <Table
               columns={permissionColumns}
               data={allPermissions}
@@ -245,12 +253,12 @@ const Permissions = () => {
             />
           )}
 
-          {activeTab === 'roles' && (
+          {activeTab === "roles" && (
             <Table
               columns={roleColumns}
               data={Object.entries(rolePermissions).map(([role, permissions]) => ({
                 role,
-                permissions
+                permissions,
               }))}
               idField="role"
               total={Object.keys(rolePermissions).length}
@@ -258,7 +266,7 @@ const Permissions = () => {
             />
           )}
 
-          {activeTab === 'me' && userPermissions && (
+          {activeTab === "me" && userPermissions && (
             <div className="space-y-6 overflow-auto">
               <div className="bg-surface rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -267,7 +275,7 @@ const Permissions = () => {
                     <h3 className="text-lg font-medium">Your Role</h3>
                     <StatusBadge
                       label={userPermissions.role}
-                      variant={userPermissions.role === 'ADMIN' ? 'error' : 'success'}
+                      variant={userPermissions.role === "ADMIN" ? "error" : "success"}
                       className="mt-1"
                     />
                   </div>
@@ -276,7 +284,9 @@ const Permissions = () => {
                 <div className="space-y-4">
                   <div>
                     <h4 className="text-sm font-medium text-text-muted mb-2">
-                      Expanded Permissions ({userPermissions.permissions.length})
+                      Expanded Permissions (
+                      {userPermissions.permissions.length}
+                      )
                     </h4>
                     <div className="flex flex-wrap gap-1">
                       {userPermissions.permissions.map(permission => (
@@ -292,7 +302,9 @@ const Permissions = () => {
 
                   <div>
                     <h4 className="text-sm font-medium text-text-muted mb-2">
-                      Direct Permissions ({userPermissions.rawPermissions.length})
+                      Direct Permissions (
+                      {userPermissions.rawPermissions.length}
+                      )
                     </h4>
                     <div className="flex flex-wrap gap-1">
                       {userPermissions.rawPermissions.map(permission => (
@@ -310,7 +322,7 @@ const Permissions = () => {
             </div>
           )}
 
-          {activeTab === 'check' && (
+          {activeTab === "check" && (
             <div className="space-y-6 overflow-auto">
               <div className="bg-surface rounded-lg p-6">
                 <h3 className="text-lg font-medium mb-4">Check Permissions</h3>
@@ -347,7 +359,7 @@ const Permissions = () => {
                   <div className="flex gap-2">
                     <Button
                       variant="secondary-outline"
-                      onClick={() => setCheckPermissions([...checkPermissions, ''])}
+                      onClick={() => setCheckPermissions([...checkPermissions, ""])}
                     >
                       Add Permission
                     </Button>
@@ -357,7 +369,7 @@ const Permissions = () => {
                         type="checkbox"
                         id="requireAll"
                         checked={requireAll}
-                        onChange={(e) => setRequireAll(e.target.checked)}
+                        onChange={e => setRequireAll(e.target.checked)}
                         className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                       />
                       <label htmlFor="requireAll" className="text-sm text-text-muted">
@@ -385,25 +397,31 @@ const Permissions = () => {
         {checkResults && (
           <div className="space-y-4">
             <div className={`p-4 rounded-lg ${
-              checkResults.hasAccess ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-            }`}>
+              checkResults.hasAccess ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
+            }`}
+            >
               <div className="flex items-center gap-2">
                 <CheckCircle size={20} />
                 <span className="font-medium">
-                  Access {checkResults.hasAccess ? 'Granted' : 'Denied'}
+                  Access
+                  {" "}
+                  {checkResults.hasAccess ? "Granted" : "Denied"}
                 </span>
               </div>
             </div>
 
             <div>
-              <h4 className="font-medium mb-2">Your Role: {checkResults.userRole}</h4>
+              <h4 className="font-medium mb-2">
+                Your Role:
+                {checkResults.userRole}
+              </h4>
               <div className="space-y-2">
                 {Object.entries(checkResults.results).map(([permission, hasAccess]) => (
                   <div key={permission} className="flex items-center justify-between p-2 bg-surface rounded">
                     <span className="text-sm font-mono">{permission}</span>
                     <StatusBadge
-                      label={hasAccess ? 'Granted' : 'Denied'}
-                      variant={hasAccess ? 'success' : 'error'}
+                      label={hasAccess ? "Granted" : "Denied"}
+                      variant={hasAccess ? "success" : "error"}
                     />
                   </div>
                 ))}
@@ -420,6 +438,6 @@ const Permissions = () => {
       </Modal>
     </div>
   );
-};
+}
 
 export default Permissions;

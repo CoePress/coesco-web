@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Camera, PenTool, Download, Printer, Clock } from 'lucide-react';
-import { Button, Card, PageHeader } from '@/components';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useApi } from '@/hooks/use-api';
-import { IApiResponse } from '@/utils/types';
-import { useToast } from '@/hooks/use-toast';
+import { Calendar, Camera, CheckSquare, ChevronLeft, ChevronRight, Clock, Download, FileText, List, MapPin, PenTool, Printer } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+
+import type { IApiResponse } from "@/utils/types";
+
+import { Button, Card, PageHeader } from "@/components";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
 
 interface FormSubmissionData {
   id: string;
@@ -20,7 +22,7 @@ interface FormSubmissionData {
   };
 }
 
-const FormSubmission = () => {
+function FormSubmission() {
   const { submissionId, id: formId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,14 +51,15 @@ const FormSubmission = () => {
   }, [submission?.answers, conditionalRules]);
 
   const fetchSubmission = async () => {
-    if (!submissionId) return;
+    if (!submissionId)
+      return;
 
     setLoading(true);
     setError(null);
 
     try {
       const response = await get(`/forms/${formId}/submissions/${submissionId}`, {
-        include: ['form.pages.sections.fields']
+        include: ["form.pages.sections.fields"],
       });
 
       if (response?.success && response.data) {
@@ -67,8 +70,8 @@ const FormSubmission = () => {
             ...page,
             sections: page.sections?.map((section: any) => ({
               ...section,
-              fields: section.fields || []
-            })) || []
+              fields: section.fields || [],
+            })) || [],
           })) || [];
           setPages(pagesData.sort((a: any, b: any) => a.sequence - b.sequence));
 
@@ -78,53 +81,61 @@ const FormSubmission = () => {
             setConditionalRules(rules);
           }
         }
-      } else {
+      }
+      else {
         setError(response?.error || "Failed to fetch submission");
       }
-    } catch (err) {
-      console.error('Error fetching submission:', err);
-      setError('Failed to load submission');
-    } finally {
+    }
+    catch (err) {
+      console.error("Error fetching submission:", err);
+      setError("Failed to load submission");
+    }
+    finally {
       setLoading(false);
     }
   };
 
   const evaluateConditionalRules = () => {
-    if (!submission) return;
+    if (!submission)
+      return;
 
     const newHidden = new Set<string>();
     const values = submission.answers;
 
     conditionalRules.forEach((rule: any) => {
-      if (!rule.isActive) return;
-      if (rule.action === 'SHOW') {
+      if (!rule.isActive)
+        return;
+      if (rule.action === "SHOW") {
         newHidden.add(rule.targetId);
       }
     });
 
     conditionalRules.forEach((rule: any) => {
-      if (!rule.isActive) return;
+      if (!rule.isActive)
+        return;
 
-      const conditions = Array.isArray(rule.conditions) ? rule.conditions :
-                        (rule.conditions ? [rule.conditions] : []);
+      const conditions = Array.isArray(rule.conditions)
+        ? rule.conditions
+        : (rule.conditions ? [rule.conditions] : []);
 
       let conditionsMet = false;
-      if (rule.operator === 'OR') {
+      if (rule.operator === "OR") {
         conditionsMet = conditions.some((condition: any) =>
-          evaluateCondition(condition, values)
+          evaluateCondition(condition, values),
         );
-      } else {
+      }
+      else {
         conditionsMet = conditions.every((condition: any) =>
-          evaluateCondition(condition, values)
+          evaluateCondition(condition, values),
         );
       }
 
       if (conditionsMet) {
         switch (rule.action) {
-          case 'SHOW':
+          case "SHOW":
             newHidden.delete(rule.targetId);
             break;
-          case 'HIDE':
+          case "HIDE":
             newHidden.add(rule.targetId);
             break;
         }
@@ -133,14 +144,15 @@ const FormSubmission = () => {
 
     if (values["2nd Customer"] !== "yes") {
       conditionalRules.forEach((rule: any) => {
-        const conditions = Array.isArray(rule.conditions) ? rule.conditions :
-                          (rule.conditions ? [rule.conditions] : []);
+        const conditions = Array.isArray(rule.conditions)
+          ? rule.conditions
+          : (rule.conditions ? [rule.conditions] : []);
 
         const dependsOnThirdCustomer = conditions.some((condition: any) =>
-          condition.fieldVariable === "Third Customer"
+          condition.fieldVariable === "Third Customer",
         );
 
-        if (dependsOnThirdCustomer && rule.action === 'SHOW') {
+        if (dependsOnThirdCustomer && rule.action === "SHOW") {
           newHidden.add(rule.targetId);
         }
       });
@@ -156,29 +168,29 @@ const FormSubmission = () => {
     const value = condition.value;
 
     switch (operator) {
-      case 'equals':
-      case '=':
+      case "equals":
+      case "=":
         return fieldValue === value;
-      case 'not_equals':
-      case '!=':
+      case "not_equals":
+      case "!=":
         return fieldValue !== value;
-      case 'contains':
+      case "contains":
         return fieldValue && String(fieldValue).includes(value);
-      case 'not_contains':
+      case "not_contains":
         return !fieldValue || !String(fieldValue).includes(value);
-      case 'empty':
-        return !fieldValue || fieldValue === '';
-      case 'not_empty':
-        return fieldValue && fieldValue !== '';
-      case 'greater_than':
-      case '>':
+      case "empty":
+        return !fieldValue || fieldValue === "";
+      case "not_empty":
+        return fieldValue && fieldValue !== "";
+      case "greater_than":
+      case ">":
         return Number(fieldValue) > Number(value);
-      case 'less_than':
-      case '<':
+      case "less_than":
+      case "<":
         return Number(fieldValue) < Number(value);
-      case 'in':
+      case "in":
         return Array.isArray(value) && value.includes(fieldValue);
-      case 'not_in':
+      case "not_in":
         return Array.isArray(value) && !value.includes(fieldValue);
       default:
         return false;
@@ -214,7 +226,7 @@ const FormSubmission = () => {
   };
 
   const handleExport = () => {
-    toast.info('Export functionality coming soon');
+    toast.info("Export functionality coming soon");
   };
 
   const handlePrint = () => {
@@ -225,38 +237,47 @@ const FormSubmission = () => {
     const fieldKey = field.variable || field.id;
     const value = submission?.answers[fieldKey];
 
-    if (value === undefined || value === null || value === '') {
+    if (value === undefined || value === null || value === "") {
       return <span className="text-text-muted italic">No response</span>;
     }
 
-    if (field.label === 'Current Location (GPS)' && submission?.answers._gpsLocation) {
+    if (field.label === "Current Location (GPS)" && submission?.answers._gpsLocation) {
       const gps = submission.answers._gpsLocation;
       return (
         <div className="font-mono text-sm">
-          {gps.latitude?.toFixed(6)}, {gps.longitude?.toFixed(6)}
-          {gps.accuracy && <span className="text-text-muted ml-2">(±{gps.accuracy.toFixed(0)}m)</span>}
+          {gps.latitude?.toFixed(6)}
+          ,
+          {gps.longitude?.toFixed(6)}
+          {gps.accuracy && (
+            <span className="text-text-muted ml-2">
+              (±
+              {gps.accuracy.toFixed(0)}
+              m)
+            </span>
+          )}
         </div>
       );
     }
 
     switch (field.controlType) {
-      case 'SIGNATURE_PAD':
-        if (!value) return <span className="text-text-muted italic">No signature</span>;
-        if (typeof value === 'string' && value.startsWith('data:image/')) {
+      case "SIGNATURE_PAD":
+        if (!value)
+          return <span className="text-text-muted italic">No signature</span>;
+        if (typeof value === "string" && value.startsWith("data:image/")) {
           return (
             <div className="border border-border rounded p-2 bg-white inline-block">
               <img
                 src={value}
                 alt="Signature"
                 className="max-w-[400px] max-h-[200px] object-contain"
-                style={{ imageRendering: 'auto' }}
+                style={{ imageRendering: "auto" }}
               />
             </div>
           );
         }
         return <span className="text-text">{value}</span>;
 
-      case 'CAMERA':
+      case "CAMERA":
         if (!value || !Array.isArray(value) || value.length === 0) {
           return <span className="text-text-muted italic">No images</span>;
         }
@@ -268,7 +289,7 @@ const FormSubmission = () => {
                   src={file.url}
                   alt={file.originalName || `Image ${index + 1}`}
                   className="w-full h-32 object-cover cursor-pointer hover:opacity-75 transition-opacity"
-                  onClick={() => window.open(file.url, '_blank')}
+                  onClick={() => window.open(file.url, "_blank")}
                   title={file.originalName}
                 />
                 {file.originalName && (
@@ -281,47 +302,48 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'MULTI_SELECT':
-        return <span className="text-text">{value ? 'Yes' : 'No'}</span>;
+      case "MULTI_SELECT":
+        return <span className="text-text">{value ? "Yes" : "No"}</span>;
 
-      case 'TEXT_AREA':
+      case "TEXT_AREA":
         return (
           <div className="whitespace-pre-wrap text-text">
             {value}
           </div>
         );
 
-      case 'DATE_SELECTOR':
+      case "DATE_SELECTOR":
         return <span className="text-text">{new Date(value).toLocaleDateString()}</span>;
 
-      case 'TIME_SELECTOR':
-        if (typeof value === 'string' && value.includes(':')) {
-          const [hours, minutes] = value.split(':');
-          const hour = parseInt(hours);
-          const period = hour >= 12 ? 'PM' : 'AM';
+      case "TIME_SELECTOR":
+        if (typeof value === "string" && value.includes(":")) {
+          const [hours, minutes] = value.split(":");
+          const hour = Number.parseInt(hours);
+          const period = hour >= 12 ? "PM" : "AM";
           const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
           return <span className="text-text">{`${hour12}:${minutes} ${period}`}</span>;
         }
         return <span className="text-text">{value}</span>;
 
-      case 'DROPDOWN':
+      case "DROPDOWN":
         // If the value is a UUID, try to find the label from options
-        if (field.options && typeof value === 'string' && value.match(/^[a-f0-9-]{36}$/)) {
+        if (field.options && typeof value === "string" && value.match(/^[a-f0-9-]{36}$/)) {
           const option = field.options.find((opt: any) => opt.value === value);
           return <span className="text-text">{option?.label || value}</span>;
         }
         return <span className="text-text">{value}</span>;
 
-      case 'SKETCH_PAD':
-        if (!value) return <span className="text-text-muted italic">No sketch</span>;
-        if (typeof value === 'string') {
+      case "SKETCH_PAD":
+        if (!value)
+          return <span className="text-text-muted italic">No sketch</span>;
+        if (typeof value === "string") {
           return (
             <div className="border border-border rounded p-2 bg-white inline-block">
               <img
                 src={value}
                 alt="Sketch"
                 className="max-w-[400px] max-h-[300px] object-contain cursor-pointer hover:opacity-75 transition-opacity"
-                onClick={() => window.open(value, '_blank')}
+                onClick={() => window.open(value, "_blank")}
                 title="Click to view full size"
               />
             </div>
@@ -336,20 +358,20 @@ const FormSubmission = () => {
 
   const getFieldIcon = (fieldType: string, field?: any) => {
     switch (fieldType) {
-      case 'INPUT':
-      case 'TEXTBOX':
-        if (field && field.label === 'Current Location (GPS)') {
+      case "INPUT":
+      case "TEXTBOX":
+        if (field && field.label === "Current Location (GPS)") {
           return <MapPin size={16} />;
         }
         return <FileText size={16} />;
-      case 'DATE_SELECTOR': return <Calendar size={16} />;
-      case 'TIME_SELECTOR': return <Clock size={16} />;
-      case 'DROPDOWN': return <List size={16} />;
-      case 'MULTI_SELECT': return <CheckSquare size={16} />;
-      case 'TEXT_AREA': return <FileText size={16} />;
-      case 'CAMERA': return <Camera size={16} />;
-      case 'SIGNATURE_PAD': return <PenTool size={16} />;
-      case 'SKETCH_PAD': return <PenTool size={16} />;
+      case "DATE_SELECTOR": return <Calendar size={16} />;
+      case "TIME_SELECTOR": return <Clock size={16} />;
+      case "DROPDOWN": return <List size={16} />;
+      case "MULTI_SELECT": return <CheckSquare size={16} />;
+      case "TEXT_AREA": return <FileText size={16} />;
+      case "CAMERA": return <Camera size={16} />;
+      case "SIGNATURE_PAD": return <PenTool size={16} />;
+      case "SKETCH_PAD": return <PenTool size={16} />;
       default: return null;
     }
   };
@@ -389,7 +411,7 @@ const FormSubmission = () => {
   return (
     <div className="w-full flex-1 flex flex-col">
       <PageHeader
-        title={submission.form?.name || 'Form Submission'}
+        title={submission.form?.name || "Form Submission"}
         description={`Status: ${submission.status} • Submitted: ${new Date(submission.createdAt).toLocaleString()}`}
         actions={<Actions />}
         goBack={true}
@@ -409,7 +431,13 @@ const FormSubmission = () => {
               Previous
             </Button>
             <div className="text-sm text-text-muted">
-              Page {currentPageIndex + 1} of {getVisiblePages().length}
+              Page
+              {" "}
+              {currentPageIndex + 1}
+              {" "}
+              of
+              {" "}
+              {getVisiblePages().length}
             </div>
             <Button
               onClick={goToNextPage}
@@ -430,37 +458,36 @@ const FormSubmission = () => {
                 <h2 className="text-xl font-semibold text-text">{getCurrentPage().title}</h2>
               </div>
 
-              {getCurrentPage().sections
-                .filter((section: any) => !hiddenElements.has(section.id))
-                .map((section: any) => (
-                  <Card key={section.id} className="mb-4">
-                    {section.title && (
-                      <h3 className="text-lg font-medium text-text mb-4">{section.title}</h3>
-                    )}
-                    <div className="space-y-4">
-                      {section.fields
-                        .filter((field: any) => !hiddenElements.has(field.id))
-                        .map((field: any) => {
-                          const hasValue = submission.answers[field.variable || field.id];
-                          if (!hasValue && field.controlType !== 'MULTI_SELECT') return null;
+              {getCurrentPage().sections.filter((section: any) => !hiddenElements.has(section.id)).map((section: any) => (
+                <Card key={section.id} className="mb-4">
+                  {section.title && (
+                    <h3 className="text-lg font-medium text-text mb-4">{section.title}</h3>
+                  )}
+                  <div className="space-y-4">
+                    {section.fields
+                      .filter((field: any) => !hiddenElements.has(field.id))
+                      .map((field: any) => {
+                        const hasValue = submission.answers[field.variable || field.id];
+                        if (!hasValue && field.controlType !== "MULTI_SELECT")
+                          return null;
 
-                          return (
-                            <div key={field.id} className="border-b border-border/50 last:border-0 pb-3 last:pb-0">
-                              <div className="flex items-start gap-2">
-                                <div className="text-text-muted mt-0.5">{getFieldIcon(field.controlType, field)}</div>
-                                <div className="flex-1">
-                                  <label className="text-text-muted text-sm font-medium block mb-1">
-                                    {field.label}
-                                  </label>
-                                  {renderFieldValue(field)}
-                                </div>
+                        return (
+                          <div key={field.id} className="border-b border-border/50 last:border-0 pb-3 last:pb-0">
+                            <div className="flex items-start gap-2">
+                              <div className="text-text-muted mt-0.5">{getFieldIcon(field.controlType, field)}</div>
+                              <div className="flex-1">
+                                <label className="text-text-muted text-sm font-medium block mb-1">
+                                  {field.label}
+                                </label>
+                                {renderFieldValue(field)}
                               </div>
                             </div>
-                          );
-                        })}
-                    </div>
-                  </Card>
-                ))}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </Card>
+              ))}
             </>
           )}
         </div>
@@ -481,7 +508,8 @@ const FormSubmission = () => {
                         .filter((field: any) => !hiddenElements.has(field.id))
                         .map((field: any) => {
                           const hasValue = submission.answers[field.variable || field.id];
-                          if (!hasValue && field.controlType !== 'MULTI_SELECT') return null;
+                          if (!hasValue && field.controlType !== "MULTI_SELECT")
+                            return null;
 
                           return (
                             <div key={field.id} className="border-b border-gray-200 pb-2">
@@ -503,6 +531,6 @@ const FormSubmission = () => {
       </div>
     </div>
   );
-};
+}
 
 export default FormSubmission;

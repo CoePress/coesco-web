@@ -73,5 +73,5 @@ export const COMPETITION_OPTIONS = [
   "PA Industries",
   "Perfecto",
   "Schuller",
-  "Universal Feed"
+  "Universal Feed",
 ] as const;

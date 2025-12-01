@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-type ButtonProps = {
+interface ButtonProps {
   onClick?: (e?: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => void;
   variant?:
     | "primary"
@@ -18,9 +18,9 @@ type ButtonProps = {
   href?: string;
   className?: string;
   type?: "button" | "submit" | "reset";
-};
+}
 
-const Button = ({
+function Button({
   children,
   onClick,
   variant = "primary",
@@ -30,23 +30,23 @@ const Button = ({
   href = "#",
   className,
   type = "button",
-}: ButtonProps) => {
+}: ButtonProps) {
   const variantStyles: {
     [key in NonNullable<ButtonProps["variant"]>]: string;
   } = {
-    primary:
+    "primary":
       "border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer",
-    secondary:
+    "secondary":
       "border-text bg-text text-foreground hover:bg-text/80 hover:border-text/80 cursor-pointer",
     "primary-outline":
       "border-primary text-primary hover:bg-primary/15 hover:border-primary/15 cursor-pointer",
     "secondary-outline":
       "border-border bg-transparent text-text/75 hover:bg-text/15 hover:border-text/15 cursor-pointer",
-    ghost:
+    "ghost":
       "border-transparent bg-transparent text-text-muted hover:bg-surface cursor-pointer",
-    destructive:
+    "destructive":
       "border-error bg-error/25 text-error hover:bg-error/50 hover:border-error/80 cursor-pointer",
-    disabled: "border-border bg-surface text-text-muted cursor-not-allowed",
+    "disabled": "border-border bg-surface text-text-muted cursor-not-allowed",
   };
 
   const sizeStyles: {
@@ -57,8 +57,8 @@ const Button = ({
     lg: "px-4 py-2 text-base",
   };
 
-  const baseStyles =
-    "border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max";
+  const baseStyles
+    = "border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max";
 
   const finalStyles = `${baseStyles} ${
     variantStyles[disabled ? "disabled" : variant]
@@ -70,7 +70,8 @@ const Button = ({
         to={href}
         onClick={disabled ? undefined : onClick}
         className={`${finalStyles} ${className}`}
-        aria-disabled={disabled}>
+        aria-disabled={disabled}
+      >
         {children}
       </Link>
     );
@@ -81,10 +82,11 @@ const Button = ({
       onClick={onClick}
       disabled={disabled}
       className={`${finalStyles} ${className}`}
-      type={type}>
+      type={type}
+    >
       {children}
     </button>
   );
-};
+}
 
 export default Button;

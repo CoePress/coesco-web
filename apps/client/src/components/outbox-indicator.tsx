@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { CloudIcon, CloudOffIcon, RefreshCwIcon, Trash2Icon, XIcon } from "lucide-react";
+import { useState } from "react";
 
 import { useOutbox } from "@/hooks/use-outbox";
 import { isOnline } from "@/utils/network";
@@ -50,7 +50,9 @@ export default function OutboxIndicator() {
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-mono text-neutral-300">{item.method}</span>
                     <span className="text-neutral-500">
-                      {item.attempts}/{item.maxAttempts}
+                      {item.attempts}
+                      /
+                      {item.maxAttempts}
                     </span>
                   </div>
                   <div className="text-neutral-400 truncate">{item.url}</div>
@@ -91,17 +93,21 @@ export default function OutboxIndicator() {
           `}
           type="button"
         >
-          {!online ? (
-            <>
-              <CloudOffIcon className="w-4 h-4" />
-              Offline
-            </>
-          ) : (
-            <>
-              <CloudIcon className="w-4 h-4" />
-              {stats.queued_count} Queued
-            </>
-          )}
+          {!online
+            ? (
+                <>
+                  <CloudOffIcon className="w-4 h-4" />
+                  Offline
+                </>
+              )
+            : (
+                <>
+                  <CloudIcon className="w-4 h-4" />
+                  {stats.queued_count}
+                  {" "}
+                  Queued
+                </>
+              )}
         </button>
       </div>
     </div>

@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2, Cloud, CloudOff, Clock } from 'lucide-react';
-import { Button, Input, Card, PageHeader, Modal, DatePicker, TimePicker, SignaturePad, CameraUpload, SketchPad } from '@/components';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useApi } from '@/hooks/use-api';
-import { IApiResponse } from '@/utils/types';
-import { useToast } from '@/hooks/use-toast';
-import { __dev__ } from '@/config/env';
-import { FormSubmissionStatus } from '@coesco/types';
+import { FormSubmissionStatus } from "@coesco/types";
+import { Calendar, Camera, CheckSquare, ChevronLeft, ChevronRight, Clock, Cloud, CloudOff, FileText, List, MapPin, PenTool, Save, Wand2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+
+import type { IApiResponse } from "@/utils/types";
+
+import { Button, CameraUpload, Card, DatePicker, Input, Modal, PageHeader, SignaturePad, SketchPad, TimePicker } from "@/components";
+import { __dev__ } from "@/config/env";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
 
 interface GPSLocation {
   latitude: number;
@@ -15,16 +17,16 @@ interface GPSLocation {
   timestamp: string;
 }
 
-const FormSubmit = () => {
+function FormSubmit() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { get, post, patch } = useApi<IApiResponse<any>>();
   const toast = useToast();
 
-  const isAdminContext = location.pathname.startsWith('/admin');
-  const isSalesContext = location.pathname.startsWith('/sales');
-  const basePath = isAdminContext ? '/admin/forms' : isSalesContext ? '/sales/forms' : '/service/forms';
+  const isAdminContext = location.pathname.startsWith("/admin");
+  const isSalesContext = location.pathname.startsWith("/sales");
+  const basePath = isAdminContext ? "/admin/forms" : isSalesContext ? "/sales/forms" : "/service/forms";
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +51,7 @@ const FormSubmit = () => {
 
   const include = useMemo(
     () => ["pages.sections.fields"],
-    []
+    [],
   );
 
   const storageKey = useMemo(() => `form-submission-${id}`, [id]);
@@ -70,35 +72,38 @@ const FormSubmit = () => {
         setUserLocation(locationData);
       },
       (error) => {
-        console.error('Location error:', error);
+        console.error("Location error:", error);
       },
       {
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 60000,
-      }
+      },
     );
   };
 
   const saveToLocalStorage = (values: Record<string, any>) => {
-    if (!id) return;
+    if (!id)
+      return;
     const dataToSave = {
       formId: id,
       formValues: values,
       currentPageIndex,
-      savedAt: new Date().toISOString()
+      savedAt: new Date().toISOString(),
     };
     localStorage.setItem(storageKey, JSON.stringify(dataToSave));
   };
 
   const loadFromLocalStorage = () => {
-    if (!id) return null;
+    if (!id)
+      return null;
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved form data:', e);
+      }
+      catch (e) {
+        console.error("Failed to parse saved form data:", e);
         return null;
       }
     }
@@ -106,21 +111,26 @@ const FormSubmit = () => {
   };
 
   const clearLocalStorage = () => {
-    if (!id) return;
+    if (!id)
+      return;
     localStorage.removeItem(storageKey);
   };
 
   const autoSaveDraft = useCallback(async () => {
-    if (!id) return;
+    if (!id)
+      return;
 
     const visibleFieldVariables = new Set<string>();
 
     pages.forEach((page: any) => {
-      if (hiddenElements.has(page.id)) return;
+      if (hiddenElements.has(page.id))
+        return;
       page.sections.forEach((section: any) => {
-        if (hiddenElements.has(section.id)) return;
+        if (hiddenElements.has(section.id))
+          return;
         section.fields.forEach((field: any) => {
-          if (hiddenElements.has(field.id)) return;
+          if (hiddenElements.has(field.id))
+            return;
           const fieldKey = field.variable || field.id;
           visibleFieldVariables.add(fieldKey);
         });
@@ -128,11 +138,12 @@ const FormSubmit = () => {
     });
 
     const filledFields = Object.entries(formValues).filter(([fieldKey, value]) => {
-      return visibleFieldVariables.has(fieldKey) &&
-             value !== '' && value !== null && value !== undefined;
+      return visibleFieldVariables.has(fieldKey)
+        && value !== "" && value !== null && value !== undefined;
     });
 
-    if (filledFields.length === 0) return;
+    if (filledFields.length === 0)
+      return;
 
     setIsSaving(true);
     setSaveError(null);
@@ -145,14 +156,15 @@ const FormSubmit = () => {
         status: FormSubmissionStatus.DRAFT,
         answers: {
           ...filteredFormValues,
-          _gpsLocation: userLocation || null
-        }
+          _gpsLocation: userLocation || null,
+        },
       };
 
       let response;
       if (draftSubmissionId) {
         response = await patch(`/forms/${id}/submissions/${draftSubmissionId}`, submissionData);
-      } else {
+      }
+      else {
         response = await post(`/forms/${id}/submissions`, submissionData);
         if (response?.success && response.data?.id) {
           setDraftSubmissionId(response.data.id);
@@ -162,13 +174,16 @@ const FormSubmit = () => {
       if (response?.success) {
         setLastSaved(new Date());
         setSaveError(null);
-      } else {
-        setSaveError(response?.error || 'Failed to auto-save');
       }
-    } catch (error) {
-      console.error('Auto-save error:', error);
-      setSaveError('Failed to auto-save draft');
-    } finally {
+      else {
+        setSaveError(response?.error || "Failed to auto-save");
+      }
+    }
+    catch (error) {
+      console.error("Auto-save error:", error);
+      setSaveError("Failed to auto-save draft");
+    }
+    finally {
       setIsSaving(false);
     }
   }, [id, formValues, pages, hiddenElements, userLocation, draftSubmissionId, post, patch]);
@@ -184,18 +199,19 @@ const FormSubmit = () => {
   }, [autoSaveDraft]);
 
   const autoFillForm = () => {
-    if (!__dev__) return;
+    if (!__dev__)
+      return;
 
     const testData: Record<string, any> = {};
 
-    testData['2nd Customer'] = 'no';
-    testData['Third Customer'] = 'no';
-    testData['In House'] = 'no';
+    testData["2nd Customer"] = "no";
+    testData["Third Customer"] = "no";
+    testData["In House"] = "no";
 
     pages.forEach((page: any) => {
-      if (page.label === 'Customer Information 2' ||
-          page.label === 'Customer Information 3' ||
-          page.label === 'Did you visit a third customer?') {
+      if (page.label === "Customer Information 2"
+        || page.label === "Customer Information 3"
+        || page.label === "Did you visit a third customer?") {
         return;
       }
 
@@ -203,106 +219,123 @@ const FormSubmit = () => {
         section.fields.forEach((field: any) => {
           const fieldKey = field.variable || field.id;
 
-          if (testData[fieldKey] !== undefined) return;
+          if (testData[fieldKey] !== undefined)
+            return;
 
           switch (field.controlType) {
-            case 'DROPDOWN':
+            case "DROPDOWN":
               const options = Array.isArray(field.options) ? field.options : [];
               if (options.length > 0) {
                 const firstOption = options[0];
-                if (typeof firstOption === 'string') {
+                if (typeof firstOption === "string") {
                   testData[fieldKey] = firstOption;
-                } else if (firstOption && typeof firstOption === 'object') {
-                  if (fieldKey === '2nd Customer' || fieldKey === 'Third Customer' || fieldKey === 'In House') {
-                    const noOption = options.find((opt: any) => opt.value === 'no');
+                }
+                else if (firstOption && typeof firstOption === "object") {
+                  if (fieldKey === "2nd Customer" || fieldKey === "Third Customer" || fieldKey === "In House") {
+                    const noOption = options.find((opt: any) => opt.value === "no");
                     testData[fieldKey] = noOption ? noOption.value : firstOption.value;
-                  } else {
+                  }
+                  else {
                     testData[fieldKey] = firstOption.value;
                   }
                 }
               }
               break;
 
-            case 'DATE_SELECTOR':
-              testData[fieldKey] = new Date().toISOString().split('T')[0];
+            case "DATE_SELECTOR":
+              testData[fieldKey] = new Date().toISOString().split("T")[0];
               break;
 
-            case 'TIME_SELECTOR':
-              if (field.label.toLowerCase().includes('start')) {
-                testData[fieldKey] = '08:00';
-              } else if (field.label.toLowerCase().includes('end')) {
-                testData[fieldKey] = '17:00';
-              } else {
-                testData[fieldKey] = '12:00';
+            case "TIME_SELECTOR":
+              if (field.label.toLowerCase().includes("start")) {
+                testData[fieldKey] = "08:00";
+              }
+              else if (field.label.toLowerCase().includes("end")) {
+                testData[fieldKey] = "17:00";
+              }
+              else {
+                testData[fieldKey] = "12:00";
               }
               break;
 
-            case 'TEXTBOX':
-            case 'INPUT':
-              if (field.variable === 'Tech Name' || field.label === 'Technician Name') {
+            case "TEXTBOX":
+            case "INPUT":
+              if (field.variable === "Tech Name" || field.label === "Technician Name") {
                 const techOptions = Array.isArray(field.options) ? field.options : [];
                 if (techOptions.length > 0) {
                   const firstTech = techOptions[0];
-                  testData[fieldKey] = typeof firstTech === 'object' ? firstTech.value : 'Test Technician';
-                } else {
-                  testData[fieldKey] = 'Test Technician';
+                  testData[fieldKey] = typeof firstTech === "object" ? firstTech.value : "Test Technician";
                 }
-              } else if (field.label.includes('Customer Name') || field.variable.includes('Company Name')) {
-                testData[fieldKey] = 'Test Company Inc.';
-              } else if (field.label.includes('Service Job Number') || field.variable.includes('Service Number')) {
-                testData[fieldKey] = 'SVC-' + Math.floor(Math.random() * 10000);
-              } else if (field.label.includes('Machine Serial') || field.variable.includes('Machine Number')) {
-                testData[fieldKey] = 'MSN-' + Math.floor(Math.random() * 100000);
-              } else if (field.label.includes('Customer Contact')) {
-                testData[fieldKey] = 'John Doe';
-              } else if (field.label.includes('Customer Email')) {
-                testData[fieldKey] = 'test@example.com';
-              } else if (field.label.includes('Customer Phone')) {
-                testData[fieldKey] = '555-0100';
-              } else if (field.label.includes('Type Customer Name')) {
-                testData[fieldKey] = 'John Doe';
-              } else if (field.label.includes('Current Location') && !field.label.includes('GPS')) {
-                testData[fieldKey] = '123 Test Street, Test City, TC 12345';
-              } else if (field.label.includes('Daily Summary')) {
-                testData[fieldKey] = 'Completed routine maintenance and system checks. All systems operational.';
-              } else {
-                testData[fieldKey] = 'Test ' + field.label;
+                else {
+                  testData[fieldKey] = "Test Technician";
+                }
+              }
+              else if (field.label.includes("Customer Name") || field.variable.includes("Company Name")) {
+                testData[fieldKey] = "Test Company Inc.";
+              }
+              else if (field.label.includes("Service Job Number") || field.variable.includes("Service Number")) {
+                testData[fieldKey] = `SVC-${Math.floor(Math.random() * 10000)}`;
+              }
+              else if (field.label.includes("Machine Serial") || field.variable.includes("Machine Number")) {
+                testData[fieldKey] = `MSN-${Math.floor(Math.random() * 100000)}`;
+              }
+              else if (field.label.includes("Customer Contact")) {
+                testData[fieldKey] = "John Doe";
+              }
+              else if (field.label.includes("Customer Email")) {
+                testData[fieldKey] = "test@example.com";
+              }
+              else if (field.label.includes("Customer Phone")) {
+                testData[fieldKey] = "555-0100";
+              }
+              else if (field.label.includes("Type Customer Name")) {
+                testData[fieldKey] = "John Doe";
+              }
+              else if (field.label.includes("Current Location") && !field.label.includes("GPS")) {
+                testData[fieldKey] = "123 Test Street, Test City, TC 12345";
+              }
+              else if (field.label.includes("Daily Summary")) {
+                testData[fieldKey] = "Completed routine maintenance and system checks. All systems operational.";
+              }
+              else {
+                testData[fieldKey] = `Test ${field.label}`;
               }
               break;
 
-            case 'TEXT_AREA':
-              if (field.label.includes('Report') || field.variable === 'Remarks') {
-                testData[fieldKey] = 'Performed scheduled maintenance. Checked all systems and components. Everything is working properly. No issues found.';
-              } else {
-                testData[fieldKey] = 'Test notes for ' + field.label;
+            case "TEXT_AREA":
+              if (field.label.includes("Report") || field.variable === "Remarks") {
+                testData[fieldKey] = "Performed scheduled maintenance. Checked all systems and components. Everything is working properly. No issues found.";
+              }
+              else {
+                testData[fieldKey] = `Test notes for ${field.label}`;
               }
               break;
 
-            case 'STAMP':
+            case "STAMP":
               break;
 
-            case 'SIGNATURE_PAD':
+            case "SIGNATURE_PAD":
               // Generate a simple test signature as base64 data URL
-              testData[fieldKey] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+              testData[fieldKey] = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
               break;
 
-            case 'CAMERA':
+            case "CAMERA":
               // Will be handled by CameraUpload component
               break;
 
-            case 'SKETCH_PAD':
+            case "SKETCH_PAD":
               // Will be handled by SketchPad component
               break;
 
             default:
-              testData[fieldKey] = 'Test ' + field.label;
+              testData[fieldKey] = `Test ${field.label}`;
           }
         });
       });
     });
 
     setFormValues(testData);
-    toast.success('Form auto-filled with test data');
+    toast.success("Form auto-filled with test data");
   };
 
   const fetchForm = async () => {
@@ -322,8 +355,8 @@ const FormSubmit = () => {
         ...page,
         sections: page.sections?.map((section: any) => ({
           ...section,
-          fields: section.fields || []
-        })) || []
+          fields: section.fields || [],
+        })) || [],
       })) || [];
       setPages(pagesData.sort((a: any, b: any) => a.sequence - b.sequence));
 
@@ -344,7 +377,8 @@ const FormSubmit = () => {
         setSavedProgress(saved);
         setShowContinueModal(true);
       }
-    } else {
+    }
+    else {
       setError(formResponse?.error || "Failed to fetch form");
     }
 
@@ -372,47 +406,51 @@ const FormSubmit = () => {
     });
 
     conditionalRules.forEach((rule: any) => {
-      if (!rule.isActive) return;
-      if (rule.action === 'SHOW') {
+      if (!rule.isActive)
+        return;
+      if (rule.action === "SHOW") {
         newHidden.add(rule.targetId);
       }
     });
 
     conditionalRules.forEach((rule: any) => {
-      if (!rule.isActive) return;
+      if (!rule.isActive)
+        return;
 
-      const conditions = Array.isArray(rule.conditions) ? rule.conditions :
-                        (rule.conditions ? [rule.conditions] : []);
+      const conditions = Array.isArray(rule.conditions)
+        ? rule.conditions
+        : (rule.conditions ? [rule.conditions] : []);
 
       let conditionsMet = false;
-      if (rule.operator === 'OR') {
+      if (rule.operator === "OR") {
         conditionsMet = conditions.some((condition: any) =>
-          evaluateCondition(condition, formValues)
+          evaluateCondition(condition, formValues),
         );
-      } else {
+      }
+      else {
         conditionsMet = conditions.every((condition: any) =>
-          evaluateCondition(condition, formValues)
+          evaluateCondition(condition, formValues),
         );
       }
 
       if (conditionsMet) {
         switch (rule.action) {
-          case 'SHOW':
+          case "SHOW":
             newHidden.delete(rule.targetId);
             break;
-          case 'HIDE':
+          case "HIDE":
             newHidden.add(rule.targetId);
             break;
-          case 'ENABLE':
+          case "ENABLE":
             newDisabled.delete(rule.targetId);
             break;
-          case 'DISABLE':
+          case "DISABLE":
             newDisabled.add(rule.targetId);
             break;
-          case 'REQUIRE':
+          case "REQUIRE":
             newRequired.add(rule.targetId);
             break;
-          case 'OPTIONAL':
+          case "OPTIONAL":
             newRequired.delete(rule.targetId);
             break;
         }
@@ -421,14 +459,15 @@ const FormSubmit = () => {
 
     if (formValues["2nd Customer"] !== "yes") {
       conditionalRules.forEach((rule: any) => {
-        const conditions = Array.isArray(rule.conditions) ? rule.conditions :
-                          (rule.conditions ? [rule.conditions] : []);
+        const conditions = Array.isArray(rule.conditions)
+          ? rule.conditions
+          : (rule.conditions ? [rule.conditions] : []);
 
         const dependsOnThirdCustomer = conditions.some((condition: any) =>
-          condition.fieldVariable === "Third Customer"
+          condition.fieldVariable === "Third Customer",
         );
 
-        if (dependsOnThirdCustomer && rule.action === 'SHOW') {
+        if (dependsOnThirdCustomer && rule.action === "SHOW") {
           newHidden.add(rule.targetId);
         }
       });
@@ -446,29 +485,29 @@ const FormSubmit = () => {
     const value = condition.value;
 
     switch (operator) {
-      case 'equals':
-      case '=':
+      case "equals":
+      case "=":
         return fieldValue === value;
-      case 'not_equals':
-      case '!=':
+      case "not_equals":
+      case "!=":
         return fieldValue !== value;
-      case 'contains':
+      case "contains":
         return fieldValue && String(fieldValue).includes(value);
-      case 'not_contains':
+      case "not_contains":
         return !fieldValue || !String(fieldValue).includes(value);
-      case 'empty':
-        return !fieldValue || fieldValue === '';
-      case 'not_empty':
-        return fieldValue && fieldValue !== '';
-      case 'greater_than':
-      case '>':
+      case "empty":
+        return !fieldValue || fieldValue === "";
+      case "not_empty":
+        return fieldValue && fieldValue !== "";
+      case "greater_than":
+      case ">":
         return Number(fieldValue) > Number(value);
-      case 'less_than':
-      case '<':
+      case "less_than":
+      case "<":
         return Number(fieldValue) < Number(value);
-      case 'in':
+      case "in":
         return Array.isArray(value) && value.includes(fieldValue);
-      case 'not_in':
+      case "not_in":
         return Array.isArray(value) && !value.includes(fieldValue);
       default:
         return false;
@@ -501,21 +540,21 @@ const FormSubmit = () => {
     };
   }, []);
 
-
   const handleFieldChange = (field: any, value: any) => {
     const fieldKey = field.variable || field.id;
 
-    setFormValues(prev => {
+    setFormValues((prev) => {
       const newValues = { ...prev };
-      if (value === '' || value === null || value === undefined) {
+      if (value === "" || value === null || value === undefined) {
         delete newValues[fieldKey];
-      } else {
+      }
+      else {
         newValues[fieldKey] = value;
       }
       return newValues;
     });
     if (errors[fieldKey] && value) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[fieldKey];
         return newErrors;
@@ -527,7 +566,7 @@ const FormSubmit = () => {
     if (savedProgress) {
       setFormValues(savedProgress.formValues || {});
       setCurrentPageIndex(savedProgress.currentPageIndex || 0);
-      toast.success('Continuing from where you left off');
+      toast.success("Continuing from where you left off");
     }
     setShowContinueModal(false);
   };
@@ -536,7 +575,7 @@ const FormSubmit = () => {
     clearLocalStorage();
     setFormValues({});
     setCurrentPageIndex(0);
-    toast.info('Starting fresh form submission');
+    toast.info("Starting fresh form submission");
     setShowContinueModal(false);
   };
 
@@ -546,12 +585,14 @@ const FormSubmit = () => {
     // Only validate currently visible pages
     const visiblePages = getVisiblePages();
 
-    visiblePages.forEach(page => {
+    visiblePages.forEach((page) => {
       page.sections.forEach((section: any) => {
-        if (hiddenElements.has(section.id)) return;
+        if (hiddenElements.has(section.id))
+          return;
 
         section.fields.forEach((field: any) => {
-          if (hiddenElements.has(field.id)) return;
+          if (hiddenElements.has(field.id))
+            return;
 
           const fieldKey = field.variable || field.id;
 
@@ -568,17 +609,21 @@ const FormSubmit = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm() || !id) return;
+    if (!validateForm() || !id)
+      return;
 
     try {
       const visibleFieldVariables = new Set<string>();
 
       pages.forEach((page: any) => {
-        if (hiddenElements.has(page.id)) return;
+        if (hiddenElements.has(page.id))
+          return;
         page.sections.forEach((section: any) => {
-          if (hiddenElements.has(section.id)) return;
+          if (hiddenElements.has(section.id))
+            return;
           section.fields.forEach((field: any) => {
-            if (hiddenElements.has(field.id)) return;
+            if (hiddenElements.has(field.id))
+              return;
             const fieldKey = field.variable || field.id;
             visibleFieldVariables.add(fieldKey);
           });
@@ -587,8 +632,8 @@ const FormSubmit = () => {
 
       const filteredFormValues = Object.fromEntries(
         Object.entries(formValues).filter(([fieldKey]) =>
-          visibleFieldVariables.has(fieldKey)
-        )
+          visibleFieldVariables.has(fieldKey),
+        ),
       );
 
       const submissionData = {
@@ -596,14 +641,15 @@ const FormSubmit = () => {
         status: FormSubmissionStatus.SUBMITTED,
         answers: {
           ...filteredFormValues,
-          _gpsLocation: userLocation || null
-        }
+          _gpsLocation: userLocation || null,
+        },
       };
 
       let response;
       if (draftSubmissionId) {
         response = await patch(`/forms/${id}/submissions/${draftSubmissionId}`, submissionData);
-      } else {
+      }
+      else {
         response = await post(`/forms/${id}/submissions`, submissionData);
       }
 
@@ -612,16 +658,18 @@ const FormSubmit = () => {
         if (autoSaveTimeoutRef.current) {
           clearTimeout(autoSaveTimeoutRef.current);
         }
-        toast.success('Form submitted successfully!');
+        toast.success("Form submitted successfully!");
         navigate(`${basePath}/${id}`);
-      } else {
-        const errorMessage = response?.error || 'Failed to submit form';
+      }
+      else {
+        const errorMessage = response?.error || "Failed to submit form";
         toast.error(errorMessage);
         setError(errorMessage);
       }
-    } catch (error) {
-      console.error('Submission error:', error);
-      const errorMessage = 'Failed to submit form. Please try again.';
+    }
+    catch (error) {
+      console.error("Submission error:", error);
+      const errorMessage = "Failed to submit form. Please try again.";
       toast.error(errorMessage);
       setError(errorMessage);
     }
@@ -632,7 +680,8 @@ const FormSubmit = () => {
 
     if (hasFilledFields) {
       setShowCancelModal(true);
-    } else {
+    }
+    else {
       navigate(`${basePath}/${id}`);
     }
   };
@@ -644,13 +693,15 @@ const FormSubmit = () => {
 
   const getTotalFields = () => {
     return pages.reduce((total: number, page: any) => {
-      if (hiddenElements.has(page.id)) return total;
+      if (hiddenElements.has(page.id))
+        return total;
 
       return total + page.sections.reduce((pageTotal: number, section: any) => {
-        if (hiddenElements.has(section.id)) return pageTotal;
+        if (hiddenElements.has(section.id))
+          return pageTotal;
 
         const visibleFields = section.fields?.filter((field: any) =>
-          !hiddenElements.has(field.variable || field.id)
+          !hiddenElements.has(field.variable || field.id),
         ) || [];
 
         return pageTotal + visibleFields.length;
@@ -662,13 +713,16 @@ const FormSubmit = () => {
     const visibleFieldVariables = new Set<string>();
 
     pages.forEach((page: any) => {
-      if (hiddenElements.has(page.id)) return;
+      if (hiddenElements.has(page.id))
+        return;
 
       page.sections.forEach((section: any) => {
-        if (hiddenElements.has(section.id)) return;
+        if (hiddenElements.has(section.id))
+          return;
 
         section.fields.forEach((field: any) => {
-          if (hiddenElements.has(field.id)) return;
+          if (hiddenElements.has(field.id))
+            return;
 
           const fieldKey = field.variable || field.id;
           visibleFieldVariables.add(fieldKey);
@@ -677,8 +731,8 @@ const FormSubmit = () => {
     });
 
     return Object.entries(formValues).filter(([fieldKey, value]) => {
-      return visibleFieldVariables.has(fieldKey) &&
-             value !== '' && value !== null && value !== undefined;
+      return visibleFieldVariables.has(fieldKey)
+        && value !== "" && value !== null && value !== undefined;
     }).length;
   };
 
@@ -712,85 +766,96 @@ const FormSubmit = () => {
 
   const renderFieldInput = (field: any) => {
     const fieldKey = field.variable || field.id;
-    const value = formValues[fieldKey] || '';
+    const value = formValues[fieldKey] || "";
     const hasError = !!errors[fieldKey];
     const fieldType = field.controlType;
     const isDisabled = disabledElements.has(fieldKey) || field.isReadOnly;
 
-    if (field.label === 'Current Location (GPS)') {
+    if (field.label === "Current Location (GPS)") {
       return (
         <div className="w-full">
           <div className="px-3 py-1.5 min-h-[34px] flex items-center bg-surface border border-border rounded-sm text-text">
-            {userLocation ? (
-              <span className="font-mono">{userLocation.latitude.toFixed(6)}, {userLocation.longitude.toFixed(6)}</span>
-            ) : (
-              <span className="text-text-muted">Getting GPS location...</span>
-            )}
+            {userLocation
+              ? (
+                  <span className="font-mono">
+                    {userLocation.latitude.toFixed(6)}
+                    ,
+                    {" "}
+                    {userLocation.longitude.toFixed(6)}
+                  </span>
+                )
+              : (
+                  <span className="text-text-muted">Getting GPS location...</span>
+                )}
           </div>
         </div>
       );
     }
 
     switch (fieldType) {
-      case 'INPUT':
-      case 'TEXTBOX':
+      case "INPUT":
+      case "TEXTBOX":
         return (
           <div className="w-full">
             <Input
               value={value}
-              onChange={(e) => handleFieldChange(field, e.target.value)}
+              onChange={e => handleFieldChange(field, e.target.value)}
               placeholder={`Enter ${field.label.toLowerCase()}`}
-              className={hasError ? 'border-error' : ''}
+              className={hasError ? "border-error" : ""}
               disabled={isDisabled}
             />
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
-      case 'DATE_SELECTOR':
+      case "DATE_SELECTOR":
         return (
           <div className="w-full">
             <DatePicker
               value={value}
-              onChange={(date) => handleFieldChange(field, date)}
+              onChange={date => handleFieldChange(field, date)}
               placeholder={`Select ${field.label.toLowerCase()}`}
-              className={hasError ? 'border-error' : ''}
+              className={hasError ? "border-error" : ""}
               disabled={isDisabled}
             />
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
-      case 'TIME_SELECTOR':
+      case "TIME_SELECTOR":
         return (
           <div className="w-full">
             <TimePicker
               value={value}
-              onChange={(time) => handleFieldChange(field, time)}
+              onChange={time => handleFieldChange(field, time)}
               placeholder={`Select ${field.label.toLowerCase()}`}
-              className={hasError ? 'border-error' : ''}
+              className={hasError ? "border-error" : ""}
               disabled={isDisabled}
             />
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
-      case 'DROPDOWN':
+      case "DROPDOWN":
         const dropdownOptions = Array.isArray(field.options) ? field.options : [];
 
         return (
           <div className="w-full">
             <select
               value={value}
-              onChange={(e) => handleFieldChange(field, e.target.value)}
-              className={`w-full px-3 py-1.5 min-h-[34px] bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onChange={e => handleFieldChange(field, e.target.value)}
+              className={`w-full px-3 py-1.5 min-h-[34px] bg-surface border ${hasError ? "border-error" : "border-border"} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
               disabled={isDisabled}
             >
-              <option value="">Select {field.label.toLowerCase()}</option>
+              <option value="">
+                Select
+                {field.label.toLowerCase()}
+              </option>
               {dropdownOptions.map((option: any, index: number) => {
-                if (typeof option === 'string') {
+                if (typeof option === "string") {
                   return <option key={option} value={option}>{option}</option>;
-                } else if (option && typeof option === 'object') {
+                }
+                else if (option && typeof option === "object") {
                   return <option key={option.value || index} value={option.value}>{option.label}</option>;
                 }
                 return null;
@@ -800,13 +865,13 @@ const FormSubmit = () => {
           </div>
         );
 
-      case 'MULTI_SELECT':
+      case "MULTI_SELECT":
         return (
           <div className="flex items-center space-x-3">
             <input
               type="checkbox"
               checked={value || false}
-              onChange={(e) => handleFieldChange(field, e.target.checked)}
+              onChange={e => handleFieldChange(field, e.target.checked)}
               className="w-5 h-5 bg-surface border border-border rounded text-primary focus:ring-2 focus:ring-primary/50"
               disabled={isDisabled}
             />
@@ -815,30 +880,30 @@ const FormSubmit = () => {
           </div>
         );
 
-      case 'TEXT_AREA':
+      case "TEXT_AREA":
         return (
           <div className="w-full">
             <textarea
               value={value}
-              onChange={(e) => handleFieldChange(field, e.target.value)}
+              onChange={e => handleFieldChange(field, e.target.value)}
               placeholder={`Enter ${field.label.toLowerCase()}`}
               rows={4}
-              className={`w-full px-3 py-1.5 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-1.5 bg-surface border ${hasError ? "border-error" : "border-border"} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
               disabled={isDisabled}
             />
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
-      case 'CAMERA':
+      case "CAMERA":
         return (
           <div className="w-full space-y-2">
             <CameraUpload
-              formId={id || ''}
+              formId={id || ""}
               value={value || []}
-              onChange={(files) => handleFieldChange(field, files)}
+              onChange={files => handleFieldChange(field, files)}
               disabled={isDisabled}
-              className={hasError ? 'border-error' : ''}
+              className={hasError ? "border-error" : ""}
             />
             {value && Array.isArray(value) && value.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
@@ -848,8 +913,8 @@ const FormSubmit = () => {
                       src={file.url}
                       alt={file.originalName || `Image ${index + 1}`}
                       className="w-full h-32 object-cover cursor-pointer hover:opacity-75 transition-opacity"
-                      onClick={() => window.open(file.url, '_blank')}
-                      title={file.originalName || 'Click to view full size'}
+                      onClick={() => window.open(file.url, "_blank")}
+                      title={file.originalName || "Click to view full size"}
                     />
                     {file.originalName && (
                       <div className="p-1 bg-surface text-xs text-text-muted truncate">
@@ -864,74 +929,78 @@ const FormSubmit = () => {
           </div>
         );
 
-      case 'SIGNATURE_PAD':
+      case "SIGNATURE_PAD":
         return (
           <div className="w-full space-y-2">
-            {value && typeof value === 'string' && value.startsWith('data:image/') ? (
-              <div className="space-y-2">
-                <div className="border border-border rounded p-2 bg-white inline-block">
-                  <img
-                    src={value}
-                    alt="Signature"
-                    className="max-w-[400px] max-h-[200px] object-contain"
-                    style={{ imageRendering: 'auto' }}
+            {value && typeof value === "string" && value.startsWith("data:image/")
+              ? (
+                  <div className="space-y-2">
+                    <div className="border border-border rounded p-2 bg-white inline-block">
+                      <img
+                        src={value}
+                        alt="Signature"
+                        className="max-w-[400px] max-h-[200px] object-contain"
+                        style={{ imageRendering: "auto" }}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary-outline"
+                      size="sm"
+                      onClick={() => handleFieldChange(field, "")}
+                      disabled={isDisabled}
+                    >
+                      Clear Signature
+                    </Button>
+                  </div>
+                )
+              : (
+                  <SignaturePad
+                    value={value}
+                    onChange={signature => handleFieldChange(field, signature)}
+                    disabled={isDisabled}
+                    className={hasError ? "border-error" : ""}
                   />
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary-outline"
-                  size="sm"
-                  onClick={() => handleFieldChange(field, '')}
-                  disabled={isDisabled}
-                >
-                  Clear Signature
-                </Button>
-              </div>
-            ) : (
-              <SignaturePad
-                value={value}
-                onChange={(signature) => handleFieldChange(field, signature)}
-                disabled={isDisabled}
-                className={hasError ? 'border-error' : ''}
-              />
-            )}
+                )}
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
-      case 'SKETCH_PAD':
+      case "SKETCH_PAD":
         return (
           <div className="w-full space-y-2">
-            {value && typeof value === 'string' && (value.startsWith('data:image/') || value.startsWith('http')) ? (
-              <div className="space-y-2">
-                <div className="border border-border rounded p-2 bg-white inline-block">
-                  <img
-                    src={value}
-                    alt="Sketch"
-                    className="max-w-[600px] max-h-[400px] object-contain cursor-pointer hover:opacity-75 transition-opacity"
-                    onClick={() => window.open(value, '_blank')}
-                    title="Click to view full size"
+            {value && typeof value === "string" && (value.startsWith("data:image/") || value.startsWith("http"))
+              ? (
+                  <div className="space-y-2">
+                    <div className="border border-border rounded p-2 bg-white inline-block">
+                      <img
+                        src={value}
+                        alt="Sketch"
+                        className="max-w-[600px] max-h-[400px] object-contain cursor-pointer hover:opacity-75 transition-opacity"
+                        onClick={() => window.open(value, "_blank")}
+                        title="Click to view full size"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary-outline"
+                      size="sm"
+                      onClick={() => handleFieldChange(field, "")}
+                      disabled={isDisabled}
+                    >
+                      Clear Sketch
+                    </Button>
+                  </div>
+                )
+              : (
+                  <SketchPad
+                    formId={id || ""}
+                    value={value}
+                    onChange={sketchUrl => handleFieldChange(field, sketchUrl)}
+                    disabled={isDisabled}
+                    className={hasError ? "border-error" : ""}
                   />
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary-outline"
-                  size="sm"
-                  onClick={() => handleFieldChange(field, '')}
-                  disabled={isDisabled}
-                >
-                  Clear Sketch
-                </Button>
-              </div>
-            ) : (
-              <SketchPad
-                formId={id || ''}
-                value={value}
-                onChange={(sketchUrl) => handleFieldChange(field, sketchUrl)}
-                disabled={isDisabled}
-                className={hasError ? 'border-error' : ''}
-              />
-            )}
+                )}
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
@@ -943,19 +1012,19 @@ const FormSubmit = () => {
 
   const getFieldIcon = (fieldType: string, field?: any) => {
     switch (fieldType) {
-      case 'INPUT':
-      case 'TEXTBOX':
-        if (field && field.label === 'Current Location (GPS)') {
+      case "INPUT":
+      case "TEXTBOX":
+        if (field && field.label === "Current Location (GPS)") {
           return <MapPin size={16} />;
         }
         return <FileText size={16} />;
-      case 'DATE_SELECTOR': return <Calendar size={16} />;
-      case 'TIME_SELECTOR': return <Clock size={16} />;
-      case 'DROPDOWN': return <List size={16} />;
-      case 'MULTI_SELECT': return <CheckSquare size={16} />;
-      case 'TEXT_AREA': return <FileText size={16} />;
-      case 'CAMERA': return <Camera size={16} />;
-      case 'SIGNATURE_PAD': return <PenTool size={16} />;
+      case "DATE_SELECTOR": return <Calendar size={16} />;
+      case "TIME_SELECTOR": return <Clock size={16} />;
+      case "DROPDOWN": return <List size={16} />;
+      case "MULTI_SELECT": return <CheckSquare size={16} />;
+      case "TEXT_AREA": return <FileText size={16} />;
+      case "CAMERA": return <Camera size={16} />;
+      case "SIGNATURE_PAD": return <PenTool size={16} />;
       default: return null;
     }
   };
@@ -965,7 +1034,10 @@ const FormSubmit = () => {
       {lastSaved && !isSaving && (
         <div className="flex items-center gap-1 text-xs text-text-muted">
           <Cloud size={14} className="text-success" />
-          <span>Saved {new Date(lastSaved).toLocaleTimeString()}</span>
+          <span>
+            Saved
+            {new Date(lastSaved).toLocaleTimeString()}
+          </span>
         </div>
       )}
       {isSaving && (
@@ -1009,7 +1081,7 @@ const FormSubmit = () => {
     return (
       <div className="w-full flex-1 flex flex-col items-center justify-center">
         <div className="text-error text-lg mb-4">{error || "Form not found"}</div>
-        <Button onClick={() => navigate('/service/forms')}>
+        <Button onClick={() => navigate("/service/forms")}>
           Back to Forms
         </Button>
       </div>
@@ -1028,13 +1100,21 @@ const FormSubmit = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm text-text-muted mb-2">
             <span>Form Progress</span>
-            <span>{getFilledFieldsCount()} / {getTotalFields()} fields</span>
+            <span>
+              {getFilledFieldsCount()}
+              {" "}
+              /
+              {" "}
+              {getTotalFields()}
+              {" "}
+              fields
+            </span>
           </div>
           <div className="w-full bg-foreground rounded-full h-2">
             <div
               className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{
-                width: `${(getFilledFieldsCount() / getTotalFields()) * 100}%`
+                width: `${(getFilledFieldsCount() / getTotalFields()) * 100}%`,
               }}
             />
           </div>
@@ -1052,7 +1132,13 @@ const FormSubmit = () => {
               Previous
             </Button>
             <div className="text-sm text-text-muted">
-              Page {currentPageIndex + 1} of {getVisiblePages().length}
+              Page
+              {" "}
+              {currentPageIndex + 1}
+              {" "}
+              of
+              {" "}
+              {getVisiblePages().length}
             </div>
             <Button
               onClick={goToNextPage}
@@ -1072,28 +1158,26 @@ const FormSubmit = () => {
               <h2 className="text-xl font-semibold text-text">{getCurrentPage().title}</h2>
             </div>
 
-            {getCurrentPage().sections
-              .filter((section: any) => !hiddenElements.has(section.id))
-              .map((section: any) => (
-                <Card key={section.id} className="">
-                  <div className="space-y-6">
-                    {section.fields
-                      .filter((field: any) => !hiddenElements.has(field.id))
-                      .map((field: any) => (
-                        <div key={field.id} className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="text-text-muted">{getFieldIcon(field.controlType, field)}</div>
-                            <label className="text-text font-medium">
-                              {field.label}
-                              {requiredFields.has(field.id) && <span className="text-error ml-1">*</span>}
-                            </label>
-                          </div>
-                          {renderFieldInput(field)}
+            {getCurrentPage().sections.filter((section: any) => !hiddenElements.has(section.id)).map((section: any) => (
+              <Card key={section.id} className="">
+                <div className="space-y-6">
+                  {section.fields
+                    .filter((field: any) => !hiddenElements.has(field.id))
+                    .map((field: any) => (
+                      <div key={field.id} className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="text-text-muted">{getFieldIcon(field.controlType, field)}</div>
+                          <label className="text-text font-medium">
+                            {field.label}
+                            {requiredFields.has(field.id) && <span className="text-error ml-1">*</span>}
+                          </label>
                         </div>
-                      ))}
-                  </div>
-                </Card>
-              ))}
+                        {renderFieldInput(field)}
+                      </div>
+                    ))}
+                </div>
+              </Card>
+            ))}
           </>
         )}
 
@@ -1120,7 +1204,9 @@ const FormSubmit = () => {
             Are you sure you want to cancel? Your progress has been saved and you can continue later.
           </p>
           <p className="text-text-muted text-sm">
-            {getFilledFieldsCount()} field(s) have been filled out.
+            {getFilledFieldsCount()}
+            {" "}
+            field(s) have been filled out.
           </p>
           <div className="flex gap-2 justify-end">
             <Button
@@ -1151,8 +1237,15 @@ const FormSubmit = () => {
           </p>
           {savedProgress && (
             <div className="text-text-muted text-sm space-y-1">
-              <p>{Object.keys(savedProgress.formValues || {}).length} field(s) already filled</p>
-              <p>Last saved: {new Date(savedProgress.savedAt).toLocaleString()}</p>
+              <p>
+                {Object.keys(savedProgress.formValues || {}).length}
+                {" "}
+                field(s) already filled
+              </p>
+              <p>
+                Last saved:
+                {new Date(savedProgress.savedAt).toLocaleString()}
+              </p>
             </div>
           )}
           <div className="flex gap-2 justify-end">
@@ -1172,6 +1265,6 @@ const FormSubmit = () => {
       </Modal>
     </div>
   );
-};
+}
 
 export default FormSubmit;

@@ -1,4 +1,4 @@
-import { Modal, Button } from "@/components";
+import { Button, Modal } from "@/components";
 import { formatCurrency } from "@/utils";
 
 interface DeleteJourneyModalProps {
@@ -9,13 +9,13 @@ interface DeleteJourneyModalProps {
   isDeleting?: boolean;
 }
 
-export const DeleteJourneyModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  journey, 
-  isDeleting = false 
-}: DeleteJourneyModalProps) => {
+export function DeleteJourneyModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  journey,
+  isDeleting = false,
+}: DeleteJourneyModalProps) {
   return (
     <Modal
       isOpen={isOpen}
@@ -33,7 +33,13 @@ export const DeleteJourneyModal = ({
               {journey?.name || journey?.Project_Name || journey?.Target_Account}
             </div>
             <div className="text-gray-300">
-              ID: {journey?.id || journey?.ID} • Value: {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
+              ID:
+              {" "}
+              {journey?.id || journey?.ID}
+              {" "}
+              • Value:
+              {" "}
+              {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
             </div>
           </div>
         </div>
@@ -55,10 +61,10 @@ export const DeleteJourneyModal = ({
             disabled={isDeleting}
             className="bg-gray-800 hover:bg-gray-900 border-gray-800 text-white"
           >
-            {isDeleting ? 'Deleting...' : 'Delete Journey'}
+            {isDeleting ? "Deleting..." : "Delete Journey"}
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}

@@ -1,6 +1,7 @@
 import type { Quote, QuoteItem, QuoteRevision, QuoteTerms } from "@prisma/client";
 
 import { Prisma } from "@prisma/client";
+import { Buffer } from "node:buffer";
 
 import { quoteItemRepository, quoteRepository, quoteRevisionRepository, quoteTermsRepository } from "@/repositories";
 

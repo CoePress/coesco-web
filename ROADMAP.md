@@ -53,6 +53,27 @@
 - [x] Register warehouse module in `modules.ts` (status: development)
 - [x] Remove debug `console.log` statements from `_base.repository.ts`
 
+### 1.4 Lint Cleanup
+
+- [x] Fixed lint errors (109 → 33 remaining)
+  - Fixed import spacing in `lock.controller.ts`
+  - Removed unused variables in `employee.controller.ts`, `form.controller.ts`
+  - Changed `isNaN` → `Number.isNaN` across multiple files
+  - Removed unused `error` params in catch blocks (`system.routes.ts`)
+  - Prefixed intentionally unused params with underscore (`_base.repository.ts`, `coil-type.repository.ts`)
+  - Fixed `isNaN`/`isFinite` in autofill services
+  - Removed unused `result` variables in `legacy.service.ts`
+- [x] Fixed remaining 33 server errors (33 → 0 errors)
+  - Fixed unused variables in `autofill-data-transformer.ts`, `tab-visibility.ts`
+  - Fixed `global` → `globalThis` in test files
+  - Fixed `require()` → proper imports in `email.service.test.ts`
+  - Added `process` import from `node:process` in service files
+  - Fixed unused catch parameters (changed to bare `catch`)
+  - Added `Buffer` import in test files
+  - Replaced `process.env.NODE_ENV` with `env.NODE_ENV` from config
+  - Added eslint ignores for `.md` files and performance-sheet JSON configs
+- Client has 227 errors remaining (mostly stylistic: `no-use-before-define`, `no-alert`, JSON key ordering)
+
 ---
 
 ## Phase 2: Warehouse Management
@@ -298,3 +319,35 @@
 - Never manually edit auto-generated repository files
 - Follow existing patterns in codebase for consistency
 - Test locally before pushing to staging
+
+---
+
+## Handoff Prompt
+
+Use this prompt when starting a new Claude Code session to continue development:
+
+```
+I'm continuing development on the Coesco Web Platform. Please review ROADMAP.md for current progress and next steps.
+
+**Recently Completed (Phase 1):**
+- All security fixes (admin validation in lock controller)
+- Data pipeline itemId mapping fixes
+- Code cleanup (removed _old pages, documented terms codes, fixed typos)
+- Lint cleanup: Server now has 0 errors (down from 109 → 33 → 0)
+- Warehouse module registered in modules.ts (development status)
+
+**Current State:**
+- Phase 1 is 100% complete
+- Server lint passes with 0 errors, 46 warnings (console.log in scripts - expected)
+- Client has 227 lint errors (mostly stylistic - no-use-before-define, no-alert)
+- Warehouse, Production expansion, Time Tracking not started (Phases 2-4)
+- Test coverage is a critical gap
+
+**Recommended Next Steps:**
+1. Small feature: Build out warehouse stub pages with basic UI
+2. Medium feature: Add work order models and basic CRUD for production
+3. Large feature: Implement full warehouse inventory system
+4. Optional: Fix client lint errors (mostly stylistic, low priority)
+
+Please check git status and ROADMAP.md, then suggest what to tackle based on available time.
+```

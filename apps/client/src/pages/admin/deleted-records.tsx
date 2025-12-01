@@ -1,6 +1,10 @@
+import { format } from "date-fns";
 import { RefreshCcwIcon, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
+
+import type { Filter } from "@/components/feature/toolbar";
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
 
 import {
   Button,
@@ -10,11 +14,8 @@ import {
   Table,
   Toolbar,
 } from "@/components";
-import { TableColumn } from "@/components/ui/table";
-import { Filter } from "@/components/feature/toolbar";
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
-import { IApiResponse } from "@/utils/types";
 
 interface DeletedRecord {
   id: string;
@@ -25,7 +26,7 @@ interface DeletedRecord {
   metadata: Record<string, any>;
 }
 
-const DeletedRecords = () => {
+function DeletedRecords() {
   const toast = useToast();
   const [modelNames, setModelNames] = useState<string[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<DeletedRecord | null>(null);
@@ -176,7 +177,8 @@ const DeletedRecords = () => {
   };
 
   const handleRestore = async () => {
-    if (!selectedRecord) return;
+    if (!selectedRecord)
+      return;
 
     try {
       await restoreRecord(`/admin/deleted-records/${selectedRecord.modelName}/${selectedRecord.id}/restore`);
@@ -192,7 +194,8 @@ const DeletedRecords = () => {
   };
 
   const handleHardDelete = async () => {
-    if (!selectedRecord) return;
+    if (!selectedRecord)
+      return;
 
     try {
       await hardDeleteRecord(`/admin/deleted-records/${selectedRecord.modelName}/${selectedRecord.id}`);
@@ -280,7 +283,7 @@ const DeletedRecords = () => {
             error={error}
             currentPage={deletedRecords?.meta?.page}
             totalPages={deletedRecords?.meta?.totalPages}
-            onPageChange={(page) => handleParamsChange({ page })}
+            onPageChange={page => handleParamsChange({ page })}
             className="rounded border overflow-clip"
             emptyMessage="No deleted records found"
             mobileCardView={true}
@@ -300,7 +303,10 @@ const DeletedRecords = () => {
         >
           <div className="space-y-4">
             <p className="text-sm text-text">
-              Are you sure you want to restore this {formatModelName(selectedRecord.modelName)}?
+              Are you sure you want to restore this
+              {" "}
+              {formatModelName(selectedRecord.modelName)}
+              ?
             </p>
 
             <div className="bg-surface border border-border rounded p-3 space-y-2 text-sm">
@@ -353,7 +359,14 @@ const DeletedRecords = () => {
         >
           <div className="space-y-4">
             <p className="text-sm text-text">
-              Are you sure you want to <strong className="text-error">permanently delete</strong> this {formatModelName(selectedRecord.modelName)}? This action cannot be undone.
+              Are you sure you want to
+              {" "}
+              <strong className="text-error">permanently delete</strong>
+              {" "}
+              this
+              {" "}
+              {formatModelName(selectedRecord.modelName)}
+              ? This action cannot be undone.
             </p>
 
             <div className="bg-surface border border-border rounded p-3 space-y-2 text-sm">
@@ -402,6 +415,6 @@ const DeletedRecords = () => {
       )}
     </div>
   );
-};
+}
 
 export default DeletedRecords;

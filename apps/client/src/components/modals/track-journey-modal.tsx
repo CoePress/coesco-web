@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Modal, Button } from "@/components";
-import { useApi } from "@/hooks/use-api";
+
+import { Button, Modal } from "@/components";
 import { useAuth } from "@/contexts/auth.context";
+import { useApi } from "@/hooks/use-api";
 
 interface TrackJourneyModalProps {
   isOpen: boolean;
@@ -10,35 +11,38 @@ interface TrackJourneyModalProps {
   onTrackingChange?: (isTracked: boolean) => void;
 }
 
-export const TrackJourneyModal = ({ 
-  isOpen, 
-  onClose, 
-  journey, 
-  onTrackingChange 
-}: TrackJourneyModalProps) => {
+export function TrackJourneyModal({
+  isOpen,
+  onClose,
+  journey,
+  onTrackingChange,
+}: TrackJourneyModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { post } = useApi();
 
   const handleTrackJourney = async () => {
-    if (!user?.email || !journey?.id) return;
-    
+    if (!user?.email || !journey?.id)
+      return;
+
     setIsLoading(true);
     try {
       const result = await post(`/api/journey/${journey.id}/track`, {
         user_email: user.email,
-        user_name: user.name || user.email
+        user_name: user.name || user.email,
       });
-      
+
       if (result) {
         onTrackingChange?.(true);
         onClose();
         // Show success toast/notification
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error tracking journey:", error);
       // Show error toast/notification
-    } finally {
+    }
+    finally {
       setIsLoading(false);
     }
   };
@@ -57,11 +61,17 @@ export const TrackJourneyModal = ({
               {journey?.name || journey?.Project_Name || journey?.Target_Account}
             </div>
             <div className="text-gray-600">
-              ID: {journey?.id || journey?.ID} • Current Stage: {journey?.Journey_Stage || journey?.stage || "Unknown"}
+              ID:
+              {" "}
+              {journey?.id || journey?.ID}
+              {" "}
+              • Current Stage:
+              {" "}
+              {journey?.Journey_Stage || journey?.stage || "Unknown"}
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-3">
           <p className="text-sm text-gray-700">
             You'll receive email notifications when this journey is updated, including:
@@ -78,7 +88,11 @@ export const TrackJourneyModal = ({
         <div className="bg-blue-50 border border-blue-200 rounded p-3">
           <div className="flex">
             <div className="text-sm text-blue-800">
-              <strong>Note:</strong> Your email ({user?.email}) will be used for notifications. 
+              <strong>Note:</strong>
+              {" "}
+              Your email (
+              {user?.email}
+              ) will be used for notifications.
               You can stop tracking at any time by clicking "Track Journey" again.
             </div>
           </div>
@@ -99,10 +113,10 @@ export const TrackJourneyModal = ({
             onClick={handleTrackJourney}
             disabled={isLoading}
           >
-            {isLoading ? 'Setting up tracking...' : 'Start Tracking'}
+            {isLoading ? "Setting up tracking..." : "Start Tracking"}
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}

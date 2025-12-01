@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useApi } from "@/hooks/use-api";
-import { useAuth } from "@/contexts/auth.context";
-import { Loader } from "@/components";
 
-const MicrosoftCallback = () => {
+import { Loader } from "@/components";
+import { useAuth } from "@/contexts/auth.context";
+import { useApi } from "@/hooks/use-api";
+
+function MicrosoftCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setUser } = useAuth();
@@ -12,7 +13,8 @@ const MicrosoftCallback = () => {
   const { post } = useApi<{ user: any; employee: any; sessionId?: string }>();
 
   useEffect(() => {
-    if (hasRun.current) return;
+    if (hasRun.current)
+      return;
 
     const handleCallback = async () => {
       hasRun.current = true;
@@ -33,12 +35,14 @@ const MicrosoftCallback = () => {
 
         if (response) {
           setUser(response.user, response.employee, response.sessionId);
-        } else {
+        }
+        else {
           throw new Error("Authentication failed");
         }
 
         navigate("/");
-      } catch (error) {
+      }
+      catch (error) {
         navigate("/login?error=auth_failed");
       }
     };
@@ -51,6 +55,6 @@ const MicrosoftCallback = () => {
       <Loader />
     </div>
   );
-};
+}
 
 export default MicrosoftCallback;

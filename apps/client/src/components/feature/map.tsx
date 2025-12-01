@@ -1,7 +1,7 @@
-const Map = () => {
+function Map() {
   return (
     <div>Map</div>
-  )
+  );
 }
 
-export default Map
+export default Map;

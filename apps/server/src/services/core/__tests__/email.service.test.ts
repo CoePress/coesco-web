@@ -8,14 +8,16 @@ import { EmailService } from "../email.service";
 
 jest.mock("nodemailer");
 jest.mock("ejs");
+const mockEmailLogService = {
+  createEmailLog: jest.fn(),
+  updateEmailLog: jest.fn(),
+};
+
 jest.mock("@/services", () => ({
-  emailLogService: {
-    createEmailLog: jest.fn(),
-    updateEmailLog: jest.fn(),
-  },
+  emailLogService: mockEmailLogService,
 }));
 
-const { emailLogService } = require("@/services");
+const emailLogService = mockEmailLogService;
 
 describe("emailService", () => {
   let emailService: EmailService;

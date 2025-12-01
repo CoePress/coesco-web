@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Modal, Button } from "@/components";
+
+import { Button, Modal } from "@/components";
 import { useApi } from "@/hooks/use-api";
 
 interface AddJourneyContactModalProps {
@@ -10,14 +11,13 @@ interface AddJourneyContactModalProps {
   isFirstContact?: boolean;
 }
 
-
-export const AddJourneyContactModal = ({ 
-  isOpen, 
-  onClose, 
+export function AddJourneyContactModal({
+  isOpen,
+  onClose,
   onContactAdded,
   journeyId,
-  isFirstContact = false
-}: AddJourneyContactModalProps) => {
+  isFirstContact = false,
+}: AddJourneyContactModalProps) {
   const { post } = useApi();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,8 +36,8 @@ export const AddJourneyContactModal = ({
 
     try {
       const now = new Date();
-      const formattedDate = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}.${String(now.getMilliseconds()).padStart(3, '0')}`;
-      
+      const formattedDate = `${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}/${now.getFullYear()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}.${String(now.getMilliseconds()).padStart(3, "0")}`;
+
       const journeyContactData = {
         Jrn_ID: journeyId,
         Contact_Name: formData.Contact_Name,
@@ -67,18 +67,21 @@ export const AddJourneyContactModal = ({
         if (onContactAdded) {
           onContactAdded({
             ...journeyContactData,
-            _needsRefresh: true // Flag to indicate this needs to be fetched from API
+            _needsRefresh: true, // Flag to indicate this needs to be fetched from API
           });
         }
 
         onClose();
-      } else {
+      }
+      else {
         alert("Failed to create contact. Please try again.");
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error creating journey contact:", error);
       alert("Error creating contact. Please try again.");
-    } finally {
+    }
+    finally {
       setIsSubmitting(false);
     }
   };
@@ -112,7 +115,7 @@ export const AddJourneyContactModal = ({
           <input
             type="text"
             value={formData.Contact_Name}
-            onChange={(e) => setFormData(prev => ({ ...prev, Contact_Name: e.target.value }))}
+            onChange={e => setFormData(prev => ({ ...prev, Contact_Name: e.target.value }))}
             className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             maxLength={50}
             required
@@ -127,7 +130,7 @@ export const AddJourneyContactModal = ({
             <input
               type="email"
               value={formData.Contact_Email}
-              onChange={(e) => setFormData(prev => ({ ...prev, Contact_Email: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, Contact_Email: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               maxLength={50}
             />
@@ -140,7 +143,7 @@ export const AddJourneyContactModal = ({
             <input
               type="text"
               value={formData.Contact_Position}
-              onChange={(e) => setFormData(prev => ({ ...prev, Contact_Position: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, Contact_Position: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               maxLength={50}
             />
@@ -155,7 +158,7 @@ export const AddJourneyContactModal = ({
             <input
               type="text"
               value={formData.Contact_Office}
-              onChange={(e) => setFormData(prev => ({ ...prev, Contact_Office: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, Contact_Office: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               maxLength={30}
             />
@@ -168,7 +171,7 @@ export const AddJourneyContactModal = ({
             <input
               type="text"
               value={formData.Contact_Mobile}
-              onChange={(e) => setFormData(prev => ({ ...prev, Contact_Mobile: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, Contact_Mobile: e.target.value }))}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               maxLength={30}
             />
@@ -181,7 +184,7 @@ export const AddJourneyContactModal = ({
           </label>
           <textarea
             value={formData.Contact_Note}
-            onChange={(e) => setFormData(prev => ({ ...prev, Contact_Note: e.target.value }))}
+            onChange={e => setFormData(prev => ({ ...prev, Contact_Note: e.target.value }))}
             className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             maxLength={500}
             rows={5}
@@ -194,7 +197,7 @@ export const AddJourneyContactModal = ({
             type="checkbox"
             id="isPrimary"
             checked={formData.IsPrimary}
-            onChange={(e) => setFormData(prev => ({ ...prev, IsPrimary: e.target.checked }))}
+            onChange={e => setFormData(prev => ({ ...prev, IsPrimary: e.target.checked }))}
             className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
           />
           <label
@@ -224,4 +227,4 @@ export const AddJourneyContactModal = ({
       </form>
     </Modal>
   );
-};
+}

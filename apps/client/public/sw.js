@@ -40,7 +40,7 @@ async function flushSubmissions() {
       const res = await fetch(`${baseURL}/api/submit`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         credentials: "include",
         body: JSON.stringify(sub.payload),

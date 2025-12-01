@@ -1,18 +1,19 @@
+import { format } from "date-fns";
 import { BeakerIcon, PlusIcon, RefreshCcwIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
 
 import {
-  StatusBadge,
-  PageHeader,
-  Table,
   Button,
   Loader,
   Modal,
+  PageHeader,
+  StatusBadge,
+  Table,
 } from "@/components";
-import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
-import { format } from "date-fns";
 
 interface IDevice {
   id: string;
@@ -29,7 +30,7 @@ interface IDevice {
   updatedAt: Date;
 }
 
-const Devices = () => {
+function Devices() {
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
   const [sort, setSort] = useState("name");
@@ -89,7 +90,8 @@ const Devices = () => {
       key: "lastPingTime",
       header: "Last Ping",
       render: (_, row) => {
-        if (!row.lastPingTime) return <span className="text-text-muted">Never</span>;
+        if (!row.lastPingTime)
+          return <span className="text-text-muted">Never</span>;
         return (
           <div className="flex flex-col">
             <span>{format(new Date(row.lastPingTime), "MM/dd/yyyy")}</span>
@@ -105,7 +107,10 @@ const Devices = () => {
       header: "Missed Pings",
       render: (_, row) => (
         <span className={row.currentMissedPings >= row.maxMissedPings ? "text-red-600" : ""}>
-          {row.currentMissedPings} / {row.maxMissedPings}
+          {row.currentMissedPings}
+          {" "}
+          /
+          {row.maxMissedPings}
         </span>
       ),
     },
@@ -123,7 +128,8 @@ const Devices = () => {
             setDeviceEnabled(row.enabled);
             setMaxMissedPings(row.maxMissedPings);
             setIsEditModalOpen(true);
-          }}>
+          }}
+        >
           Edit
         </Button>
       ),
@@ -136,7 +142,7 @@ const Devices = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await get("/admin/devices", {
         page,
         limit,
@@ -151,10 +157,12 @@ const Devices = () => {
           ...response.meta,
         }));
       }
-    } catch (err: any) {
+    }
+    catch (err: any) {
       setError(err.message || "Failed to fetch devices");
       setDevices([]);
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   };
@@ -183,26 +191,29 @@ const Devices = () => {
       if (selectedDevice) {
         await put(`/admin/devices/${selectedDevice.id}`, deviceData);
         setIsEditModalOpen(false);
-      } else {
+      }
+      else {
         await post("/admin/devices", deviceData);
         setIsAddModalOpen(false);
       }
       resetForm();
       fetchDevices();
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error saving device:", error);
     }
   };
 
-  const handleCreateClick = () => { 
+  const handleCreateClick = () => {
     resetForm();
     setIsAddModalOpen(true);
-  }
+  };
 
   const handleTest = async () => {
     try {
       await post("/admin/test-ntfy", {});
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error testing notification:", error);
     }
   };
@@ -223,13 +234,19 @@ const Devices = () => {
     return (
       <div className="flex gap-2">
         <Button onClick={handleTest} variant="secondary-outline">
-          <BeakerIcon size={16} /> Test Notification
+          <BeakerIcon size={16} />
+          {" "}
+          Test Notification
         </Button>
         <Button onClick={handleCreateClick}>
-          <PlusIcon size={16} /> New Device
+          <PlusIcon size={16} />
+          {" "}
+          New Device
         </Button>
         <Button onClick={fetchDevices} variant="secondary-outline">
-          <RefreshCcwIcon size={16} /> Refresh
+          <RefreshCcwIcon size={16} />
+          {" "}
+          Refresh
         </Button>
       </div>
     );
@@ -267,14 +284,15 @@ const Devices = () => {
           resetForm();
         }}
         title="Add Device"
-        size="sm">
+        size="sm"
+      >
         <div className="space-y-4">
           <div>
             <label className="text-sm text-text-muted mb-2 block">Name</label>
             <input
               type="text"
               value={deviceName}
-              onChange={(e) => setDeviceName(e.target.value)}
+              onChange={e => setDeviceName(e.target.value)}
               placeholder="Device name"
               className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
             />
@@ -285,7 +303,7 @@ const Devices = () => {
             <input
               type="text"
               value={deviceHost}
-              onChange={(e) => setDeviceHost(e.target.value)}
+              onChange={e => setDeviceHost(e.target.value)}
               placeholder="192.168.1.100"
               className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface font-mono"
             />
@@ -296,7 +314,7 @@ const Devices = () => {
             <input
               type="number"
               value={maxMissedPings}
-              onChange={(e) => setMaxMissedPings(parseInt(e.target.value) || 3)}
+              onChange={e => setMaxMissedPings(Number.parseInt(e.target.value) || 3)}
               min="1"
               className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
             />
@@ -307,7 +325,7 @@ const Devices = () => {
               type="checkbox"
               id="enabled"
               checked={deviceEnabled}
-              onChange={(e) => setDeviceEnabled(e.target.checked)}
+              onChange={e => setDeviceEnabled(e.target.checked)}
               className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
             />
             <label htmlFor="enabled" className="text-sm text-text-muted">
@@ -321,7 +339,8 @@ const Devices = () => {
               onClick={() => {
                 setIsAddModalOpen(false);
                 resetForm();
-              }}>
+              }}
+            >
               Cancel
             </Button>
             <Button onClick={handleSaveDevice}>
@@ -339,14 +358,15 @@ const Devices = () => {
           resetForm();
         }}
         title="Edit Device"
-        size="sm">
+        size="sm"
+      >
         <div className="space-y-4">
           <div>
             <label className="text-sm text-text-muted mb-2 block">Name</label>
             <input
               type="text"
               value={deviceName}
-              onChange={(e) => setDeviceName(e.target.value)}
+              onChange={e => setDeviceName(e.target.value)}
               className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
             />
           </div>
@@ -356,7 +376,7 @@ const Devices = () => {
             <input
               type="text"
               value={deviceHost}
-              onChange={(e) => setDeviceHost(e.target.value)}
+              onChange={e => setDeviceHost(e.target.value)}
               className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface font-mono"
             />
           </div>
@@ -366,7 +386,7 @@ const Devices = () => {
             <input
               type="number"
               value={maxMissedPings}
-              onChange={(e) => setMaxMissedPings(parseInt(e.target.value) || 3)}
+              onChange={e => setMaxMissedPings(Number.parseInt(e.target.value) || 3)}
               min="1"
               className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
             />
@@ -377,7 +397,7 @@ const Devices = () => {
               type="checkbox"
               id="enabled-edit"
               checked={deviceEnabled}
-              onChange={(e) => setDeviceEnabled(e.target.checked)}
+              onChange={e => setDeviceEnabled(e.target.checked)}
               className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
             />
             <label htmlFor="enabled-edit" className="text-sm text-text-muted">
@@ -391,7 +411,8 @@ const Devices = () => {
               onClick={() => {
                 setIsEditModalOpen(false);
                 resetForm();
-              }}>
+              }}
+            >
               Cancel
             </Button>
             <Button onClick={handleSaveDevice}>
@@ -402,6 +423,6 @@ const Devices = () => {
       </Modal>
     </div>
   );
-};
+}
 
 export default Devices;

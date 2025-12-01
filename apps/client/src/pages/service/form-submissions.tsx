@@ -1,15 +1,15 @@
-import { CalendarIcon, UserIcon, ClockIcon, FileText, Activity, User, Calendar, Edit, Plus, Eye } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
-import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
+import { Activity, Calendar, CalendarIcon, ClockIcon, Edit, Eye, FileText, Plus, User, UserIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import { PageHeader, StatusBadge, Table, Toolbar, Card, Button } from "@/components";
-import { TableColumn } from "@/components/ui/table";
-import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
-import { Filter } from "@/components/feature/toolbar";
-import { useToast } from "@/hooks/use-toast";
-import { formatDate } from "@/utils";
+import type { Filter } from "@/components/feature/toolbar";
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
+
+import { Button, Card, PageHeader, StatusBadge, Table, Toolbar } from "@/components";
 import { useAuth } from "@/contexts/auth.context";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
 
 interface FormData {
   id: string;
@@ -28,7 +28,7 @@ interface FormData {
   };
 }
 
-const FormSubmissions = () => {
+function FormSubmissions() {
   const { id: formId } = useParams<{ id: string }>();
   const { employee } = useAuth();
   const location = useLocation();
@@ -42,9 +42,9 @@ const FormSubmissions = () => {
   const [limit] = useState(25);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     createdById: employee.id,
-    status: '',
-    formId: '',
-    dateRange: ''
+    status: "",
+    formId: "",
+    dateRange: "",
   });
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -66,12 +66,12 @@ const FormSubmissions = () => {
 
   const include = useMemo(
     () => ["form"],
-    []
+    [],
   );
 
   const filter = useMemo(() => {
     const filterObj = Object.fromEntries(
-      Object.entries(filterValues).filter(([_, value]) => value)
+      Object.entries(filterValues).filter(([_, value]) => value),
     );
     return Object.keys(filterObj).length > 0 ? JSON.stringify(filterObj) : undefined;
   }, [filterValues]);
@@ -88,17 +88,19 @@ const FormSubmissions = () => {
 
     try {
       const formResponse = await get(`/forms/${formId}`, {
-        include: ['pages', '_count']
+        include: ["pages", "_count"],
       });
 
       if (formResponse?.success && formResponse.data) {
         setForm(formResponse.data);
-      } else {
-        setError(formResponse?.error || 'Failed to fetch form details');
       }
-    } catch (err) {
-      console.error('Error fetching form:', err);
-      setError('Failed to load form details');
+      else {
+        setError(formResponse?.error || "Failed to fetch form details");
+      }
+    }
+    catch (err) {
+      console.error("Error fetching form:", err);
+      setError("Failed to load form details");
     }
   };
 
@@ -129,7 +131,8 @@ const FormSubmissions = () => {
           limit: response.meta.limit || 25,
         });
       }
-    } else {
+    }
+    else {
       const errorMessage = response?.error || "Failed to fetch form submissions";
       setError(errorMessage);
       toast.error(errorMessage);
@@ -195,18 +198,20 @@ const FormSubmissions = () => {
     {
       key: "createdAt",
       header: "Submitted",
-      render: (value) => (
+      render: value => (
         <div className="flex items-center gap-2">
           <CalendarIcon size={14} className="text-text-muted" />
           <span className="text-sm">
-            {new Date(value).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            })} {new Date(value).toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true
+            {new Date(value).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+            {" "}
+            {new Date(value).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
             })}
           </span>
         </div>
@@ -215,18 +220,20 @@ const FormSubmissions = () => {
     {
       key: "updatedAt",
       header: "Last Updated",
-      render: (value) => (
+      render: value => (
         <div className="flex items-center gap-2">
           <ClockIcon size={14} className="text-text-muted" />
           <span className="text-sm">
-            {new Date(value).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            })} {new Date(value).toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true
+            {new Date(value).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+            {" "}
+            {new Date(value).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
             })}
           </span>
         </div>
@@ -257,44 +264,44 @@ const FormSubmissions = () => {
   const handleFilterChange = (key: string, value: string) => {
     setFilterValues(prev => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
   const handleExport = () => {
-    console.log('Exporting form submissions...', filteredSubmissions);
+    console.log("Exporting form submissions...", filteredSubmissions);
   };
 
   const filters: Filter[] = [
     {
-      key: 'status',
-      label: 'Status',
+      key: "status",
+      label: "Status",
       options: [
-        { value: '', label: 'All Statuses' },
-        { value: 'pending', label: 'Pending' },
-        { value: 'reviewing', label: 'Reviewing' },
-        { value: 'approved', label: 'Approved' },
-        { value: 'rejected', label: 'Rejected' },
-        { value: 'completed', label: 'Completed' }
+        { value: "", label: "All Statuses" },
+        { value: "pending", label: "Pending" },
+        { value: "reviewing", label: "Reviewing" },
+        { value: "approved", label: "Approved" },
+        { value: "rejected", label: "Rejected" },
+        { value: "completed", label: "Completed" },
       ],
-      placeholder: 'Filter by status'
+      placeholder: "Filter by status",
     },
     {
-      key: 'dateRange',
-      label: 'Date Range',
+      key: "dateRange",
+      label: "Date Range",
       options: [
-        { value: '', label: 'All Time' },
-        { value: 'today', label: 'Today' },
-        { value: 'yesterday', label: 'Yesterday' },
-        { value: 'last7days', label: 'Last 7 Days' },
-        { value: 'last30days', label: 'Last 30 Days' },
-        { value: 'thisMonth', label: 'This Month' },
-        { value: 'lastMonth', label: 'Last Month' },
-        { value: 'thisQuarter', label: 'This Quarter' },
-        { value: 'thisYear', label: 'This Year' }
+        { value: "", label: "All Time" },
+        { value: "today", label: "Today" },
+        { value: "yesterday", label: "Yesterday" },
+        { value: "last7days", label: "Last 7 Days" },
+        { value: "last30days", label: "Last 30 Days" },
+        { value: "thisMonth", label: "This Month" },
+        { value: "lastMonth", label: "Last Month" },
+        { value: "thisQuarter", label: "This Quarter" },
+        { value: "thisYear", label: "This Year" },
       ],
-      placeholder: 'Filter by date'
-    }
+      placeholder: "Filter by date",
+    },
   ];
 
   const filteredSubmissions = useMemo(() => {
@@ -302,8 +309,8 @@ const FormSubmissions = () => {
 
     if (searchQuery) {
       filtered = filtered.filter(submission =>
-        submission.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        submission.form?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        submission.id.toLowerCase().includes(searchQuery.toLowerCase())
+        || submission.form?.name?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -390,10 +397,12 @@ const FormSubmissions = () => {
               </div>
               <div>
                 <div className="text-2xl font-bold text-text">
-                  {form?.createdAt ? new Date(form.createdAt).toLocaleDateString() : '-'}
+                  {form?.createdAt ? new Date(form.createdAt).toLocaleDateString() : "-"}
                 </div>
                 <div className="text-sm text-text-muted">
-                  Created by {form?.createdByName || (form?.createdById === 'system' ? 'System' : 'Unknown')}
+                  Created by
+                  {" "}
+                  {form?.createdByName || (form?.createdById === "system" ? "System" : "Unknown")}
                 </div>
               </div>
             </div>
@@ -406,10 +415,12 @@ const FormSubmissions = () => {
               </div>
               <div>
                 <div className="text-2xl font-bold text-text">
-                  {form?.updatedAt ? new Date(form.updatedAt).toLocaleDateString() : '-'}
+                  {form?.updatedAt ? new Date(form.updatedAt).toLocaleDateString() : "-"}
                 </div>
                 <div className="text-sm text-text-muted">
-                  Updated by {form?.updatedByName || (form?.updatedById === 'system' ? 'System' : 'Unknown')}
+                  Updated by
+                  {" "}
+                  {form?.updatedByName || (form?.updatedById === "system" ? "System" : "Unknown")}
                 </div>
               </div>
             </div>
@@ -450,6 +461,6 @@ const FormSubmissions = () => {
       </div>
     </div>
   );
-};
+}
 
-export default FormSubmissions
+export default FormSubmissions;

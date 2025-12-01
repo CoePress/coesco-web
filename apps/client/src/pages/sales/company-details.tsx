@@ -1719,152 +1719,154 @@ function CompanyDetails() {
 
                               return (
                                 <div key={uniqueKey} className="bg-surface border border-border rounded-lg p-3 relative">
-                                  {isEditing ? (
-                                    <div className="space-y-3">
-                                      <div className="flex items-start gap-2">
-                                        <span className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-                                          <span className="text-primary text-sm font-bold">{contactInitial}</span>
-                                        </span>
-                                        <div className="flex-1 space-y-2">
+                                  {isEditing
+                                    ? (
+                                        <div className="space-y-3">
+                                          <div className="flex items-start gap-2">
+                                            <span className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+                                              <span className="text-primary text-sm font-bold">{contactInitial}</span>
+                                            </span>
+                                            <div className="flex-1 space-y-2">
+                                              <input
+                                                type="text"
+                                                value={contactEditor.editData.firstName || ""}
+                                                onChange={e => handleContactFieldChange("firstName", e.target.value)}
+                                                className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                                placeholder="First name"
+                                              />
+                                              <input
+                                                type="text"
+                                                value={contactEditor.editData.lastName || ""}
+                                                onChange={e => handleContactFieldChange("lastName", e.target.value)}
+                                                className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                                placeholder="Last name"
+                                              />
+                                              <input
+                                                type="text"
+                                                value={contactEditor.editData.title || ""}
+                                                onChange={e => handleContactFieldChange("title", e.target.value)}
+                                                className="w-full text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                                placeholder="Title"
+                                              />
+                                            </div>
+                                          </div>
+                                          <select
+                                            value={contactEditor.editData.type || ""}
+                                            onChange={e => handleContactFieldChange("type", e.target.value)}
+                                            className="w-full bg-background border border-border rounded px-2 py-1 text-sm text-text focus:outline-none focus:border-primary"
+                                          >
+                                            <option value="">Select Type</option>
+                                            <option value={ContactType.Accounting}>Accounting</option>
+                                            <option value={ContactType.Engineering}>Engineering</option>
+                                            <option value={ContactType.Inactive}>Inactive</option>
+                                            <option value={ContactType.Left_Company}>Left Company</option>
+                                            <option value={ContactType.Parts_Service}>Parts/Service</option>
+                                            <option value={ContactType.Sales}>Sales</option>
+                                          </select>
                                           <input
-                                            type="text"
-                                            value={contactEditor.editData.firstName || ""}
-                                            onChange={e => handleContactFieldChange("firstName", e.target.value)}
+                                            type="email"
+                                            value={contactEditor.editData.email || ""}
+                                            onChange={e => handleContactFieldChange("email", e.target.value)}
                                             className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                                            placeholder="First name"
+                                            placeholder="email@example.com"
                                           />
-                                          <input
-                                            type="text"
-                                            value={contactEditor.editData.lastName || ""}
-                                            onChange={e => handleContactFieldChange("lastName", e.target.value)}
-                                            className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                                            placeholder="Last name"
-                                          />
-                                          <input
-                                            type="text"
-                                            value={contactEditor.editData.title || ""}
-                                            onChange={e => handleContactFieldChange("title", e.target.value)}
-                                            className="w-full text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                                            placeholder="Title"
-                                          />
-                                        </div>
-                                      </div>
-                                      <select
-                                        value={contactEditor.editData.type || ""}
-                                        onChange={e => handleContactFieldChange("type", e.target.value)}
-                                        className="w-full bg-background border border-border rounded px-2 py-1 text-sm text-text focus:outline-none focus:border-primary"
-                                      >
-                                        <option value="">Select Type</option>
-                                        <option value={ContactType.Accounting}>Accounting</option>
-                                        <option value={ContactType.Engineering}>Engineering</option>
-                                        <option value={ContactType.Inactive}>Inactive</option>
-                                        <option value={ContactType.Left_Company}>Left Company</option>
-                                        <option value={ContactType.Parts_Service}>Parts/Service</option>
-                                        <option value={ContactType.Sales}>Sales</option>
-                                      </select>
-                                      <input
-                                        type="email"
-                                        value={contactEditor.editData.email || ""}
-                                        onChange={e => handleContactFieldChange("email", e.target.value)}
-                                        className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                                        placeholder="email@example.com"
-                                      />
-                                      <div className="flex gap-2">
-                                        <input
-                                          type="tel"
-                                          value={contactEditor.editData.phone || ""}
-                                          onChange={e => handleContactFieldChange("phone", e.target.value)}
-                                          className="flex-1 text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                                          placeholder="Phone number"
-                                        />
-                                        <input
-                                          type="text"
-                                          value={contactEditor.editData.phoneExtension || ""}
-                                          onChange={e => handleContactFieldChange("phoneExtension", e.target.value)}
-                                          className="w-20 text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                                          placeholder="Ext"
-                                        />
-                                      </div>
-                                      <div className="flex gap-2 pt-2">
-                                        <Button
-                                          variant="primary"
-                                          size="sm"
-                                          onClick={contactEditor.save}
-                                          className="flex-1"
-                                        >
-                                          Save
-                                        </Button>
-                                        <Button
-                                          variant="secondary-outline"
-                                          size="sm"
-                                          onClick={contactEditor.cancel}
-                                          className="flex-1"
-                                        >
-                                          Cancel
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <div className="flex items-start justify-between gap-2 mb-2">
-                                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                                          <span className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <span className="text-primary text-sm font-bold">{contactInitial}</span>
-                                          </span>
-                                          <div className="flex-1 min-w-0">
-                                            <Link
-                                              to={`/sales/contacts/${contact.id}`}
-                                              className="text-primary hover:underline font-medium block truncate"
+                                          <div className="flex gap-2">
+                                            <input
+                                              type="tel"
+                                              value={contactEditor.editData.phone || ""}
+                                              onChange={e => handleContactFieldChange("phone", e.target.value)}
+                                              className="flex-1 text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                              placeholder="Phone number"
+                                            />
+                                            <input
+                                              type="text"
+                                              value={contactEditor.editData.phoneExtension || ""}
+                                              onChange={e => handleContactFieldChange("phoneExtension", e.target.value)}
+                                              className="w-20 text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                              placeholder="Ext"
+                                            />
+                                          </div>
+                                          <div className="flex gap-2 pt-2">
+                                            <Button
+                                              variant="primary"
+                                              size="sm"
+                                              onClick={contactEditor.save}
+                                              className="flex-1"
                                             >
-                                              {fullName || "Unnamed Contact"}
-                                            </Link>
-                                            {contact.title && (
-                                              <span className="text-xs text-text-muted block truncate">
-                                                {contact.title}
-                                              </span>
-                                            )}
+                                              Save
+                                            </Button>
+                                            <Button
+                                              variant="secondary-outline"
+                                              size="sm"
+                                              onClick={contactEditor.cancel}
+                                              className="flex-1"
+                                            >
+                                              Cancel
+                                            </Button>
                                           </div>
                                         </div>
-                                        <div className="flex gap-1 flex-shrink-0">
-                                          <Button
-                                            variant="secondary-outline"
-                                            size="sm"
-                                            onClick={() => contactEditor.startEdit(contact.id, contact)}
-                                          >
-                                            <Edit size={12} />
-                                          </Button>
-                                          <Button
-                                            variant="secondary-outline"
-                                            size="sm"
-                                            onClick={() => setMarkInactiveContact(contact)}
-                                            className="border-red-300 hover:bg-red-50 hover:border-red-400"
-                                          >
-                                            <UserX size={12} className="text-red-600" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                      {displayData.email && (
-                                        <div className="text-sm text-text mb-1 truncate">
-                                          <span className="text-text-muted">Email: </span>
-                                          <a href={`mailto:${displayData.email}`} className="text-info hover:underline">
-                                            {displayData.email}
-                                          </a>
-                                        </div>
+                                      )
+                                    : (
+                                        <>
+                                          <div className="flex items-start justify-between gap-2 mb-2">
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                              <span className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <span className="text-primary text-sm font-bold">{contactInitial}</span>
+                                              </span>
+                                              <div className="flex-1 min-w-0">
+                                                <Link
+                                                  to={`/sales/contacts/${contact.id}`}
+                                                  className="text-primary hover:underline font-medium block truncate"
+                                                >
+                                                  {fullName || "Unnamed Contact"}
+                                                </Link>
+                                                {contact.title && (
+                                                  <span className="text-xs text-text-muted block truncate">
+                                                    {contact.title}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-1 flex-shrink-0">
+                                              <Button
+                                                variant="secondary-outline"
+                                                size="sm"
+                                                onClick={() => contactEditor.startEdit(contact.id, contact)}
+                                              >
+                                                <Edit size={12} />
+                                              </Button>
+                                              <Button
+                                                variant="secondary-outline"
+                                                size="sm"
+                                                onClick={() => setMarkInactiveContact(contact)}
+                                                className="border-red-300 hover:bg-red-50 hover:border-red-400"
+                                              >
+                                                <UserX size={12} className="text-red-600" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                          {displayData.email && (
+                                            <div className="text-sm text-text mb-1 truncate">
+                                              <span className="text-text-muted">Email: </span>
+                                              <a href={`mailto:${displayData.email}`} className="text-info hover:underline">
+                                                {displayData.email}
+                                              </a>
+                                            </div>
+                                          )}
+                                          {displayData.phone && (
+                                            <div className="text-sm text-text truncate">
+                                              <span className="text-text-muted">Phone: </span>
+                                              <a href={`tel:${displayData.phone}`} className="hover:underline">
+                                                {displayData.phone}
+                                                {displayData.phoneExtension && ` ext. ${displayData.phoneExtension}`}
+                                              </a>
+                                            </div>
+                                          )}
+                                          <span className={`absolute bottom-2 right-2 px-2 py-1 rounded text-xs font-medium border whitespace-nowrap ${getContactTypeColor(displayData.type)}`}>
+                                            {getContactTypeName(displayData.type)}
+                                          </span>
+                                        </>
                                       )}
-                                      {displayData.phone && (
-                                        <div className="text-sm text-text truncate">
-                                          <span className="text-text-muted">Phone: </span>
-                                          <a href={`tel:${displayData.phone}`} className="hover:underline">
-                                            {displayData.phone}
-                                            {displayData.phoneExtension && ` ext. ${displayData.phoneExtension}`}
-                                          </a>
-                                        </div>
-                                      )}
-                                      <span className={`absolute bottom-2 right-2 px-2 py-1 rounded text-xs font-medium border whitespace-nowrap ${getContactTypeColor(displayData.type)}`}>
-                                        {getContactTypeName(displayData.type)}
-                                      </span>
-                                    </>
-                                  )}
                                 </div>
                               );
                             })

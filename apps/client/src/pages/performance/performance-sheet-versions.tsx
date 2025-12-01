@@ -1,15 +1,16 @@
-import { PlusCircleIcon, Edit2 } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { Edit2, PlusCircleIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
+
 import { Button, Modal, Table, Toolbar } from "@/components";
-import { TableColumn } from "@/components/ui/table";
-import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
+import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
 
-const PerformanceSheetVersions = () => {
+function PerformanceSheetVersions() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { get: getVersions, response: versions, loading: versionsLoading, error: versionsError } = useApi<IApiResponse<any[]>>();
   const { post: createVersion, loading: createVersionLoading, error: createVersionError } = useApi<IApiResponse<any[]>>();
@@ -21,7 +22,7 @@ const PerformanceSheetVersions = () => {
     limit: 25,
     filter: {},
     include: [] as string[],
-    search: ""
+    search: "",
   });
 
   const queryParams = useMemo(() => {
@@ -33,7 +34,7 @@ const PerformanceSheetVersions = () => {
     };
 
     const activeFilters = Object.fromEntries(
-      Object.entries(params.filter).filter(([_, value]) => value)
+      Object.entries(params.filter).filter(([_, value]) => value),
     );
 
     if (Object.keys(activeFilters).length > 0) {
@@ -73,7 +74,7 @@ const PerformanceSheetVersions = () => {
       sortable: false,
       render: (_, row) => {
         const sections = row.sections || [];
-        return `${sections.length} section${sections.length !== 1 ? 's' : ''}`;
+        return `${sections.length} section${sections.length !== 1 ? "s" : ""}`;
       },
     },
     {
@@ -103,7 +104,9 @@ const PerformanceSheetVersions = () => {
     return (
       <div className="flex gap-2">
         <Button onClick={toggleModal}>
-          <PlusCircleIcon size={20} /> Create New Version
+          <PlusCircleIcon size={20} />
+          {" "}
+          Create New Version
         </Button>
       </div>
     );
@@ -112,16 +115,16 @@ const PerformanceSheetVersions = () => {
   const handleSearch = (query: string) => {
     handleParamsChange({
       search: query,
-      page: 1
-    })
-  }
+      page: 1,
+    });
+  };
 
   const handleParamsChange = (updates: Partial<typeof params>) => {
     setParams(prev => ({
       ...prev,
-      ...updates
-    }))
-  }
+      ...updates,
+    }));
+  };
 
   useEffect(() => {
     fetchVersions();
@@ -151,13 +154,13 @@ const PerformanceSheetVersions = () => {
           error={versionsError}
           currentPage={versions?.meta?.page}
           totalPages={versions?.meta?.totalPages}
-          onPageChange={(page) => handleParamsChange({ page })}
+          onPageChange={page => handleParamsChange({ page })}
           sort={params.sort}
           order={params.order}
           onSortChange={(newSort, newOrder) => {
             handleParamsChange({
               sort: newSort as any,
-              order: newOrder as any
+              order: newOrder as any,
             });
           }}
           className="rounded border overflow-clip"
@@ -170,16 +173,16 @@ const PerformanceSheetVersions = () => {
           isOpen={isModalOpen}
           onClose={toggleModal}
           onSuccess={fetchVersions}
-          createVersion={(data) => createVersion("/sales/performance-versions", data)}
+          createVersion={data => createVersion("/sales/performance-versions", data)}
           loading={createVersionLoading}
           error={createVersionError}
         />
       )}
     </div>
   );
-};
+}
 
-const CreateVersionModal = ({
+function CreateVersionModal({
   isOpen,
   onClose,
   onSuccess,
@@ -193,11 +196,10 @@ const CreateVersionModal = ({
   createVersion: (params: any) => Promise<any>;
   loading: boolean;
   error: string | null;
-}) => {
-
+}) {
   const [formData, setFormData] = useState({
     sections: [] as any[],
-  })
+  });
 
   const navigate = useNavigate();
   const toast = useToast();
@@ -205,25 +207,27 @@ const CreateVersionModal = ({
   const handleCreateVersion = async () => {
     try {
       const response = await createVersion({
-        sections: formData.sections
+        sections: formData.sections,
       });
       if (response?.success) {
-        toast.success('Performance Sheet Version created successfully!');
+        toast.success("Performance Sheet Version created successfully!");
         onClose();
         onSuccess();
         navigate(`/admin/performance-sheet-versions/${response.data.id}/build`);
-      } else {
-        toast.error('Failed to create version. Please try again.');
       }
-    } catch (error) {
-      toast.error('An unexpected error occurred while creating the version.');
+      else {
+        toast.error("Failed to create version. Please try again.");
+      }
+    }
+    catch (error) {
+      toast.error("An unexpected error occurred while creating the version.");
     }
   };
 
   const resetForm = () => {
     setFormData({
       sections: [],
-    })
+    });
   };
 
   useEffect(() => {
@@ -237,7 +241,8 @@ const CreateVersionModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Create New Performance Sheet Version"
-      size="xs">
+      size="xs"
+    >
       <div className="space-y-4">
         <div className="text-sm text-text-muted bg-surface p-3 rounded">
           A new blank version will be created. You can configure sections and fields in the version builder.
@@ -254,20 +259,22 @@ const CreateVersionModal = ({
             onClick={onClose}
             disabled={loading}
             variant="secondary-outline"
-            className="flex-1">
+            className="flex-1"
+          >
             Cancel
           </Button>
           <Button
             onClick={handleCreateVersion}
             disabled={loading}
             variant="primary"
-            className="flex-1">
+            className="flex-1"
+          >
             {loading ? "Creating..." : "Create Version"}
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}
 
 export default PerformanceSheetVersions;

@@ -82,7 +82,7 @@ export class DeletedRecordsService {
           });
         }
       }
-      catch (error) {
+      catch {
         // Skip models that don't exist or have issues
         continue;
       }

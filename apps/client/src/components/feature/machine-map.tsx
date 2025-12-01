@@ -1,13 +1,14 @@
-import { useTheme } from "@/contexts/theme.context";
-import { getStatusColor } from "@/utils";
 import { useState } from "react";
 
-type MachineMapProps = {
+import { useTheme } from "@/contexts/theme.context";
+import { getStatusColor } from "@/utils";
+
+interface MachineMapProps {
   machines: any[];
-};
+}
 
 const MACHINE_POSITIONS: Record<string, { row: number; col: number }> = {
-  OKK: { row: 1, col: 1 },
+  "OKK": { row: 1, col: 1 },
   "Niigata SPN630": { row: 3, col: 1 },
   "Kuraki Boring Mill": { row: 1, col: 3 },
   "Niigata HN80": { row: 3, col: 3 },
@@ -17,13 +18,13 @@ const MACHINE_POSITIONS: Record<string, { row: number; col: number }> = {
   "Mazak 450": { row: 3, col: 8 },
 };
 
-const shadeColor = (color: string | undefined, percent: number) => {
+function shadeColor(color: string | undefined, percent: number) {
   if (!color) {
     return "#A0A0A0";
   }
-  let R = parseInt(color.substring(1, 3), 16);
-  let G = parseInt(color.substring(3, 5), 16);
-  let B = parseInt(color.substring(5, 7), 16);
+  let R = Number.parseInt(color.substring(1, 3), 16);
+  let G = Number.parseInt(color.substring(3, 5), 16);
+  let B = Number.parseInt(color.substring(5, 7), 16);
 
   R = Math.floor((R * (100 + percent)) / 100);
   G = Math.floor((G * (100 + percent)) / 100);
@@ -37,10 +38,10 @@ const shadeColor = (color: string | undefined, percent: number) => {
   const GG = G.toString(16).padStart(2, "0");
   const BB = B.toString(16).padStart(2, "0");
 
-  return "#" + RR + GG + BB;
-};
+  return `#${RR}${GG}${BB}`;
+}
 
-const MachineMap = ({ machines }: MachineMapProps) => {
+function MachineMap({ machines }: MachineMapProps) {
   const [selectedBlock, setSelectedBlock] = useState<number | null>(null);
   const [gridSizeX] = useState(10);
   const [gridSizeY] = useState(5);
@@ -108,7 +109,8 @@ const MachineMap = ({ machines }: MachineMapProps) => {
           selectedBlock === null || selectedBlock === index
             ? "opacity-100"
             : "opacity-50"
-        }`}>
+        }`}
+      >
         <path
           d={top}
           fill={color}
@@ -133,7 +135,8 @@ const MachineMap = ({ machines }: MachineMapProps) => {
           textAnchor="middle"
           fill="var(--text)"
           fontSize="12"
-          className="pointer-events-none select-none">
+          className="pointer-events-none select-none"
+        >
           {machine.name}
         </text>
       </g>
@@ -161,7 +164,7 @@ const MachineMap = ({ machines }: MachineMapProps) => {
             fill="var(--surface)"
             stroke="var(--border)"
             strokeWidth="1"
-          />
+          />,
         );
       }
     }
@@ -172,14 +175,15 @@ const MachineMap = ({ machines }: MachineMapProps) => {
     <div className="flex-1 flex-col overflow-hidden items-center justify-center">
       <svg
         viewBox={`${width / 5} ${height / 3.5} ${width} ${height + 5}`}
-        preserveAspectRatio="xMidYMid meet">
-        <g transform={`translate(50, 50)`}>
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <g transform="translate(50, 50)">
           {renderGrid()}
           {machines.map((machine, index) => drawIsoBlock(machine, index))}
         </g>
       </svg>
     </div>
   );
-};
+}
 
 export default MachineMap;

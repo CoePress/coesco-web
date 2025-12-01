@@ -1,20 +1,20 @@
-import { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-type StatusBadgeProps = {
+interface StatusBadgeProps {
   label?: string;
   icon?: LucideIcon;
   variant?: "success" | "warning" | "error" | "info" | "default" | "secondary";
   size?: "sm" | "md" | "lg";
   className?: string;
-};
+}
 
-const StatusBadge = ({
+function StatusBadge({
   label,
   icon: Icon,
   variant = "default",
   size = "md",
   className = "",
-}: StatusBadgeProps) => {
+}: StatusBadgeProps) {
   const variants = {
     success: "bg-success/10 text-success",
     warning: "bg-warning/10 text-warning",
@@ -50,7 +50,8 @@ const StatusBadge = ({
 
   return (
     <div
-      className={`w-max flex items-center gap-1 rounded border ${sizes[size]} font-medium ${variants[variant]} ${borderVariants[variant]} ${className}`}>
+      className={`w-max flex items-center gap-1 rounded border ${sizes[size]} font-medium ${variants[variant]} ${borderVariants[variant]} ${className}`}
+    >
       {Icon && (
         <Icon
           size={14}
@@ -60,6 +61,6 @@ const StatusBadge = ({
       <span className="uppercase">{label}</span>
     </div>
   );
-};
+}
 
 export default StatusBadge;

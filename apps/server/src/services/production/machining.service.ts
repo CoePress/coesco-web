@@ -214,7 +214,7 @@ export class MachineMonitorService {
       now,
     );
 
-    const totalStateDuration = Object.values(totalsByState).reduce(
+    const _totalStateDuration = Object.values(totalsByState).reduce(
       (acc, total) => acc + total,
       0,
     );
@@ -285,7 +285,7 @@ export class MachineMonitorService {
       timezoneOffset,
     );
 
-    const totalAvailableTime
+    const _totalAvailableTime
       = dateRange.duration * machineCount - futureFleetDuration;
 
     const stateDistribution = this.calculateStateDistribution(
@@ -711,7 +711,7 @@ export class MachineMonitorService {
         json: () => Promise.resolve(JSON.parse(response.data)),
       };
     }
-    catch (error: any) {
+    catch {
       return null;
     }
     finally {
@@ -992,7 +992,7 @@ export class MachineMonitorService {
     timezoneOffset?: number,
   ): string {
     const formatters = {
-      [TimeScale.HOUR]: (start: Date, end: Date) => {
+      [TimeScale.HOUR]: (start: Date, _end: Date) => {
         // Calculate the client's hour based on the start date and timezone offset
         // This should match what we show in the label
         const startUtcHours = start.getUTCHours();

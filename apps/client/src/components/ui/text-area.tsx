@@ -14,7 +14,7 @@ interface TextareaProps {
   autoComplete?: string;
 }
 
-const Textarea = ({
+function Textarea({
   label,
   name,
   id,
@@ -28,7 +28,7 @@ const Textarea = ({
   rows = 3,
   placeholder = "",
   autoComplete,
-}: TextareaProps) => {
+}: TextareaProps) {
   return (
     <div className="w-full">
       {label && (
@@ -56,6 +56,6 @@ const Textarea = ({
       {error && <p className="mt-1 text-sm text-error">{error}</p>}
     </div>
   );
-};
+}
 
-export default Textarea; 
+export default Textarea;

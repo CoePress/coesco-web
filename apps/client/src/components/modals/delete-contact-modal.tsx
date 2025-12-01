@@ -1,4 +1,4 @@
-import { Modal, Button } from "@/components";
+import { Button, Modal } from "@/components";
 import { ContactType } from "@/types/enums";
 
 interface DeleteContactModalProps {
@@ -9,13 +9,13 @@ interface DeleteContactModalProps {
   isUpdating?: boolean;
 }
 
-export const DeleteContactModal = ({
+export function DeleteContactModal({
   isOpen,
   onClose,
   onConfirm,
   contact,
-  isUpdating = false
-}: DeleteContactModalProps) => {
+  isUpdating = false,
+}: DeleteContactModalProps) {
   const contactName = `${contact?.FirstName || ""} ${contact?.LastName || ""}`.trim() || "Unnamed Contact";
 
   return (
@@ -27,7 +27,10 @@ export const DeleteContactModal = ({
     >
       <div className="space-y-4">
         <p className="text-text">
-          Choose the status for <strong>{contactName}</strong>:
+          Choose the status for
+          {" "}
+          <strong>{contactName}</strong>
+          :
         </p>
         <div className="flex flex-col gap-2">
           <Button
@@ -37,7 +40,7 @@ export const DeleteContactModal = ({
             disabled={isUpdating}
             className="w-full"
           >
-            {isUpdating ? 'Updating...' : 'Mark as Inactive'}
+            {isUpdating ? "Updating..." : "Mark as Inactive"}
           </Button>
           <Button
             variant="secondary-outline"
@@ -46,7 +49,7 @@ export const DeleteContactModal = ({
             disabled={isUpdating}
             className="w-full"
           >
-            {isUpdating ? 'Updating...' : 'Mark as Left Company'}
+            {isUpdating ? "Updating..." : "Mark as Left Company"}
           </Button>
           <Button
             variant="secondary-outline"
@@ -61,4 +64,4 @@ export const DeleteContactModal = ({
       </div>
     </Modal>
   );
-};
+}

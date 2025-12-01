@@ -1,25 +1,25 @@
+import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
 
 type ToastVariant = "success" | "error" | "warning" | "info";
 
-export type ToastProps = {
+export interface ToastProps {
   id: string;
   title?: string;
   message: string;
   variant?: ToastVariant;
   duration?: number;
   onClose: (id: string) => void;
-};
+}
 
-const Toast = ({
+function Toast({
   id,
   title,
   message,
   variant = "info",
   duration = 5000,
   onClose,
-}: ToastProps) => {
+}: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -74,14 +74,14 @@ const Toast = ({
         transform transition-all duration-200 ease-out
         ${bg} ${text}
         ${
-          isVisible
-            ? "translate-x-0 opacity-100"
-            : "translate-x-full opacity-0"
-        }
+    isVisible
+      ? "translate-x-0 opacity-100"
+      : "translate-x-full opacity-0"
+    }
       `}
     >
       <Icon size={20} className={`flex-shrink-0 mt-0.5 ${iconColor}`} />
-      
+
       <div className="flex-1 min-w-0">
         {title && (
           <div className="font-semibold text-sm mb-1">{title}</div>
@@ -98,6 +98,6 @@ const Toast = ({
       </button>
     </div>
   );
-};
+}
 
 export default Toast;

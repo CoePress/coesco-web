@@ -1,23 +1,23 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, Sun, Moon, ChevronsRight, BugIcon, Loader2, Settings as SettingsIcon, LayoutDashboard, Shield } from "lucide-react";
 import * as htmlToImage from "html-to-image";
+import { BugIcon, ChevronsRight, Home, LayoutDashboard, Loader2, Moon, Settings as SettingsIcon, Shield, Sun } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import { Button, Modal } from "@/components";
+import BugReportForm from "@/components/forms/bug-report-form";
+import ToastContainer from "@/components/ui/toast-container";
 import modules from "@/config/modules";
-import { useTheme } from "@/contexts/theme.context";
 import { useAppContext } from "@/contexts/app.context";
 import { useAuth } from "@/contexts/auth.context";
-import { __dev__ } from "@/config/env";
-import ChatSidebar from "./chat-sidebar";
-import CommandBar from "../feature/command-bar";
-import ToastContainer from "@/components/ui/toast-container";
-import { useToast } from "@/hooks/use-toast";
-import { Modal, Button } from "@/components";
-import BugReportForm from "@/components/forms/bug-report-form";
+import { useTheme } from "@/contexts/theme.context";
 import { useApi } from "@/hooks/use-api";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useToast } from "@/hooks/use-toast";
 
-type SidebarProps = {
+import CommandBar from "../feature/command-bar";
+import ChatSidebar from "./chat-sidebar";
+
+interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onTooltipMouseEnter: (e: React.MouseEvent, text: string) => void;
@@ -27,9 +27,9 @@ type SidebarProps = {
   setScreenshot: (screenshot: string | null) => void;
   isCapturing: boolean;
   setIsCapturing: (capturing: boolean) => void;
-};
+}
 
-const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, screenshotAreaRef, setIsBugModalOpen, setScreenshot, isCapturing, setIsCapturing }: SidebarProps) => {
+function Sidebar({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, screenshotAreaRef, setIsBugModalOpen, setScreenshot, isCapturing, setIsCapturing }: SidebarProps) {
   let sidebarLabel = "Dashboard";
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
@@ -44,14 +44,15 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
     return trimmedCurrentPath === trimmedPath;
   };
 
-  const currentModule = modules.find((m) =>
-    location.pathname.startsWith(`/${m.slug}`)
+  const currentModule = modules.find(m =>
+    location.pathname.startsWith(`/${m.slug}`),
   );
 
   if (!currentModule) {
     sidebarLabel = location.pathname.split("/")[1];
     sidebarLabel = sidebarLabel.charAt(0).toUpperCase() + sidebarLabel.slice(1);
-  } else {
+  }
+  else {
     sidebarLabel = currentModule.label;
   }
 
@@ -59,11 +60,13 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
     <div
       className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden select-none ${
         isOpen ? "w-60" : "w-[50px]"
-      } md:relative absolute z-50 hidden md:block`}>
+      } md:relative absolute z-50 hidden md:block`}
+    >
       <div className="flex flex-col h-full">
         <div className={`flex items-center h-[57px] border-b border-border px-2 ${
           isOpen ? "justify-between" : "justify-center"
-        }`}>
+        }`}
+        >
           {isOpen && (
             <h1 className="text-xl font-semibold text-primary">
               {sidebarLabel}
@@ -73,7 +76,8 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
             onClick={() => setIsOpen(!isOpen)}
             className={`flex justify-center items-center p-2 rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer ${
               isOpen ? "" : "w-full"
-            }`}>
+            }`}
+          >
             <ChevronsRight
               size={20}
               className={`transition-transform duration-200 shrink-0 ${
@@ -82,146 +86,183 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
             />
           </button>
         </div>
-          <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2">
-            {location.pathname.startsWith("/chat") ? (
-              <ChatSidebar
-                isOpen={isOpen}
-                onTooltipMouseEnter={onTooltipMouseEnter}
-                onTooltipMouseLeave={onTooltipMouseLeave}
-              />
-            ) : location.pathname.startsWith("/settings") ? (
-              <div className="flex flex-col gap-2">
-                <Link
-                  to="/settings?tab=general"
-                  onMouseEnter={(e) => onTooltipMouseEnter(e, "General")}
-                  onMouseLeave={onTooltipMouseLeave}
-                  className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
-                    location.search.includes("tab=general") || (!location.search.includes("tab=") && location.pathname === "/settings")
-                      ? "bg-surface text-text"
-                      : "text-text-muted hover:bg-surface"
-                  }`}>
-                  <LayoutDashboard size={18} className="flex-shrink-0" />
-                  <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                    isOpen ? "opacity-100" : "opacity-0"
-                  }`}>General</span>
-                </Link>
-                <Link
-                  to="/settings?tab=security"
-                  onMouseEnter={(e) => onTooltipMouseEnter(e, "Security")}
-                  onMouseLeave={onTooltipMouseLeave}
-                  className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
-                    location.search.includes("tab=security")
-                      ? "bg-surface text-text"
-                      : "text-text-muted hover:bg-surface"
-                  }`}>
-                  <Shield size={18} className="flex-shrink-0" />
-                  <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                    isOpen ? "opacity-100" : "opacity-0"
-                  }`}>Security</span>
-                </Link>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {currentModule?.pages?.map((page) => {
-                  const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
-                  return (
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2">
+          {location.pathname.startsWith("/chat")
+            ? (
+                <ChatSidebar
+                  isOpen={isOpen}
+                  onTooltipMouseEnter={onTooltipMouseEnter}
+                  onTooltipMouseLeave={onTooltipMouseLeave}
+                />
+              )
+            : location.pathname.startsWith("/settings")
+              ? (
+                  <div className="flex flex-col gap-2">
                     <Link
-                      key={page.slug || "index"}
-                      to={trimmer(fullPath)}
-                      onMouseEnter={(e) => onTooltipMouseEnter(e, page.label)}
+                      to="/settings?tab=general"
+                      onMouseEnter={e => onTooltipMouseEnter(e, "General")}
                       onMouseLeave={onTooltipMouseLeave}
                       className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
-                        isActive(fullPath)
-                          ? "bg-background text-primary"
+                        location.search.includes("tab=general") || (!location.search.includes("tab=") && location.pathname === "/settings")
+                          ? "bg-surface text-text"
                           : "text-text-muted hover:bg-surface"
-                      }`}>
-                      {page.icon && <page.icon size={18} className="flex-shrink-0" />}
+                      }`}
+                    >
+                      <LayoutDashboard size={18} className="flex-shrink-0" />
                       <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
                         isOpen ? "opacity-100" : "opacity-0"
-                      }`}>{page.label}</span>
+                      }`}
+                      >
+                        General
+                      </span>
                     </Link>
-                  );
-                })}
-              </div>
-            )}
-          </nav>
-          
-          <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
-            <Link
-              to="/settings"
-              onMouseEnter={(e) => onTooltipMouseEnter(e, "Settings")}
-              onMouseLeave={onTooltipMouseLeave}
-              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full">
-              <SettingsIcon size={18} className="flex-shrink-0" />
-              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                isOpen ? "opacity-100" : "opacity-0"
-              }`}>Settings</span>
-            </Link>
+                    <Link
+                      to="/settings?tab=security"
+                      onMouseEnter={e => onTooltipMouseEnter(e, "Security")}
+                      onMouseLeave={onTooltipMouseLeave}
+                      className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
+                        location.search.includes("tab=security")
+                          ? "bg-surface text-text"
+                          : "text-text-muted hover:bg-surface"
+                      }`}
+                    >
+                      <Shield size={18} className="flex-shrink-0" />
+                      <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+                        isOpen ? "opacity-100" : "opacity-0"
+                      }`}
+                      >
+                        Security
+                      </span>
+                    </Link>
+                  </div>
+                )
+              : (
+                  <div className="flex flex-col gap-2">
+                    {currentModule?.pages?.map((page) => {
+                      const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
+                      return (
+                        <Link
+                          key={page.slug || "index"}
+                          to={trimmer(fullPath)}
+                          onMouseEnter={e => onTooltipMouseEnter(e, page.label)}
+                          onMouseLeave={onTooltipMouseLeave}
+                          className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
+                            isActive(fullPath)
+                              ? "bg-background text-primary"
+                              : "text-text-muted hover:bg-surface"
+                          }`}
+                        >
+                          {page.icon && <page.icon size={18} className="flex-shrink-0" />}
+                          <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+                            isOpen ? "opacity-100" : "opacity-0"
+                          }`}
+                          >
+                            {page.label}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+        </nav>
 
-            <button
-              onClick={async () => {
-                onTooltipMouseLeave();
-                try {
-                  if (!screenshotAreaRef.current) return;
-                  setIsCapturing(true);
-                  const dataUrl = await htmlToImage.toPng(screenshotAreaRef.current);
-                  setScreenshot(dataUrl);
-                } catch (error) {
-                  setScreenshot(null);
-                } finally {
-                  setIsCapturing(false);
-                }
-                setIsBugModalOpen(true);
-              }}
-              onMouseEnter={(e) => onTooltipMouseEnter(e, "Report Bug")}
-              onMouseLeave={onTooltipMouseLeave}
-              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full">
-              {isCapturing ? (
-                <Loader2 size={18} className="flex-shrink-0 animate-spin" />
-              ) : (
-                <BugIcon size={18} className="flex-shrink-0" />
-              )}
-              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                isOpen ? "opacity-100" : "opacity-0"
-              }`}>Report Bug</span>
-            </button>
+        <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
+          <Link
+            to="/settings"
+            onMouseEnter={e => onTooltipMouseEnter(e, "Settings")}
+            onMouseLeave={onTooltipMouseLeave}
+            className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full"
+          >
+            <SettingsIcon size={18} className="flex-shrink-0" />
+            <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+              isOpen ? "opacity-100" : "opacity-0"
+            }`}
+            >
+              Settings
+            </span>
+          </Link>
 
-            <button
-              onClick={toggleTheme}
-              onMouseEnter={(e) => onTooltipMouseEnter(e, theme === "dark" ? "Light Mode" : "Dark Mode")}
-              onMouseLeave={onTooltipMouseLeave}
-              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full">
-              {theme === "dark" ? <Sun size={18} className="flex-shrink-0" /> : <Moon size={18} className="flex-shrink-0" />}
-              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                isOpen ? "opacity-100" : "opacity-0"
-              }`}>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-            </button>
+          <button
+            onClick={async () => {
+              onTooltipMouseLeave();
+              try {
+                if (!screenshotAreaRef.current)
+                  return;
+                setIsCapturing(true);
+                const dataUrl = await htmlToImage.toPng(screenshotAreaRef.current);
+                setScreenshot(dataUrl);
+              }
+              catch (error) {
+                setScreenshot(null);
+              }
+              finally {
+                setIsCapturing(false);
+              }
+              setIsBugModalOpen(true);
+            }}
+            onMouseEnter={e => onTooltipMouseEnter(e, "Report Bug")}
+            onMouseLeave={onTooltipMouseLeave}
+            className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full"
+          >
+            {isCapturing
+              ? (
+                  <Loader2 size={18} className="flex-shrink-0 animate-spin" />
+                )
+              : (
+                  <BugIcon size={18} className="flex-shrink-0" />
+                )}
+            <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+              isOpen ? "opacity-100" : "opacity-0"
+            }`}
+            >
+              Report Bug
+            </span>
+          </button>
 
-            <Link
-              key="main-menu"
-              to="/"
-              onMouseEnter={(e) => onTooltipMouseEnter(e, "Main Menu")}
-              onMouseLeave={onTooltipMouseLeave}
-              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full">
-              <Home size={18} className="flex-shrink-0" />
-              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                isOpen ? "opacity-100" : "opacity-0"
-              }`}>Main Menu</span>
-            </Link>
-          </div>
+          <button
+            onClick={toggleTheme}
+            onMouseEnter={e => onTooltipMouseEnter(e, theme === "dark" ? "Light Mode" : "Dark Mode")}
+            onMouseLeave={onTooltipMouseLeave}
+            className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full"
+          >
+            {theme === "dark" ? <Sun size={18} className="flex-shrink-0" /> : <Moon size={18} className="flex-shrink-0" />}
+            <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+              isOpen ? "opacity-100" : "opacity-0"
+            }`}
+            >
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </span>
+          </button>
+
+          <Link
+            key="main-menu"
+            to="/"
+            onMouseEnter={e => onTooltipMouseEnter(e, "Main Menu")}
+            onMouseLeave={onTooltipMouseLeave}
+            className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full"
+          >
+            <Home size={18} className="flex-shrink-0" />
+            <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+              isOpen ? "opacity-100" : "opacity-0"
+            }`}
+            >
+              Main Menu
+            </span>
+          </Link>
+        </div>
       </div>
-      
+
     </div>
   );
-};
+}
 
-type LayoutProps = {
+interface LayoutProps {
   children: React.ReactNode;
-};
+}
 
-const Layout = ({ children }: LayoutProps) => {
+function Layout({ children }: LayoutProps) {
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
-  const [hoveredTooltip, setHoveredTooltip] = useState<{text: string, rect: DOMRect} | null>(null);
+  const [hoveredTooltip, setHoveredTooltip] = useState<{ text: string; rect: DOMRect } | null>(null);
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -264,9 +305,9 @@ const Layout = ({ children }: LayoutProps) => {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        isCommandBarOpen &&
-        commandBarRef.current &&
-        !commandBarRef.current.contains(e.target as Node)
+        isCommandBarOpen
+        && commandBarRef.current
+        && !commandBarRef.current.contains(e.target as Node)
       ) {
         setIsCommandBarOpen(false);
       }
@@ -278,8 +319,8 @@ const Layout = ({ children }: LayoutProps) => {
     };
   }, [isCommandBarOpen]);
 
-  const currentModule = modules.find((m) =>
-    location.pathname.startsWith(`/${m.slug}`)
+  const currentModule = modules.find(m =>
+    location.pathname.startsWith(`/${m.slug}`),
   );
   const defaultModule = currentModule?.slug || "production";
 
@@ -301,7 +342,8 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="fixed inset-0 flex items-start justify-center pt-32 z-50 bg-background/50 backdrop-blur-sm">
             <div
               ref={commandBarRef}
-              className="w-full max-w-2xl px-4">
+              className="w-full max-w-2xl px-4"
+            >
               <CommandBar
                 onNavigate={handleCommandNavigation}
                 defaultModule={defaultModule}
@@ -320,7 +362,8 @@ const Layout = ({ children }: LayoutProps) => {
               to="/"
               className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded transition-colors min-w-0 ${
                 location.pathname === "/" ? "text-primary" : "text-text-muted"
-              }`}>
+              }`}
+            >
               <Home size={20} className="flex-shrink-0" />
               <span className="text-xs truncate w-full text-center">Home</span>
             </Link>
@@ -336,7 +379,8 @@ const Layout = ({ children }: LayoutProps) => {
                   to={trimmedPath}
                   className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded transition-colors min-w-0 ${
                     isActive ? "text-primary" : "text-text-muted"
-                  }`}>
+                  }`}
+                >
                   {page.icon && <page.icon size={20} className="flex-shrink-0" />}
                   <span className="text-xs truncate w-full text-center">{page.label}</span>
                 </Link>
@@ -345,137 +389,150 @@ const Layout = ({ children }: LayoutProps) => {
 
             <button
               onClick={toggleTheme}
-              className="flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded text-text-muted transition-colors min-w-0">
+              className="flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded text-text-muted transition-colors min-w-0"
+            >
               {theme === "dark" ? <Sun size={20} className="flex-shrink-0" /> : <Moon size={20} className="flex-shrink-0" />}
               <span className="text-xs truncate w-full text-center">Theme</span>
             </button>
           </nav>
         </div>
       </div>
-      
+
       {hoveredTooltip && !isCommandBarOpen && !isBugModalOpen && (
         <div
           className="fixed px-2 py-1 bg-surface border border-border text-text text-xs rounded whitespace-nowrap z-[999] pointer-events-none shadow-lg"
           style={{
             left: hoveredTooltip.rect.right + 8,
             top: hoveredTooltip.rect.top + hoveredTooltip.rect.height / 2,
-            transform: 'translateY(-50%)'
-          }}>
+            transform: "translateY(-50%)",
+          }}
+        >
           {hoveredTooltip.text}
         </div>
       )}
 
-      {showConfirmation ? (
-        <Modal
-          isOpen={isBugModalOpen}
-          onClose={() => {
-            setIsBugModalOpen(false);
-            setScreenshot(null);
-            setShowConfirmation(false);
-            setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
-          }}
-          title="Confirm Bug Report"
-          size="xs"
-          footer={
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary-outline"
-                onClick={() => setShowConfirmation(false)}>
-                Back
-              </Button>
-              <Button
-                onClick={async () => {
-                  const payload: any = {
-                    description: formData.description.trim(),
-                    url: window.location.href,
-                    userAgent: navigator.userAgent,
-                  };
+      {showConfirmation
+        ? (
+            <Modal
+              isOpen={isBugModalOpen}
+              onClose={() => {
+                setIsBugModalOpen(false);
+                setScreenshot(null);
+                setShowConfirmation(false);
+                setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
+              }}
+              title="Confirm Bug Report"
+              size="xs"
+              footer={(
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="secondary-outline"
+                    onClick={() => setShowConfirmation(false)}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      const payload: any = {
+                        description: formData.description.trim(),
+                        url: window.location.href,
+                        userAgent: navigator.userAgent,
+                      };
 
-                  if (employee?.email) payload.userEmail = employee.email;
-                  if (employee) payload.userName = `${employee.firstName} ${employee.lastName}`;
-                  if (formData.includeScreenshot && (formData.annotatedScreenshot || screenshot)) {
-                    payload.screenshot = formData.annotatedScreenshot || screenshot;
-                  }
+                      if (employee?.email)
+                        payload.userEmail = employee.email;
+                      if (employee)
+                        payload.userName = `${employee.firstName} ${employee.lastName}`;
+                      if (formData.includeScreenshot && (formData.annotatedScreenshot || screenshot)) {
+                        payload.screenshot = formData.annotatedScreenshot || screenshot;
+                      }
 
-                  const result = await post("/system/bugs", payload);
+                      const result = await post("/system/bugs", payload);
 
-                  if (result) {
-                    addToast({
-                      title: "Bug report submitted",
-                      message: "Thank you for reporting this issue!",
-                      variant: "success",
-                    });
-                    setIsBugModalOpen(false);
-                    setScreenshot(null);
-                    setShowConfirmation(false);
-                    setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
-                  } else {
-                    addToast({
-                      title: "Failed to submit bug report",
-                      message: "Please try again later",
-                      variant: "error",
-                    });
-                  }
-                }}
-                disabled={loading}>
-                {loading ? "Submitting..." : "Confirm"}
-              </Button>
-            </div>
-          }>
-          <p className="text-sm text-text">
-            Are you sure you want to submit this bug report?
-          </p>
+                      if (result) {
+                        addToast({
+                          title: "Bug report submitted",
+                          message: "Thank you for reporting this issue!",
+                          variant: "success",
+                        });
+                        setIsBugModalOpen(false);
+                        setScreenshot(null);
+                        setShowConfirmation(false);
+                        setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
+                      }
+                      else {
+                        addToast({
+                          title: "Failed to submit bug report",
+                          message: "Please try again later",
+                          variant: "error",
+                        });
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    {loading ? "Submitting..." : "Confirm"}
+                  </Button>
+                </div>
+              )}
+            >
+              <p className="text-sm text-text">
+                Are you sure you want to submit this bug report?
+              </p>
 
-          <div className="bg-surface border border-border rounded p-3 space-y-2 text-sm">
-            <div>
-              <span className="text-text-muted block mb-1">Description:</span>
-              <span className="font-medium text-text whitespace-pre-wrap">{formData.description}</span>
-            </div>
-            {formData.includeScreenshot && (formData.annotatedScreenshot || screenshot) && (
-              <div>
-                <span className="text-text-muted block mb-1">Screenshot:</span>
-                <span className="text-text">Attached</span>
+              <div className="bg-surface border border-border rounded p-3 space-y-2 text-sm">
+                <div>
+                  <span className="text-text-muted block mb-1">Description:</span>
+                  <span className="font-medium text-text whitespace-pre-wrap">{formData.description}</span>
+                </div>
+                {formData.includeScreenshot && (formData.annotatedScreenshot || screenshot) && (
+                  <div>
+                    <span className="text-text-muted block mb-1">Screenshot:</span>
+                    <span className="text-text">Attached</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </Modal>
-      ) : (
-        <Modal
-          isOpen={isBugModalOpen}
-          onClose={() => {
-            setIsBugModalOpen(false);
-            setScreenshot(null);
-            setShowConfirmation(false);
-            setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
-          }}
-          title="Report Bug"
-          size="md"
-          footer={
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="secondary-outline"
-                onClick={() => {
-                  setIsBugModalOpen(false);
-                  setScreenshot(null);
-                  setShowConfirmation(false);
-                  setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
-                }}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => setShowConfirmation(true)}
-                disabled={!formData.description.trim()}>
-                Submit Report
-              </Button>
-            </div>
-          }>
-          <BugReportForm
-            screenshot={screenshot}
-            formData={formData}
-            onFormDataChange={setFormData}
-          />
-        </Modal>
-      )}
+            </Modal>
+          )
+        : (
+            <Modal
+              isOpen={isBugModalOpen}
+              onClose={() => {
+                setIsBugModalOpen(false);
+                setScreenshot(null);
+                setShowConfirmation(false);
+                setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
+              }}
+              title="Report Bug"
+              size="md"
+              footer={(
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="secondary-outline"
+                    onClick={() => {
+                      setIsBugModalOpen(false);
+                      setScreenshot(null);
+                      setShowConfirmation(false);
+                      setFormData({ description: "", annotatedScreenshot: null, includeScreenshot: true });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => setShowConfirmation(true)}
+                    disabled={!formData.description.trim()}
+                  >
+                    Submit Report
+                  </Button>
+                </div>
+              )}
+            >
+              <BugReportForm
+                screenshot={screenshot}
+                formData={formData}
+                onFormDataChange={setFormData}
+              />
+            </Modal>
+          )}
 
       <ToastContainer
         toasts={toasts}
@@ -484,6 +541,6 @@ const Layout = ({ children }: LayoutProps) => {
       />
     </div>
   );
-};
+}
 
 export default Layout;

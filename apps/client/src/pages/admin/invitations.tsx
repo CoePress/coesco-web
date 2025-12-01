@@ -1,17 +1,18 @@
-import { RefreshCcwIcon, PlusIcon } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { format } from "date-fns";
+import { PlusIcon, RefreshCcwIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+import type { TableColumn } from "@/components/ui/table";
+import type { IApiResponse } from "@/utils/types";
 
 import {
-  StatusBadge,
-  PageHeader,
-  Table,
   Button,
   Modal,
+  PageHeader,
+  StatusBadge,
+  Table,
 } from "@/components";
-import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
-import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
 interface ExternalInvitation {
@@ -30,7 +31,7 @@ interface ExternalInvitation {
   updatedAt: string;
 }
 
-const Invitations = () => {
+function Invitations() {
   const [selectedInvitation, setSelectedInvitation] = useState<ExternalInvitation | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -56,16 +57,22 @@ const Invitations = () => {
   }, [params]);
 
   const getStatusVariant = (invitation: ExternalInvitation): "success" | "warning" | "error" | "default" => {
-    if (invitation.revokedAt) return "error";
-    if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) return "error";
-    if (invitation.maxUses && invitation.useCount >= invitation.maxUses) return "warning";
+    if (invitation.revokedAt)
+      return "error";
+    if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date())
+      return "error";
+    if (invitation.maxUses && invitation.useCount >= invitation.maxUses)
+      return "warning";
     return "success";
   };
 
   const getStatusLabel = (invitation: ExternalInvitation): string => {
-    if (invitation.revokedAt) return "Revoked";
-    if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) return "Expired";
-    if (invitation.maxUses && invitation.useCount >= invitation.maxUses) return "Max Uses";
+    if (invitation.revokedAt)
+      return "Revoked";
+    if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date())
+      return "Expired";
+    if (invitation.maxUses && invitation.useCount >= invitation.maxUses)
+      return "Max Uses";
     return "Active";
   };
 
@@ -75,7 +82,9 @@ const Invitations = () => {
       header: "Token",
       render: (_, row) => (
         <span className="font-mono text-sm">
-          {row.token.substring(0, 8)}...{row.token.substring(row.token.length - 4)}
+          {row.token.substring(0, 8)}
+          ...
+          {row.token.substring(row.token.length - 4)}
         </span>
       ),
     },
@@ -105,7 +114,8 @@ const Invitations = () => {
       header: "Uses",
       render: (_, row) => (
         <span>
-          {row.useCount}{row.maxUses ? ` / ${row.maxUses}` : ""}
+          {row.useCount}
+          {row.maxUses ? ` / ${row.maxUses}` : ""}
         </span>
       ),
     },
@@ -114,16 +124,18 @@ const Invitations = () => {
       header: "Expires",
       render: (_, row) => (
         <div className="flex flex-col">
-          {row.expiresAt ? (
-            <>
-              <span>{format(new Date(row.expiresAt), "MM/dd/yyyy")}</span>
-              <span className="text-xs text-text-muted">
-                {format(new Date(row.expiresAt), "hh:mm a")}
-              </span>
-            </>
-          ) : (
-            <span className="text-text-muted">Never</span>
-          )}
+          {row.expiresAt
+            ? (
+                <>
+                  <span>{format(new Date(row.expiresAt), "MM/dd/yyyy")}</span>
+                  <span className="text-xs text-text-muted">
+                    {format(new Date(row.expiresAt), "hh:mm a")}
+                  </span>
+                </>
+              )
+            : (
+                <span className="text-text-muted">Never</span>
+              )}
         </div>
       ),
     },
@@ -152,7 +164,8 @@ const Invitations = () => {
             e?.stopPropagation();
             setSelectedInvitation(row);
             setIsDetailsModalOpen(true);
-          }}>
+          }}
+        >
           View
         </Button>
       ),
@@ -174,7 +187,7 @@ const Invitations = () => {
   const handleParamsChange = (updates: Partial<typeof params>) => {
     setParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
@@ -183,7 +196,8 @@ const Invitations = () => {
       <div className="flex gap-2">
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          variant="secondary-outline">
+          variant="secondary-outline"
+        >
           <PlusIcon size={16} className="mr-2" />
           Create Invitation
         </Button>
@@ -214,13 +228,13 @@ const Invitations = () => {
             error={error}
             currentPage={invitations?.meta?.page}
             totalPages={invitations?.meta?.totalPages}
-            onPageChange={(page) => handleParamsChange({ page })}
+            onPageChange={page => handleParamsChange({ page })}
             sort={params.sort}
             order={params.order}
             onSortChange={(newSort, newOrder) => {
               handleParamsChange({
                 sort: newSort as any,
-                order: newOrder as any
+                order: newOrder as any,
               });
             }}
             className="rounded border overflow-clip"
@@ -250,9 +264,9 @@ const Invitations = () => {
       )}
     </div>
   );
-};
+}
 
-const InvitationDetailsModal = ({
+function InvitationDetailsModal({
   isOpen,
   onClose,
   invitation,
@@ -262,7 +276,7 @@ const InvitationDetailsModal = ({
   onClose: () => void;
   invitation: ExternalInvitation;
   onSuccess: () => void;
-}) => {
+}) {
   const { post: revokeInvitation, loading } = useApi<IApiResponse<any>>();
   const toast = useToast();
 
@@ -274,10 +288,12 @@ const InvitationDetailsModal = ({
         toast.success("Invitation revoked successfully!");
         onClose();
         onSuccess();
-      } else {
+      }
+      else {
         toast.error("Failed to revoke invitation. Please try again.");
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error revoking invitation:", error);
       toast.error("An unexpected error occurred.");
     }
@@ -297,7 +313,8 @@ const InvitationDetailsModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Invitation Details"
-      size="lg">
+      size="lg"
+    >
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
@@ -309,7 +326,8 @@ const InvitationDetailsModal = ({
               <Button
                 variant="secondary-outline"
                 size="sm"
-                onClick={() => copyToClipboard(invitation.token)}>
+                onClick={() => copyToClipboard(invitation.token)}
+              >
                 Copy
               </Button>
             </div>
@@ -324,15 +342,20 @@ const InvitationDetailsModal = ({
             <label className="text-sm text-text-muted mb-2 block">Status</label>
             <StatusBadge
               label={
-                isRevoked ? "Revoked" :
-                  isExpired ? "Expired" :
-                    isMaxedOut ? "Max Uses Reached" :
-                      "Active"
+                isRevoked
+                  ? "Revoked"
+                  : isExpired
+                    ? "Expired"
+                    : isMaxedOut
+                      ? "Max Uses Reached"
+                      : "Active"
               }
               variant={
-                isRevoked || isExpired ? "error" :
-                  isMaxedOut ? "warning" :
-                    "success"
+                isRevoked || isExpired
+                  ? "error"
+                  : isMaxedOut
+                    ? "warning"
+                    : "success"
               }
             />
           </div>
@@ -340,7 +363,8 @@ const InvitationDetailsModal = ({
           <div>
             <label className="text-sm text-text-muted mb-2 block">Use Count</label>
             <div className="text-sm">
-              {invitation.useCount}{invitation.maxUses ? ` / ${invitation.maxUses}` : " (unlimited)"}
+              {invitation.useCount}
+              {invitation.maxUses ? ` / ${invitation.maxUses}` : " (unlimited)"}
             </div>
           </div>
 
@@ -405,14 +429,16 @@ const InvitationDetailsModal = ({
         <div className="flex justify-end gap-2">
           <Button
             variant="secondary-outline"
-            onClick={onClose}>
+            onClick={onClose}
+          >
             Close
           </Button>
           {!isRevoked && (
             <Button
               variant="destructive"
               onClick={handleRevoke}
-              disabled={loading}>
+              disabled={loading}
+            >
               {loading ? "Revoking..." : "Revoke Invitation"}
             </Button>
           )}
@@ -420,9 +446,9 @@ const InvitationDetailsModal = ({
       </div>
     </Modal>
   );
-};
+}
 
-const CreateInvitationModal = ({
+function CreateInvitationModal({
   isOpen,
   onClose,
   onSuccess,
@@ -430,7 +456,7 @@ const CreateInvitationModal = ({
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-}) => {
+}) {
   const [formData, setFormData] = useState({
     purpose: "FORM_SUBMISSION",
     maxUses: "",
@@ -445,7 +471,7 @@ const CreateInvitationModal = ({
   const handleChange = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
@@ -456,7 +482,7 @@ const CreateInvitationModal = ({
       };
 
       if (formData.maxUses) {
-        payload.maxUses = parseInt(formData.maxUses);
+        payload.maxUses = Number.parseInt(formData.maxUses);
       }
 
       if (formData.expiresAt) {
@@ -477,10 +503,12 @@ const CreateInvitationModal = ({
         toast.success("Invitation created successfully!");
         onClose();
         onSuccess();
-      } else {
+      }
+      else {
         toast.error("Failed to create invitation. Please try again.");
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error creating invitation:", error);
       toast.error("An unexpected error occurred.");
     }
@@ -491,14 +519,16 @@ const CreateInvitationModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Create Invitation"
-      size="md">
+      size="md"
+    >
       <div className="space-y-4">
         <div>
           <label className="text-sm text-text-muted mb-2 block">Purpose *</label>
           <select
             value={formData.purpose}
-            onChange={(e) => handleChange({ purpose: e.target.value })}
-            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+            onChange={e => handleChange({ purpose: e.target.value })}
+            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+          >
             <option value="FORM_SUBMISSION">Form Submission</option>
             <option value="FILE_DOWNLOAD">File Download</option>
             <option value="CUSTOMER_FEEDBACK">Customer Feedback</option>
@@ -510,7 +540,7 @@ const CreateInvitationModal = ({
           <input
             type="number"
             value={formData.maxUses}
-            onChange={(e) => handleChange({ maxUses: e.target.value })}
+            onChange={e => handleChange({ maxUses: e.target.value })}
             placeholder="Leave empty for unlimited"
             className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text placeholder:text-text-muted bg-surface"
           />
@@ -521,7 +551,7 @@ const CreateInvitationModal = ({
           <input
             type="datetime-local"
             value={formData.expiresAt}
-            onChange={(e) => handleChange({ expiresAt: e.target.value })}
+            onChange={e => handleChange({ expiresAt: e.target.value })}
             className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text placeholder:text-text-muted bg-surface"
           />
         </div>
@@ -531,7 +561,7 @@ const CreateInvitationModal = ({
           <input
             type="text"
             value={formData.resourceType}
-            onChange={(e) => handleChange({ resourceType: e.target.value })}
+            onChange={e => handleChange({ resourceType: e.target.value })}
             placeholder="e.g., form, file"
             className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text placeholder:text-text-muted bg-surface"
           />
@@ -542,7 +572,7 @@ const CreateInvitationModal = ({
           <input
             type="text"
             value={formData.resourceId}
-            onChange={(e) => handleChange({ resourceId: e.target.value })}
+            onChange={e => handleChange({ resourceId: e.target.value })}
             placeholder="UUID of the resource"
             className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text placeholder:text-text-muted bg-surface"
           />
@@ -551,18 +581,20 @@ const CreateInvitationModal = ({
         <div className="flex justify-end gap-2">
           <Button
             variant="secondary-outline"
-            onClick={onClose}>
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleCreate}
-            disabled={loading}>
+            disabled={loading}
+          >
             {loading ? "Creating..." : "Create Invitation"}
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}
 
 export default Invitations;

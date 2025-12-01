@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Save, X, Plus, Trash2, Edit2, ChevronUp, ChevronDown, Eye } from 'lucide-react';
-import { Button, Input, PageHeader, Modal, Select } from '@/components';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useApi } from '@/hooks/use-api';
-import { useToast } from '@/hooks/use-toast';
+import { ChevronDown, ChevronUp, Edit2, Eye, Plus, Save, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
-type FieldType = 'text' | 'number' | 'date' | 'textarea' | 'select' | 'checkbox';
+import { Button, Input, Modal, PageHeader, Select } from "@/components";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
+
+type FieldType = "text" | "number" | "date" | "textarea" | "select" | "checkbox";
 
 interface Field {
   id: string;
@@ -34,7 +35,7 @@ interface Section {
   sections: Subsection[];
 }
 
-const PerformanceSheetVersionBuilder = () => {
+function PerformanceSheetVersionBuilder() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { get, patch } = useApi<any>();
@@ -51,10 +52,11 @@ const PerformanceSheetVersionBuilder = () => {
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
   const [editingSubsection, setEditingSubsection] = useState<Subsection | null>(null);
   const [isSubsectionModalOpen, setIsSubsectionModalOpen] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'section' | 'subsection' | 'field', id: string, parentId?: string, subParentId?: string } | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: "section" | "subsection" | "field"; id: string; parentId?: string; subParentId?: string } | null>(null);
 
   const fetchVersion = async () => {
-    if (!id) return;
+    if (!id)
+      return;
 
     setLoading(true);
     const response = await get(`/sales/performance-versions/${id}`);
@@ -75,7 +77,8 @@ const PerformanceSheetVersionBuilder = () => {
           setSelectedSubsectionId(firstSubsection.id);
         }
       }
-    } else {
+    }
+    else {
       toast.error(response?.error || "Failed to fetch version");
     }
 
@@ -87,18 +90,20 @@ const PerformanceSheetVersionBuilder = () => {
   }, [id]);
 
   const handleSave = async () => {
-    if (!id) return;
+    if (!id)
+      return;
 
     try {
       await patch(`/sales/performance-versions/${id}`, {
-        sections: sections
+        sections,
       });
 
-      toast.success('Version updated successfully!');
+      toast.success("Version updated successfully!");
       navigate(`/admin/performance-sheets`);
-    } catch (error) {
-      console.error('Save error:', error);
-      toast.error('Failed to save changes');
+    }
+    catch (error) {
+      console.error("Save error:", error);
+      toast.error("Failed to save changes");
     }
   };
 
@@ -113,10 +118,10 @@ const PerformanceSheetVersionBuilder = () => {
 
     const newSection: Section = {
       id: `section-${Date.now()}`,
-      label: '',
-      value: '',
+      label: "",
+      value: "",
       sequence: maxSequence + 1,
-      sections: []
+      sections: [],
     };
 
     setEditingSection(newSection);
@@ -128,7 +133,8 @@ const PerformanceSheetVersionBuilder = () => {
       setSections([...sections, section]);
       setSelectedSectionId(section.id);
       setSelectedSubsectionId(null);
-    } else {
+    }
+    else {
       setSections(sections.map(s => s.id === section.id ? section : s));
     }
     setIsSectionModalOpen(false);
@@ -136,7 +142,7 @@ const PerformanceSheetVersionBuilder = () => {
   };
 
   const confirmRemoveSection = (sectionId: string) => {
-    setDeleteConfirmation({ type: 'section', id: sectionId });
+    setDeleteConfirmation({ type: "section", id: sectionId });
   };
 
   const removeSection = (sectionId: string) => {
@@ -149,7 +155,8 @@ const PerformanceSheetVersionBuilder = () => {
       if (firstSection.sections?.length > 0) {
         setSelectedSubsectionId(firstSection.sections[0].id);
       }
-    } else if (remainingSections.length === 0) {
+    }
+    else if (remainingSections.length === 0) {
       setSelectedSectionId(null);
       setSelectedSubsectionId(null);
     }
@@ -172,7 +179,7 @@ const PerformanceSheetVersionBuilder = () => {
       [sortedSections[index], sortedSections[index - 1]] = [sortedSections[index - 1], sortedSections[index]];
       const updatedSections = sortedSections.map((section, idx) => ({
         ...section,
-        sequence: idx + 1
+        sequence: idx + 1,
       }));
       setSections(updatedSections);
     }
@@ -186,7 +193,7 @@ const PerformanceSheetVersionBuilder = () => {
       [sortedSections[index], sortedSections[index + 1]] = [sortedSections[index + 1], sortedSections[index]];
       const updatedSections = sortedSections.map((section, idx) => ({
         ...section,
-        sequence: idx + 1
+        sequence: idx + 1,
       }));
       setSections(updatedSections);
     }
@@ -194,7 +201,8 @@ const PerformanceSheetVersionBuilder = () => {
 
   const addSubsection = (sectionId: string) => {
     const section = sections.find(s => s.id === sectionId);
-    if (!section) return;
+    if (!section)
+      return;
 
     const maxSequence = section.sections.length > 0
       ? Math.max(...section.sections.map(s => s.sequence ?? 0))
@@ -202,10 +210,10 @@ const PerformanceSheetVersionBuilder = () => {
 
     const newSubsection: Subsection = {
       id: `subsection-${Date.now()}`,
-      title: '',
+      title: "",
       sequence: maxSequence + 1,
       columns: 4,
-      fields: []
+      fields: [],
     };
 
     setEditingSubsection(newSubsection);
@@ -217,19 +225,20 @@ const PerformanceSheetVersionBuilder = () => {
       setSections(sections.map(s =>
         s.id === sectionId
           ? { ...s, sections: [...s.sections, subsection] }
-          : s
+          : s,
       ));
       setSelectedSubsectionId(subsection.id);
-    } else {
+    }
+    else {
       setSections(sections.map(section =>
         section.id === sectionId
           ? {
               ...section,
               sections: section.sections.map(sub =>
-                sub.id === subsection.id ? subsection : sub
-              )
+                sub.id === subsection.id ? subsection : sub,
+              ),
             }
-          : section
+          : section,
       ));
     }
     setIsSubsectionModalOpen(false);
@@ -237,14 +246,14 @@ const PerformanceSheetVersionBuilder = () => {
   };
 
   const confirmRemoveSubsection = (sectionId: string, subsectionId: string) => {
-    setDeleteConfirmation({ type: 'subsection', id: subsectionId, parentId: sectionId });
+    setDeleteConfirmation({ type: "subsection", id: subsectionId, parentId: sectionId });
   };
 
   const removeSubsection = (sectionId: string, subsectionId: string) => {
     setSections(sections.map(section =>
       section.id === sectionId
         ? { ...section, sections: section.sections.filter(s => s.id !== subsectionId) }
-        : section
+        : section,
     ));
 
     if (selectedSubsectionId === subsectionId) {
@@ -252,7 +261,8 @@ const PerformanceSheetVersionBuilder = () => {
       const remainingSubsections = section?.sections.filter(s => s.id !== subsectionId) || [];
       if (remainingSubsections.length > 0) {
         setSelectedSubsectionId(remainingSubsections[0].id);
-      } else {
+      }
+      else {
         setSelectedSubsectionId(null);
       }
     }
@@ -269,8 +279,9 @@ const PerformanceSheetVersionBuilder = () => {
   };
 
   const moveSubsectionUp = (sectionId: string, subsectionId: string) => {
-    setSections(sections.map(section => {
-      if (section.id !== sectionId) return section;
+    setSections(sections.map((section) => {
+      if (section.id !== sectionId)
+        return section;
 
       const sortedSubsections = [...section.sections].sort((a, b) => a.sequence - b.sequence);
       const index = sortedSubsections.findIndex(s => s.id === subsectionId);
@@ -279,7 +290,7 @@ const PerformanceSheetVersionBuilder = () => {
         [sortedSubsections[index], sortedSubsections[index - 1]] = [sortedSubsections[index - 1], sortedSubsections[index]];
         const updatedSubsections = sortedSubsections.map((subsection, idx) => ({
           ...subsection,
-          sequence: idx + 1
+          sequence: idx + 1,
         }));
         return { ...section, sections: updatedSubsections };
       }
@@ -289,8 +300,9 @@ const PerformanceSheetVersionBuilder = () => {
   };
 
   const moveSubsectionDown = (sectionId: string, subsectionId: string) => {
-    setSections(sections.map(section => {
-      if (section.id !== sectionId) return section;
+    setSections(sections.map((section) => {
+      if (section.id !== sectionId)
+        return section;
 
       const sortedSubsections = [...section.sections].sort((a, b) => a.sequence - b.sequence);
       const index = sortedSubsections.findIndex(s => s.id === subsectionId);
@@ -299,7 +311,7 @@ const PerformanceSheetVersionBuilder = () => {
         [sortedSubsections[index], sortedSubsections[index + 1]] = [sortedSubsections[index + 1], sortedSubsections[index]];
         const updatedSubsections = sortedSubsections.map((subsection, idx) => ({
           ...subsection,
-          sequence: idx + 1
+          sequence: idx + 1,
         }));
         return { ...section, sections: updatedSubsections };
       }
@@ -311,19 +323,20 @@ const PerformanceSheetVersionBuilder = () => {
   const addField = (sectionId: string, subsectionId: string) => {
     const section = sections.find(s => s.id === sectionId);
     const subsection = section?.sections.find(s => s.id === subsectionId);
-    if (!subsection) return;
+    if (!subsection)
+      return;
 
     const maxSequence = subsection.fields.length > 0
       ? Math.max(...subsection.fields.map(f => f.sequence ?? 0))
       : 0;
 
     const newField: Field = {
-      id: 'new.field',
-      label: 'New Field',
-      type: 'text',
+      id: "new.field",
+      label: "New Field",
+      type: "text",
       size: 1,
       sequence: maxSequence + 1,
-      required: false
+      required: false,
     };
 
     setEditingField(newField);
@@ -341,12 +354,12 @@ const PerformanceSheetVersionBuilder = () => {
                     ...subsection,
                     fields: isNew
                       ? [...subsection.fields, field]
-                      : subsection.fields.map(f => f.id === field.id ? field : f)
+                      : subsection.fields.map(f => f.id === field.id ? field : f),
                   }
-                : subsection
-            )
+                : subsection,
+            ),
           }
-        : section
+        : section,
     ));
 
     setIsFieldModalOpen(false);
@@ -354,7 +367,7 @@ const PerformanceSheetVersionBuilder = () => {
   };
 
   const confirmRemoveField = (sectionId: string, subsectionId: string, fieldId: string) => {
-    setDeleteConfirmation({ type: 'field', id: fieldId, parentId: subsectionId, subParentId: sectionId });
+    setDeleteConfirmation({ type: "field", id: fieldId, parentId: subsectionId, subParentId: sectionId });
   };
 
   const removeField = (sectionId: string, subsectionId: string, fieldId: string) => {
@@ -365,22 +378,24 @@ const PerformanceSheetVersionBuilder = () => {
             sections: section.sections.map(subsection =>
               subsection.id === subsectionId
                 ? { ...subsection, fields: subsection.fields.filter(f => f.id !== fieldId) }
-                : subsection
-            )
+                : subsection,
+            ),
           }
-        : section
+        : section,
     ));
     setDeleteConfirmation(null);
   };
 
   const moveFieldUp = (sectionId: string, subsectionId: string, fieldId: string) => {
-    setSections(sections.map(section => {
-      if (section.id !== sectionId) return section;
+    setSections(sections.map((section) => {
+      if (section.id !== sectionId)
+        return section;
 
       return {
         ...section,
-        sections: section.sections.map(subsection => {
-          if (subsection.id !== subsectionId) return subsection;
+        sections: section.sections.map((subsection) => {
+          if (subsection.id !== subsectionId)
+            return subsection;
 
           const sortedFields = [...subsection.fields].sort((a, b) => a.sequence - b.sequence);
           const index = sortedFields.findIndex(f => f.id === fieldId);
@@ -389,25 +404,27 @@ const PerformanceSheetVersionBuilder = () => {
             [sortedFields[index], sortedFields[index - 1]] = [sortedFields[index - 1], sortedFields[index]];
             const updatedFields = sortedFields.map((field, idx) => ({
               ...field,
-              sequence: idx + 1
+              sequence: idx + 1,
             }));
             return { ...subsection, fields: updatedFields };
           }
 
           return subsection;
-        })
+        }),
       };
     }));
   };
 
   const moveFieldDown = (sectionId: string, subsectionId: string, fieldId: string) => {
-    setSections(sections.map(section => {
-      if (section.id !== sectionId) return section;
+    setSections(sections.map((section) => {
+      if (section.id !== sectionId)
+        return section;
 
       return {
         ...section,
-        sections: section.sections.map(subsection => {
-          if (subsection.id !== subsectionId) return subsection;
+        sections: section.sections.map((subsection) => {
+          if (subsection.id !== subsectionId)
+            return subsection;
 
           const sortedFields = [...subsection.fields].sort((a, b) => a.sequence - b.sequence);
           const index = sortedFields.findIndex(f => f.id === fieldId);
@@ -416,13 +433,13 @@ const PerformanceSheetVersionBuilder = () => {
             [sortedFields[index], sortedFields[index + 1]] = [sortedFields[index + 1], sortedFields[index]];
             const updatedFields = sortedFields.map((field, idx) => ({
               ...field,
-              sequence: idx + 1
+              sequence: idx + 1,
             }));
             return { ...subsection, fields: updatedFields };
           }
 
           return subsection;
-        })
+        }),
       };
     }));
   };
@@ -434,7 +451,8 @@ const PerformanceSheetVersionBuilder = () => {
       const firstSubsection = section.sections.reduce((min: Subsection, subsection: Subsection) =>
         subsection.sequence < min.sequence ? subsection : min, section.sections[0]);
       setSelectedSubsectionId(firstSubsection.id);
-    } else {
+    }
+    else {
       setSelectedSubsectionId(null);
     }
   };
@@ -443,10 +461,10 @@ const PerformanceSheetVersionBuilder = () => {
   const selectedSubsection = selectedSection?.sections.find(s => s.id === selectedSubsectionId);
 
   const openPreview = () => {
-    const previewWindow = window.open('', 'Performance Sheet Preview', 'width=1200,height=800,scrollbars=yes');
+    const previewWindow = window.open("", "Performance Sheet Preview", "width=1200,height=800,scrollbars=yes");
 
     if (!previewWindow) {
-      toast.error('Failed to open preview window. Please allow popups.');
+      toast.error("Failed to open preview window. Please allow popups.");
       return;
     }
 
@@ -454,7 +472,7 @@ const PerformanceSheetVersionBuilder = () => {
       .sort((a, b) => a.sequence - b.sequence)
       .map(tab => ({ label: tab.label, value: tab.value }));
 
-    const firstTab = visibleTabs[0]?.value || '';
+    const firstTab = visibleTabs[0]?.value || "";
 
     const html = `
       <!DOCTYPE html>
@@ -626,11 +644,11 @@ const PerformanceSheetVersionBuilder = () => {
 
   const Actions = () => (
     <div className="flex gap-2">
-      <Button onClick={openPreview} variant='secondary-outline'>
+      <Button onClick={openPreview} variant="secondary-outline">
         <Eye size={16} />
         Preview
       </Button>
-      <Button onClick={handleCancel} variant='secondary-outline'>
+      <Button onClick={handleCancel} variant="secondary-outline">
         <X size={16} />
         Cancel
       </Button>
@@ -653,7 +671,7 @@ const PerformanceSheetVersionBuilder = () => {
     return (
       <div className="w-full flex-1 flex flex-col items-center justify-center">
         <div className="text-error text-lg mb-4">Version not found</div>
-        <Button onClick={() => navigate('/admin/performance-sheet-versions')}>
+        <Button onClick={() => navigate("/admin/performance-sheet-versions")}>
           Back to Versions
         </Button>
       </div>
@@ -726,7 +744,7 @@ const PerformanceSheetVersionBuilder = () => {
       {isSubsectionModalOpen && editingSubsection && (
         <SubsectionEditorModal
           subsection={editingSubsection}
-          onSave={(subsection : any) => {
+          onSave={(subsection: any) => {
             const isNew = !selectedSection?.sections.some(s => s.id === subsection.id);
             saveSubsection(selectedSectionId!, subsection, isNew);
           }}
@@ -740,7 +758,7 @@ const PerformanceSheetVersionBuilder = () => {
       {isFieldModalOpen && editingField && (
         <FieldEditorModal
           field={editingField}
-          onSave={(field : any) => {
+          onSave={(field: any) => {
             const isNew = !selectedSubsection?.fields.some(f => f.id === field.id);
             saveField(selectedSectionId!, selectedSubsectionId!, field, isNew);
           }}
@@ -755,7 +773,10 @@ const PerformanceSheetVersionBuilder = () => {
         <Modal isOpen={true} onClose={() => setDeleteConfirmation(null)} title="Confirm Delete" size="sm">
           <div className="space-y-4">
             <p className="text-text">
-              Are you sure you want to delete this {deleteConfirmation.type}? This action cannot be undone.
+              Are you sure you want to delete this
+              {" "}
+              {deleteConfirmation.type}
+              ? This action cannot be undone.
             </p>
             <div className="flex gap-2 justify-end">
               <Button variant="secondary-outline" onClick={() => setDeleteConfirmation(null)}>
@@ -764,11 +785,13 @@ const PerformanceSheetVersionBuilder = () => {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  if (deleteConfirmation.type === 'section') {
+                  if (deleteConfirmation.type === "section") {
                     removeSection(deleteConfirmation.id);
-                  } else if (deleteConfirmation.type === 'subsection') {
+                  }
+                  else if (deleteConfirmation.type === "subsection") {
                     removeSubsection(deleteConfirmation.subParentId!, deleteConfirmation.id);
-                  } else if (deleteConfirmation.type === 'field') {
+                  }
+                  else if (deleteConfirmation.type === "field") {
                     removeField(deleteConfirmation.subParentId!, deleteConfirmation.parentId!, deleteConfirmation.id);
                   }
                 }}
@@ -781,9 +804,9 @@ const PerformanceSheetVersionBuilder = () => {
       )}
     </div>
   );
-};
+}
 
-const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSection, onEditSection, onRemoveSection, onMoveUp, onMoveDown }: any) => {
+function SectionsPanel({ sections, selectedSectionId, onSelectSection, onAddSection, onEditSection, onRemoveSection, onMoveUp, onMoveDown }: any) {
   const sortedSections = [...sections].sort((a, b) => a.sequence - b.sequence);
 
   return (
@@ -800,8 +823,8 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
             key={section.id}
             className={`border border-border rounded ${
               selectedSectionId === section.id
-                ? 'bg-primary/10 border-primary'
-                : 'bg-surface'
+                ? "bg-primary/10 border-primary"
+                : "bg-surface"
             }`}
           >
             <div
@@ -810,7 +833,11 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
             >
               <div className="font-medium text-sm text-text">{section.label}</div>
               <div className="text-xs text-text-muted">{section.value}</div>
-              <div className="text-xs text-text-muted">{section.sections?.length || 0} sections</div>
+              <div className="text-xs text-text-muted">
+                {section.sections?.length || 0}
+                {" "}
+                sections
+              </div>
             </div>
             <div className="flex gap-1 p-2 pt-0">
               <button
@@ -845,9 +872,9 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
       </div>
     </div>
   );
-};
+}
 
-const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, onAddSubsection, onEditSubsection, onRemoveSubsection, onMoveUp, onMoveDown }: any) => {
+function SubsectionsPanel({ section, selectedSubsectionId, onSelectSubsection, onAddSubsection, onEditSubsection, onRemoveSubsection, onMoveUp, onMoveDown }: any) {
   if (!section) {
     return (
       <div className="border border-border rounded bg-foreground flex items-center justify-center">
@@ -872,8 +899,8 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
             key={subsection.id}
             className={`border border-border rounded ${
               selectedSubsectionId === subsection.id
-                ? 'bg-primary/10 border-primary'
-                : 'bg-surface'
+                ? "bg-primary/10 border-primary"
+                : "bg-surface"
             }`}
           >
             <div
@@ -882,7 +909,11 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
             >
               <div className="font-medium text-sm text-text">{subsection.title}</div>
               <div className="text-xs text-text-muted">{subsection.id}</div>
-              <div className="text-xs text-text-muted">{subsection.fields?.length || 0} fields</div>
+              <div className="text-xs text-text-muted">
+                {subsection.fields?.length || 0}
+                {" "}
+                fields
+              </div>
             </div>
             <div className="flex gap-1 p-2 pt-0">
               <button
@@ -917,9 +948,9 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
       </div>
     </div>
   );
-};
+}
 
-const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveField, onMoveUp, onMoveDown }: any) => {
+function FieldsPanel({ section, subsection, onAddField, onEditField, onRemoveField, onMoveUp, onMoveDown }: any) {
   if (!subsection) {
     return (
       <div className="border border-border rounded bg-foreground flex items-center justify-center">
@@ -951,8 +982,14 @@ const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveFie
               <div className="flex-1">
                 <div className="text-sm font-medium text-text">{field.label}</div>
                 <div className="text-xs text-text-muted">
-                  {field.id} • {field.type} • span {field.size}
-                  {field.required && ' • required'}
+                  {field.id}
+                  {" "}
+                  •
+                  {field.type}
+                  {" "}
+                  • span
+                  {field.size}
+                  {field.required && " • required"}
                 </div>
               </div>
             </div>
@@ -989,9 +1026,9 @@ const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveFie
       </div>
     </div>
   );
-};
+}
 
-const SectionEditorModal = ({ section, onSave, onClose }: any) => {
+function SectionEditorModal({ section, onSave, onClose }: any) {
   const [editedSection, setEditedSection] = useState<Section>(section);
 
   return (
@@ -1000,14 +1037,14 @@ const SectionEditorModal = ({ section, onSave, onClose }: any) => {
         <Input
           label="Tab Label"
           value={editedSection.label}
-          onChange={(e) => setEditedSection({ ...editedSection, label: e.target.value })}
+          onChange={e => setEditedSection({ ...editedSection, label: e.target.value })}
           placeholder="e.g., Buyer Details"
         />
 
         <Input
           label="Tab Value (identifier)"
           value={editedSection.value}
-          onChange={(e) => setEditedSection({ ...editedSection, value: e.target.value })}
+          onChange={e => setEditedSection({ ...editedSection, value: e.target.value })}
           placeholder="e.g., buyer-details"
         />
 
@@ -1022,9 +1059,9 @@ const SectionEditorModal = ({ section, onSave, onClose }: any) => {
       </div>
     </Modal>
   );
-};
+}
 
-const SubsectionEditorModal = ({ subsection, onSave, onClose }: any) => {
+function SubsectionEditorModal({ subsection, onSave, onClose }: any) {
   const [editedSubsection, setEditedSubsection] = useState<Subsection>(subsection);
 
   return (
@@ -1033,7 +1070,7 @@ const SubsectionEditorModal = ({ subsection, onSave, onClose }: any) => {
         <Input
           label="Section Title"
           value={editedSubsection.title}
-          onChange={(e) => setEditedSubsection({ ...editedSubsection, title: e.target.value })}
+          onChange={e => setEditedSubsection({ ...editedSubsection, title: e.target.value })}
           placeholder="e.g., Quote Dates"
         />
 
@@ -1041,7 +1078,7 @@ const SubsectionEditorModal = ({ subsection, onSave, onClose }: any) => {
           label="Number of Columns"
           type="number"
           value={editedSubsection.columns.toString()}
-          onChange={(e) => setEditedSubsection({ ...editedSubsection, columns: parseInt(e.target.value) || 4 })}
+          onChange={e => setEditedSubsection({ ...editedSubsection, columns: Number.parseInt(e.target.value) || 4 })}
           placeholder="4"
         />
 
@@ -1056,25 +1093,25 @@ const SubsectionEditorModal = ({ subsection, onSave, onClose }: any) => {
       </div>
     </Modal>
   );
-};
+}
 
-const FieldEditorModal = ({ field, onSave, onClose }: any) => {
+function FieldEditorModal({ field, onSave, onClose }: any) {
   const [editedField, setEditedField] = useState<Field>(field);
 
   const fieldTypes: { value: FieldType; label: string }[] = [
-    { value: 'text', label: 'Text' },
-    { value: 'number', label: 'Number' },
-    { value: 'date', label: 'Date' },
-    { value: 'textarea', label: 'Text Area' },
-    { value: 'select', label: 'Select' },
-    { value: 'checkbox', label: 'Checkbox' }
+    { value: "text", label: "Text" },
+    { value: "number", label: "Number" },
+    { value: "date", label: "Date" },
+    { value: "textarea", label: "Text Area" },
+    { value: "select", label: "Select" },
+    { value: "checkbox", label: "Checkbox" },
   ];
 
   const fieldSizes: { value: string; label: string }[] = [
-    { value: '1', label: 'Span 1 Column' },
-    { value: '2', label: 'Span 2 Columns' },
-    { value: '3', label: 'Span 3 Columns' },
-    { value: '4', label: 'Span 4 Columns (Full Width)' }
+    { value: "1", label: "Span 1 Column" },
+    { value: "2", label: "Span 2 Columns" },
+    { value: "3", label: "Span 3 Columns" },
+    { value: "4", label: "Span 4 Columns (Full Width)" },
   ];
 
   const getDuplicateIndices = (options: { value: string; label: string }[]) => {
@@ -1102,28 +1139,28 @@ const FieldEditorModal = ({ field, onSave, onClose }: any) => {
           <Input
             label="Field ID (dot notation)"
             value={editedField.id}
-            onChange={(e) => setEditedField({ ...editedField, id: e.target.value })}
+            onChange={e => setEditedField({ ...editedField, id: e.target.value })}
             placeholder="e.g., rfq.dates.date"
           />
 
           <Input
             label="Label"
             value={editedField.label}
-            onChange={(e) => setEditedField({ ...editedField, label: e.target.value })}
+            onChange={e => setEditedField({ ...editedField, label: e.target.value })}
             placeholder="Field label"
           />
 
           <Select
             label="Type"
             value={editedField.type}
-            onChange={(e) => setEditedField({ ...editedField, type: e.target.value as FieldType })}
+            onChange={e => setEditedField({ ...editedField, type: e.target.value as FieldType })}
             options={fieldTypes}
           />
 
           <Select
             label="Size (Column Span)"
             value={editedField.size.toString()}
-            onChange={(e) => setEditedField({ ...editedField, size: parseInt(e.target.value) })}
+            onChange={e => setEditedField({ ...editedField, size: Number.parseInt(e.target.value) })}
             options={fieldSizes}
           />
 
@@ -1132,13 +1169,13 @@ const FieldEditorModal = ({ field, onSave, onClose }: any) => {
               type="checkbox"
               id="required"
               checked={editedField.required}
-              onChange={(e) => setEditedField({ ...editedField, required: e.target.checked })}
+              onChange={e => setEditedField({ ...editedField, required: e.target.checked })}
               className="rounded"
             />
             <label htmlFor="required" className="text-sm text-text">Required</label>
           </div>
 
-          {editedField.type === 'select' && (
+          {editedField.type === "select" && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm text-text-muted">Options</label>
@@ -1149,7 +1186,7 @@ const FieldEditorModal = ({ field, onSave, onClose }: any) => {
                     const options = editedField.options || [];
                     setEditedField({
                       ...editedField,
-                      options: [...options, { value: '', label: '' }]
+                      options: [...options, { value: "", label: "" }],
                     });
                   }}
                 >
@@ -1215,47 +1252,53 @@ const FieldEditorModal = ({ field, onSave, onClose }: any) => {
             </div>
           )}
 
-          {editedField.type === 'select' ? (
-            <Select
-              label="Default Value"
-              value={editedField.default || ''}
-              onChange={(e) => setEditedField({ ...editedField, default: e.target.value })}
-              options={[
-                { value: '', label: 'None' },
-                ...(editedField.options || [])
-              ]}
-            />
-          ) : editedField.type === 'checkbox' ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="default-checkbox"
-                checked={editedField.default === true || editedField.default === 'true'}
-                onChange={(e) => setEditedField({ ...editedField, default: e.target.checked })}
-                className="rounded"
-              />
-              <label htmlFor="default-checkbox" className="text-sm text-text">Default checked</label>
-            </div>
-          ) : editedField.type === 'textarea' ? (
-            <div>
-              <label className="text-sm text-text-muted mb-2 block">Default Value</label>
-              <textarea
-                value={editedField.default || ''}
-                onChange={(e) => setEditedField({ ...editedField, default: e.target.value })}
-                placeholder="Optional default value"
-                className="w-full p-2 border border-border rounded bg-background text-text text-sm"
-                rows={3}
-              />
-            </div>
-          ) : (
-            <Input
-              label="Default Value"
-              type={editedField.type === 'number' ? 'number' : editedField.type === 'date' ? 'date' : 'text'}
-              value={editedField.default || ''}
-              onChange={(e) => setEditedField({ ...editedField, default: e.target.value })}
-              placeholder="Optional default value"
-            />
-          )}
+          {editedField.type === "select"
+            ? (
+                <Select
+                  label="Default Value"
+                  value={editedField.default || ""}
+                  onChange={e => setEditedField({ ...editedField, default: e.target.value })}
+                  options={[
+                    { value: "", label: "None" },
+                    ...(editedField.options || []),
+                  ]}
+                />
+              )
+            : editedField.type === "checkbox"
+              ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="default-checkbox"
+                      checked={editedField.default === true || editedField.default === "true"}
+                      onChange={e => setEditedField({ ...editedField, default: e.target.checked })}
+                      className="rounded"
+                    />
+                    <label htmlFor="default-checkbox" className="text-sm text-text">Default checked</label>
+                  </div>
+                )
+              : editedField.type === "textarea"
+                ? (
+                    <div>
+                      <label className="text-sm text-text-muted mb-2 block">Default Value</label>
+                      <textarea
+                        value={editedField.default || ""}
+                        onChange={e => setEditedField({ ...editedField, default: e.target.value })}
+                        placeholder="Optional default value"
+                        className="w-full p-2 border border-border rounded bg-background text-text text-sm"
+                        rows={3}
+                      />
+                    </div>
+                  )
+                : (
+                    <Input
+                      label="Default Value"
+                      type={editedField.type === "number" ? "number" : editedField.type === "date" ? "date" : "text"}
+                      value={editedField.default || ""}
+                      onChange={e => setEditedField({ ...editedField, default: e.target.value })}
+                      placeholder="Optional default value"
+                    />
+                  )}
         </div>
 
         <div className="flex gap-2 justify-end sticky bottom-0 bg-foreground pt-2 border-t border-border">
@@ -1272,6 +1315,6 @@ const FieldEditorModal = ({ field, onSave, onClose }: any) => {
       </>
     </Modal>
   );
-};
+}
 
 export default PerformanceSheetVersionBuilder;

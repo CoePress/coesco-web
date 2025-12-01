@@ -1,18 +1,19 @@
-import { useEffect, useState, useRef, useMemo } from "react";
-import { Save, Lock, Link, ChevronDown } from "lucide-react";
-import { useParams, Link as RouterLink } from "react-router-dom";
-import { useApi } from "@/hooks/use-api";
+import { ChevronDown, Link, Lock, Save } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link as RouterLink, useParams } from "react-router-dom";
+
+import { Button, Checkbox, DatePicker, Input, Modal, PageHeader, Select, Tabs, Textarea } from "@/components";
+import Loader from "@/components/ui/loader";
 import { useAuth } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
-import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox } from "@/components";
+import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
 import { ms } from "@/utils";
-import Loader from "@/components/ui/loader";
 
 type PerformanceTabValue = string;
-type ModalType = 'links' | 'save-confirmation' | 'cancel-confirmation' | 'continue' | 'delete-link' | 'create-link' | null;
+type ModalType = "links" | "save-confirmation" | "cancel-confirmation" | "continue" | "delete-link" | "create-link" | null;
 
-const PerformanceSheet = () => {
+function PerformanceSheet() {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("");
   const [isLocked, setIsLocked] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -86,23 +87,26 @@ const PerformanceSheet = () => {
   const storageKey = useMemo(() => `performance-sheet-${performanceSheetId}`, [performanceSheetId]);
 
   const saveToLocalStorage = (values: Record<string, any>) => {
-    if (!performanceSheetId) return;
+    if (!performanceSheetId)
+      return;
     const dataToSave = {
       sheetId: performanceSheetId,
       formData: values,
-      savedAt: new Date().toISOString()
+      savedAt: new Date().toISOString(),
     };
     localStorage.setItem(storageKey, JSON.stringify(dataToSave));
   };
 
   const loadFromLocalStorage = () => {
-    if (!performanceSheetId) return null;
+    if (!performanceSheetId)
+      return null;
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved performance sheet data:', e);
+      }
+      catch (e) {
+        console.error("Failed to parse saved performance sheet data:", e);
         return null;
       }
     }
@@ -110,12 +114,14 @@ const PerformanceSheet = () => {
   };
 
   const clearLocalStorage = () => {
-    if (!performanceSheetId) return;
+    if (!performanceSheetId)
+      return;
     localStorage.removeItem(storageKey);
   };
 
   const visibleTabs = useMemo(() => {
-    if (!performanceSheet?.data?.version?.sections) return [];
+    if (!performanceSheet?.data?.version?.sections)
+      return [];
     return performanceSheet.data.version.sections
       .sort((a: any, b: any) => a.sequence - b.sequence)
       .map((tab: any) => ({
@@ -125,7 +131,8 @@ const PerformanceSheet = () => {
   }, [performanceSheet]);
 
   const activeTabData = useMemo(() => {
-    if (!performanceSheet?.data?.version?.sections || !activeTab) return null;
+    if (!performanceSheet?.data?.version?.sections || !activeTab)
+      return null;
     return performanceSheet.data.version.sections.find((tab: any) => tab.value === activeTab);
   }, [performanceSheet, activeTab]);
 
@@ -149,27 +156,31 @@ const PerformanceSheet = () => {
   };
 
   const fetchSheet = async () => {
-    if (!performanceSheetId) return;
+    if (!performanceSheetId)
+      return;
     await getSheet(`/sales/performance-sheets/${performanceSheetId}`, queryParams);
   };
 
   const fetchLockStatus = async () => {
-    if (!performanceSheetId) return;
+    if (!performanceSheetId)
+      return;
     try {
       const response = await getLockStatus(
-        `/core/locks/status/performance-sheets/${performanceSheetId}`
+        `/core/locks/status/performance-sheets/${performanceSheetId}`,
       );
       if (response) {
         setIsLocked((response as any)?.isLocked ?? false);
         setLockInfo((response as any)?.lockInfo || null);
       }
-    } catch (err) {
+    }
+    catch (err) {
       console.error("Failed to fetch lock status:", err);
     }
   };
 
   useEffect(() => {
-    if (!performanceSheetId) return;
+    if (!performanceSheetId)
+      return;
 
     fetchSheet();
     fetchLockStatus();
@@ -185,7 +196,7 @@ const PerformanceSheet = () => {
             recordType: "performance-sheets",
             recordId: performanceSheetId,
             userId: user?.id,
-          }
+          },
         );
       }
     };
@@ -206,7 +217,7 @@ const PerformanceSheet = () => {
         const hasChanges = JSON.stringify(saved.formData) !== JSON.stringify(data);
         if (hasChanges) {
           setSavedProgress(saved);
-          setModalType('continue');
+          setModalType("continue");
         }
       }
     }
@@ -238,7 +249,7 @@ const PerformanceSheet = () => {
               setIsEditing(false);
               setIsLocked(false);
             }
-          }
+          },
         );
       }, ms.minutes(4));
 
@@ -268,7 +279,8 @@ const PerformanceSheet = () => {
               lockExtendIntervalRef.current = null;
             }
           }
-        } else {
+        }
+        else {
           setIsLocked(false);
           setLockInfo(null);
           if (isEditing) {
@@ -302,7 +314,8 @@ const PerformanceSheet = () => {
   const bundleFormDataByTabsAndSections = (data: Record<string, any>) => {
     const bundled: Record<string, any> = {};
 
-    if (!performanceSheet?.data?.version?.sections) return data;
+    if (!performanceSheet?.data?.version?.sections)
+      return data;
 
     performanceSheet.data.version.sections.forEach((tab: any) => {
       tab.sections?.forEach((section: any) => {
@@ -331,14 +344,14 @@ const PerformanceSheet = () => {
   const handleContinueProgress = () => {
     if (savedProgress) {
       setFormData(savedProgress.formData || {});
-      toast.success('Continuing from where you left off');
+      toast.success("Continuing from where you left off");
     }
     setModalType(null);
   };
 
   const handleStartFresh = () => {
     clearLocalStorage();
-    toast.info('Starting fresh with original data');
+    toast.info("Starting fresh with original data");
     setModalType(null);
   };
 
@@ -366,10 +379,12 @@ const PerformanceSheet = () => {
         });
         setSearchResults(response?.data || []);
         setShowResults(true);
-      } catch (error) {
+      }
+      catch (error) {
         console.error("Search failed:", error);
         setSearchResults([]);
-      } finally {
+      }
+      finally {
         setIsSearching(false);
       }
     }, 300);
@@ -383,11 +398,12 @@ const PerformanceSheet = () => {
   };
 
   const toggleSection = (sectionId: string) => {
-    setCollapsedSections(prev => {
+    setCollapsedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
-      } else {
+      }
+      else {
         newSet.add(sectionId);
       }
       return newSet;
@@ -413,18 +429,19 @@ const PerformanceSheet = () => {
           setIsLocked(true);
           setLockInfo(result.lockInfo);
           toast.success("Lock acquired. You can now edit.");
-        } else {
+        }
+        else {
           setIsLocked(true);
           setIsEditing(false);
           toast.error(result?.message || "Failed to acquire lock. Sheet may be locked by another user.");
         }
-      }
+      },
     );
   };
 
   const handleCancel = () => {
     if (hasChanges) {
-      setModalType('cancel-confirmation');
+      setModalType("cancel-confirmation");
       return;
     }
 
@@ -460,20 +477,22 @@ const PerformanceSheet = () => {
             clearInterval(lockExtendIntervalRef.current);
             lockExtendIntervalRef.current = null;
           }
-        } else {
+        }
+        else {
           toast.error("Failed to release lock.");
           setModalType(null);
         }
-      }
+      },
     );
   };
 
   const handleSave = () => {
-    setModalType('save-confirmation');
+    setModalType("save-confirmation");
   };
 
   const handleConfirmSave = async () => {
-    if (!performanceSheetId) return;
+    if (!performanceSheetId)
+      return;
 
     try {
       await updateSheet(`/sales/performance-sheets/${performanceSheetId}`, {
@@ -507,13 +526,15 @@ const PerformanceSheet = () => {
               clearInterval(lockExtendIntervalRef.current);
               lockExtendIntervalRef.current = null;
             }
-          } else {
+          }
+          else {
             toast.error("Failed to release lock.");
             setModalType(null);
           }
-        }
+        },
       );
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Failed to save performance sheet:", error);
       toast.error("Failed to save performance sheet.");
       setModalType(null);
@@ -533,7 +554,8 @@ const PerformanceSheet = () => {
 
     const getSizeClass = () => {
       const span = field.size || 1;
-      if (span >= 4) return "col-span-full";
+      if (span >= 4)
+        return "col-span-full";
       return `col-span-${span}`;
     };
 
@@ -545,7 +567,7 @@ const PerformanceSheet = () => {
               {...commonProps}
               type="text"
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={e => handleFieldChange(field.id, e.target.value)}
             />
           );
         case "number":
@@ -554,7 +576,7 @@ const PerformanceSheet = () => {
               {...commonProps}
               type="number"
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={e => handleFieldChange(field.id, e.target.value)}
             />
           );
         case "date":
@@ -562,7 +584,7 @@ const PerformanceSheet = () => {
             <DatePicker
               {...commonProps}
               value={value}
-              onChange={(date) => handleFieldChange(field.id, date)}
+              onChange={date => handleFieldChange(field.id, date)}
             />
           );
         case "textarea":
@@ -570,7 +592,7 @@ const PerformanceSheet = () => {
             <Textarea
               {...commonProps}
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={e => handleFieldChange(field.id, e.target.value)}
               rows={4}
             />
           );
@@ -579,7 +601,7 @@ const PerformanceSheet = () => {
             <Select
               {...commonProps}
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={e => handleFieldChange(field.id, e.target.value)}
               options={field.options || []}
             />
           );
@@ -588,7 +610,7 @@ const PerformanceSheet = () => {
             <Checkbox
               {...commonProps}
               checked={!!value}
-              onChange={(e) => handleFieldChange(field.id, e.target.checked)}
+              onChange={e => handleFieldChange(field.id, e.target.checked)}
             />
           );
         default:
@@ -597,7 +619,7 @@ const PerformanceSheet = () => {
               {...commonProps}
               type="text"
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={e => handleFieldChange(field.id, e.target.value)}
             />
           );
       }
@@ -618,7 +640,9 @@ const PerformanceSheet = () => {
             Cancel
           </Button>
           <Button variant="primary" onClick={handleSave} disabled={!hasChanges}>
-            <Save size={16} /> Save
+            <Save size={16} />
+            {" "}
+            Save
           </Button>
         </div>
       );
@@ -627,11 +651,18 @@ const PerformanceSheet = () => {
     if (isLocked && lockInfo?.userId && lockInfo.userId !== user?.id) {
       return (
         <div className="flex gap-2">
-          <Button variant="secondary-outline" onClick={() => setModalType('links')}>
-            <Link size={16} /> Links ({links.length})
+          <Button variant="secondary-outline" onClick={() => setModalType("links")}>
+            <Link size={16} />
+            {" "}
+            Links (
+            {links.length}
+            )
           </Button>
           <Button variant="secondary" disabled>
-            <Lock size={16} /> Locked by {lockInfo?.userName || "another user"}
+            <Lock size={16} />
+            {" "}
+            Locked by
+            {lockInfo?.userName || "another user"}
           </Button>
         </div>
       );
@@ -639,11 +670,17 @@ const PerformanceSheet = () => {
 
     return (
       <div className="flex gap-2">
-        <Button variant="secondary-outline" onClick={() => setModalType('links')}>
-          <Link size={16} /> Links ({links.length})
+        <Button variant="secondary-outline" onClick={() => setModalType("links")}>
+          <Link size={16} />
+          {" "}
+          Links (
+          {links.length}
+          )
         </Button>
         <Button variant="secondary" onClick={handleEdit} disabled={!isLockConnected}>
-          <Lock size={16} /> Edit
+          <Lock size={16} />
+          {" "}
+          Edit
         </Button>
       </div>
     );
@@ -651,7 +688,7 @@ const PerformanceSheet = () => {
 
   const closeModal = () => {
     setModalType(null);
-    if (modalType === 'links') {
+    if (modalType === "links") {
       setAddMode(false);
       setNewLink({ entityType: "quote", entityId: "" });
       setSearchQuery("");
@@ -659,161 +696,173 @@ const PerformanceSheet = () => {
       setSelectedEntity(null);
       setShowResults(false);
     }
-    if (modalType === 'delete-link') {
+    if (modalType === "delete-link") {
       setLinkToDelete(null);
     }
   };
 
   const getModalConfig = () => {
     switch (modalType) {
-      case 'links':
-        return { title: 'Links', size: 'sm' as const, overflow: 'visible' as const };
-      case 'save-confirmation':
-        return { title: 'Confirm Save', size: 'xs' as const };
-      case 'cancel-confirmation':
-        return { title: 'Unsaved Changes', size: 'xs' as const };
-      case 'continue':
-        return { title: 'Continue Previous Session?', size: 'xs' as const };
-      case 'delete-link':
-        return { title: 'Confirm Delete', size: 'xs' as const };
-      case 'create-link':
-        return { title: 'Confirm Add Link', size: 'xs' as const };
+      case "links":
+        return { title: "Links", size: "sm" as const, overflow: "visible" as const };
+      case "save-confirmation":
+        return { title: "Confirm Save", size: "xs" as const };
+      case "cancel-confirmation":
+        return { title: "Unsaved Changes", size: "xs" as const };
+      case "continue":
+        return { title: "Continue Previous Session?", size: "xs" as const };
+      case "delete-link":
+        return { title: "Confirm Delete", size: "xs" as const };
+      case "create-link":
+        return { title: "Confirm Add Link", size: "xs" as const };
       default:
-        return { title: '', size: 'sm' as const };
+        return { title: "", size: "sm" as const };
     }
   };
 
   const renderModalContent = () => {
     switch (modalType) {
-      case 'links':
-        return !addMode ? (
-          <div>
-            <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
-              {links.length === 0 ? (
-                <div className="text-center text-text-muted text-sm py-4">
-                  No links added yet
+      case "links":
+        return !addMode
+          ? (
+              <div>
+                <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
+                  {links.length === 0
+                    ? (
+                        <div className="text-center text-text-muted text-sm py-4">
+                          No links added yet
+                        </div>
+                      )
+                    : (
+                        links.map((link: any) => (
+                          <div
+                            key={link.id}
+                            className="flex items-center px-2 py-1 justify-between rounded text-sm border border-transparent group"
+                          >
+                            <RouterLink
+                              to={getEntityPath(link.entityType, link.entityId)}
+                              className="flex items-center gap-2 flex-1 hover:underline rounded px-1 py-0.5 -mx-1 hover:bg-surface/50 transition"
+                            >
+                              <span className="font-medium capitalize text-text-muted">
+                                {link.entityType}
+                              </span>
+                              <span className="text-xs text-text">
+                                {link.label || link.entityId}
+                              </span>
+                            </RouterLink>
+                            <button
+                              onClick={() => {
+                                setLinkToDelete(link);
+                                setModalType("delete-link");
+                              }}
+                              className="opacity-0 group-hover:opacity-100 text-error hover:text-error/80 text-xs ml-2 shrink-0"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        ))
+                      )}
                 </div>
-              ) : (
-                links.map((link: any) => (
-                  <div
-                    key={link.id}
-                    className="flex items-center px-2 py-1 justify-between rounded text-sm border border-transparent group">
-                    <RouterLink
-                      to={getEntityPath(link.entityType, link.entityId)}
-                      className="flex items-center gap-2 flex-1 hover:underline rounded px-1 py-0.5 -mx-1 hover:bg-surface/50 transition">
-                      <span className="font-medium capitalize text-text-muted">
-                        {link.entityType}
-                      </span>
-                      <span className="text-xs text-text">
-                        {link.label || link.entityId}
-                      </span>
-                    </RouterLink>
-                    <button
-                      onClick={() => {
-                        setLinkToDelete(link);
-                        setModalType('delete-link');
-                      }}
-                      className="opacity-0 group-hover:opacity-100 text-error hover:text-error/80 text-xs ml-2 shrink-0">
-                      Delete
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => setAddMode(true)}
-              className="w-full">
-              Add
-            </Button>
-          </div>
-        ) : (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setModalType('create-link');
-            }}>
-            <Select
-              label="Entity Type"
-              name="entityType"
-              value={newLink.entityType}
-              onChange={(e) => {
-                setNewLink({ ...newLink, entityType: e.target.value, entityId: "" });
-                setSearchQuery("");
-                setSearchResults([]);
-                setSelectedEntity(null);
-                setShowResults(false);
-              }}
-              options={[
-                { value: "quote", label: "Quote" },
-                { value: "journey", label: "Journey" },
-                { value: "contact", label: "Contact" },
-                { value: "company", label: "Company" },
-              ]}
-            />
-            <div className="relative">
-              <Input
-                label="Search Entity"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                required
-                autoComplete="off"
-                placeholder={`Search for ${newLink.entityType}...`}
-              />
-              {isSearching && (
-                <div className="absolute right-3 top-9 text-text-muted text-sm">
-                  Searching...
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => setAddMode(true)}
+                  className="w-full"
+                >
+                  Add
+                </Button>
+              </div>
+            )
+          : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setModalType("create-link");
+                }}
+              >
+                <Select
+                  label="Entity Type"
+                  name="entityType"
+                  value={newLink.entityType}
+                  onChange={(e) => {
+                    setNewLink({ ...newLink, entityType: e.target.value, entityId: "" });
+                    setSearchQuery("");
+                    setSearchResults([]);
+                    setSelectedEntity(null);
+                    setShowResults(false);
+                  }}
+                  options={[
+                    { value: "quote", label: "Quote" },
+                    { value: "journey", label: "Journey" },
+                    { value: "contact", label: "Contact" },
+                    { value: "company", label: "Company" },
+                  ]}
+                />
+                <div className="relative">
+                  <Input
+                    label="Search Entity"
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => handleSearchChange(e.target.value)}
+                    required
+                    autoComplete="off"
+                    placeholder={`Search for ${newLink.entityType}...`}
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-9 text-text-muted text-sm">
+                      Searching...
+                    </div>
+                  )}
+                  {showResults && searchResults.length > 0 && (
+                    <div className="absolute z-[9999] w-full mt-1 bg-foreground border border-border rounded shadow-lg max-h-60 overflow-y-auto">
+                      {searchResults.map(result => (
+                        <button
+                          key={result.id}
+                          type="button"
+                          onClick={() => handleSelectEntity(result)}
+                          className="w-full text-left px-3 py-2 hover:bg-surface transition text-sm text-text"
+                        >
+                          {result.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showResults && searchResults.length === 0 && !isSearching && (
+                    <div className="absolute z-[9999] w-full mt-1 bg-foreground border border-border rounded shadow-lg">
+                      <div className="px-3 py-2 text-sm text-text-muted">
+                        No results found
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-              {showResults && searchResults.length > 0 && (
-                <div className="absolute z-[9999] w-full mt-1 bg-foreground border border-border rounded shadow-lg max-h-60 overflow-y-auto">
-                  {searchResults.map((result) => (
-                    <button
-                      key={result.id}
-                      type="button"
-                      onClick={() => handleSelectEntity(result)}
-                      className="w-full text-left px-3 py-2 hover:bg-surface transition text-sm text-text">
-                      {result.label}
-                    </button>
-                  ))}
+                <div className="flex justify-end gap-2 mt-6">
+                  <Button
+                    variant="secondary-outline"
+                    size="md"
+                    onClick={() => {
+                      setAddMode(false);
+                      setNewLink({ entityType: "quote", entityId: "" });
+                      setSearchQuery("");
+                      setSearchResults([]);
+                      setSelectedEntity(null);
+                      setShowResults(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    type="submit"
+                    disabled={!selectedEntity}
+                  >
+                    Save
+                  </Button>
                 </div>
-              )}
-              {showResults && searchResults.length === 0 && !isSearching && (
-                <div className="absolute z-[9999] w-full mt-1 bg-foreground border border-border rounded shadow-lg">
-                  <div className="px-3 py-2 text-sm text-text-muted">
-                    No results found
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                variant="secondary-outline"
-                size="md"
-                onClick={() => {
-                  setAddMode(false);
-                  setNewLink({ entityType: "quote", entityId: "" });
-                  setSearchQuery("");
-                  setSearchResults([]);
-                  setSelectedEntity(null);
-                  setShowResults(false);
-                }}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                type="submit"
-                disabled={!selectedEntity}>
-                Save
-              </Button>
-            </div>
-          </form>
-        );
+              </form>
+            );
 
-      case 'save-confirmation':
+      case "save-confirmation":
         return (
           <div className="space-y-4">
             <p className="text-sm text-text">
@@ -822,19 +871,21 @@ const PerformanceSheet = () => {
             <div className="flex justify-end gap-2">
               <Button
                 variant="secondary-outline"
-                onClick={() => setModalType(null)}>
+                onClick={() => setModalType(null)}
+              >
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                onClick={handleConfirmSave}>
+                onClick={handleConfirmSave}
+              >
                 Save
               </Button>
             </div>
           </div>
         );
 
-      case 'cancel-confirmation':
+      case "cancel-confirmation":
         return (
           <div className="space-y-4">
             <p className="text-sm text-text">
@@ -843,19 +894,21 @@ const PerformanceSheet = () => {
             <div className="flex justify-end gap-2">
               <Button
                 variant="secondary-outline"
-                onClick={() => setModalType(null)}>
+                onClick={() => setModalType(null)}
+              >
                 Keep Editing
               </Button>
               <Button
                 variant="primary"
-                onClick={performCancel}>
+                onClick={performCancel}
+              >
                 Discard Changes
               </Button>
             </div>
           </div>
         );
 
-      case 'continue':
+      case "continue":
         return (
           <div className="space-y-4">
             <p className="text-sm text-text">
@@ -863,25 +916,30 @@ const PerformanceSheet = () => {
             </p>
             {savedProgress && (
               <div className="text-text-muted text-sm">
-                <p>Last saved: {new Date(savedProgress.savedAt).toLocaleString()}</p>
+                <p>
+                  Last saved:
+                  {new Date(savedProgress.savedAt).toLocaleString()}
+                </p>
               </div>
             )}
             <div className="flex justify-end gap-2">
               <Button
                 variant="secondary-outline"
-                onClick={handleStartFresh}>
+                onClick={handleStartFresh}
+              >
                 Start Fresh
               </Button>
               <Button
                 variant="primary"
-                onClick={handleContinueProgress}>
+                onClick={handleContinueProgress}
+              >
                 Continue
               </Button>
             </div>
           </div>
         );
 
-      case 'delete-link':
+      case "delete-link":
         return (
           <div className="space-y-4">
             <p className="text-sm text-text">
@@ -891,33 +949,37 @@ const PerformanceSheet = () => {
               <Button
                 variant="secondary-outline"
                 onClick={() => {
-                  setModalType('links');
+                  setModalType("links");
                   setLinkToDelete(null);
-                }}>
+                }}
+              >
                 Cancel
               </Button>
               <Button
                 variant="primary"
                 onClick={async () => {
-                  if (!linkToDelete) return;
+                  if (!linkToDelete)
+                    return;
                   try {
                     await deleteLink(`/sales/performance-links/${linkToDelete.id}`);
                     toast.success("Link deleted");
                     setModalType(null);
                     setLinkToDelete(null);
                     fetchSheet();
-                  } catch (error) {
+                  }
+                  catch (error) {
                     toast.error("Failed to delete link");
                     setModalType(null);
                   }
-                }}>
+                }}
+              >
                 Delete
               </Button>
             </div>
           </div>
         );
 
-      case 'create-link':
+      case "create-link":
         return (
           <div className="space-y-4">
             <p className="text-sm text-text">
@@ -926,7 +988,8 @@ const PerformanceSheet = () => {
             <div className="flex justify-end gap-2">
               <Button
                 variant="secondary-outline"
-                onClick={() => setModalType('links')}>
+                onClick={() => setModalType("links")}
+              >
                 Cancel
               </Button>
               <Button
@@ -947,11 +1010,13 @@ const PerformanceSheet = () => {
                     setSelectedEntity(null);
                     setShowResults(false);
                     fetchSheet();
-                  } catch (error) {
+                  }
+                  catch (error) {
                     toast.error("Failed to create link");
                     setModalType(null);
                   }
-                }}>
+                }}
+              >
                 Add Link
               </Button>
             </div>
@@ -974,7 +1039,10 @@ const PerformanceSheet = () => {
   if (sheetError) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="text-error">Error loading performance sheet: {sheetError}</div>
+        <div className="text-error">
+          Error loading performance sheet:
+          {sheetError}
+        </div>
       </div>
     );
   }
@@ -994,12 +1062,12 @@ const PerformanceSheet = () => {
         description={`Version: ${performanceSheet.data.version?.id?.slice(-8) || "Unknown"}`}
         actions={getHeaderActions()}
         goBack
-        goBackTo='/sales/performance-sheets'
+        goBackTo="/sales/performance-sheets"
       />
 
       <Tabs
         activeTab={activeTab}
-        setActiveTab={(tab) => setActiveTab(tab as PerformanceTabValue)}
+        setActiveTab={tab => setActiveTab(tab as PerformanceTabValue)}
         tabs={visibleTabs}
       />
 
@@ -1016,12 +1084,14 @@ const PerformanceSheet = () => {
               const isLastSection = index === activeTabData.sections.length - 1;
 
               return (
-                <div key={section.id} className={`pb-8 ${!isLastSection ? 'mb-8 border-b border-border' : ''}`}>
-                  <div className={`flex items-center justify-between ${!isCollapsed ? 'mb-4' : ''}`}>
+                <div key={section.id} className={`pb-8 ${!isLastSection ? "mb-8 border-b border-border" : ""}`}>
+                  <div className={`flex items-center justify-between ${!isCollapsed ? "mb-4" : ""}`}>
                     <h2 className="text-lg font-semibold text-text">{section.title}</h2>
                     <div className="flex items-center gap-2">
-                      <span className={`text-sm ${filledFields === totalFields ? 'text-success' : 'text-error'}`}>
-                        {filledFields}/{totalFields}
+                      <span className={`text-sm ${filledFields === totalFields ? "text-success" : "text-error"}`}>
+                        {filledFields}
+                        /
+                        {totalFields}
                       </span>
                       <button
                         type="button"
@@ -1030,7 +1100,7 @@ const PerformanceSheet = () => {
                       >
                         <ChevronDown
                           size={20}
-                          className={`transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+                          className={`transition-transform duration-200 ${isCollapsed ? "" : "rotate-180"}`}
                         />
                       </button>
                     </div>
@@ -1056,14 +1126,15 @@ const PerformanceSheet = () => {
 
       <Modal
         isOpen={modalType !== null}
-        onClose={modalType === 'continue' ? () => {} : closeModal}
+        onClose={modalType === "continue" ? () => {} : closeModal}
         title={getModalConfig().title}
         size={getModalConfig().size}
-        overflow={getModalConfig().overflow}>
+        overflow={getModalConfig().overflow}
+      >
         {renderModalContent()}
       </Modal>
     </div>
   );
-};
+}
 
 export default PerformanceSheet;

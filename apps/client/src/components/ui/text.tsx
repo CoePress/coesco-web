@@ -1,12 +1,12 @@
 import React from "react";
 
-type TextProps = {
+interface TextProps {
   as?: "h1" | "h2" | "h3" | "h4" | "p";
   children: React.ReactNode;
   className?: string;
-};
+}
 
-const Text = ({ as = "p", children, className = "" }: TextProps) => {
+function Text({ as = "p", children, className = "" }: TextProps) {
   const baseStyles: {
     [key in NonNullable<TextProps["as"]>]: string;
   } = {
@@ -24,6 +24,6 @@ const Text = ({ as = "p", children, className = "" }: TextProps) => {
       {children}
     </Component>
   );
-};
+}
 
 export default Text;

@@ -3,13 +3,14 @@ import { RefreshCcw } from "lucide-react";
 import { Button } from "@/components";
 import PageHeader from "@/components/layout/page-header";
 
-const ServiceDashboard = () => {
-
+function ServiceDashboard() {
   const Actions = () => {
     return (
       <div className="flex gap-2">
         <Button>
-          <RefreshCcw size={20} /> Refresh
+          <RefreshCcw size={20} />
+          {" "}
+          Refresh
         </Button>
       </div>
     );
@@ -24,6 +25,6 @@ const ServiceDashboard = () => {
       />
     </div>
   );
-};
+}
 
 export default ServiceDashboard;

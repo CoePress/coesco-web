@@ -1,13 +1,14 @@
-import { Button, Input, Card } from "@/components";
+import { useContext, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+
+import { Button, Card, Input } from "@/components";
+import ToastContainer from "@/components/ui/toast-container";
 import { AuthContext } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
 import { useApi } from "@/hooks/use-api";
-import { useContext, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import ToastContainer from "@/components/ui/toast-container";
 import { useToast } from "@/hooks/use-toast";
 
-const getErrorMessage = (error: string | null) => {
+function getErrorMessage(error: string | null) {
   switch (error) {
     case "unauthorized":
       return "Access denied. Contact your administrator.";
@@ -24,9 +25,9 @@ const getErrorMessage = (error: string | null) => {
     default:
       return error ? `Authentication error: ${error}` : null;
   }
-};
+}
 
-const BackgroundImage = () => {
+function BackgroundImage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   return (
@@ -43,20 +44,20 @@ const BackgroundImage = () => {
       />
     </div>
   );
-};
+}
 
-const Login = () => {
+function Login() {
   const {
     get: getMicrosoft,
     loading: microsoftLoginLoading,
-    error: microsoftLoginError
+    error: microsoftLoginError,
   } = useApi<string>();
 
   const {
     post,
     loading: loginLoading,
-    error: loginError
-  } = useApi<{ user: any, employee: any, sessionId?: string }>();
+    error: loginError,
+  } = useApi<{ user: any; employee: any; sessionId?: string }>();
 
   const { user, setUser } = useContext(AuthContext)!;
   const navigate = useNavigate();
@@ -66,7 +67,7 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { toasts, removeToast } = useToast();
-  
+
   const microsoftLogin = async () => {
     const response = await getMicrosoft("/auth/microsoft/login");
     if (response) {
@@ -80,10 +81,10 @@ const Login = () => {
       password,
     });
 
-    console.log('[Login] Received login response:', {
+    console.log("[Login] Received login response:", {
       hasUser: !!response?.user,
       hasEmployee: !!response?.employee,
-      sessionId: response?.sessionId
+      sessionId: response?.sessionId,
     });
 
     if (response && response.user) {
@@ -98,13 +99,13 @@ const Login = () => {
 
   useEffect(() => {
     subscribeToSystemStatus();
-    
+
     const retryInterval = setInterval(() => {
       if (!isSystemConnected) {
         subscribeToSystemStatus();
       }
     }, 3000);
-    
+
     return () => {
       clearInterval(retryInterval);
       unsubscribeFromSystemStatus();
@@ -169,7 +170,8 @@ const Login = () => {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className="mr-2 mt-0.5 flex-shrink-0">
+                  className="mr-2 mt-0.5 flex-shrink-0"
+                >
                   <circle
                     cx="12"
                     cy="12"
@@ -199,13 +201,14 @@ const Login = () => {
                 if (username && password) {
                   handleUsernamePasswordLogin();
                 }
-              }}>
+              }}
+            >
               <Input
                 type="text"
                 label="Username"
                 value={username}
                 disabled={loading}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={e => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 className="bg-background/50"
               />
@@ -215,7 +218,7 @@ const Login = () => {
                 label="Password"
                 value={password}
                 disabled={loading}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="bg-background/50 mb-2"
               />
@@ -229,7 +232,8 @@ const Login = () => {
                   }
                 }}
                 disabled={loading || !username || !password}
-                className="w-full border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5 disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed">
+                className="w-full border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5 disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed"
+              >
                 {loading ? "Signing in..." : "Sign in"}
               </button>
             </form>
@@ -249,12 +253,14 @@ const Login = () => {
               onClick={microsoftLogin}
               disabled={loading}
               variant="secondary-outline"
-              className="w-full flex items-center justify-center">
+              className="w-full flex items-center justify-center"
+            >
               <svg
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
-                className="mr-2">
+                className="mr-2"
+              >
                 <path
                   fill="currentColor"
                   d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zm12.6 0H12.6V0H24v11.4z"
@@ -283,10 +289,10 @@ const Login = () => {
                         username: "admin",
                         password: "admin123",
                       });
-                      console.log('[Login] Dev admin login response:', {
+                      console.log("[Login] Dev admin login response:", {
                         hasUser: !!response?.user,
                         hasEmployee: !!response?.employee,
-                        sessionId: response?.sessionId
+                        sessionId: response?.sessionId,
                       });
                       if (response && response.user) {
                         setUser(response.user, response.employee, response.sessionId);
@@ -295,7 +301,8 @@ const Login = () => {
                     }}
                     disabled={loading}
                     variant="secondary"
-                    className="flex-1 text-xs">
+                    className="flex-1 text-xs"
+                  >
                     Admin
                   </Button>
                   <Button
@@ -304,10 +311,10 @@ const Login = () => {
                         username: "user",
                         password: "user123",
                       });
-                      console.log('[Login] Dev user login response:', {
+                      console.log("[Login] Dev user login response:", {
                         hasUser: !!response?.user,
                         hasEmployee: !!response?.employee,
-                        sessionId: response?.sessionId
+                        sessionId: response?.sessionId,
                       });
                       if (response && response.user) {
                         setUser(response.user, response.employee, response.sessionId);
@@ -316,7 +323,8 @@ const Login = () => {
                     }}
                     disabled={loading}
                     variant="secondary"
-                    className="flex-1 text-xs">
+                    className="flex-1 text-xs"
+                  >
                     User
                   </Button>
                 </div>
@@ -332,6 +340,6 @@ const Login = () => {
       />
     </div>
   );
-};
+}
 
 export default Login;

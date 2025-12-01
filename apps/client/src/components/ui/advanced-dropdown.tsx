@@ -1,15 +1,15 @@
-import React, { useState, useRef, useEffect, forwardRef } from "react";
 import { ChevronDown, X } from "lucide-react";
+import React, { forwardRef, useEffect, useRef, useState } from "react";
 
-type Option = {
+interface Option {
   value: string;
   label: string;
   disabled?: boolean;
-};
+}
 
 type DropdownValue = string | { create: true; label: string };
 
-type Props = {
+interface Props {
   options: Option[];
   value?: DropdownValue;
   onChange: (value: DropdownValue) => void;
@@ -18,7 +18,7 @@ type Props = {
   className?: string;
   disabled?: boolean;
   mode?: "select" | "create";
-};
+}
 
 const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
   (
@@ -32,26 +32,28 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
       disabled = false,
       mode,
     },
-    ref
+    ref,
   ) => {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState("");
     const [selectedOption, setSelectedOption] = useState<Option | null>(null);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(
-      null
+      null,
     );
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
       if (value && typeof value === "string") {
-        const option = options.find((opt) => opt.value === value);
+        const option = options.find(opt => opt.value === value);
         setSelectedOption(option || null);
         setInputValue(option?.label || "");
-      } else if (value && typeof value === "object" && value.create) {
+      }
+      else if (value && typeof value === "object" && value.create) {
         // Handle create mode values properly
         setSelectedOption(null);
         setInputValue(value.label || "");
-      } else {
+      }
+      else {
         setSelectedOption(null);
         setInputValue("");
       }
@@ -60,10 +62,10 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (
-          ref &&
-          "current" in ref &&
-          ref.current &&
-          !ref.current.contains(event.target as Node)
+          ref
+          && "current" in ref
+          && ref.current
+          && !ref.current.contains(event.target as Node)
         ) {
           setIsOpen(false);
         }
@@ -74,12 +76,13 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
         document.removeEventListener("mousedown", handleClickOutside);
     }, [ref]);
 
-    const filteredOptions = options.filter((option) =>
-      option.label.toLowerCase().includes(inputValue.toLowerCase())
+    const filteredOptions = options.filter(option =>
+      option.label.toLowerCase().includes(inputValue.toLowerCase()),
     );
 
     const handleSelect = (option: Option) => {
-      if (option.disabled) return;
+      if (option.disabled)
+        return;
       setSelectedOption(option);
       setInputValue(option.label);
       onChange(option.value);
@@ -106,7 +109,8 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
       setInputValue(newValue);
       if (mode === "create") {
         onChange({ create: true, label: newValue });
-      } else if (!selectedOption) {
+      }
+      else if (!selectedOption) {
         setIsOpen(true);
       }
     };
@@ -117,7 +121,8 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
       }
       if (selectedOption) {
         setInputValue(selectedOption.label);
-      } else {
+      }
+      else {
         setInputValue("");
       }
     };
@@ -146,7 +151,8 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
         e.preventDefault();
         if (highlightedIndex === null) {
           setHighlightedIndex(0);
-        } else if (highlightedIndex < filteredOptions.length - 1) {
+        }
+        else if (highlightedIndex < filteredOptions.length - 1) {
           setHighlightedIndex(highlightedIndex + 1);
         }
       }
@@ -154,7 +160,8 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
         e.preventDefault();
         if (highlightedIndex === null) {
           setHighlightedIndex(filteredOptions.length - 1);
-        } else if (highlightedIndex > 0) {
+        }
+        else if (highlightedIndex > 0) {
           setHighlightedIndex(highlightedIndex - 1);
         }
       }
@@ -167,7 +174,8 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     return (
       <div
         className={`relative w-full max-w-sm ${className}`}
-        ref={ref}>
+        ref={ref}
+      >
         <div className="relative flex items-center">
           <input
             ref={inputRef}
@@ -196,7 +204,8 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
                 <button
                   onClick={handleExitCreateNew}
                   tabIndex={-1}
-                  className="hover:bg-primary/20 rounded-full p-0.5 cursor-pointer">
+                  className="hover:bg-primary/20 rounded-full p-0.5 cursor-pointer"
+                >
                   <X size={12} />
                 </button>
               </div>
@@ -206,7 +215,8 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
             {selectedOption && mode !== "create" && (
               <button
                 onClick={handleClear}
-                className="p-1 hover:bg-surface rounded-full cursor-pointer">
+                className="p-1 hover:bg-surface rounded-full cursor-pointer"
+              >
                 <X
                   size={14}
                   className="text-text-muted"
@@ -229,38 +239,42 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
             <div className="max-h-60 overflow-auto">
               <div
                 className="px-3 py-2 cursor-pointer text-sm hover:bg-surface text-text border-b border-border"
-                onClick={handleCreateNew}>
+                onClick={handleCreateNew}
+              >
                 Create New
               </div>
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((option, index) => (
-                  <div
-                    key={option.value}
-                    className={`px-3 py-2 cursor-pointer text-sm ${
-                      option.disabled
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:bg-surface"
-                    } ${
-                      selectedOption?.value === option.value ||
-                      highlightedIndex === index
-                        ? "bg-primary text-white"
-                        : "text-text"
-                    }`}
-                    onClick={() => handleSelect(option)}>
-                    {option.label}
-                  </div>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-sm text-text-muted">
-                  No options found
-                </div>
-              )}
+              {filteredOptions.length > 0
+                ? (
+                    filteredOptions.map((option, index) => (
+                      <div
+                        key={option.value}
+                        className={`px-3 py-2 cursor-pointer text-sm ${
+                          option.disabled
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-surface"
+                        } ${
+                          selectedOption?.value === option.value
+                          || highlightedIndex === index
+                            ? "bg-primary text-white"
+                            : "text-text"
+                        }`}
+                        onClick={() => handleSelect(option)}
+                      >
+                        {option.label}
+                      </div>
+                    ))
+                  )
+                : (
+                    <div className="px-3 py-2 text-sm text-text-muted">
+                      No options found
+                    </div>
+                  )}
             </div>
           </div>
         )}
       </div>
     );
-  }
+  },
 );
 
 export default AdvancedDropdown;

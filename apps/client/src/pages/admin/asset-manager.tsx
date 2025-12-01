@@ -1,11 +1,12 @@
 import { CheckCircle2, Download, Edit2, FileIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { PageHeader, Toolbar, Button, Modal } from "@/components";
-import { Filter } from "@/components/feature/toolbar";
+import type { Filter } from "@/components/feature/toolbar";
+import type { IApiResponse } from "@/utils/types";
+
+import { Button, Modal, PageHeader, Toolbar } from "@/components";
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
-import { IApiResponse } from "@/utils/types";
 
 interface Asset {
   id: string;
@@ -31,7 +32,7 @@ interface Asset {
   updatedAt: string;
 }
 
-const AssetManager = () => {
+function AssetManager() {
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
@@ -51,7 +52,7 @@ const AssetManager = () => {
     limit: 50,
     filter: { status: "READY" },
     include: [] as string[],
-    search: ""
+    search: "",
   });
 
   const queryParams = useMemo(() => {
@@ -63,7 +64,7 @@ const AssetManager = () => {
     };
 
     const activeFilters = Object.fromEntries(
-      Object.entries(params.filter).filter(([_, value]) => value)
+      Object.entries(params.filter).filter(([_, value]) => value),
     );
 
     if (Object.keys(activeFilters).length > 0) {
@@ -96,25 +97,26 @@ const AssetManager = () => {
   const handleSearch = (query: string) => {
     handleParamsChange({
       search: query,
-      page: 1
+      page: 1,
     });
   };
 
   const handleParamsChange = (updates: Partial<typeof params>) => {
     setParams(prev => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   };
 
   const handleFilterChange = (key: string, value: string) => {
     handleParamsChange({
-      filter: { ...params.filter, [key]: value }
+      filter: { ...params.filter, [key]: value },
     });
   };
 
   const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0)
+      return;
 
     setUploading(true);
     const formData = new FormData();
@@ -178,7 +180,8 @@ const AssetManager = () => {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingAsset) return;
+    if (!editingAsset)
+      return;
 
     try {
       const tags = editForm.tags.split(",").map(t => t.trim()).filter(Boolean);
@@ -214,7 +217,8 @@ const AssetManager = () => {
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
+    if (bytes === 0)
+      return "0 Bytes";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -244,42 +248,42 @@ const AssetManager = () => {
 
   const filters: Filter[] = [
     {
-      key: 'type',
-      label: 'Type',
+      key: "type",
+      label: "Type",
       options: [
-        { value: '', label: 'All Types' },
-        { value: 'IMAGE', label: 'Images' },
-        { value: 'DOCUMENT', label: 'Documents' },
-        { value: 'VIDEO', label: 'Videos' },
-        { value: 'AUDIO', label: 'Audio' },
-        { value: 'ARCHIVE', label: 'Archives' },
-        { value: 'OTHER', label: 'Other' }
+        { value: "", label: "All Types" },
+        { value: "IMAGE", label: "Images" },
+        { value: "DOCUMENT", label: "Documents" },
+        { value: "VIDEO", label: "Videos" },
+        { value: "AUDIO", label: "Audio" },
+        { value: "ARCHIVE", label: "Archives" },
+        { value: "OTHER", label: "Other" },
       ],
-      placeholder: 'Type'
+      placeholder: "Type",
     },
     {
-      key: 'status',
-      label: 'Status',
+      key: "status",
+      label: "Status",
       options: [
-        { value: '', label: 'All' },
-        { value: 'READY', label: 'Ready' },
-        { value: 'UPLOADING', label: 'Uploading' },
-        { value: 'PROCESSING', label: 'Processing' },
-        { value: 'FAILED', label: 'Failed' },
-        { value: 'DELETED', label: 'Deleted' }
+        { value: "", label: "All" },
+        { value: "READY", label: "Ready" },
+        { value: "UPLOADING", label: "Uploading" },
+        { value: "PROCESSING", label: "Processing" },
+        { value: "FAILED", label: "Failed" },
+        { value: "DELETED", label: "Deleted" },
       ],
-      placeholder: 'Status'
+      placeholder: "Status",
     },
     {
-      key: 'isPublic',
-      label: 'Access',
+      key: "isPublic",
+      label: "Access",
       options: [
-        { value: '', label: 'All' },
-        { value: 'true', label: 'Public' },
-        { value: 'false', label: 'Private' }
+        { value: "", label: "All" },
+        { value: "true", label: "Public" },
+        { value: "false", label: "Private" },
       ],
-      placeholder: 'Access'
-    }
+      placeholder: "Access",
+    },
   ];
 
   const Actions = () => {
@@ -332,108 +336,118 @@ const AssetManager = () => {
         )}
 
         <div className="flex-1 overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : !assets?.data || assets.data.length === 0 ? (
-            <div className="text-center py-12">
-              <FileIcon className="w-16 h-16 mx-auto text-text-muted mb-4" />
-              <p className="text-text-muted">No assets found</p>
-              <p className="text-sm text-text-muted mt-2">Upload some files to get started</p>
-            </div>
-          ) : (
-            <div className="h-full overflow-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 p-2">
-                {assets.data.map(asset => (
-              <div
-                key={asset.id}
-                className="border border-border rounded overflow-hidden bg-surface hover:border-primary transition-all"
-              >
-                <div className="aspect-video bg-background flex items-center justify-center relative border-b border-border">
-                  {asset.type === "IMAGE" && asset.thumbnailUrl ? (
-                    <img
-                      src={asset.thumbnailUrl}
-                      alt={asset.originalName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <FileIcon className="w-12 h-12 text-text-muted" />
-                  )}
-                  <div className="absolute top-2 right-2 flex gap-2">
-                    {asset.status === "READY" && (
-                      <CheckCircle2 className={`w-5 h-5 ${getStatusColor(asset.status)}`} />
-                    )}
-                  </div>
+          {loading
+            ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
-
-                <div className="p-3">
-                  <div className="mb-3">
-                    <h3 className="font-medium text-sm text-text truncate" title={asset.originalName}>
-                      {asset.originalName}
-                    </h3>
-                  </div>
-
-                  <div className="space-y-1.5 mb-3 text-xs text-text-muted">
-                    <div className="flex justify-between">
-                      <span>Size:</span>
-                      <span className="font-medium text-text">{formatFileSize(asset.size)}</span>
+              )
+            : !assets?.data || assets.data.length === 0
+                ? (
+                    <div className="text-center py-12">
+                      <FileIcon className="w-16 h-16 mx-auto text-text-muted mb-4" />
+                      <p className="text-text-muted">No assets found</p>
+                      <p className="text-sm text-text-muted mt-2">Upload some files to get started</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Type:</span>
-                      <span className="font-medium text-text">{asset.mimeType}</span>
-                    </div>
-                    {asset.uploadedBy && (
-                      <div className="flex justify-between">
-                        <span>Uploaded by:</span>
-                        <span className="font-medium text-text">{asset.uploadedBy.firstName} {asset.uploadedBy.lastName}</span>
+                  )
+                : (
+                    <div className="h-full overflow-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 p-2">
+                        {assets.data.map(asset => (
+                          <div
+                            key={asset.id}
+                            className="border border-border rounded overflow-hidden bg-surface hover:border-primary transition-all"
+                          >
+                            <div className="aspect-video bg-background flex items-center justify-center relative border-b border-border">
+                              {asset.type === "IMAGE" && asset.thumbnailUrl
+                                ? (
+                                    <img
+                                      src={asset.thumbnailUrl}
+                                      alt={asset.originalName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  )
+                                : (
+                                    <FileIcon className="w-12 h-12 text-text-muted" />
+                                  )}
+                              <div className="absolute top-2 right-2 flex gap-2">
+                                {asset.status === "READY" && (
+                                  <CheckCircle2 className={`w-5 h-5 ${getStatusColor(asset.status)}`} />
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="p-3">
+                              <div className="mb-3">
+                                <h3 className="font-medium text-sm text-text truncate" title={asset.originalName}>
+                                  {asset.originalName}
+                                </h3>
+                              </div>
+
+                              <div className="space-y-1.5 mb-3 text-xs text-text-muted">
+                                <div className="flex justify-between">
+                                  <span>Size:</span>
+                                  <span className="font-medium text-text">{formatFileSize(asset.size)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Type:</span>
+                                  <span className="font-medium text-text">{asset.mimeType}</span>
+                                </div>
+                                {asset.uploadedBy && (
+                                  <div className="flex justify-between">
+                                    <span>Uploaded by:</span>
+                                    <span className="font-medium text-text">
+                                      {asset.uploadedBy.firstName}
+                                      {" "}
+                                      {asset.uploadedBy.lastName}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between">
+                                  <span>Created:</span>
+                                  <span className="font-medium text-text">{new Date(asset.createdAt).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+
+                              {asset.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-3 pb-3 border-b border-border">
+                                  {asset.tags.map(tag => (
+                                    <span
+                                      key={tag}
+                                      className="px-2 py-0.5 bg-background border border-border text-text text-xs rounded"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() => handleEdit(asset)}
+                                  variant="secondary-outline"
+                                  size="sm"
+                                  className="flex-1"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  onClick={() => handleDownload(asset)}
+                                  variant="secondary-outline"
+                                  size="sm"
+                                  className="flex-1"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  Download
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span>Created:</span>
-                      <span className="font-medium text-text">{new Date(asset.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  {asset.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3 pb-3 border-b border-border">
-                      {asset.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 bg-background border border-border text-text text-xs rounded"
-                        >
-                          {tag}
-                        </span>
-                      ))}
                     </div>
                   )}
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleEdit(asset)}
-                      variant="secondary-outline"
-                      size="sm"
-                      className="flex-1"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={() => handleDownload(asset)}
-                      variant="secondary-outline"
-                      size="sm"
-                      className="flex-1"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-              </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -442,7 +456,7 @@ const AssetManager = () => {
         onClose={() => setEditingAsset(null)}
         title="Edit Asset"
         size="sm"
-        footer={
+        footer={(
           <div className="flex gap-2">
             <Button
               onClick={() => {
@@ -470,7 +484,7 @@ const AssetManager = () => {
               Save Changes
             </Button>
           </div>
-        }
+        )}
       >
         <div className="space-y-4">
           <div>
@@ -485,7 +499,9 @@ const AssetManager = () => {
               placeholder="Enter file label..."
             />
             <p className="text-xs text-text-muted mt-1.5">
-              File stored as: <span className="font-medium">{editingAsset?.filename}</span>
+              File stored as:
+              {" "}
+              <span className="font-medium">{editingAsset?.filename}</span>
             </p>
           </div>
 
@@ -521,6 +537,6 @@ const AssetManager = () => {
       </Modal>
     </div>
   );
-};
+}
 
 export default AssetManager;

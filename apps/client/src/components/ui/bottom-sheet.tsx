@@ -1,8 +1,9 @@
+import { GripHorizontal, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Card, Button } from "@/components";
-import { X, GripHorizontal } from "lucide-react";
 
-type BottomSheetProps = {
+import { Button, Card } from "@/components";
+
+interface BottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
@@ -14,9 +15,9 @@ type BottomSheetProps = {
   showCloseButton?: boolean;
   enableDrag?: boolean;
   backdropClosable?: boolean;
-};
+}
 
-const BottomSheet = ({
+function BottomSheet({
   isOpen,
   onClose,
   title,
@@ -28,7 +29,7 @@ const BottomSheet = ({
   showCloseButton = false,
   enableDrag = true,
   backdropClosable = true,
-}: BottomSheetProps) => {
+}: BottomSheetProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [dragStartY, setDragStartY] = useState<number | null>(null);
   const [currentTranslateY, setCurrentTranslateY] = useState(0);
@@ -45,7 +46,8 @@ const BottomSheet = ({
     if (isOpen) {
       setIsAnimating(true);
       document.body.style.overflow = "hidden";
-    } else {
+    }
+    else {
       document.body.style.overflow = "";
     }
 
@@ -69,14 +71,16 @@ const BottomSheet = ({
   };
 
   const handleDragStart = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!enableDrag) return;
+    if (!enableDrag)
+      return;
 
     const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
     setDragStartY(clientY);
   };
 
   const handleDragMove = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!enableDrag || dragStartY === null) return;
+    if (!enableDrag || dragStartY === null)
+      return;
 
     const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
     const deltaY = clientY - dragStartY;
@@ -87,18 +91,21 @@ const BottomSheet = ({
   };
 
   const handleDragEnd = () => {
-    if (!enableDrag || dragStartY === null) return;
+    if (!enableDrag || dragStartY === null)
+      return;
 
     if (currentTranslateY > 100) {
       handleClose();
-    } else {
+    }
+    else {
       setCurrentTranslateY(0);
     }
 
     setDragStartY(null);
   };
 
-  if (!isOpen && !isAnimating) return null;
+  if (!isOpen && !isAnimating)
+    return null;
 
   return (
     <div
@@ -170,6 +177,6 @@ const BottomSheet = ({
       </div>
     </div>
   );
-};
+}
 
 export default BottomSheet;

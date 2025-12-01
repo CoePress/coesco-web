@@ -1,6 +1,6 @@
 import React from "react";
 
-type InputProps = {
+interface InputProps {
   type?: "text" | "password" | "email" | "number" | "search" | "date";
   placeholder?: string;
   value?: string | number;
@@ -17,9 +17,9 @@ type InputProps = {
   min?: number;
   max?: number;
   autoComplete?: string;
-};
+}
 
-const Input = ({
+function Input({
   type = "text",
   placeholder = "",
   value,
@@ -36,13 +36,14 @@ const Input = ({
   min,
   max,
   autoComplete,
-}: InputProps) => {
+}: InputProps) {
   return (
     <div className="w-full">
       {label && (
         <label
           htmlFor={id}
-          className="block mb-2 text-sm font-medium text-text">
+          className="block mb-2 text-sm font-medium text-text"
+        >
           {label}
           {required && <span className="text-error ml-1">*</span>}
         </label>
@@ -73,6 +74,6 @@ const Input = ({
       {error && <p className="mt-1 text-sm text-error">{error}</p>}
     </div>
   );
-};
+}
 
 export default Input;

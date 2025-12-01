@@ -1,11 +1,13 @@
-import { Input, Card } from "@/components";
 import { useState } from "react";
-import { useApi } from "@/hooks/use-api";
-import { useToast } from "@/hooks/use-toast";
-import { IApiResponse } from "@/utils/types";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-const BackgroundImage = () => {
+import type { IApiResponse } from "@/utils/types";
+
+import { Card, Input } from "@/components";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
+
+function BackgroundImage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   return (
@@ -22,9 +24,9 @@ const BackgroundImage = () => {
       />
     </div>
   );
-};
+}
 
-const ForgotPassword = () => {
+function ForgotPassword() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const [step] = useState<"request" | "reset">(token ? "reset" : "request");
@@ -40,7 +42,7 @@ const ForgotPassword = () => {
     minLength: newPassword.length >= 8,
     hasUpperCase: /[A-Z]/.test(newPassword),
     hasLowerCase: /[a-z]/.test(newPassword),
-    hasNumber: /[0-9]/.test(newPassword),
+    hasNumber: /\d/.test(newPassword),
     hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
     passwordsMatch: confirmPassword.length > 0 && newPassword === confirmPassword,
   };
@@ -54,13 +56,14 @@ const ForgotPassword = () => {
     }
 
     const response = await requestReset("/settings/request-password-reset", {
-      email
+      email,
     });
 
     if (response?.success) {
       toast.success("If an account exists with this email, a password reset link has been sent.");
       setEmail("");
-    } else {
+    }
+    else {
       toast.error(response?.error || "Failed to send password reset email");
     }
   };
@@ -83,13 +86,14 @@ const ForgotPassword = () => {
 
     const response = await resetPassword("/settings/reset-password", {
       token,
-      newPassword
+      newPassword,
     });
 
     if (response?.success) {
       toast.success("Password reset successfully. You can now log in with your new password.");
       setTimeout(() => navigate("/login"), 2000);
-    } else {
+    }
+    else {
       toast.error(response?.error || "Failed to reset password");
     }
   };
@@ -115,13 +119,14 @@ const ForgotPassword = () => {
                   if (newPassword && confirmPassword && isPasswordValid) {
                     handleResetPassword();
                   }
-                }}>
+                }}
+              >
                 <Input
                   type="password"
                   label="New Password"
                   value={newPassword}
                   disabled={loading}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={e => setNewPassword(e.target.value)}
                   placeholder="Enter new password"
                   className="bg-background/50"
                 />
@@ -131,7 +136,7 @@ const ForgotPassword = () => {
                   label="Confirm Password"
                   value={confirmPassword}
                   disabled={loading}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
                   className="bg-background/50 mb-2"
                 />
@@ -171,7 +176,8 @@ const ForgotPassword = () => {
                 <button
                   type="submit"
                   disabled={loading || !newPassword || !confirmPassword || !isPasswordValid}
-                  className="w-full border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5 disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed">
+                  className="w-full border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5 disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed"
+                >
                   {loading ? "Resetting..." : "Reset Password"}
                 </button>
               </form>
@@ -209,13 +215,14 @@ const ForgotPassword = () => {
                 if (email) {
                   handleRequestReset();
                 }
-              }}>
+              }}
+            >
               <Input
                 type="email"
                 label="Email Address"
                 value={email}
                 disabled={loading}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 className="bg-background/50"
               />
@@ -223,7 +230,8 @@ const ForgotPassword = () => {
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5 disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed">
+                className="w-full border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5 disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed"
+              >
                 {loading ? "Sending..." : "Send Reset Link"}
               </button>
             </form>
@@ -241,6 +249,6 @@ const ForgotPassword = () => {
       </div>
     </div>
   );
-};
+}
 
 export default ForgotPassword;

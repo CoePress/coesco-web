@@ -1,30 +1,30 @@
 import {
-  ChevronRight,
-  ChevronDown,
   AlertCircle,
   CheckCircle,
-  CircleCheck,
-  CircleX,
-  CircleAlert,
-  CircleMinus,
-  Minus,
   CheckSquare,
-  Square,
+  ChevronDown,
   ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  CircleCheck,
+  CircleMinus,
+  CircleX,
+  Minus,
+  Square,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import {
   Button,
-  PageHeader,
-  Modal,
   Loader,
+  Modal,
+  PageHeader,
   Table,
 } from "@/components";
-import { formatCurrency } from "@/utils";
-import { isProductClassDescendant } from "@/utils";
 import { useApi } from "@/hooks/use-api";
+import { formatCurrency, isProductClassDescendant } from "@/utils";
 
-const SaveConfigModal = ({
+function SaveConfigModal({
   isOpen,
   onClose,
   configName,
@@ -38,7 +38,7 @@ const SaveConfigModal = ({
   selectedOptions: any[];
   totalPrice: number;
   onSave: (data: { name: string; isTemplate: boolean }) => void;
-}) => {
+}) {
   const [name] = useState(configName);
   const [isTemplate] = useState(false);
 
@@ -47,14 +47,16 @@ const SaveConfigModal = ({
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen)
+    return null;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Save Configuration"
-      size="xs">
+      size="xs"
+    >
       <div className="mt-2 border rounded p-2 bg-neutral-50">
         <h4 className="text-sm font-medium text-neutral-700 mb-2">
           Configuration Summary
@@ -73,16 +75,17 @@ const SaveConfigModal = ({
 
       <Button
         onClick={handleSave}
-        disabled={!name.trim()}>
+        disabled={!name.trim()}
+      >
         Save as Template
       </Button>
 
       <Button onClick={handleSave}>Add to Quote</Button>
     </Modal>
   );
-};
+}
 
-const PerformanceRequirementsModal = ({
+function PerformanceRequirementsModal({
   isOpen,
   onClose,
   onApply,
@@ -90,7 +93,7 @@ const PerformanceRequirementsModal = ({
   isOpen: boolean;
   onClose: () => void;
   onApply: (requirements: Record<string, number>) => void;
-}) => {
+}) {
   const [selectedForm, setSelectedForm] = useState<string>("");
   const [requirements, setRequirements] = useState<Record<string, number>>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -213,7 +216,7 @@ const PerformanceRequirementsModal = ({
   ];
 
   const handleFormSelect = (formId: string) => {
-    const form = performanceForms.find((f) => f.id === formId);
+    const form = performanceForms.find(f => f.id === formId);
     if (form) {
       setSelectedForm(formId);
       setRequirements(form.requirements as Record<string, number>);
@@ -232,7 +235,8 @@ const PerformanceRequirementsModal = ({
     setRequirements({});
   };
 
-  if (!isOpen) return null;
+  if (!isOpen)
+    return null;
 
   return (
     <Modal
@@ -243,136 +247,149 @@ const PerformanceRequirementsModal = ({
           ? "Confirm Performance Requirements"
           : "Apply Performance Requirements"
       }
-      size="sm">
+      size="sm"
+    >
       <div className="flex flex-col gap-4">
-        {showConfirmation ? (
-          <>
-            <div className="text-sm text-text-muted">
-              Are you sure you want to apply these performance requirements to
-              your configuration?
-            </div>
-
-            <div className="space-y-2">
-              <div>
-                <div className="font-medium text-text">
-                  {
-                    performanceForms.find((f) => f.id === selectedForm)
-                      ?.description
-                  }
+        {showConfirmation
+          ? (
+              <>
+                <div className="text-sm text-text-muted">
+                  Are you sure you want to apply these performance requirements to
+                  your configuration?
                 </div>
-              </div>
-            </div>
 
-            <div>
-              <h4 className="text-sm font-medium mb-3">
-                Performance Requirements
-              </h4>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {Object.entries(requirements).map(([key, value]) => (
-                  <div
-                    key={key}
-                    className="flex items-center justify-between">
-                    <span className="text-sm text-text-muted flex-1">
-                      {key}
-                    </span>
-                    <span className="text-sm font-medium text-text-muted">
-                      {value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t">
-              <Button
-                variant="secondary-outline"
-                onClick={handleCancel}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleApply}>
-                Apply
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <Table
-              columns={[
-                {
-                  key: "customerName",
-                  header: "Customer Name",
-                },
-                {
-                  key: "createdDate",
-                  header: "Created Date",
-                },
-                {
-                  key: "createdBy",
-                  header: "Created By",
-                },
-                {
-                  key: "actions",
-                  header: "",
-                  render: (_, row) => (
-                    <div className="flex justify-end">
-                      <Button
-                        variant="secondary-outline"
-                        onClick={() => handleFormSelect(row.id)}>
-                        Select
-                      </Button>
+                <div className="space-y-2">
+                  <div>
+                    <div className="font-medium text-text">
+                      {
+                        performanceForms.find(f => f.id === selectedForm)
+                          ?.description
+                      }
                     </div>
-                  ),
-                  className: "text-right",
-                },
-              ]}
-              data={performanceForms}
-              total={performanceForms.length}
-            />
+                  </div>
+                </div>
 
-            <div className="flex justify-between gap-2 pt-2 border-t">
-              <div className="flex gap-2 items-center">
-                <Button
-                  variant="secondary-outline"
-                  size="sm">
-                  <ChevronLeft size={16} />
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm">
-                  1
-                </Button>
-                <Button
-                  variant="secondary-outline"
-                  size="sm">
-                  2
-                </Button>
-                <Button
-                  variant="secondary-outline"
-                  size="sm">
-                  3
-                </Button>
-                <Button
-                  variant="secondary-outline"
-                  size="sm">
-                  <ChevronRight size={16} />
-                </Button>
-              </div>
-              <Button
-                variant="secondary-outline"
-                onClick={onClose}>
-                Cancel
-              </Button>
-            </div>
-          </>
-        )}
+                <div>
+                  <h4 className="text-sm font-medium mb-3">
+                    Performance Requirements
+                  </h4>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {Object.entries(requirements).map(([key, value]) => (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-sm text-text-muted flex-1">
+                          {key}
+                        </span>
+                        <span className="text-sm font-medium text-text-muted">
+                          {value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t">
+                  <Button
+                    variant="secondary-outline"
+                    onClick={handleCancel}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleApply}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </>
+            )
+          : (
+              <>
+                <Table
+                  columns={[
+                    {
+                      key: "customerName",
+                      header: "Customer Name",
+                    },
+                    {
+                      key: "createdDate",
+                      header: "Created Date",
+                    },
+                    {
+                      key: "createdBy",
+                      header: "Created By",
+                    },
+                    {
+                      key: "actions",
+                      header: "",
+                      render: (_, row) => (
+                        <div className="flex justify-end">
+                          <Button
+                            variant="secondary-outline"
+                            onClick={() => handleFormSelect(row.id)}
+                          >
+                            Select
+                          </Button>
+                        </div>
+                      ),
+                      className: "text-right",
+                    },
+                  ]}
+                  data={performanceForms}
+                  total={performanceForms.length}
+                />
+
+                <div className="flex justify-between gap-2 pt-2 border-t">
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                    >
+                      <ChevronLeft size={16} />
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                    >
+                      1
+                    </Button>
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                    >
+                      2
+                    </Button>
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                    >
+                      3
+                    </Button>
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                    >
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                  <Button
+                    variant="secondary-outline"
+                    onClick={onClose}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </>
+            )}
       </div>
     </Modal>
   );
-};
+}
 
-const ConfigurationBuilder = () => {
+function ConfigurationBuilder() {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<any[]>([]);
   const [validationResults, setValidationResults] = useState<any[]>([]);
@@ -392,12 +409,12 @@ const ConfigurationBuilder = () => {
   const [optionRulesLoading, setOptionRulesLoading] = useState(true);
   const api = useApi();
 
-  const selectedProductClass =
-    productClassSelections.length > 0
+  const selectedProductClass
+    = productClassSelections.length > 0
       ? productClassSelections[productClassSelections.length - 1]
       : "";
-  const effectiveProductClassId =
-    selectedProductClass || productClasses?.[0]?.id;
+  const effectiveProductClassId
+    = selectedProductClass || productClasses?.[0]?.id;
   const [optionCategories, setOptionCategories] = useState<any[]>([]);
   const [optionCategoriesLoading, setOptionCategoriesLoading] = useState(false);
   const [optionHeaders, setOptionHeaders] = useState<any[]>([]);
@@ -408,17 +425,18 @@ const ConfigurationBuilder = () => {
     : [];
 
   const getOptionsForLevel = (
-    level: number
+    level: number,
   ): Array<{ id: string; name: string }> => {
-    if (!productClasses) return [];
+    if (!productClasses)
+      return [];
 
     if (level === 0) {
-      return productClasses.filter((pc) => pc.parentId === null);
+      return productClasses.filter(pc => pc.parentId === null);
     }
 
     const parentId = productClassSelections[level - 1];
     return parentId
-      ? productClasses.filter((pc) => pc.parentId === parentId)
+      ? productClasses.filter(pc => pc.parentId === parentId)
       : [];
   };
 
@@ -435,17 +453,20 @@ const ConfigurationBuilder = () => {
   const visibleProductClassLevels = productClassSelections.length + 1;
 
   const getOptionsForCategory = (categoryId: string) => {
-    if (!optionHeaders) return [];
+    if (!optionHeaders)
+      return [];
     return optionHeaders.filter((header: any) => header.optionCategoryId === categoryId);
   };
 
   const getOptionById = (optionId: string) => {
-    if (!optionHeaders) return null;
+    if (!optionHeaders)
+      return null;
     const header = optionHeaders.find((h: any) => h.id === optionId);
-    if (!header) return null;
+    if (!header)
+      return null;
 
     const detail = header.optionDetails?.find((d: any) =>
-      d.productClassId === effectiveProductClassId
+      d.productClassId === effectiveProductClassId,
     );
 
     return {
@@ -456,12 +477,13 @@ const ConfigurationBuilder = () => {
   };
 
   const getCategoryById = (categoryId: string) => {
-    if (!optionCategories) return null;
-    return optionCategories.find((cat) => cat.id === categoryId);
+    if (!optionCategories)
+      return null;
+    return optionCategories.find(cat => cat.id === categoryId);
   };
 
   const isOptionSelected = (optionId: string) => {
-    return selectedOptions.some((opt) => opt.optionId === optionId);
+    return selectedOptions.some(opt => opt.optionId === optionId);
   };
 
   const evaluateCondition = (condition: any): boolean => {
@@ -471,13 +493,14 @@ const ConfigurationBuilder = () => {
           const state = condition.state || "SELECTED";
           const isSelected = isOptionSelected(condition.id);
           return state === "SELECTED" ? isSelected : !isSelected;
-        } else if (condition.conditionType === "PRODUCT_CLASS") {
+        }
+        else if (condition.conditionType === "PRODUCT_CLASS") {
           return (
-            condition.id === selectedProductClass ||
-            isProductClassDescendant(
+            condition.id === selectedProductClass
+            || isProductClassDescendant(
               selectedProductClass,
               condition.id,
-              productClasses || []
+              productClasses || [],
             )
           );
         }
@@ -498,31 +521,33 @@ const ConfigurationBuilder = () => {
   };
 
   const isRuleTriggered = (rule: any): boolean => {
-    if (!rule.triggerOptions || rule.triggerOptions.length === 0) return false;
+    if (!rule.triggerOptions || rule.triggerOptions.length === 0)
+      return false;
     const triggered = rule.triggerOptions.some((triggerOption: any) =>
-      isOptionSelected(triggerOption.id)
+      isOptionSelected(triggerOption.id),
     );
     console.log(
       `Rule "${rule.name}" triggered:`,
       triggered,
       "trigger options:",
-      rule.triggerOptions?.map((opt: any) => opt.name) || []
+      rule.triggerOptions?.map((opt: any) => opt.name) || [],
     );
     return triggered;
   };
 
   const isOptionRequired = (optionId: string): boolean => {
-    if (!optionRules) return false;
+    if (!optionRules)
+      return false;
 
     const applicableRules = optionRules
       .filter(
-        (rule) =>
-          rule.action === "REQUIRE" &&
-          rule.targetOptions?.some((target: any) => target.id === optionId)
+        rule =>
+          rule.action === "REQUIRE"
+          && rule.targetOptions?.some((target: any) => target.id === optionId),
       )
       .sort((a, b) => b.priority - a.priority);
 
-    return applicableRules.some((rule) => isRuleTriggered(rule));
+    return applicableRules.some(rule => isRuleTriggered(rule));
   };
 
   const getRequiredOptions = (): string[] => {
@@ -535,7 +560,7 @@ const ConfigurationBuilder = () => {
     for (const rule of optionRules) {
       if (rule.action === "REQUIRE" && isRuleTriggered(rule)) {
         requiredOptions.push(
-          ...(rule.targetOptions?.map((opt: { id: string }) => opt.id) || [])
+          ...(rule.targetOptions?.map((opt: { id: string }) => opt.id) || []),
         );
       }
     }
@@ -546,12 +571,13 @@ const ConfigurationBuilder = () => {
   const getDisabledOptions = (): string[] => {
     const disabledOptions: string[] = [];
 
-    if (!optionRules) return disabledOptions;
+    if (!optionRules)
+      return disabledOptions;
 
     for (const rule of optionRules) {
       if (rule.action === "DISABLE" && isRuleTriggered(rule)) {
         disabledOptions.push(
-          ...(rule.targetOptions?.map((opt: { id: string }) => opt.id) || [])
+          ...(rule.targetOptions?.map((opt: { id: string }) => opt.id) || []),
         );
       }
     }
@@ -560,10 +586,11 @@ const ConfigurationBuilder = () => {
   };
 
   const getCategoryStatus = (
-    categoryId: string
+    categoryId: string,
   ): "valid" | "warning" | "error" | "incomplete" | "default" | "custom" => {
     const category = getCategoryById(categoryId);
-    if (!category) return "valid";
+    if (!category)
+      return "valid";
 
     const hasSelection = selectedOptions.some((opt) => {
       const option: any = getOptionById(opt.optionId);
@@ -577,10 +604,11 @@ const ConfigurationBuilder = () => {
     if (hasSelection) {
       const categoryOptions = getOptionsForCategory(categoryId);
       const hasWarning = categoryOptions.some(
-        (opt: any) => isOptionRequired(opt.id) && !isOptionSelected(opt.id)
+        (opt: any) => isOptionRequired(opt.id) && !isOptionSelected(opt.id),
       );
 
-      if (hasWarning) return "warning";
+      if (hasWarning)
+        return "warning";
 
       const selectedCategoryOptions = selectedOptions.filter((opt) => {
         const option: any = getOptionById(opt.optionId);
@@ -588,20 +616,21 @@ const ConfigurationBuilder = () => {
       });
 
       const defaultOptions = categoryOptions.filter(
-        (opt: any) => opt.isDefault
+        (opt: any) => opt.isDefault,
       );
       const selectedDefaultOptions = selectedCategoryOptions.filter((opt) => {
         const option: any = getOptionById(opt.optionId);
         return option?.isDefault;
       });
 
-      const hasOnlyDefaults =
-        selectedCategoryOptions.length === defaultOptions.length &&
-        selectedDefaultOptions.length === defaultOptions.length;
+      const hasOnlyDefaults
+        = selectedCategoryOptions.length === defaultOptions.length
+          && selectedDefaultOptions.length === defaultOptions.length;
 
       if (hasOnlyDefaults && defaultOptions.length > 0) {
         return "default";
-      } else {
+      }
+      else {
         return "valid";
       }
     }
@@ -643,7 +672,7 @@ const ConfigurationBuilder = () => {
 
   const handleErrorBannerClick = (categoryName: string) => {
     const targetCategory = sortedCategories.find(
-      (cat) => cat.name === categoryName
+      cat => cat.name === categoryName,
     );
     if (targetCategory) {
       setExpandedCategories([targetCategory.id]);
@@ -662,14 +691,14 @@ const ConfigurationBuilder = () => {
     if (optionRules) {
       console.log(
         "ALL RULES:",
-        optionRules.map((rule) => ({
+        optionRules.map(rule => ({
           name: rule.name,
           action: rule.action,
           condition: rule.condition,
           targetOptions: rule.targetOptions?.map(
-            (opt: { name: string }) => opt.name
+            (opt: { name: string }) => opt.name,
           ) || [],
-        }))
+        })),
       );
     }
 
@@ -697,7 +726,7 @@ const ConfigurationBuilder = () => {
       requiredOptions.map((id) => {
         const option: any = getOptionById(id);
         return `${option?.name} (${option?.code})`;
-      })
+      }),
     );
 
     for (const optionId of requiredOptions) {
@@ -731,7 +760,7 @@ const ConfigurationBuilder = () => {
       disabledOptions.map((id) => {
         const option: any = getOptionById(id);
         return `${option?.name} (${option?.code})`;
-      })
+      }),
     );
 
     for (const optionId of disabledOptions) {
@@ -759,7 +788,7 @@ const ConfigurationBuilder = () => {
 
     console.log(
       "STATUS:",
-      results.map((r) => `${r.type}: ${r.message}`).join(", ")
+      results.map(r => `${r.type}: ${r.message}`).join(", "),
     );
     return results;
   };
@@ -795,9 +824,9 @@ const ConfigurationBuilder = () => {
         return;
       }
       setOptionCategoriesLoading(true);
-      const response = await api.get('/catalog/product-class-option-categories', {
+      const response = await api.get("/catalog/product-class-option-categories", {
         filter: JSON.stringify({ productClassId: effectiveProductClassId }),
-        include: JSON.stringify(['optionCategory']),
+        include: JSON.stringify(["optionCategory"]),
       });
       if (response && response.data) {
         const categories = response.data.map((pcoc: any) => ({
@@ -819,8 +848,8 @@ const ConfigurationBuilder = () => {
         return;
       }
       setOptionHeadersLoading(true);
-      const response = await api.get('/catalog/options', {
-        include: JSON.stringify(['optionDetails']),
+      const response = await api.get("/catalog/options", {
+        include: JSON.stringify(["optionDetails"]),
       });
       if (response && response.data) {
         setOptionHeaders(response.data);
@@ -837,11 +866,11 @@ const ConfigurationBuilder = () => {
 
   useEffect(() => {
     if (
-      productClasses &&
-      productClasses.length > 0 &&
-      productClassSelections.length === 0
+      productClasses
+      && productClasses.length > 0
+      && productClassSelections.length === 0
     ) {
-      const firstClass = productClasses.find((pc) => pc.parentId === null);
+      const firstClass = productClasses.find(pc => pc.parentId === null);
       if (firstClass) {
         setProductClassSelections([firstClass.id]);
       }
@@ -849,7 +878,8 @@ const ConfigurationBuilder = () => {
   }, [productClasses, productClassSelections.length]);
 
   useEffect(() => {
-    if (!optionCategories || optionCategories.length === 0) return;
+    if (!optionCategories || optionCategories.length === 0)
+      return;
 
     setExpandedCategories([]);
 
@@ -907,34 +937,41 @@ const ConfigurationBuilder = () => {
             <h2 className="font-semibold text-text-muted">Product Class</h2>
             <div className={`mt-2 grid gap-2 ${(() => {
               const dropdownsWithOptions = Array.from({ length: visibleProductClassLevels })
-                .filter((_, level) => getOptionsForLevel(level).length > 0).length;
-              return dropdownsWithOptions === 1 ? 'grid-cols-1' : 'grid-cols-2';
-            })()}`}>
+                .filter((_, level) => getOptionsForLevel(level).length > 0)
+                .length;
+              return dropdownsWithOptions === 1 ? "grid-cols-1" : "grid-cols-2";
+            })()}`}
+            >
               {Array.from({ length: visibleProductClassLevels }).map(
                 (_, level) => {
                   const options = getOptionsForLevel(level);
 
-                  return options.length > 0 ? (
-                    <select
-                      key={`product-class-${level}`}
-                      value={productClassSelections[level] || ""}
-                      onChange={(e) =>
-                        handleProductClassSelectionChange(level, e.target.value)
-                      }
-                      className="w-full p-2 bg-foreground border border-border rounded text-text-muted focus:outline-none">
-                      <option value="">
-                        Select {level === 0 ? "Category" : "Option"}
-                      </option>
-                      {options.map((option: any) => (
-                        <option
-                          key={option.id}
-                          value={option.id}>
-                          {option.code}
-                        </option>
-                      ))}
-                    </select>
-                  ) : null;
-                }
+                  return options.length > 0
+                    ? (
+                        <select
+                          key={`product-class-${level}`}
+                          value={productClassSelections[level] || ""}
+                          onChange={e =>
+                            handleProductClassSelectionChange(level, e.target.value)}
+                          className="w-full p-2 bg-foreground border border-border rounded text-text-muted focus:outline-none"
+                        >
+                          <option value="">
+                            Select
+                            {" "}
+                            {level === 0 ? "Category" : "Option"}
+                          </option>
+                          {options.map((option: any) => (
+                            <option
+                              key={option.id}
+                              value={option.id}
+                            >
+                              {option.code}
+                            </option>
+                          ))}
+                        </select>
+                      )
+                    : null;
+                },
               )}
             </div>
           </div>
@@ -948,7 +985,8 @@ const ConfigurationBuilder = () => {
                 <button
                   onClick={handleSelectAllDefaults}
                   className="p-1 hover:bg-surface rounded cursor-pointer"
-                  title="Select all default options">
+                  title="Select all default options"
+                >
                   <CheckSquare
                     size={16}
                     className="text-text-muted"
@@ -957,7 +995,8 @@ const ConfigurationBuilder = () => {
                 <button
                   onClick={handleDeselectAll}
                   className="p-1 hover:bg-surface rounded cursor-pointer"
-                  title="Deselect all options">
+                  title="Deselect all options"
+                >
                   <Square
                     size={16}
                     className="text-text-muted"
@@ -966,7 +1005,8 @@ const ConfigurationBuilder = () => {
                 <button
                   onClick={handleCollapseAll}
                   className="p-1 hover:bg-surface rounded cursor-pointer"
-                  title="Collapse all">
+                  title="Collapse all"
+                >
                   <Minus
                     size={16}
                     className="text-text-muted"
@@ -984,36 +1024,41 @@ const ConfigurationBuilder = () => {
                 return (
                   <div
                     key={category.id}
-                    className="py-1">
+                    className="py-1"
+                  >
                     <button
                       onClick={() =>
-                        setExpandedCategories((prev) =>
+                        setExpandedCategories(prev =>
                           prev.includes(category.id)
-                            ? prev.filter((id) => id !== category.id)
-                            : [...prev, category.id]
-                        )
-                      }
-                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer select-none">
+                            ? prev.filter(id => id !== category.id)
+                            : [...prev, category.id],
+                        )}
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer select-none"
+                    >
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="flex-shrink-0">
                           {getStatusIcon(categoryStatus)}
                         </div>
                         <span className="text-sm font-medium text-text-muted truncate">
-                          {category.name} {category.isRequired && "*"}
+                          {category.name}
+                          {" "}
+                          {category.isRequired && "*"}
                         </span>
                       </div>
                       <div className="flex-shrink-0">
-                        {expandedCategories.includes(category.id) ? (
-                          <ChevronDown
-                            size={16}
-                            className="text-text-muted"
-                          />
-                        ) : (
-                          <ChevronRight
-                            size={16}
-                            className="text-text-muted"
-                          />
-                        )}
+                        {expandedCategories.includes(category.id)
+                          ? (
+                              <ChevronDown
+                                size={16}
+                                className="text-text-muted"
+                              />
+                            )
+                          : (
+                              <ChevronRight
+                                size={16}
+                                className="text-text-muted"
+                              />
+                            )}
                       </div>
                     </button>
 
@@ -1029,22 +1074,25 @@ const ConfigurationBuilder = () => {
                             <div
                               key={option.id}
                               className={`flex items-center justify-between p-2 rounded hover:bg-surface cursor-pointer select-none ${
-                                isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                isDisabled ? "opacity-50 cursor-not-allowed" : ""
                               }`}
                               onClick={() => {
-                                if (isDisabled) return;
+                                if (isDisabled)
+                                  return;
                                 if (isSelected) {
                                   setSelectedOptions(prev => prev.filter(opt => opt.optionId !== option.id));
-                                } else {
+                                }
+                                else {
                                   if (!category.multiple) {
                                     setSelectedOptions(prev => [
-                                      ...prev.filter(opt => {
+                                      ...prev.filter((opt) => {
                                         const o = getOptionById(opt.optionId);
                                         return o?.categoryId !== category.id;
                                       }),
-                                      { optionId: option.id, quantity: 1 }
+                                      { optionId: option.id, quantity: 1 },
                                     ]);
-                                  } else {
+                                  }
+                                  else {
                                     setSelectedOptions(prev => [...prev, { optionId: option.id, quantity: 1 }]);
                                   }
                                 }
@@ -1052,11 +1100,13 @@ const ConfigurationBuilder = () => {
                             >
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <div className="flex-shrink-0">
-                                  {isSelected ? (
-                                    <CheckSquare size={16} className="text-primary" />
-                                  ) : (
-                                    <Square size={16} className="text-text-muted" />
-                                  )}
+                                  {isSelected
+                                    ? (
+                                        <CheckSquare size={16} className="text-primary" />
+                                      )
+                                    : (
+                                        <Square size={16} className="text-text-muted" />
+                                      )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="text-sm font-medium text-text truncate">
@@ -1104,9 +1154,8 @@ const ConfigurationBuilder = () => {
                   <div
                     key={index}
                     onClick={() =>
-                      result.categoryName &&
-                      handleErrorBannerClick(result.categoryName)
-                    }
+                      result.categoryName
+                      && handleErrorBannerClick(result.categoryName)}
                     className={`p-2 rounded flex items-center gap-2 text-sm border select-none ${
                       result.type === "error"
                         ? "bg-error/10 text-error border-error hover:bg-error/20 cursor-pointer"
@@ -1115,7 +1164,8 @@ const ConfigurationBuilder = () => {
                           : result.type === "success"
                             ? "bg-success/10 text-success border-success"
                             : "bg-info/10 text-info border-info"
-                    }`}>
+                    }`}
+                  >
                     {result.type === "error" && <AlertCircle size={16} />}
                     {result.type === "warning" && <CircleX size={16} />}
                     {result.type === "success" && <CheckCircle size={16} />}
@@ -1141,12 +1191,14 @@ const ConfigurationBuilder = () => {
                       };
                     });
 
-                  if (selectedCategoryOptions.length === 0) return null;
+                  if (selectedCategoryOptions.length === 0)
+                    return null;
 
                   return (
                     <div
                       key={category.id}
-                      className="p-2 bg-foreground border rounded">
+                      className="p-2 bg-foreground border rounded"
+                    >
                       <h3 className="font-medium text-text-muted mb-2">
                         {category.name}
                       </h3>
@@ -1155,18 +1207,20 @@ const ConfigurationBuilder = () => {
                           ({ optionId, quantity, option }) => (
                             <div
                               key={optionId}
-                              className="flex items-center justify-between">
+                              className="flex items-center justify-between"
+                            >
                               <div className="text-sm text-text-muted">
-                                {option?.name}{" "}
+                                {option?.name}
+                                {" "}
                                 {quantity > 1 ? `(x${quantity})` : ""}
                               </div>
                               <div className="text-sm font-medium text-text-muted">
                                 {formatCurrency(
-                                  option ? option.price * quantity : 0
+                                  option ? option.price * quantity : 0,
                                 )}
                               </div>
                             </div>
-                          )
+                          ),
                         )}
                       </div>
                     </div>
@@ -1184,7 +1238,6 @@ const ConfigurationBuilder = () => {
           </div>
         </div>
       </div>
-
 
       {/* <div className="flex flex-1 bg-red-500 gap-2 p-2 overflow-hidden">
         <div className="w-80 bg-blue-500 flex flex-col overflow-hidden">
@@ -1214,6 +1267,6 @@ const ConfigurationBuilder = () => {
       />
     </div>
   );
-};
+}
 
 export default ConfigurationBuilder;

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { Trash2, Upload, Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, Trash2, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
 import { Button } from "@/components";
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
@@ -10,7 +11,7 @@ interface Image {
   uploadedAt: string;
 }
 
-const ImageManager = () => {
+function ImageManager() {
   const [images, setImages] = useState<Image[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(false);
@@ -65,12 +66,15 @@ const ImageManager = () => {
           fileInputRef.current.value = "";
         }
         fetchImages();
-      } else {
+      }
+      else {
         error("Failed to upload images");
       }
-    } catch (err) {
+    }
+    catch (err) {
       error("An error occurred during upload");
-    } finally {
+    }
+    finally {
       setUploadProgress(false);
     }
   };
@@ -84,7 +88,8 @@ const ImageManager = () => {
     if (result !== null) {
       success("Image deleted successfully");
       fetchImages();
-    } else {
+    }
+    else {
       error("Failed to delete image");
     }
   };
@@ -130,7 +135,9 @@ const ImageManager = () => {
             <div className="bg-surface rounded p-3">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-text">
-                  {selectedFiles.length} file(s) selected
+                  {selectedFiles.length}
+                  {" "}
+                  file(s) selected
                 </p>
                 <Button
                   onClick={clearSelection}
@@ -146,7 +153,10 @@ const ImageManager = () => {
                     <ImageIcon size={12} />
                     <span>{file.name}</span>
                     <span className="text-text-muted">
-                      ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                      (
+                      {(file.size / 1024 / 1024).toFixed(2)}
+                      {" "}
+                      MB)
                     </span>
                   </div>
                 ))}
@@ -155,7 +165,11 @@ const ImageManager = () => {
           )}
 
           <div className="text-xs text-text-muted space-y-1 bg-surface p-3 rounded">
-            <p><strong>Note:</strong> Images will be automatically converted to WebP format</p>
+            <p>
+              <strong>Note:</strong>
+              {" "}
+              Images will be automatically converted to WebP format
+            </p>
             <p>Maximum file size: 20MB per image (before compression)</p>
             <p>Images will be compressed to maintain quality at 85% with a 2MB limit after compression</p>
           </div>
@@ -165,60 +179,64 @@ const ImageManager = () => {
       <div className="bg-foreground rounded-lg p-6 flex-1" style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
         <h3 className="text-xl font-semibold text-text mb-4">Uploaded Images</h3>
 
-        {images.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-text-muted">
-            <ImageIcon size={48} className="mb-4 opacity-50" />
-            <p>No images uploaded yet</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {images.map((image) => (
-              <div
-                key={image.id}
-                className="group relative bg-surface rounded-lg overflow-hidden border border-border hover:border-primary transition-colors"
-              >
-                <div className="aspect-square">
-                  <img
-                    src={`${import.meta.env.VITE_API_URL.replace('/v1', '')}${image.url}`}
-                    alt={`Image ${image.id}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-2 space-y-1">
-                  <p className="text-xs text-text-muted truncate">
-                    ID: {image.id}
-                  </p>
-                  <p className="text-xs text-text-muted truncate">
-                    {new Date(image.uploadedAt).toLocaleDateString()}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleDelete(image.id)}
-                      variant="destructive"
-                      size="sm"
-                      className="flex-1 flex items-center justify-center gap-1"
-                    >
-                      <Trash2 size={14} />
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => navigator.clipboard.writeText(image.url)}
-                    className="bg-background/80 backdrop-blur-sm text-text px-2 py-1 rounded text-xs hover:bg-background"
-                    title="Copy URL"
-                  >
-                    Copy URL
-                  </button>
-                </div>
+        {images.length === 0
+          ? (
+              <div className="flex flex-col items-center justify-center py-12 text-text-muted">
+                <ImageIcon size={48} className="mb-4 opacity-50" />
+                <p>No images uploaded yet</p>
               </div>
-            ))}
-          </div>
-        )}
+            )
+          : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {images.map(image => (
+                  <div
+                    key={image.id}
+                    className="group relative bg-surface rounded-lg overflow-hidden border border-border hover:border-primary transition-colors"
+                  >
+                    <div className="aspect-square">
+                      <img
+                        src={`${import.meta.env.VITE_API_URL.replace("/v1", "")}${image.url}`}
+                        alt={`Image ${image.id}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-2 space-y-1">
+                      <p className="text-xs text-text-muted truncate">
+                        ID:
+                        {" "}
+                        {image.id}
+                      </p>
+                      <p className="text-xs text-text-muted truncate">
+                        {new Date(image.uploadedAt).toLocaleDateString()}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleDelete(image.id)}
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1 flex items-center justify-center gap-1"
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => navigator.clipboard.writeText(image.url)}
+                        className="bg-background/80 backdrop-blur-sm text-text px-2 py-1 rounded text-xs hover:bg-background"
+                        title="Copy URL"
+                      >
+                        Copy URL
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
       </div>
     </div>
   );
-};
+}
 
 export default ImageManager;

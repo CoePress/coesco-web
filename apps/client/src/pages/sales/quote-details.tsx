@@ -1,15 +1,18 @@
 import {
-  Plus,
-  ChevronDown,
-  CheckCircle,
   Check,
-  Send,
+  CheckCircle,
+  ChevronDown,
   Eye,
-  Trash,
   GripVertical,
+  Plus,
   Search,
+  Send,
+  Trash,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+
+import type { IApiResponse } from "@/utils/types";
 
 import {
   Button,
@@ -19,20 +22,18 @@ import {
   Table,
   // Tabs,
 } from "@/components";
-import { formatCurrency, formatDate, formatQuoteNumber } from "@/utils";
-import { useMemo, useState, useEffect } from "react";
-import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
+import { useApi } from "@/hooks/use-api";
+import { formatCurrency, formatDate, formatQuoteNumber } from "@/utils";
 
-const QuoteDetails = () => {
+function QuoteDetails() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDealerModalOpen, setIsDealerModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isSendConfirmationOpen, setIsSendConfirmationOpen] = useState(false);
-  const [isRevisionConfirmationOpen, setIsRevisionConfirmationOpen] =
-    useState(false);
+  const [isRevisionConfirmationOpen, setIsRevisionConfirmationOpen]
+    = useState(false);
   const [isDeleteItemModalOpen, setIsDeleteItemModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -66,17 +67,18 @@ const QuoteDetails = () => {
   }, []);
 
   const handleDragStart = (itemId: string) => {
-    if (quoteOverview?.status !== "DRAFT") return;
+    if (quoteOverview?.status !== "DRAFT")
+      return;
     setDraggedItemId(itemId);
   };
 
   const handleDragEnd = async () => {
     if (draggedItemId && hoveredRowId) {
       const currentItems = quoteItems.sort(
-        (a: any, b: any) => a.lineNumber - b.lineNumber
+        (a: any, b: any) => a.lineNumber - b.lineNumber,
       );
       const draggedItem = currentItems.find(
-        (item: any) => item.id === draggedItemId
+        (item: any) => item.id === draggedItemId,
       );
 
       if (draggedItem) {
@@ -84,15 +86,17 @@ const QuoteDetails = () => {
 
         if (hoveredRowId === "top") {
           newLineNumber = 1;
-        } else {
+        }
+        else {
           const afterItemId = hoveredRowId.replace("after-", "");
           const afterItem = currentItems.find(
-            (item: any) => item.id === afterItemId
+            (item: any) => item.id === afterItemId,
           );
 
           if (afterItem) {
             newLineNumber = afterItem.lineNumber + 1;
-          } else {
+          }
+          else {
             newLineNumber = currentItems.length + 1;
           }
         }
@@ -107,7 +111,8 @@ const QuoteDetails = () => {
   };
 
   const handleDragMove = (e: React.MouseEvent) => {
-    if (!draggedItemId) return;
+    if (!draggedItemId)
+      return;
 
     const dropZones = document.querySelectorAll("[data-drop-zone]");
     let closestZone: HTMLElement | null = null;
@@ -126,10 +131,11 @@ const QuoteDetails = () => {
 
     if (closestZone !== null) {
       const zoneId = (closestZone as HTMLElement).getAttribute(
-        "data-drop-zone"
+        "data-drop-zone",
       );
       setHoveredRowId(zoneId || null);
-    } else {
+    }
+    else {
       setHoveredRowId(null);
     }
   };
@@ -141,29 +147,35 @@ const QuoteDetails = () => {
   const handleDoubleClick = (
     itemId: string,
     field: "quantity" | "unitPrice" | "discount" | "tax",
-    currentValue: any
+    currentValue: any,
   ) => {
-    if (quoteOverview?.status !== "DRAFT") return;
+    if (quoteOverview?.status !== "DRAFT")
+      return;
     setEditingItemId(itemId);
     setEditingField(field);
     setEditingValue(currentValue.toString());
   };
 
   const handleSaveEdit = async () => {
-    if (!editingItemId || !editingField || !editingValue) return;
+    if (!editingItemId || !editingField || !editingValue)
+      return;
 
     const item = quoteItems.find((item: any) => item.id === editingItemId);
-    if (!item) return;
+    if (!item)
+      return;
 
     const updateData: any = {};
     if (editingField === "quantity") {
-      updateData.quantity = parseInt(editingValue) || 1;
-    } else if (editingField === "unitPrice") {
-      updateData.unitPrice = parseFloat(editingValue) || 0;
-    } else if (editingField === "discount") {
-      updateData.discount = parseFloat(editingValue) || 0;
-    } else if (editingField === "tax") {
-      updateData.tax = parseFloat(editingValue) || 0;
+      updateData.quantity = Number.parseInt(editingValue) || 1;
+    }
+    else if (editingField === "unitPrice") {
+      updateData.unitPrice = Number.parseFloat(editingValue) || 0;
+    }
+    else if (editingField === "discount") {
+      updateData.discount = Number.parseFloat(editingValue) || 0;
+    }
+    else if (editingField === "tax") {
+      updateData.tax = Number.parseFloat(editingValue) || 0;
     }
 
     await updateQuoteItem(editingItemId, updateData);
@@ -188,9 +200,10 @@ const QuoteDetails = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { get: getQuoteOverview } = useApi<IApiResponse<any>>();
   const { get: getRevisions } = useApi<IApiResponse<any[]>>();
-  
+
   const fetchQuoteOverview = async () => {
-    if (!quoteId) return;
+    if (!quoteId)
+      return;
     setOverviewLoading(true);
     const response = await getQuoteOverview(`/sales/quotes/${quoteId}`);
     if (response?.success) {
@@ -200,7 +213,8 @@ const QuoteDetails = () => {
   };
 
   const fetchRevisionOverview = async (revisionId: string) => {
-    if (!quoteId) return;
+    if (!quoteId)
+      return;
     setOverviewLoading(true);
     const response = await getQuoteOverview(`/sales/quotes/${quoteId}/revisions/${revisionId}`);
     if (response?.success) {
@@ -210,34 +224,36 @@ const QuoteDetails = () => {
   };
 
   const fetchRevisions = async () => {
-    if (!quoteId) return;
+    if (!quoteId)
+      return;
     const response = await getRevisions(`/sales/quotes/${quoteId}/revisions`);
     if (response?.success) {
       const fetchedRevisions = response.data || [];
       setRevisions(fetchedRevisions);
-      
+
       const staticSorted = [...fetchedRevisions].sort((a: any, b: any) => {
         const aRev = a.revision;
         const bRev = b.revision;
-        
+
         if (/^\d+$/.test(aRev) && /^\d+$/.test(bRev)) {
-          return parseInt(bRev) - parseInt(aRev);
+          return Number.parseInt(bRev) - Number.parseInt(aRev);
         }
-        
+
         if (aRev.length !== bRev.length) {
           return bRev.length - aRev.length;
         }
-        
+
         return bRev.localeCompare(aRev);
       });
       setSortedRevisions(staticSorted);
     }
   };
-  
+
   const refreshQuote = () => {
     if (selectedRevisionId) {
       fetchRevisionOverview(selectedRevisionId);
-    } else {
+    }
+    else {
       fetchQuoteOverview();
     }
     fetchRevisions();
@@ -249,20 +265,20 @@ const QuoteDetails = () => {
       // User selected latest revision
       setSelectedRevisionId(null);
       fetchQuoteOverview();
-    } else {
+    }
+    else {
       setSelectedRevisionId(revisionId);
       fetchRevisionOverview(revisionId);
     }
   };
-  
+
   useEffect(() => {
     fetchQuoteOverview();
     fetchRevisions();
   }, [quoteId]);
 
-
   const { patch: updateLineNumberApi } = useApi<IApiResponse<any>>();
-  
+
   const updateLineNumber = async (itemId: string, lineNumber: number) => {
     const response = await updateLineNumberApi(`/sales/quotes/items/${itemId}/line-number`, { lineNumber });
     return response?.success ? response.data : null;
@@ -278,25 +294,25 @@ const QuoteDetails = () => {
   const customer = quoteOverview?.customer || null;
   const dealer = quoteOverview?.dealer || null;
 
-  const pageTitle = quoteOverview?.year && quoteOverview?.number && quoteOverview?.revision 
+  const pageTitle = quoteOverview?.year && quoteOverview?.number && quoteOverview?.revision
     ? formatQuoteNumber(quoteOverview.year, quoteOverview.number, quoteOverview.revision)
     : `${quoteOverview?.number || "Q-2024-001"} (${quoteOverview?.revision || "A"})`;
   const pageDescription = `${quoteItems.reduce(
     (acc: number, item: any) => acc + item.quantity,
-    0
+    0,
   )} items • ${formatCurrency(
     quoteItems.reduce(
       (acc: number, item: any) => acc + Number(item.totalPrice),
-      0
-    ) -
-      quoteItems.reduce(
-        (acc: number, item: any) => acc + (Number(item.discount) || 0),
-        0
-      ) +
-      quoteItems.reduce(
-        (acc: number, item: any) => acc + (Number(item.taxAmount) || 0),
-        0
-      )
+      0,
+    )
+    - quoteItems.reduce(
+      (acc: number, item: any) => acc + (Number(item.discount) || 0),
+      0,
+    )
+    + quoteItems.reduce(
+      (acc: number, item: any) => acc + (Number(item.taxAmount) || 0),
+      0,
+    ),
   )} • ${quoteOverview?.status}`;
 
   const Actions = () => {
@@ -306,33 +322,42 @@ const QuoteDetails = () => {
     // Add Revision Dropdown
     if (sortedRevisions.length > 1) {
       actions.push(
-<div key="revision-dropdown" className="relative">
+        <div key="revision-dropdown" className="relative">
           <div
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="appearance-none bg-surface border border-border rounded px-3 py-2 pr-8 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer min-w-40">
-            Revision {quoteOverview?.revision} {!selectedRevisionId ? " (Latest)" : ""}
+            className="appearance-none bg-surface border border-border rounded px-3 py-2 pr-8 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer min-w-40"
+          >
+            Revision
+            {" "}
+            {quoteOverview?.revision}
+            {" "}
+            {!selectedRevisionId ? " (Latest)" : ""}
           </div>
-          <ChevronDown 
-            size={16} 
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" 
+          <ChevronDown
+            size={16}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none"
           />
           {isDropdownOpen && (
             <div className="absolute top-full left-0 right-0 bg-surface border border-border rounded mt-1 shadow-lg z-50">
-              {sortedRevisions.map((revision) => (
+              {sortedRevisions.map(revision => (
                 <div
                   key={revision.id}
                   onClick={() => {
                     handleRevisionChange(revision.id);
                     setIsDropdownOpen(false);
                   }}
-                  className="px-3 py-2 text-sm text-text hover:bg-foreground cursor-pointer flex items-center justify-between">
-                  <span>Revision {revision.revision}</span>
+                  className="px-3 py-2 text-sm text-text hover:bg-foreground cursor-pointer flex items-center justify-between"
+                >
+                  <span>
+                    Revision
+                    {revision.revision}
+                  </span>
                   {revision.revision === quoteOverview?.revision && <Check size={16} />}
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </div>,
       );
     }
 
@@ -343,20 +368,26 @@ const QuoteDetails = () => {
           <Button
             key="add-customer"
             variant="secondary-outline"
-            onClick={() => setIsCustomerModalOpen(true)}>
-            <Plus size={16} /> Add Customer
-          </Button>
+            onClick={() => setIsCustomerModalOpen(true)}
+          >
+            <Plus size={16} />
+            {" "}
+            Add Customer
+          </Button>,
         );
       }
-      
+
       if (!dealer) {
         actions.push(
           <Button
             key="add-dealer"
             variant="secondary-outline"
-            onClick={() => setIsDealerModalOpen(true)}>
-            <Plus size={16} /> Add Dealer
-          </Button>
+            onClick={() => setIsDealerModalOpen(true)}
+          >
+            <Plus size={16} />
+            {" "}
+            Add Dealer
+          </Button>,
         );
       }
     }
@@ -366,9 +397,12 @@ const QuoteDetails = () => {
         <Button
           key="preview"
           variant="secondary-outline"
-          onClick={() => setIsPreviewModalOpen(true)}>
-          <Eye size={16} /> Preview
-        </Button>
+          onClick={() => setIsPreviewModalOpen(true)}
+        >
+          <Eye size={16} />
+          {" "}
+          Preview
+        </Button>,
       );
     }
 
@@ -380,9 +414,12 @@ const QuoteDetails = () => {
               key="approve"
               variant="primary"
               disabled={quoteItems.length === 0}
-              onClick={() => setIsApprovalModalOpen(true)}>
-              <CheckCircle size={16} /> Approve Quote
-            </Button>
+              onClick={() => setIsApprovalModalOpen(true)}
+            >
+              <CheckCircle size={16} />
+              {" "}
+              Approve Quote
+            </Button>,
           );
           break;
         case "APPROVED":
@@ -390,9 +427,12 @@ const QuoteDetails = () => {
             <Button
               key="send"
               variant="primary"
-              onClick={() => setIsSendConfirmationOpen(true)}>
-              <Send size={16} /> Send Quote
-            </Button>
+              onClick={() => setIsSendConfirmationOpen(true)}
+            >
+              <Send size={16} />
+              {" "}
+              Send Quote
+            </Button>,
           );
           break;
         case "SENT":
@@ -400,9 +440,12 @@ const QuoteDetails = () => {
             <Button
               key="revise"
               variant="primary"
-              onClick={() => setIsRevisionConfirmationOpen(true)}>
-              <Plus size={16} /> Create Revision
-            </Button>
+              onClick={() => setIsRevisionConfirmationOpen(true)}
+            >
+              <Plus size={16} />
+              {" "}
+              Create Revision
+            </Button>,
           );
           break;
       }
@@ -429,7 +472,7 @@ const QuoteDetails = () => {
               <div className="space-y-1">
                 <div className="text-xs text-text-muted">Number</div>
                 <div className="text-sm font-medium text-text">
-                  {quoteOverview?.year && quoteOverview?.number 
+                  {quoteOverview?.year && quoteOverview?.number
                     ? formatQuoteNumber(quoteOverview.year, quoteOverview.number)
                     : "25-00001"}
                 </div>
@@ -523,7 +566,8 @@ const QuoteDetails = () => {
                 onClick={() => setIsModalOpen(true)}
                 size="sm"
                 disabled={quoteOverview?.status !== "DRAFT"}
-                variant="secondary-outline">
+                variant="secondary-outline"
+              >
                 <Plus size={16} />
                 Add Item
               </Button>
@@ -538,7 +582,8 @@ const QuoteDetails = () => {
                     quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
                       : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
-                }}>
+                }}
+              >
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div className="truncate whitespace-nowrap">Line</div>
                 <div className="truncate whitespace-nowrap">Item</div>
@@ -565,7 +610,8 @@ const QuoteDetails = () => {
               className={`relative select-none ${draggedItemId ? "cursor-grabbing" : ""}`}
               onMouseUp={handleDragEnd}
               onMouseMove={handleDragMove}
-              onMouseLeave={handleDragLeave}>
+              onMouseLeave={handleDragLeave}
+            >
               <div
                 data-drop-zone="top"
                 className={`h-px transition-colors ${hoveredRowId === "top" ? "bg-primary" : "bg-transparent"}`}
@@ -584,7 +630,8 @@ const QuoteDetails = () => {
                           quoteOverview?.status === "DRAFT"
                             ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
                             : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
-                      }}>
+                      }}
+                    >
                       {quoteOverview?.status === "DRAFT" && (
                         <div className="flex items-center">
                           <GripVertical
@@ -599,47 +646,53 @@ const QuoteDetails = () => {
                       )}
                       <div
                         className="text-sm text-text-muted truncate whitespace-nowrap"
-                        title={item.lineNumber}>
+                        title={item.lineNumber}
+                      >
                         {item.lineNumber}
                       </div>
                       <div
                         className="text-sm font-medium text-text truncate whitespace-nowrap"
-                        title={item.item?.name || item.configuration?.name}>
+                        title={item.item?.name || item.configuration?.name}
+                      >
                         {item.item?.name || item.configuration?.name}
                       </div>
                       <div
                         className="text-sm text-text truncate whitespace-nowrap"
                         title={
-                          item.item?.description ||
-                          item.configuration?.description
-                        }>
-                        {item.item?.description ||
-                          item.configuration?.description}
+                          item.item?.description
+                          || item.configuration?.description
+                        }
+                      >
+                        {item.item?.description
+                          || item.configuration?.description}
                       </div>
                       <div
                         className="text-sm text-text text-right cursor-pointer hover:bg-foreground/50 px-1 rounded"
                         onDoubleClick={() =>
-                          handleDoubleClick(item.id, "quantity", item.quantity)
-                        }>
-                        {editingItemId === item.id &&
-                        editingField === "quantity" ? (
-                          <input
-                            value={editingValue}
-                            onChange={(e) => setEditingValue(e.target.value)}
-                            onBlur={handleSaveEdit}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                handleSaveEdit();
-                              } else if (e.key === "Escape") {
-                                handleCancelEdit();
-                              }
-                            }}
-                            className="px-2 rounded text-right text-text text-sm w-14"
-                            autoFocus
-                          />
-                        ) : (
-                          item.quantity
-                        )}
+                          handleDoubleClick(item.id, "quantity", item.quantity)}
+                      >
+                        {editingItemId === item.id
+                          && editingField === "quantity"
+                          ? (
+                              <input
+                                value={editingValue}
+                                onChange={e => setEditingValue(e.target.value)}
+                                onBlur={handleSaveEdit}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    handleSaveEdit();
+                                  }
+                                  else if (e.key === "Escape") {
+                                    handleCancelEdit();
+                                  }
+                                }}
+                                className="px-2 rounded text-right text-text text-sm w-14"
+                                autoFocus
+                              />
+                            )
+                          : (
+                              item.quantity
+                            )}
                       </div>
                       <div
                         className="text-sm text-text text-right cursor-pointer hover:bg-foreground/50 px-1 rounded"
@@ -647,28 +700,31 @@ const QuoteDetails = () => {
                           handleDoubleClick(
                             item.id,
                             "unitPrice",
-                            item.unitPrice
-                          )
-                        }>
-                        {editingItemId === item.id &&
-                        editingField === "unitPrice" ? (
-                          <input
-                            value={editingValue}
-                            onChange={(e) => setEditingValue(e.target.value)}
-                            onBlur={handleSaveEdit}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                handleSaveEdit();
-                              } else if (e.key === "Escape") {
-                                handleCancelEdit();
-                              }
-                            }}
-                            className="px-2 rounded text-right text-text text-sm w-20"
-                            autoFocus
-                          />
-                        ) : (
-                          formatCurrency(item.unitPrice || 0)
-                        )}
+                            item.unitPrice,
+                          )}
+                      >
+                        {editingItemId === item.id
+                          && editingField === "unitPrice"
+                          ? (
+                              <input
+                                value={editingValue}
+                                onChange={e => setEditingValue(e.target.value)}
+                                onBlur={handleSaveEdit}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    handleSaveEdit();
+                                  }
+                                  else if (e.key === "Escape") {
+                                    handleCancelEdit();
+                                  }
+                                }}
+                                className="px-2 rounded text-right text-text text-sm w-20"
+                                autoFocus
+                              />
+                            )
+                          : (
+                              formatCurrency(item.unitPrice || 0)
+                            )}
                       </div>
                       <div
                         className="text-sm text-text text-right cursor-pointer hover:bg-foreground/50 px-1 rounded"
@@ -676,28 +732,31 @@ const QuoteDetails = () => {
                           handleDoubleClick(
                             item.id,
                             "discount",
-                            item.discount || 0
-                          )
-                        }>
-                        {editingItemId === item.id &&
-                        editingField === "discount" ? (
-                          <input
-                            value={editingValue}
-                            onChange={(e) => setEditingValue(e.target.value)}
-                            onBlur={handleSaveEdit}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                handleSaveEdit();
-                              } else if (e.key === "Escape") {
-                                handleCancelEdit();
-                              }
-                            }}
-                            className="px-2 rounded text-right text-text text-sm w-20"
-                            autoFocus
-                          />
-                        ) : (
-                          formatCurrency(item.discount || 0)
-                        )}
+                            item.discount || 0,
+                          )}
+                      >
+                        {editingItemId === item.id
+                          && editingField === "discount"
+                          ? (
+                              <input
+                                value={editingValue}
+                                onChange={e => setEditingValue(e.target.value)}
+                                onBlur={handleSaveEdit}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    handleSaveEdit();
+                                  }
+                                  else if (e.key === "Escape") {
+                                    handleCancelEdit();
+                                  }
+                                }}
+                                className="px-2 rounded text-right text-text text-sm w-20"
+                                autoFocus
+                              />
+                            )
+                          : (
+                              formatCurrency(item.discount || 0)
+                            )}
                       </div>
                       <div className="text-sm text-text text-right">
                         {formatCurrency(item.tax || 0)}
@@ -714,7 +773,8 @@ const QuoteDetails = () => {
                               setSelectedItem(item);
                               setIsDeleteItemModalOpen(true);
                             }
-                          }}>
+                          }}
+                        >
                           <Trash size={16} />
                         </Button>
                       </div>
@@ -736,7 +796,8 @@ const QuoteDetails = () => {
                     quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
                       : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
-                }}>
+                }}
+              >
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
                 <div></div>
@@ -751,8 +812,8 @@ const QuoteDetails = () => {
                   {formatCurrency(
                     quoteItems.reduce(
                       (acc: number, item: any) => acc + Number(item.totalPrice),
-                      0
-                    )
+                      0,
+                    ),
                   )}
                 </div>
               </div>
@@ -763,7 +824,8 @@ const QuoteDetails = () => {
                     quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
                       : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
-                }}>
+                }}
+              >
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
                 <div></div>
@@ -778,16 +840,17 @@ const QuoteDetails = () => {
                   {quoteItems.reduce(
                     (acc: number, item: any) =>
                       acc + (Number(item.discount) || 0),
-                    0
+                    0,
                   ) > 0
                     ? "-"
-                    : ""}{" "}
+                    : ""}
+                  {" "}
                   {formatCurrency(
                     quoteItems.reduce(
                       (acc: number, item: any) =>
                         acc + (Number(item.discount) || 0),
-                      0
-                    )
+                      0,
+                    ),
                   )}
                 </div>
               </div>
@@ -798,7 +861,8 @@ const QuoteDetails = () => {
                     quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
                       : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
-                }}>
+                }}
+              >
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
                 <div></div>
@@ -814,8 +878,8 @@ const QuoteDetails = () => {
                     quoteItems.reduce(
                       (acc: number, item: any) =>
                         acc + (Number(item.taxAmount) || 0),
-                      0
-                    )
+                      0,
+                    ),
                   )}
                 </div>
               </div>
@@ -826,7 +890,8 @@ const QuoteDetails = () => {
                     quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 80px 120px 120px 120px 120px 64px"
                       : "48px 2fr 3fr 80px 120px 120px 120px 120px 64px",
-                }}>
+                }}
+              >
                 {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
                 <div></div>
@@ -841,18 +906,18 @@ const QuoteDetails = () => {
                   {formatCurrency(
                     quoteItems.reduce(
                       (acc: number, item: any) => acc + Number(item.totalPrice),
-                      0
-                    ) -
-                      quoteItems.reduce(
-                        (acc: number, item: any) =>
-                          acc + (Number(item.discount) || 0),
-                        0
-                      ) +
-                      quoteItems.reduce(
-                        (acc: number, item: any) =>
-                          acc + (Number(item.taxAmount) || 0),
-                        0
-                      )
+                      0,
+                    )
+                    - quoteItems.reduce(
+                      (acc: number, item: any) =>
+                        acc + (Number(item.discount) || 0),
+                      0,
+                    )
+                    + quoteItems.reduce(
+                      (acc: number, item: any) =>
+                        acc + (Number(item.taxAmount) || 0),
+                      0,
+                    ),
                   )}
                 </div>
               </div>
@@ -929,9 +994,9 @@ const QuoteDetails = () => {
       />
     </div>
   );
-};
+}
 
-const AddItemModal = ({
+function AddItemModal({
   isOpen,
   onClose,
   quoteId,
@@ -941,26 +1006,26 @@ const AddItemModal = ({
   onClose: () => void;
   quoteId: string;
   onSuccess: () => void;
-}) => {
+}) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [selectedQuantity, setSelectedQuantity] = useState<
     Record<string, number>
   >({});
-  const [productType, setProductType] = useState<'equipment' | 'parts' | 'services'>('equipment');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [productType, setProductType] = useState<"equipment" | "parts" | "services">("equipment");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
     total: 0,
     totalPages: 1,
     page: 1,
-    limit: 25
+    limit: 25,
   });
 
   const [addItemLoading, setAddItemLoading] = useState<boolean>(false);
   const [addItemError, setAddItemError] = useState<string | null>(null);
   const { post: createQuoteItemApi } = useApi<IApiResponse<any>>();
-  
+
   const createQuoteItem = async (data: any) => {
     setAddItemLoading(true);
     setAddItemError(null);
@@ -968,7 +1033,8 @@ const AddItemModal = ({
     setAddItemLoading(false);
     if (response?.success) {
       return response.data;
-    } else {
+    }
+    else {
       setAddItemError(response?.error || "Failed to create quote item");
       return null;
     }
@@ -980,7 +1046,8 @@ const AddItemModal = ({
   };
 
   const handleConfirmAddItem = async () => {
-    if (!quoteId || !selectedItem) return;
+    if (!quoteId || !selectedItem)
+      return;
 
     const result = await createQuoteItem({
       itemId: selectedItem.id,
@@ -1005,167 +1072,185 @@ const AddItemModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title={showConfirmation ? "Confirm Item Addition" : "Add Item to Quote"}
-      size={showConfirmation ? "sm" : "lg"}>
+      size={showConfirmation ? "sm" : "lg"}
+    >
       <div className="flex flex-col h-full">
-        {showConfirmation ? (
-          <div className="flex flex-col gap-4">
-            <div className="text-sm text-text-muted">
-              Are you sure you want to add this item to the quote?
-            </div>
-
-            {addItemError && (
-              <div className="text-sm text-red-500">{addItemError}</div>
-            )}
-
-            <div className="space-y-2">
-              <div>
-                <div className="font-medium text-text">
-                  {selectedItem?.modelNumber}
-                </div>
+        {showConfirmation
+          ? (
+              <div className="flex flex-col gap-4">
                 <div className="text-sm text-text-muted">
-                  Quantity: {selectedQuantity[selectedItem?.id] || 1} ×{" "}
-                  {formatCurrency(selectedItem?.specifications?.price || 0)} ={" "}
-                  {formatCurrency(
-                    (selectedQuantity[selectedItem?.id] || 1) *
-                      (selectedItem?.specifications?.price || 0)
-                  )}
+                  Are you sure you want to add this item to the quote?
                 </div>
-              </div>
-            </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t">
-              <Button
-                variant="secondary-outline"
-                onClick={handleCancelAddItem}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleConfirmAddItem}
-                disabled={addItemLoading}>
-                {addItemLoading ? "Adding..." : "Confirm"}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex-shrink-0 space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-text-muted" />
+                {addItemError && (
+                  <div className="text-sm text-red-500">{addItemError}</div>
+                )}
+
+                <div className="space-y-2">
+                  <div>
+                    <div className="font-medium text-text">
+                      {selectedItem?.modelNumber}
                     </div>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search items..."
-                      className="block w-full pl-10 pr-2 py-2 border border-border rounded-sm leading-5 bg-foreground placeholder-text-muted focus:outline-none focus:placeholder-text focus:ring-1 focus:ring-primary focus:border-primary text-sm text-foreground"
-                    />
+                    <div className="text-sm text-text-muted">
+                      Quantity:
+                      {" "}
+                      {selectedQuantity[selectedItem?.id] || 1}
+                      {" "}
+                      ×
+                      {" "}
+                      {formatCurrency(selectedItem?.specifications?.price || 0)}
+                      {" "}
+                      =
+                      {" "}
+                      {formatCurrency(
+                        (selectedQuantity[selectedItem?.id] || 1)
+                        * (selectedItem?.specifications?.price || 0),
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-1 bg-surface p-1 rounded border border-border">
-                <button
-                  onClick={() => setProductType('equipment')}
-                  className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-                    productType === 'equipment' 
-                      ? 'bg-primary text-background' 
-                      : 'text-text-muted hover:text-text'
-                  }`}
-                >
-                  Equipment
-                </button>
-                <button
-                  onClick={() => setProductType('parts')}
-                  className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-                    productType === 'parts' 
-                      ? 'bg-primary text-background' 
-                      : 'text-text-muted hover:text-text'
-                  }`}
-                >
-                  Parts
-                </button>
-                <button
-                  onClick={() => setProductType('services')}
-                  className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-                    productType === 'services' 
-                      ? 'bg-primary text-background' 
-                      : 'text-text-muted hover:text-text'
-                  }`}
-                >
-                  Services
-                </button>
-                </div>
-              </div>
-            </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 max-h-96">
-              <ItemsTab
-                onAddItem={handleAddItem}
-                addItemLoading={addItemLoading}
-                selectedQuantity={selectedQuantity}
-                setSelectedQuantity={setSelectedQuantity}
-                productType={productType}
-                page={page}
-                pagination={pagination}
-                setPagination={setPagination}
-              />
-            </div>
-
-            <div className="flex justify-between gap-2 pt-2 border-t flex-shrink-0">
-              <Button
-                variant="secondary-outline"
-                onClick={onClose}>
-                Cancel
-              </Button>
-              <div className="flex gap-2 items-center ml-auto">
-                <div className="flex gap-1">
+                <div className="flex justify-end gap-2 pt-2 border-t">
                   <Button
                     variant="secondary-outline"
-                    size="sm"
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page <= 1}>
-                    <ChevronDown
-                      className="rotate-90"
-                      size={16}
-                    />
+                    onClick={handleCancelAddItem}
+                  >
+                    Cancel
                   </Button>
-                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                    const pageNum = Math.max(1, Math.min(pagination.totalPages - 4, page - 2)) + i;
-                    if (pageNum > pagination.totalPages) return null;
-                    return (
+                  <Button
+                    variant="primary"
+                    onClick={handleConfirmAddItem}
+                    disabled={addItemLoading}
+                  >
+                    {addItemLoading ? "Adding..." : "Confirm"}
+                  </Button>
+                </div>
+              </div>
+            )
+          : (
+              <>
+                <div className="flex-shrink-0 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                          <Search className="h-4 w-4 text-text-muted" />
+                        </div>
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          placeholder="Search items..."
+                          className="block w-full pl-10 pr-2 py-2 border border-border rounded-sm leading-5 bg-foreground placeholder-text-muted focus:outline-none focus:placeholder-text focus:ring-1 focus:ring-primary focus:border-primary text-sm text-foreground"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-1 bg-surface p-1 rounded border border-border">
+                      <button
+                        onClick={() => setProductType("equipment")}
+                        className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                          productType === "equipment"
+                            ? "bg-primary text-background"
+                            : "text-text-muted hover:text-text"
+                        }`}
+                      >
+                        Equipment
+                      </button>
+                      <button
+                        onClick={() => setProductType("parts")}
+                        className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                          productType === "parts"
+                            ? "bg-primary text-background"
+                            : "text-text-muted hover:text-text"
+                        }`}
+                      >
+                        Parts
+                      </button>
+                      <button
+                        onClick={() => setProductType("services")}
+                        className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                          productType === "services"
+                            ? "bg-primary text-background"
+                            : "text-text-muted hover:text-text"
+                        }`}
+                      >
+                        Services
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto min-h-0 max-h-96">
+                  <ItemsTab
+                    onAddItem={handleAddItem}
+                    addItemLoading={addItemLoading}
+                    selectedQuantity={selectedQuantity}
+                    setSelectedQuantity={setSelectedQuantity}
+                    productType={productType}
+                    page={page}
+                    pagination={pagination}
+                    setPagination={setPagination}
+                  />
+                </div>
+
+                <div className="flex justify-between gap-2 pt-2 border-t flex-shrink-0">
+                  <Button
+                    variant="secondary-outline"
+                    onClick={onClose}
+                  >
+                    Cancel
+                  </Button>
+                  <div className="flex gap-2 items-center ml-auto">
+                    <div className="flex gap-1">
                       <Button
-                        key={pageNum}
-                        variant={pageNum === page ? "primary" : "secondary-outline"}
+                        variant="secondary-outline"
                         size="sm"
-                        onClick={() => setPage(pageNum)}
-                        disabled={pageNum === page}>
-                        {pageNum}
+                        onClick={() => setPage(Math.max(1, page - 1))}
+                        disabled={page <= 1}
+                      >
+                        <ChevronDown
+                          className="rotate-90"
+                          size={16}
+                        />
                       </Button>
-                    );
-                  })}
-                  <Button
-                    variant="secondary-outline"
-                    size="sm"
-                    onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
-                    disabled={page >= pagination.totalPages}>
-                    <ChevronDown
-                      className="-rotate-90"
-                      size={16}
-                    />
-                  </Button>
+                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                        const pageNum = Math.max(1, Math.min(pagination.totalPages - 4, page - 2)) + i;
+                        if (pageNum > pagination.totalPages)
+                          return null;
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={pageNum === page ? "primary" : "secondary-outline"}
+                            size="sm"
+                            onClick={() => setPage(pageNum)}
+                            disabled={pageNum === page}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                      <Button
+                        variant="secondary-outline"
+                        size="sm"
+                        onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
+                        disabled={page >= pagination.totalPages}
+                      >
+                        <ChevronDown
+                          className="-rotate-90"
+                          size={16}
+                        />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </>
-        )}
+              </>
+            )}
       </div>
     </Modal>
   );
-};
+}
 
-const ItemsTab = ({
+function ItemsTab({
   onAddItem,
   addItemLoading,
   selectedQuantity,
@@ -1179,11 +1264,11 @@ const ItemsTab = ({
   addItemLoading: boolean;
   selectedQuantity: Record<string, number>;
   setSelectedQuantity: (quantity: Record<string, number>) => void;
-  productType: 'equipment' | 'parts' | 'services';
+  productType: "equipment" | "parts" | "services";
   page: number;
   pagination: { total: number; totalPages: number; page: number; limit: number };
   setPagination: (pagination: { total: number; totalPages: number; page: number; limit: number }) => void;
-}) => {
+}) {
   const [items, setItems] = useState<any[]>([]);
   const [itemsLoading, setItemsLoading] = useState<boolean>(true);
   const [itemsError, setItemsError] = useState<string | null>(null);
@@ -1191,19 +1276,19 @@ const ItemsTab = ({
   const [sort, setSort] = useState("modelNumber");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const { get: getItems } = useApi<IApiResponse<any[]>>();
-  
+
   const fetchItems = async () => {
     setItemsLoading(true);
     setItemsError(null);
     const filter = JSON.stringify({
       type: productType.charAt(0).toUpperCase() + productType.slice(1),
     });
-    const response = await getItems("/catalog/items", { 
+    const response = await getItems("/catalog/items", {
       filter,
       page,
       limit,
       sort,
-      order
+      order,
     });
     if (response?.success) {
       setItems(response.data || []);
@@ -1215,96 +1300,101 @@ const ItemsTab = ({
           limit: response.meta.limit || 25,
         });
       }
-    } else {
+    }
+    else {
       setItemsError(response?.error || "Failed to fetch items");
     }
     setItemsLoading(false);
   };
-  
+
   useEffect(() => {
     fetchItems();
   }, [productType, page, limit, sort, order]);
 
   return (
     <div className="h-full flex flex-col">
-      {itemsLoading ? (
-        <div className="flex justify-center items-center h-full">
-          <Loader />
-        </div>
-      ) : itemsError ? (
-        <div className="text-sm text-red-500">{itemsError}</div>
-      ) : (
-        <Table
-          columns={[
-            {
-              key: "modelNumber",
-              header: "Model #",
-              className: "text-primary",
-            },
-            {
-              key: "description",
-              header: "Description",
-            },
-            {
-              key: "price",
-              header: "Price",
-              render: (_, row) => formatCurrency(row.specifications?.price || 0),
-              className: "text-right",
-            },
-            {
-              key: "quantity",
-              header: "Quantity",
-              sortable: false,
-              render: (_, row) => (
-                <input
-                  type="number"
-                  min="1"
-                  defaultValue={selectedQuantity[row.id] || 1}
-                  onChange={(e) =>
-                    setSelectedQuantity({
-                      ...selectedQuantity,
-                      [row.id]: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className="w-20 px-2 py-1 border rounded text-right"
-                />
-              ),
-              className: "text-right",
-            },
-            {
-              key: "actions",
-              header: "",
-              sortable: false,
-              render: (_, row) => (
-                <div className="flex justify-end">
-                  <Button
-                    variant="secondary-outline"
-                    onClick={() => onAddItem(row)}
-                    disabled={addItemLoading}>
-                    {addItemLoading ? "Adding..." : "Add"}
-                  </Button>
-                </div>
-              ),
-              className: "text-right",
-            },
-          ]}
-          data={items || []}
-          total={pagination.total}
-          sort={sort}
-          order={order}
-          onSortChange={(newSort, newOrder) => {
-            setSort(newSort);
-            setOrder(newOrder);
-          }}
-          loading={itemsLoading}
-          emptyMessage="No items found"
-        />
-      )}
+      {itemsLoading
+        ? (
+            <div className="flex justify-center items-center h-full">
+              <Loader />
+            </div>
+          )
+        : itemsError
+          ? (
+              <div className="text-sm text-red-500">{itemsError}</div>
+            )
+          : (
+              <Table
+                columns={[
+                  {
+                    key: "modelNumber",
+                    header: "Model #",
+                    className: "text-primary",
+                  },
+                  {
+                    key: "description",
+                    header: "Description",
+                  },
+                  {
+                    key: "price",
+                    header: "Price",
+                    render: (_, row) => formatCurrency(row.specifications?.price || 0),
+                    className: "text-right",
+                  },
+                  {
+                    key: "quantity",
+                    header: "Quantity",
+                    sortable: false,
+                    render: (_, row) => (
+                      <input
+                        type="number"
+                        min="1"
+                        defaultValue={selectedQuantity[row.id] || 1}
+                        onChange={e =>
+                          setSelectedQuantity({
+                            ...selectedQuantity,
+                            [row.id]: Number.parseInt(e.target.value) || 1,
+                          })}
+                        className="w-20 px-2 py-1 border rounded text-right"
+                      />
+                    ),
+                    className: "text-right",
+                  },
+                  {
+                    key: "actions",
+                    header: "",
+                    sortable: false,
+                    render: (_, row) => (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="secondary-outline"
+                          onClick={() => onAddItem(row)}
+                          disabled={addItemLoading}
+                        >
+                          {addItemLoading ? "Adding..." : "Add"}
+                        </Button>
+                      </div>
+                    ),
+                    className: "text-right",
+                  },
+                ]}
+                data={items || []}
+                total={pagination.total}
+                sort={sort}
+                order={order}
+                onSortChange={(newSort, newOrder) => {
+                  setSort(newSort);
+                  setOrder(newOrder);
+                }}
+                loading={itemsLoading}
+                emptyMessage="No items found"
+              />
+            )}
     </div>
   );
-};
+}
 
-const SelectCompanyModal = ({
+function SelectCompanyModal({
   isOpen,
   onClose,
   quoteId,
@@ -1316,18 +1406,18 @@ const SelectCompanyModal = ({
   quoteId: string;
   onSuccess: () => void;
   type: "customer" | "dealer";
-}) => {
+}) {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<any[]>([]);
   const { get: getCompanies } = useApi<IApiResponse<any[]>>();
-  
+
   const fetchCompanies = async () => {
     const response = await getCompanies("/sales/companies");
     if (response?.success) {
       setCompanies(response.data || []);
     }
   };
-  
+
   useEffect(() => {
     fetchCompanies();
   }, []);
@@ -1346,7 +1436,8 @@ const SelectCompanyModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      size="lg">
+      size="lg"
+    >
       <div className="flex flex-col gap-4">
         <Table
           columns={[
@@ -1378,7 +1469,8 @@ const SelectCompanyModal = ({
                 <div className="flex justify-end">
                   <Button
                     variant="secondary-outline"
-                    onClick={() => handleSelectCompany()}>
+                    onClick={() => handleSelectCompany()}
+                  >
                     Select
                   </Button>
                 </div>
@@ -1393,14 +1485,16 @@ const SelectCompanyModal = ({
         <div className="flex justify-between gap-2 pt-2 border-t">
           <Button
             variant="secondary-outline"
-            onClick={() => navigate("/sales/companies/new")}>
+            onClick={() => navigate("/sales/companies/new")}
+          >
             <Plus size={16} />
             {newButtonText}
           </Button>
           <div className="flex gap-2 ml-auto">
             <Button
               variant="secondary-outline"
-              onClick={onClose}>
+              onClick={onClose}
+            >
               Cancel
             </Button>
           </div>
@@ -1408,9 +1502,9 @@ const SelectCompanyModal = ({
       </div>
     </Modal>
   );
-};
+}
 
-const ApproveQuoteModal = ({
+function ApproveQuoteModal({
   isOpen,
   onClose,
   quoteId,
@@ -1422,9 +1516,9 @@ const ApproveQuoteModal = ({
   quoteId: string;
   quoteItems: any[];
   onSuccess: () => void;
-}) => {
+}) {
   const [confirmedItems, setConfirmedItems] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
 
   // Reset confirmed items when modal opens
@@ -1436,8 +1530,8 @@ const ApproveQuoteModal = ({
             acc[item.id] = false;
             return acc;
           },
-          {} as Record<string, boolean>
-        )
+          {} as Record<string, boolean>,
+        ),
       );
     }
   }, [isOpen, quoteItems]);
@@ -1445,7 +1539,7 @@ const ApproveQuoteModal = ({
   const [approveQuoteLoading, setApproveQuoteLoading] = useState<boolean>(false);
   const [approveQuoteError, setApproveQuoteError] = useState<string | null>(null);
   const { post: approveQuoteApi } = useApi<IApiResponse<any>>();
-  
+
   const approveQuote = async (quoteId: string) => {
     setApproveQuoteLoading(true);
     setApproveQuoteError(null);
@@ -1453,7 +1547,8 @@ const ApproveQuoteModal = ({
     setApproveQuoteLoading(false);
     if (response?.success) {
       return response.data;
-    } else {
+    }
+    else {
       setApproveQuoteError(response?.error || "Failed to approve quote");
       return null;
     }
@@ -1461,20 +1556,21 @@ const ApproveQuoteModal = ({
 
   const allItemsConfirmed = useMemo(() => {
     return (
-      quoteItems.length > 0 &&
-      quoteItems.every((item) => confirmedItems[item.id])
+      quoteItems.length > 0
+      && quoteItems.every(item => confirmedItems[item.id])
     );
   }, [confirmedItems, quoteItems]);
 
   const toggleItemConfirmation = (itemId: string) => {
-    setConfirmedItems((prev) => ({
+    setConfirmedItems(prev => ({
       ...prev,
       [itemId]: !prev[itemId],
     }));
   };
 
   const handleApprove = async () => {
-    if (!quoteId || !allItemsConfirmed) return;
+    if (!quoteId || !allItemsConfirmed)
+      return;
     const result = await approveQuote(quoteId);
     if (result) {
       onSuccess();
@@ -1487,7 +1583,8 @@ const ApproveQuoteModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Confirm Quote Approval"
-      size="sm">
+      size="sm"
+    >
       <div className="flex flex-col gap-4">
         <div className="text-sm text-text-muted">
           Please review and confirm each item before approving the quote. All
@@ -1502,13 +1599,23 @@ const ApproveQuoteModal = ({
           {quoteItems.map((item: any) => (
             <div
               key={item.id}
-              className="flex items-center justify-between p-3 bg-foreground rounded border">
+              className="flex items-center justify-between p-3 bg-foreground rounded border"
+            >
               <div className="flex-1">
                 <div className="font-medium text-text">
                   {item.item?.name || item.configuration?.name}
                 </div>
                 <div className="text-sm text-text-muted">
-                  Quantity: {item.quantity} × {formatCurrency(item.unitPrice)} ={" "}
+                  Quantity:
+                  {" "}
+                  {item.quantity}
+                  {" "}
+                  ×
+                  {" "}
+                  {formatCurrency(item.unitPrice)}
+                  {" "}
+                  =
+                  {" "}
                   {formatCurrency(item.totalPrice)}
                 </div>
               </div>
@@ -1517,7 +1624,8 @@ const ApproveQuoteModal = ({
                   confirmedItems[item.id] ? "primary" : "secondary-outline"
                 }
                 onClick={() => toggleItemConfirmation(item.id)}
-                className="ml-4">
+                className="ml-4"
+              >
                 <Check size={16} />
               </Button>
             </div>
@@ -1527,22 +1635,24 @@ const ApproveQuoteModal = ({
         <div className="flex justify-end gap-2 pt-2 border-t">
           <Button
             variant="secondary-outline"
-            onClick={onClose}>
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
             variant="primary"
             disabled={!allItemsConfirmed || approveQuoteLoading}
-            onClick={handleApprove}>
+            onClick={handleApprove}
+          >
             {approveQuoteLoading ? "Approving..." : "Submit"}
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}
 
-const SendQuoteModal = ({
+function SendQuoteModal({
   isOpen,
   onClose,
   quoteId,
@@ -1552,11 +1662,11 @@ const SendQuoteModal = ({
   onClose: () => void;
   quoteId: string;
   onSuccess: () => void;
-}) => {
+}) {
   const [sendQuoteLoading, setSendQuoteLoading] = useState<boolean>(false);
   const [sendQuoteError, setSendQuoteError] = useState<string | null>(null);
   const { post: sendQuoteApi } = useApi<IApiResponse<any>>();
-  
+
   const sendQuote = async (quoteId: string) => {
     setSendQuoteLoading(true);
     setSendQuoteError(null);
@@ -1564,14 +1674,16 @@ const SendQuoteModal = ({
     setSendQuoteLoading(false);
     if (response?.success) {
       return response.data;
-    } else {
+    }
+    else {
       setSendQuoteError(response?.error || "Failed to send quote");
       return null;
     }
   };
 
   const handleSend = async () => {
-    if (!quoteId) return;
+    if (!quoteId)
+      return;
     const result = await sendQuote(quoteId);
     if (result) {
       onSuccess();
@@ -1584,7 +1696,8 @@ const SendQuoteModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Confirm Send Quote"
-      size="xs">
+      size="xs"
+    >
       <div className="flex flex-col gap-4">
         <div className="text-sm text-text-muted">
           Are you sure you want to send this quote? This action cannot be
@@ -1598,22 +1711,24 @@ const SendQuoteModal = ({
         <div className="flex justify-end gap-2 pt-2 border-t">
           <Button
             variant="secondary-outline"
-            onClick={onClose}>
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
             variant="primary"
             onClick={handleSend}
-            disabled={sendQuoteLoading}>
+            disabled={sendQuoteLoading}
+          >
             {sendQuoteLoading ? "Sending..." : "Send Quote"}
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}
 
-const CreateRevisionModal = ({
+function CreateRevisionModal({
   isOpen,
   onClose,
   quoteId,
@@ -1623,11 +1738,11 @@ const CreateRevisionModal = ({
   onClose: () => void;
   quoteId: string;
   onSuccess: () => void;
-}) => {
+}) {
   const [createRevisionLoading, setCreateRevisionLoading] = useState<boolean>(false);
   const [createRevisionError, setCreateRevisionError] = useState<string | null>(null);
   const { post: createRevisionApi } = useApi<IApiResponse<any>>();
-  
+
   const createQuoteRevision = async (quoteId: string) => {
     setCreateRevisionLoading(true);
     setCreateRevisionError(null);
@@ -1635,14 +1750,16 @@ const CreateRevisionModal = ({
     setCreateRevisionLoading(false);
     if (response?.success) {
       return response.data;
-    } else {
+    }
+    else {
       setCreateRevisionError(response?.error || "Failed to create quote revision");
       return null;
     }
   };
 
   const handleCreateRevision = async () => {
-    if (!quoteId) return;
+    if (!quoteId)
+      return;
     const result = await createQuoteRevision(quoteId);
     if (result) {
       onSuccess();
@@ -1655,7 +1772,8 @@ const CreateRevisionModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Confirm Create Revision"
-      size="xs">
+      size="xs"
+    >
       <div className="flex flex-col gap-4">
         <div className="text-sm text-text-muted">
           Are you sure you want to create a new revision of this quote? This
@@ -1669,22 +1787,24 @@ const CreateRevisionModal = ({
         <div className="flex justify-end gap-2 pt-2 border-t">
           <Button
             variant="secondary-outline"
-            onClick={onClose}>
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
             variant="primary"
             onClick={handleCreateRevision}
-            disabled={createRevisionLoading}>
+            disabled={createRevisionLoading}
+          >
             {createRevisionLoading ? "Creating..." : "Create Revision"}
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}
 
-const DeleteItemModal = ({
+function DeleteItemModal({
   isOpen,
   onClose,
   quoteId,
@@ -1696,12 +1816,12 @@ const DeleteItemModal = ({
   quoteId: string;
   item: any;
   onSuccess: () => void;
-}) => {
+}) {
   const [deleteItemLoading, setDeleteItemLoading] = useState<boolean>(false);
   const [deleteItemError, setDeleteItemError] = useState<string | null>(null);
   const [deleteItemSuccess, setDeleteItemSuccess] = useState<boolean>(false);
   const { delete: deleteQuoteItemApi } = useApi<IApiResponse<any>>();
-  
+
   const deleteQuoteItem = async (id: string) => {
     setDeleteItemLoading(true);
     setDeleteItemError(null);
@@ -1710,13 +1830,15 @@ const DeleteItemModal = ({
     setDeleteItemLoading(false);
     if (response?.success) {
       setDeleteItemSuccess(true);
-    } else {
+    }
+    else {
       setDeleteItemError(response?.error || "Failed to delete quote item");
     }
   };
 
   const handleDelete = async () => {
-    if (!quoteId || !item) return;
+    if (!quoteId || !item)
+      return;
 
     console.log(item);
 
@@ -1736,7 +1858,8 @@ const DeleteItemModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Delete Item"
-      size="xs">
+      size="xs"
+    >
       <div className="flex flex-col gap-4">
         <div className="text-sm text-text-muted">
           Are you sure you want to delete this item from the quote? This action
@@ -1754,7 +1877,16 @@ const DeleteItemModal = ({
                 {item.item?.name || item.configuration?.name}
               </div>
               <div className="text-sm text-text-muted">
-                Quantity: {item.quantity} × {formatCurrency(item.unitPrice)} ={" "}
+                Quantity:
+                {" "}
+                {item.quantity}
+                {" "}
+                ×
+                {" "}
+                {formatCurrency(item.unitPrice)}
+                {" "}
+                =
+                {" "}
                 {formatCurrency(item.totalPrice)}
               </div>
             </div>
@@ -1764,22 +1896,24 @@ const DeleteItemModal = ({
         <div className="flex justify-end gap-2 pt-2 border-t">
           <Button
             variant="secondary-outline"
-            onClick={onClose}>
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}
-            disabled={deleteItemLoading}>
+            disabled={deleteItemLoading}
+          >
             {deleteItemLoading ? "Deleting..." : "Delete Item"}
           </Button>
         </div>
       </div>
     </Modal>
   );
-};
+}
 
-const QuotePreviewModal = ({
+function QuotePreviewModal({
   isOpen,
   onClose,
   quoteOverview,
@@ -1789,7 +1923,7 @@ const QuotePreviewModal = ({
   onClose: () => void;
   quoteOverview: any;
   quoteItems: any[];
-}) => {
+}) {
   console.log(quoteOverview);
   console.log(quoteItems);
   return (
@@ -1797,7 +1931,8 @@ const QuotePreviewModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Quote Preview"
-      size="lg">
+      size="lg"
+    >
       <div className="flex flex-col h-[65vh]">
         <div className="flex-1 overflow-y-auto min-h-0">
           <iframe
@@ -1809,6 +1944,6 @@ const QuotePreviewModal = ({
       </div>
     </Modal>
   );
-};
+}
 
 export default QuoteDetails;

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
-export const useMobileDetection = (breakpoint: number = 768) => {
+export function useMobileDetection(breakpoint: number = 768) {
   const getInitialState = () => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === "undefined")
+      return false;
     return window.innerWidth < breakpoint;
   };
 
@@ -18,13 +19,14 @@ export const useMobileDetection = (breakpoint: number = 768) => {
     handleChange(mediaQuery);
 
     if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    } else {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+    else {
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
   }, [breakpoint]);
 
   return isMobile;
-};
+}

@@ -1,4 +1,6 @@
-import { Component, ReactNode, ErrorInfo } from 'react';
+import type { ErrorInfo, ReactNode } from "react";
+
+import { Component } from "react";
 
 interface Props {
   children: ReactNode;
@@ -22,7 +24,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    console.error("Error caught by boundary:", error, errorInfo);
 
     this.setState({
       hasError: true,
@@ -61,7 +63,7 @@ class ErrorBoundary extends Component<Props, State> {
                   Refresh Page
                 </button>
               </div>
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {process.env.NODE_ENV === "development" && this.state.error && (
                 <details className="mt-4">
                   <summary className="cursor-pointer text-sm text-text-muted hover:text-text">Error Details</summary>
                   <pre className="text-xs mt-2 overflow-auto bg-surface p-3 rounded border border-border text-text">

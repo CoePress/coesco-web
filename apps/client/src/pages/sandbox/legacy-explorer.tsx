@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Table, Toolbar, Button } from "@/components";
-import type { TableColumn } from "@/components/ui/table";
+
 import type { Filter } from "@/components";
+import type { TableColumn } from "@/components/ui/table";
+
+import { Button, Table, Toolbar } from "@/components";
 import { useApi } from "@/hooks/use-api";
 
 type Row = Record<string, any>;
@@ -18,9 +20,11 @@ function flattenRow(row: Row, prefix = ""): Row {
     const newKey = prefix ? `${prefix}.${key}` : key;
     if (isPlainObject(val)) {
       Object.assign(flat, flattenRow(val, newKey));
-    } else if (Array.isArray(val)) {
+    }
+    else if (Array.isArray(val)) {
       flat[newKey] = JSON.stringify(val);
-    } else {
+    }
+    else {
       flat[newKey] = val;
     }
   }
@@ -33,16 +37,18 @@ function inferColumns(fields: string[]): string[] {
 
 function toCSV(rows: Row[], columns: string[]): string {
   const esc = (v: any) => {
-    if (v === null || v === undefined) return "";
+    if (v === null || v === undefined)
+      return "";
     const s = String(v);
-    if (/[",]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    if (/[",]/.test(s))
+      return `"${s.replace(/"/g, "\"\"")}"`;
     return s;
   };
   const header = columns.join(",");
   const body = rows
     .map((r) => {
       const flat = flattenRow(r);
-      return columns.map((c) => esc(flat[c])).join(",");
+      return columns.map(c => esc(flat[c])).join(",");
     })
     .join("");
   return `${header}
@@ -50,7 +56,7 @@ ${body}`;
 }
 
 function download(filename: string, content: string, mime = "text/plain") {
-  const blob = new Blob([content], { type: mime + ";charset=utf-8" });
+  const blob = new Blob([content], { type: `${mime};charset=utf-8` });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -61,8 +67,6 @@ function download(filename: string, content: string, mime = "text/plain") {
   URL.revokeObjectURL(url);
 }
 
-
-
 const ToggleChip: React.FC<{
   checked: boolean;
   onChange: (v: boolean) => void;
@@ -72,10 +76,10 @@ const ToggleChip: React.FC<{
     type="button"
     onClick={() => onChange(!checked)}
     className={
-      "select-none rounded border px-3 py-1 text-xs transition " +
-      (checked
-        ? "border-[var(--primary)] bg-[color:var(--primary)]/15 text-text"
-        : "border-border bg-foreground text-text-muted hover:bg-surface")
+      `select-none rounded border px-3 py-1 text-xs transition ${
+        checked
+          ? "border-[var(--primary)] bg-[color:var(--primary)]/15 text-text"
+          : "border-border bg-foreground text-text-muted hover:bg-surface"}`
     }
   >
     <span
@@ -106,13 +110,15 @@ const LegacyExplorer: React.FC = () => {
   useEffect(() => {
     if (allColumns.length && visibleColumns.length === 0) {
       setVisibleColumns(allColumns);
-    } else if (!allColumns.length) {
+    }
+    else if (!allColumns.length) {
       setVisibleColumns([]);
     }
   }, [allColumns]);
 
   const fetchTables = async () => {
-    if (!database) return;
+    if (!database)
+      return;
     const data = await tablesApi.get(`/legacy/${database}/tables`);
     if (data) {
       setTables(data);
@@ -123,7 +129,8 @@ const LegacyExplorer: React.FC = () => {
   };
 
   const fetchFields = async () => {
-    if (!database || !selectedTable) return;
+    if (!database || !selectedTable)
+      return;
     const data = await fieldsApi.get(`/legacy/${database}/${selectedTable}/fields`);
     if (data) {
       setFields(data);
@@ -131,7 +138,8 @@ const LegacyExplorer: React.FC = () => {
   };
 
   const fetchData = async (pageNum: number = page) => {
-    if (!database || !selectedTable) return;
+    if (!database || !selectedTable)
+      return;
     const result = await dataApi.get(`/legacy/${database}/${selectedTable}`, { page: pageNum, limit: pageSize });
     if (result?.data) {
       setRawRows(result.data);
@@ -160,7 +168,7 @@ const LegacyExplorer: React.FC = () => {
   const totalPages = dataApi.response?.meta?.totalPages ?? 0;
 
   const toggleColumn = (col: string) => {
-    setVisibleColumns((prev) => (prev.includes(col) ? prev.filter((c) => c !== col) : [...prev, col]));
+    setVisibleColumns(prev => (prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]));
   };
 
   const exportCSV = (scope: "page" | "all" = "all") => {
@@ -176,7 +184,7 @@ const LegacyExplorer: React.FC = () => {
   }, [page]);
 
   const tableColumns: TableColumn<Row>[] = useMemo(() => {
-    return visibleColumns.map((col) => ({
+    return visibleColumns.map(col => ({
       key: col,
       header: col,
       render: (value: any) => {
@@ -186,7 +194,7 @@ const LegacyExplorer: React.FC = () => {
             {String(flatValue)}
           </span>
         );
-      }
+      },
     }));
   }, [visibleColumns]);
 
@@ -195,7 +203,7 @@ const LegacyExplorer: React.FC = () => {
       const flatRow = flattenRow(row);
       return {
         ...flatRow,
-        _id: index
+        _id: index,
       };
     });
   }, [rawRows]);
@@ -207,26 +215,27 @@ const LegacyExplorer: React.FC = () => {
       options: [
         { value: "std", label: "std" },
         { value: "quote", label: "quotesys" },
-        { value: "job", label: "Job" }
-      ]
-    }
+        { value: "job", label: "Job" },
+      ],
+    },
   ];
 
   const filters: Filter[] = [
     {
       key: "table",
       label: "Table",
-      options: tables.map((table) => ({
+      options: tables.map(table => ({
         value: table,
-        label: table
-      }))
-    }
+        label: table,
+      })),
+    },
   ];
 
   const toggleFieldSelection = () => {
     if (visibleColumns.length === 0) {
       setVisibleColumns(allColumns);
-    } else {
+    }
+    else {
       setVisibleColumns([]);
     }
   };
@@ -242,7 +251,8 @@ const LegacyExplorer: React.FC = () => {
           onFilterChange={(key, value) => {
             if (key === "database") {
               setDatabase(value as DatabaseOption);
-            } else if (key === "table") {
+            }
+            else if (key === "table") {
               setSelectedTable(value);
             }
           }}
@@ -263,7 +273,7 @@ const LegacyExplorer: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2 flex-1">
               <span className="text-sm font-medium text-text-muted">Fields:</span>
               <div className="flex max-h-32 flex-wrap gap-2 overflow-auto">
-                {allColumns.map((c) => (
+                {allColumns.map(c => (
                   <ToggleChip
                     key={c}
                     label={c}
@@ -281,7 +291,9 @@ const LegacyExplorer: React.FC = () => {
 
         {error && (
           <div className="rounded border border-[color:var(--error)]/30 bg-[color:var(--error)]/10 p-3 text-sm text-[color:var(--error)]">
-            Error: {error}
+            Error:
+            {" "}
+            {error}
           </div>
         )}
 

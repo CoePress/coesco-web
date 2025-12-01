@@ -1,7 +1,7 @@
-const Kanban = () => {
+function Kanban() {
   return (
     <div>Kanban</div>
-  )
+  );
 }
 
-export default Kanban
+export default Kanban;

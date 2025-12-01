@@ -1,12 +1,12 @@
-import React, { createContext, useState, useCallback } from 'react';
+import React, { createContext, useCallback, useState } from "react";
 
-export type ToastData = {
+export interface ToastData {
   id: string;
   title?: string;
   message: string;
   variant?: "success" | "error" | "warning" | "info";
   duration?: number;
-};
+}
 
 export type AddToastOptions = Omit<ToastData, "id"> & {
   id?: string;
@@ -25,11 +25,11 @@ interface ToastContextType {
 
 export const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-type ToastProviderProps = {
+interface ToastProviderProps {
   children: React.ReactNode;
-};
+}
 
-export const ToastProvider = ({ children }: ToastProviderProps) => {
+export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   const addToast = useCallback((options: AddToastOptions) => {
@@ -41,12 +41,12 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
       ...options,
     };
 
-    setToasts((prev) => [...prev, toast]);
+    setToasts(prev => [...prev, toast]);
     return id;
   }, []);
 
   const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
 
   const clearToasts = useCallback(() => {
@@ -85,4 +85,4 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
       {children}
     </ToastContext.Provider>
   );
-};
+}

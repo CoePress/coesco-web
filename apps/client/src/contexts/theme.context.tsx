@@ -1,9 +1,12 @@
+import type {
+  ReactNode,
+} from "react";
+
 import React, {
   createContext,
+  useContext,
   useEffect,
   useState,
-  ReactNode,
-  useContext,
 } from "react";
 
 interface ThemeContextType {
@@ -12,7 +15,7 @@ interface ThemeContextType {
 }
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface ThemeProviderProps {
@@ -22,7 +25,7 @@ interface ThemeProviderProps {
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const themeKey = "theme";
   const [theme, setTheme] = useState<string>(
-    localStorage.getItem(themeKey) || "dark"
+    localStorage.getItem(themeKey) || "dark",
   );
 
   useEffect(() => {
@@ -31,7 +34,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+    setTheme(prevTheme => (prevTheme === "light" ? "dark" : "light"));
   };
 
   return (
@@ -41,10 +44,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   );
 };
 
-export const useTheme = () => {
+export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
-};
+}
