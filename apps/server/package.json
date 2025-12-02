@@ -15,6 +15,7 @@
     "db:migrate:status": "npx prisma migrate status",
     "db:reset": "npx prisma migrate reset",
     "pipeline": "tsx src/scripts/data-pipeline.ts",
+    "test:quote-e2e": "tsx src/scripts/quote-service-e2e.ts",
     "swagger": "tsx src/utils/swagger.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",

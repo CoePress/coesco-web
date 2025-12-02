@@ -65,7 +65,7 @@ export class QuoteService {
         status: data.status || "OPEN",
         legacy: data.legacy || {},
         latestRevision: "A",
-        latestRevisionStatus: data.status || "DRAFT",
+        latestRevisionStatus: data.revisionStatus || "DRAFT",
         latestRevisionTotalAmount: data.totalAmount || 0,
       }, tx);
 
@@ -74,10 +74,11 @@ export class QuoteService {
       }
 
       const revisionResult = await quoteRevisionRepository.create({
-        ...data,
         quoteId: quoteResult.data.id,
         revision: "A",
-        status: data.status || "DRAFT",
+        status: data.revisionStatus || "DRAFT",
+        quoteDate: data.quoteDate,
+        totalAmount: data.totalAmount,
       }, tx);
 
       if (!revisionResult.success) {
@@ -129,8 +130,9 @@ export class QuoteService {
 
       const nextRevision = await this.getNextQuoteRevision(quoteResult.data.number, Number.parseInt(quoteResult.data.year));
 
+      const { items: _items, terms: _terms, ...revisionData } = data;
       const revisionResult = await quoteRevisionRepository.create({
-        ...data,
+        ...revisionData,
         quoteId,
         revision: nextRevision,
         status: data.status || "DRAFT",
@@ -316,9 +318,14 @@ export class QuoteService {
 
       const latestRevision = quoteResult.data.latestRevision;
 
-      const revisionResult = await quoteRevisionRepository.update(latestRevision.id, data, tx);
+      const { items, terms, ...revisionData } = data;
+      let revisionResult = { success: true, data: latestRevision };
 
-      if (data.items) {
+      if (Object.keys(revisionData).length > 0) {
+        revisionResult = await quoteRevisionRepository.update(latestRevision.id, revisionData, tx);
+      }
+
+      if (items) {
         const existingItems = await quoteItemRepository.getAll({
           filter: { quoteRevisionId: latestRevision.id },
         });
@@ -329,9 +336,9 @@ export class QuoteService {
           );
         }
 
-        if (data.items.length > 0) {
+        if (items.length > 0) {
           await Promise.all(
-            data.items.map((item: any) =>
+            items.map((item: any) =>
               quoteItemRepository.create({
                 ...item,
                 quoteRevisionId: latestRevision.id,
@@ -341,7 +348,7 @@ export class QuoteService {
         }
       }
 
-      if (data.terms) {
+      if (terms) {
         const existingTerms = await quoteTermsRepository.getAll({
           filter: { quoteRevisionId: latestRevision.id },
         });
@@ -352,9 +359,9 @@ export class QuoteService {
           );
         }
 
-        if (data.terms.length > 0) {
+        if (terms.length > 0) {
           await Promise.all(
-            data.terms.map((term: any) =>
+            terms.map((term: any) =>
               quoteTermsRepository.create({
                 ...term,
                 quoteRevisionId: latestRevision.id,
@@ -678,6 +685,7 @@ export class QuoteService {
       filter: {
         year: currentYear,
       } as any,
+      limit: 10000,
     });
 
     if (!quotesResult.success) {
