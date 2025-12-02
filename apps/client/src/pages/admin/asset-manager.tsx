@@ -225,17 +225,6 @@ function AssetManager() {
     return `${Math.round(bytes / k ** i * 100) / 100} ${sizes[i]}`;
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "IMAGE": return "bg-blue-100 text-blue-800";
-      case "DOCUMENT": return "bg-green-100 text-green-800";
-      case "VIDEO": return "bg-purple-100 text-purple-800";
-      case "AUDIO": return "bg-yellow-100 text-yellow-800";
-      case "ARCHIVE": return "bg-orange-100 text-orange-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "READY": return "text-green-600";

@@ -59,7 +59,7 @@ function FormSubmissions() {
     limit: number;
   }>({ page: 1, totalPages: 1, total: 0, limit: 25 });
 
-  const { get } = useApi<IApiResponse<any[]>>();
+  const { get } = useApi<IApiResponse<any>>();
   const toast = useToast();
 
   const basePath = isAdminContext ? "/admin/forms" : isSalesContext ? "/sales/forms" : "/service/forms";

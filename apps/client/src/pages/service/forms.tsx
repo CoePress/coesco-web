@@ -1,6 +1,6 @@
 import { FormStatus } from "@coesco/types";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import type { Filter } from "@/components/feature/toolbar";
 import type { TableColumn } from "@/components/ui/table";
@@ -12,8 +12,6 @@ import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
 
 function Forms() {
-  const location = useLocation();
-  const isAdminContext = location.pathname.startsWith("/admin");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { get: getForms, response: forms, loading: formsLoading, error: formsError } = useApi<IApiResponse<any[]>>();
   const { post: createForm, loading: createFormLoading } = useApi<IApiResponse<any[]>>();
