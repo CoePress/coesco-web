@@ -329,25 +329,17 @@ Use this prompt when starting a new Claude Code session to continue development:
 ```
 I'm continuing development on the Coesco Web Platform. Please review ROADMAP.md for current progress and next steps.
 
-**Recently Completed (Phase 1):**
-- All security fixes (admin validation in lock controller)
-- Data pipeline itemId mapping fixes
-- Code cleanup (removed _old pages, documented terms codes, fixed typos)
-- Lint cleanup: Server now has 0 errors (down from 109 → 33 → 0)
-- Warehouse module registered in modules.ts (development status)
-
 **Current State:**
-- Phase 1 is 100% complete
-- Server lint passes with 0 errors, 46 warnings (console.log in scripts - expected)
-- Client has 227 lint errors (mostly stylistic - no-use-before-define, no-alert)
-- Warehouse, Production expansion, Time Tracking not started (Phases 2-4)
+- Phase 1 is 100% complete (security fixes, data migration, code cleanup, lint cleanup)
+- Server lint: 0 errors, 46 warnings (console.log in CLI scripts - expected)
+- Client lint: 227 errors (mostly stylistic - low priority)
+- Phases 2-4 not started: Warehouse, Production expansion, Time Tracking
 - Test coverage is a critical gap
 
 **Recommended Next Steps:**
-1. Small feature: Build out warehouse stub pages with basic UI
-2. Medium feature: Add work order models and basic CRUD for production
-3. Large feature: Implement full warehouse inventory system
-4. Optional: Fix client lint errors (mostly stylistic, low priority)
+1. Phase 2: Warehouse Management - add schema, backend services, frontend pages
+2. Phase 3: Production Expansion - work orders, scheduling
+3. Phase 6: Testing - critical gap, add unit/integration tests
 
-Please check git status and ROADMAP.md, then suggest what to tackle based on available time.
+Please check git status and ROADMAP.md, then suggest what to tackle.
 ```

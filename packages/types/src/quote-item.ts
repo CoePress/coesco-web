@@ -9,6 +9,8 @@ export interface QuoteItem {
   description?: string;
   quantity?: number;
   unitPrice: number;
+  discount?: number;
+  tax?: number;
   lineNumber: number;
   isCustom?: boolean;
   createdAt?: Date | string;

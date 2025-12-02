@@ -2756,6 +2756,16 @@ export const SCHEMAS: ISchema[] = [
         type: "decimal",
         required: true,
       },
+      discount: {
+        type: "decimal",
+        required: true,
+        hasDefault: true,
+      },
+      tax: {
+        type: "decimal",
+        required: true,
+        hasDefault: true,
+      },
       lineNumber: {
         type: "int",
         required: true,

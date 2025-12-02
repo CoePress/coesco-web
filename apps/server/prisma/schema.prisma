@@ -540,6 +540,7 @@ model QuoteRevision {
   quote Quote?       @relation(fields: [quoteId], references: [id])
   items QuoteItem[]
   terms QuoteTerms[]
+  notes QuoteNote[]
 
   @@unique([quoteId, revision])
   @@map("quote_details")
@@ -566,6 +567,8 @@ model QuoteItem {
   description     String?
   quantity        Int       @default(1)
   unitPrice       Decimal
+  discount        Decimal   @default(0)
+  tax             Decimal   @default(0)
   lineNumber      Int
   isCustom        Boolean   @default(false)
   createdAt       DateTime  @default(now())
@@ -609,6 +612,8 @@ model QuoteNote {
   deletedAt       DateTime?
   createdById     String
   updatedById     String
+
+  quoteRevision QuoteRevision @relation(fields: [quoteRevisionId], references: [id], onDelete: Cascade)
 
   @@map("quote_notes")
 }
