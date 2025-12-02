@@ -10,17 +10,48 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// Query metrics tracking
+export const queryMetrics = {
+  totalQueries: 0,
+  slowQueries: 0,
+  totalDuration: 0,
+  slowestQuery: { duration: 0, query: "", timestamp: new Date() },
+  queriesByDuration: {
+    fast: 0,      // < 100ms
+    medium: 0,    // 100-500ms
+    slow: 0,      // 500ms-1s
+    verySlow: 0,  // > 1s
+  },
+  reset() {
+    this.totalQueries = 0;
+    this.slowQueries = 0;
+    this.totalDuration = 0;
+    this.slowestQuery = { duration: 0, query: "", timestamp: new Date() };
+    this.queriesByDuration = { fast: 0, medium: 0, slow: 0, verySlow: 0 };
+  },
+  getAverageDuration() {
+    return this.totalQueries > 0 ? this.totalDuration / this.totalQueries : 0;
+  },
+  getSummary() {
+    return {
+      totalQueries: this.totalQueries,
+      slowQueries: this.slowQueries,
+      averageDuration: Math.round(this.getAverageDuration() * 100) / 100,
+      slowestQuery: this.slowestQuery,
+      distribution: this.queriesByDuration,
+    };
+  },
+};
+
+// Enable query events in all environments for metrics tracking
+const shouldLogQueries = __dev__ || env.LOG_ALL_QUERIES;
+
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: __dev__
-    ? [
-        { level: "query", emit: "event" },
-        { level: "error", emit: "stdout" },
-        { level: "warn", emit: "stdout" },
-      ]
-    : [
-        { level: "error", emit: "stdout" },
-        { level: "warn", emit: "stdout" },
-      ],
+  log: [
+    { level: "query", emit: "event" },
+    { level: "error", emit: "stdout" },
+    { level: "warn", emit: "stdout" },
+  ],
   datasources: {
     db: {
       url: `${env.DATABASE_URL}?connection_limit=${env.DATABASE_CONNECTION_LIMIT}&pool_timeout=${env.DATABASE_POOL_TIMEOUT}&connect_timeout=${env.DATABASE_CONNECTION_TIMEOUT}`,
@@ -28,13 +59,69 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   },
 });
 
-if (__dev__) {
-  prisma.$on("query" as never, (e: Prisma.QueryEvent) => {
-    if (e.duration > 1000) {
-      logger.warn(`Slow query (${e.duration}ms): ${e.query}`);
+// Query event handler for metrics and logging
+prisma.$on("query" as never, (e: Prisma.QueryEvent) => {
+  const duration = e.duration;
+  const threshold = env.SLOW_QUERY_THRESHOLD_MS;
+
+  // Update metrics
+  queryMetrics.totalQueries++;
+  queryMetrics.totalDuration += duration;
+
+  // Categorize by duration
+  if (duration < 100) {
+    queryMetrics.queriesByDuration.fast++;
+  } else if (duration < 500) {
+    queryMetrics.queriesByDuration.medium++;
+  } else if (duration < 1000) {
+    queryMetrics.queriesByDuration.slow++;
+  } else {
+    queryMetrics.queriesByDuration.verySlow++;
+  }
+
+  // Track slowest query
+  if (duration > queryMetrics.slowestQuery.duration) {
+    queryMetrics.slowestQuery = {
+      duration,
+      query: e.query.substring(0, 500), // Truncate for storage
+      timestamp: new Date(),
+    };
+  }
+
+  // Log slow queries
+  if (duration >= threshold) {
+    queryMetrics.slowQueries++;
+
+    // Extract table name from query for better logging
+    const tableMatch = e.query.match(/FROM\s+"?(\w+)"?/i) || e.query.match(/INTO\s+"?(\w+)"?/i) || e.query.match(/UPDATE\s+"?(\w+)"?/i);
+    const table = tableMatch ? tableMatch[1] : "unknown";
+
+    if (duration >= 1000) {
+      logger.error({
+        message: "Very slow query detected",
+        duration: `${duration}ms`,
+        table,
+        query: e.query,
+        params: e.params,
+      });
+    } else {
+      logger.warn({
+        message: "Slow query detected",
+        duration: `${duration}ms`,
+        table,
+        query: e.query,
+        params: e.params,
+      });
     }
-  });
-}
+  } else if (shouldLogQueries && __dev__) {
+    // In dev mode with LOG_ALL_QUERIES, log all queries at debug level
+    logger.debug({
+      message: "Query executed",
+      duration: `${duration}ms`,
+      query: e.query.substring(0, 200),
+    });
+  }
+});
 
 if (__dev__) {
   globalForPrisma.prisma = prisma;

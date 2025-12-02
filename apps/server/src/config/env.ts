@@ -62,6 +62,10 @@ const envSchema = z.object({
   BACKUP_DIR: z.string().optional(),
   BACKUP_RETENTION_DAYS: z.string().transform(Number).optional(),
   BACKUP_ENABLED: z.string().transform(val => val === "true").default("true"),
+
+  // Query logging configuration
+  SLOW_QUERY_THRESHOLD_MS: z.string().transform(Number).default("500"),
+  LOG_ALL_QUERIES: z.string().transform(val => val === "true").default("false"),
 });
 
 const parsed = envSchema.safeParse(process.env);

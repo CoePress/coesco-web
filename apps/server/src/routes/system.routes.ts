@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { bugReportingController } from "@/controllers";
 import { healthService } from "@/services";
+import { queryMetrics } from "@/utils/prisma";
 
 const router = Router();
 
@@ -51,5 +52,20 @@ router.get("/health/status", async (_req, res) => {
 
 router.post("/bugs", bugReportingController.sendBugReport);
 router.get("/bugs/my-reports", bugReportingController.getMyBugReports);
+
+router.get("/metrics/queries", (_req, res) => {
+  res.status(200).json({
+    ...queryMetrics.getSummary(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+router.post("/metrics/queries/reset", (_req, res) => {
+  queryMetrics.reset();
+  res.status(200).json({
+    message: "Query metrics reset",
+    timestamp: new Date().toISOString(),
+  });
+});
 
 export default router;

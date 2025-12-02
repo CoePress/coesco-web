@@ -280,7 +280,22 @@
 
 ### 8.1 Database Optimization
 
-- [ ] Add database indexes for frequently queried fields
+- [x] Add database indexes for frequently queried fields
+  - Added 120+ indexes across all models
+  - Foreign key indexes for JOINs (customerId, dealerId, rsmId, etc.)
+  - Composite indexes for common queries (status+deletedAt, companyId+deletedAt)
+  - Soft-delete indexes (deletedAt) for filtered queries
+  - Timestamp indexes (createdAt, startTime) for date range queries
+  - Boolean filter indexes (isActive+deletedAt, enabled+isDown)
+  - Run `npm run db:migrate` with name `add_performance_indexes` to apply
+- [x] Implement query performance logging
+  - Enhanced `apps/server/src/utils/prisma.ts` with comprehensive query tracking
+  - Configurable slow query threshold via `SLOW_QUERY_THRESHOLD_MS` env var (default: 500ms)
+  - Query metrics tracking: total queries, slow queries, average duration, distribution
+  - Automatic logging of slow queries (warn) and very slow queries >1s (error)
+  - Added `/system/metrics/queries` endpoint to view query performance stats
+  - Added `/system/metrics/queries/reset` endpoint to reset metrics
+  - Set `LOG_ALL_QUERIES=true` in env to log all queries in any environment
 - [ ] Optimize slow queries (identify via logging)
 - [ ] Implement connection pooling tuning
 
@@ -321,25 +336,3 @@
 - Test locally before pushing to staging
 
 ---
-
-## Handoff Prompt
-
-Use this prompt when starting a new Claude Code session to continue development:
-
-```
-I'm continuing development on the Coesco Web Platform. Please review ROADMAP.md for current progress and next steps.
-
-**Current State:**
-- Phase 1 is 100% complete (security fixes, data migration, code cleanup, lint cleanup)
-- Server lint: 0 errors, 46 warnings (console.log in CLI scripts - expected)
-- Client lint: 227 errors (mostly stylistic - low priority)
-- Phases 2-4 not started: Warehouse, Production expansion, Time Tracking
-- Test coverage is a critical gap
-
-**Recommended Next Steps:**
-1. Phase 2: Warehouse Management - add schema, backend services, frontend pages
-2. Phase 3: Production Expansion - work orders, scheduling
-3. Phase 6: Testing - critical gap, add unit/integration tests
-
-Please check git status and ROADMAP.md, then suggest what to tackle.
-```

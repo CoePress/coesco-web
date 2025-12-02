@@ -37,7 +37,7 @@ enum UserRole {
 
 model UserSettings {
   id        String   @id @default(uuid())
-  userId    String
+  userId    String   @unique
   settings  Json     @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,6 +81,8 @@ model Department {
 
   employees Employee[]
 
+  @@index([deletedAt])
+  @@index([createdById])
   @@map("departments")
 }
 
@@ -118,6 +120,10 @@ model Employee {
   uploadedAssets   Asset[]
 
   @@index([number])
+  @@index([departmentId])
+  @@index([managerId])
+  @@index([isActive, deletedAt])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("employees")
 }
@@ -241,6 +247,10 @@ model Company {
   customerJourneys Journey[] @relation("CustomerJourneys")
   dealerJourneys   Journey[] @relation("DealerJourneys")
 
+  @@index([status, deletedAt])
+  @@index([deletedAt])
+  @@index([name])
+  @@index([createdAt])
   @@index([createdById])
   @@map("companies")
 }
@@ -270,6 +280,7 @@ model CompanyRelationship {
   updatedById      String
 
   @@unique([parentId, childId])
+  @@index([childId])
   @@index([createdById])
   @@map("company_relationships")
 }
@@ -304,6 +315,11 @@ model Contact {
 
   /// @searchFields(firstName: 2, lastName: 2)
 
+  @@index([companyId, deletedAt])
+  @@index([deletedAt])
+  @@index([addressId])
+  @@index([type])
+  @@index([isPrimary])
   @@index([createdById])
   @@index([companyId])
   @@index([legacyCompanyId])
@@ -333,8 +349,11 @@ model JourneyContact {
   contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@unique([journeyId, contactId])
+  @@index([journeyId, deletedAt])
   @@index([journeyId])
   @@index([contactId])
+  @@index([isPrimary])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("journey_contacts")
 }
@@ -359,6 +378,9 @@ model Address {
   customerJourneys Journey[] @relation("JourneyCustomerAddress")
   dealerJourneys   Journey[] @relation("JourneyDealerAddress")
 
+  @@index([companyId, deletedAt])
+  @@index([companyId, isPrimary])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("addresses")
 }
@@ -406,6 +428,14 @@ model Journey {
   createdBy       Employee?            @relation("JourneyCreatedBy", fields: [createdById], references: [id])
   interactions    JourneyInteraction[] @relation("JourneyInteractions")
 
+  @@index([status, deletedAt])
+  @@index([rsmId, status])
+  @@index([customerId])
+  @@index([dealerId])
+  @@index([rsmId])
+  @@index([deletedAt])
+  @@index([startDate])
+  @@index([createdAt])
   @@index([createdById])
   @@map("journeys")
 }
@@ -422,6 +452,9 @@ model Note {
   updatedAt  DateTime  @updatedAt
   deletedAt  DateTime?
 
+  @@index([entityType, entityId])
+  @@index([deletedAt])
+  @@index([createdBy])
   @@map("notes")
 }
 
@@ -469,6 +502,11 @@ model JourneyInteraction {
 
   journey Journey @relation("JourneyInteractions", fields: [journeyId], references: [id])
 
+  @@index([journeyId, deletedAt])
+  @@index([journeyId])
+  @@index([interactionType])
+  @@index([deletedAt])
+  @@index([createdAt])
   @@index([createdById])
   @@map("journey_interactions")
 }
@@ -515,6 +553,14 @@ model Quote {
   /// @sortFields(quoteNumber: [year, number])
 
   @@unique([year, number])
+  @@index([status, deletedAt])
+  @@index([rsmId])
+  @@index([customerId])
+  @@index([dealerId])
+  @@index([journeyId])
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@index([createdById])
   @@map("quote_headers")
 }
 
@@ -543,6 +589,11 @@ model QuoteRevision {
   notes QuoteNote[]
 
   @@unique([quoteId, revision])
+  @@index([quoteId, status])
+  @@index([status, deletedAt])
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@index([createdById])
   @@map("quote_details")
 }
 
@@ -581,6 +632,12 @@ model QuoteItem {
   configuration Configuration? @relation(fields: [configurationId], references: [id])
   item          Item?          @relation(fields: [itemId], references: [id])
 
+  @@index([quoteRevisionId, deletedAt])
+  @@index([quoteRevisionId])
+  @@index([configurationId])
+  @@index([itemId])
+  @@index([deletedAt])
+  @@index([lineNumber])
   @@index([createdById])
   @@map("quote_items")
 }
@@ -600,6 +657,7 @@ model QuoteTerms {
 
   quoteRevision QuoteRevision @relation(fields: [quoteRevisionId], references: [id], onDelete: Cascade)
 
+  @@index([quoteRevisionId])
   @@map("quote_terms")
 }
 
@@ -615,6 +673,9 @@ model QuoteNote {
 
   quoteRevision QuoteRevision @relation(fields: [quoteRevisionId], references: [id], onDelete: Cascade)
 
+  @@index([quoteRevisionId, deletedAt])
+  @@index([deletedAt])
+  @@index([createdById])
   @@map("quote_notes")
 }
 
@@ -627,6 +688,8 @@ model CoilType {
   isArchived  Boolean @default(false)
   legacyId    String?
 
+  @@index([isArchived, sortOrder])
+  @@index([legacyId])
   @@map("coil_types")
 }
 
@@ -645,6 +708,9 @@ model ProductClass {
   configurations               Configuration[]
   productClassOptionCategories ProductClassOptionCategory[]
 
+  @@index([parentId])
+  @@index([isActive])
+  @@index([depth])
   @@map("product_classes")
 }
 
@@ -669,6 +735,11 @@ model Item {
   quoteItems QuoteItem[]
   /// @searchFields(modelNumber: 3, description: 2, type: 1)
 
+  @@index([type, isActive])
+  @@index([productClassId])
+  @@index([isActive, deletedAt])
+  @@index([deletedAt])
+  @@index([modelNumber])
   @@index([createdById])
   @@map("items")
 }
@@ -693,6 +764,8 @@ model OptionCategory {
   optionHeaders                OptionHeader[]
   productClassOptionCategories ProductClassOptionCategory[]
 
+  @@index([displayOrder])
+  @@index([legacyId])
   @@map("option_categories")
 }
 
@@ -735,6 +808,12 @@ model OptionHeader {
   optionRuleTriggers   OptionRuleTrigger[]
   configurationOptions ConfigurationOption[]
 
+  @@index([optionCategoryId, isActive])
+  @@index([optionCategoryId])
+  @@index([isActive, deletedAt])
+  @@index([deletedAt])
+  @@index([displayOrder])
+  @@index([legacyId])
   @@index([createdById])
   @@map("option_headers")
 }
@@ -757,6 +836,11 @@ model OptionDetails {
   item         Item?         @relation(fields: [itemId], references: [id])
 
   @@unique([productClassId, optionHeaderId])
+  @@index([optionHeaderId, isActive])
+  @@index([optionHeaderId])
+  @@index([itemId])
+  @@index([isActive, deletedAt])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("option_details")
 }
@@ -778,6 +862,10 @@ model OptionRule {
   targetOptions  OptionRuleTarget[]
   triggerOptions OptionRuleTrigger[]
 
+  @@index([isActive, deletedAt])
+  @@index([action])
+  @@index([priority])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("option_rules")
 }
@@ -800,6 +888,8 @@ model OptionRuleTarget {
   option OptionHeader @relation(fields: [optionId], references: [id])
 
   @@id([ruleId, optionId])
+  @@index([optionId])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("option_rule_targets")
 }
@@ -817,6 +907,8 @@ model OptionRuleTrigger {
   option OptionHeader @relation(fields: [optionId], references: [id])
 
   @@id([ruleId, optionId])
+  @@index([optionId])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("option_rule_triggers")
 }
@@ -838,6 +930,11 @@ model Configuration {
   selectedOptions ConfigurationOption[]
   quoteItems      QuoteItem[]
 
+  @@index([productClassId, isActive])
+  @@index([productClassId])
+  @@index([isTemplate])
+  @@index([isActive, deletedAt])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("configurations")
 }
@@ -855,6 +952,8 @@ model ConfigurationOption {
   option        OptionHeader  @relation(fields: [optionId], references: [id])
 
   @@id([configurationId, optionId])
+  @@index([optionId])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("configuration_options")
 }
@@ -877,6 +976,9 @@ model Machine {
 
   statuses MachineStatus[]
 
+  @@index([type, enabled])
+  @@index([enabled, deletedAt])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("machines")
 }
@@ -912,6 +1014,12 @@ model MachineStatus {
 
   machine Machine @relation(fields: [machineId], references: [id])
 
+  @@index([machineId, state])
+  @@index([machineId, startTime])
+  @@index([machineId])
+  @@index([state])
+  @@index([startTime])
+  @@index([createdAt])
   @@map("machine_statuses")
 }
 
@@ -936,6 +1044,8 @@ model PerformanceSheetVersion {
 
   performanceSheets PerformanceSheet[]
 
+  @@index([deletedAt])
+  @@index([createdAt])
   @@index([createdById])
   @@map("performance_sheet_versions")
 }
@@ -954,6 +1064,9 @@ model PerformanceSheet {
   version PerformanceSheetVersion @relation(fields: [versionId], references: [id])
   links   PerformanceSheetLink[]
 
+  @@index([versionId, deletedAt])
+  @@index([versionId])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("performance_sheets")
 }
@@ -971,6 +1084,9 @@ model PerformanceSheetLink {
 
   performanceSheet PerformanceSheet @relation(fields: [performanceSheetId], references: [id])
 
+  @@index([performanceSheetId])
+  @@index([entityType, entityId])
+  @@index([deletedAt])
   @@index([createdById])
   @@map("performance_sheet_links")
 }
@@ -990,6 +1106,9 @@ model Form {
   submissions      FormSubmission[]
   conditionalRules FormConditionalRule[]
 
+  @@index([status])
+  @@index([createdAt])
+  @@index([createdById])
   @@map("forms")
 }
 
@@ -1013,6 +1132,8 @@ model FormPage {
   sections FormSection[]
 
   @@unique([formId, sequence])
+  @@index([formId])
+  @@index([createdById])
   @@map("form_pages")
 }
 
@@ -1031,6 +1152,8 @@ model FormSection {
   fields FormField[]
 
   @@unique([pageId, sequence])
+  @@index([pageId])
+  @@index([createdById])
   @@map("form_sections")
 }
 
@@ -1055,6 +1178,10 @@ model FormField {
   section FormSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@unique([sectionId, sequence])
+  @@index([sectionId])
+  @@index([controlType])
+  @@index([dataType])
+  @@index([createdById])
   @@map("form_fields")
 }
 
@@ -1112,6 +1239,13 @@ model FormSubmission {
 
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
+  @@index([formId, status])
+  @@index([formId, deletedAt])
+  @@index([formId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@index([createdById])
   @@map("form_submissions")
 }
 
@@ -1140,6 +1274,10 @@ model FormConditionalRule {
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@index([formId, targetId])
+  @@index([formId, isActive])
+  @@index([targetType, targetId])
+  @@index([isActive])
+  @@index([createdById])
   @@map("form_conditional_rules")
 }
 
@@ -1215,6 +1353,11 @@ model Chat {
   employee Employee  @relation(fields: [employeeId], references: [id])
   messages Message[]
 
+  @@index([employeeId, deletedAt])
+  @@index([employeeId])
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@index([createdById])
   @@map("chats")
 }
 
@@ -1229,6 +1372,10 @@ model Message {
 
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
+  @@index([chatId, createdAt])
+  @@index([chatId])
+  @@index([role])
+  @@index([createdAt])
   @@map("messages")
 }
 
@@ -1252,7 +1399,9 @@ model Draft {
   updatedAt   DateTime @updatedAt
 
   @@index([entityType, entityId])
+  @@index([createdById, entityType])
   @@index([createdById])
+  @@index([updatedAt])
   @@map("drafts")
 }
 
@@ -1273,6 +1422,10 @@ model NtfyDevice {
   createdById        String
   updatedById        String
 
+  @@index([enabled, isDown])
+  @@index([isDown])
+  @@index([deletedAt])
+  @@index([createdById])
   @@map("ntfy_devices")
 }
 
@@ -1287,6 +1440,10 @@ model EmailLog {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
+  @@index([status])
+  @@index([to])
+  @@index([createdAt])
+  @@index([sentAt])
   @@map("email_logs")
 }
 
@@ -1313,6 +1470,11 @@ model ExternalAccessLink {
   createdById  String?
   updatedById  String?
 
+  @@index([purpose])
+  @@index([resourceType, resourceId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@index([createdById])
   @@map("external_access_links")
 }
 
@@ -1336,6 +1498,9 @@ model BugReport {
   createdAt   DateTime        @default(now())
   createdById String?
 
+  @@index([status])
+  @@index([createdAt])
+  @@index([createdById])
   @@map("bug_reports")
 }
 
