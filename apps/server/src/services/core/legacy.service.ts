@@ -49,6 +49,11 @@ export class LegacyService {
   private quoteConnection?: odbc.Connection;
   private idMap?: IdMapEntry[];
   private connectionCheckInterval?: NodeJS.Timeout;
+  private enableReconnect: boolean;
+
+  constructor(options?: { enableReconnect?: boolean }) {
+    this.enableReconnect = options?.enableReconnect ?? true;
+  }
 
   private validateFieldName(field: string): string {
     if (!/^\w+$/.test(field)) {
@@ -334,8 +339,10 @@ export class LegacyService {
       logger.info(`Successfully connected to: ${connectedDatabases.join(", ")}`);
     }
 
-    logger.info("Starting health check service (checking every 60 seconds)...");
-    this.startConnectionCheck();
+    if (this.enableReconnect) {
+      logger.info("Starting health check service (checking every 60 seconds)...");
+      this.startConnectionCheck();
+    }
   }
 
   async create(database: string, table: string, data: any) {
