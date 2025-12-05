@@ -667,13 +667,13 @@ def generate_minimum_tddbhd_values(data: Dict[str, Any]) -> Dict[str, Any]:
         tddbhd_data["tddbhd"]["reel"]["checks"]["brakePressCheck"] = calc_results.get("brake_press_check", "")
         tddbhd_data["tddbhd"]["reel"]["checks"]["airPressureCheck"] = calc_results.get("air_pressure_check", "")
         tddbhd_data["tddbhd"]["reel"]["checks"]["rewindTorqueCheck"] = calc_results.get("rewind_torque_check", "")
-        tddbhd_data["tddbhd"]["reel"]["checks"]["holdDownForceCheck"] = calc_results.get("hold_down_force_check", "")
+        tddbhd_data["tddbhd"]["reel"]["checks"]["holdDownForceCheck"] = calc_results.get("holddown_force_check", "")
         tddbhd_data["tddbhd"]["reel"]["checks"]["torqueRequiredCheck"] = calc_results.get("torque_required_check", "")
         tddbhd_data["tddbhd"]["reel"]["checks"]["minMaterialWidthCheck"] = calc_results.get("min_material_width_check", "")
 
         # Update additional calculated values matching exact interface
-        tddbhd_data["tddbhd"]["reel"]["holddown"]["force"]["required"] = calc_results.get("hold_down_force_required", 600)
-        tddbhd_data["tddbhd"]["reel"]["holddown"]["force"]["available"] = calc_results.get("hold_down_force_available", 900)
+        tddbhd_data["tddbhd"]["reel"]["holddown"]["force"]["required"] = calc_results.get("holddown_force_required", 600)
+        tddbhd_data["tddbhd"]["reel"]["holddown"]["force"]["available"] = calc_results.get("holddown_force_available", 900)
         tddbhd_data["tddbhd"]["reel"]["minMaterialWidth"] = calc_results.get("min_material_width", 2.4)
         tddbhd_data["tddbhd"]["reel"]["holddown"]["cylinderPressure"] = calc_results.get("holddown_pressure", 80)
         tddbhd_data["tddbhd"]["reel"]["cylinderBore"] = calc_results.get("cylinder_bore", 4.0)

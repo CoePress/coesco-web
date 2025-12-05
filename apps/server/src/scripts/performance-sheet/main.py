@@ -116,6 +116,12 @@ def main():
             except json.JSONDecodeError as e:
                 parser.error(f"Invalid JSON data: {e}")
 
+        # --- COMPREHENSIVE DATA LOGGING ---
+        print("=" * 80, file=sys.stderr)
+        print("=== COMPLETE INCOMING DATA STRUCTURE ===", file=sys.stderr)
+        print(json.dumps(data, indent=2, default=str), file=sys.stderr)
+        print("=" * 80, file=sys.stderr)
+
         # --- RFQ (calculate for average, min, and max) ---
         try:
             rfq_average_data = {
@@ -151,7 +157,7 @@ def main():
                 "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
                 "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
                 "coil_width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
-                "coil_weight": parse_float_with_default(data, ["common", "material", "coilWeight"], "material", "coil_weight"),
+                "coil_weight": parse_float_with_default(data, ["common", "coil", "maxCoilWeight"], "material", "max_coil_weight"),
                 "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "material", "coil_id"),
                 "feed_direction": parse_str_with_default(data, ["common", "equipment", "feed", "direction"], "feed", "direction"),
                 "controls_level": parse_str_with_default(data, ["common", "equipment", "feed", "controlsLevel"], "feed", "controls_level"),
@@ -219,8 +225,10 @@ def main():
 
         # --- TDDBHD ---
         try:
+            print("=== STARTING TDDBHD MAIN PROCESSING ===", file=sys.stderr)
             # Get reel model first to determine family-specific constraints
             reel_model = parse_str_with_default(data, ["common", "equipment", "reel", "model"], "reel", "model")
+            print(f"Reel model: {reel_model}", file=sys.stderr)
             
             # Force correct parameters for CPR-040 (D1 family) - only supports air_clutch="No"
             if reel_model == "CPR-040":
@@ -230,24 +238,49 @@ def main():
                 air_clutch_value = str2bool(get_nested(data, ["tddbhd", "reel", "threadingDrive", "airClutch"])) or DEFAULTS["reel"]["threading_drive_air_clutch"]
                 hyd_threading_drive_value = parse_str_with_default(data, ["tddbhd", "reel", "threadingDrive", "hydThreadingDrive"], "reel", "threading_drive_hyd")
             
+            # Parse and log critical values before TDDBHD calculation
+            cylinder_value = parse_str_with_default(data, ["tddbhd", "reel", "holddown", "cylinder"], "reel", "holddown_cylinder")
+            holddown_assy_value = parse_str_with_default(data, ["tddbhd", "reel", "holddown", "assy"], "reel", "holddown_assy")
+            material_thickness = parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness")
+            coil_width = parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width")
+            coil_id = parse_float_with_default(data, ["common", "coil", "coilID"], "material", "coil_id")
+            air_pressure = parse_float_with_default(data, ["tddbhd", "reel", "airPressureAvailable"], "reel", "air_pressure_available")
+            
+            print(f"=== PRE-TDDBHD CRITICAL VALUES ===", file=sys.stderr)
+            print(f"Cylinder: '{cylinder_value}' (type: {type(cylinder_value)})", file=sys.stderr)
+            print(f"Holddown assy: '{holddown_assy_value}' (type: {type(holddown_assy_value)})", file=sys.stderr)
+            print(f"Material thickness: {material_thickness} (type: {type(material_thickness)})", file=sys.stderr)
+            print(f"Coil width: {coil_width} (type: {type(coil_width)})", file=sys.stderr)
+            print(f"Coil ID: {coil_id} (type: {type(coil_id)})", file=sys.stderr)
+            print(f"Air pressure: {air_pressure} (type: {type(air_pressure)})", file=sys.stderr)
+            
+            # Show what's actually in key data paths
+            print(f"=== DATA PATH ANALYSIS ===", file=sys.stderr)
+            print(f"tddbhd.coil.coilWeight: {get_nested(data, ['tddbhd', 'coil', 'coilWeight'])}", file=sys.stderr)
+            print(f"strUtility.straightener.horsepower: {get_nested(data, ['strUtility', 'straightener', 'horsepower'])}", file=sys.stderr)
+            print(f"common.equipment.reel.width: {get_nested(data, ['common', 'equipment', 'reel', 'width'])}", file=sys.stderr)
+            print(f"tddbhd.holdDown.assembly: {get_nested(data, ['tddbhd', 'holdDown', 'assembly'])}", file=sys.stderr)
+            print(f"tddbhd.holdDown.cylinder: {get_nested(data, ['tddbhd', 'holdDown', 'cylinder'])}", file=sys.stderr)
+            print(f"===========================", file=sys.stderr)
+            
             tddbhd_data = {
                 "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
                 "reel_drive_tqempty": None,  # Not present
                 "motor_hp": parse_float_with_default(data, ["common", "equipment", "reel", "horsepower"], "reel", "horsepower"),
                 "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
-                "thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
-                "width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
-                "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "material", "coil_id"),
+                "thickness": material_thickness,
+                "width": coil_width,
+                "coil_id": coil_id,
                 "coil_od": parse_float_with_default(data, ["common", "coil", "maxCoilOD"], "material", "max_coil_od"),
                 "coil_weight": parse_float_with_default(data, ["common", "material", "coilWeight"], "material", "coil_weight"),
                 "confirmed_min_width": parse_boolean_with_default(data, ["tddbhd", "reel", "confirmedMinWidth"], "reel", "confirmed_min_width"),
                 "decel": parse_float_with_default(data, ["tddbhd", "reel", "requiredDecelRate"], "reel", "required_decel_rate"),
                 "friction": parse_float_with_default(data, ["tddbhd", "reel", "coefficientOfFriction"], "reel", "coefficient_of_friction"),
-                "air_pressure": parse_float_with_default(data, ["tddbhd", "reel", "airPressureAvailable"], "reel", "air_pressure_available"),
+                "air_pressure": air_pressure,
                 "brake_qty": parse_int_with_default(data, ["tddbhd", "reel", "dragBrake", "quantity"], "reel", "drag_brake_quantity"),
                 "brake_model": parse_str_with_default(data, ["tddbhd", "reel", "dragBrake", "model"], "reel", "drag_brake_model"),
-                "cylinder": parse_str_with_default(data, ["tddbhd", "reel", "holddown", "cylinder"], "reel", "holddown_cylinder"),
-                "hold_down_assy": parse_str_with_default(data, ["tddbhd", "reel", "holddown", "assy"], "reel", "holddown_assy"),
+                "cylinder": cylinder_value,
+                "hold_down_assy": holddown_assy_value,
                 "hyd_threading_drive": hyd_threading_drive_value,
                 "air_clutch": air_clutch_value,
                 "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
@@ -256,10 +289,16 @@ def main():
                 "backplate_diameter": parse_float_with_default(data, ["common", "equipment", "reel", "backplate", "diameter"], "reel", "backplate_diameter"),
             }
             
+            
+            print(f"Creating tddbhd_input object with data: {tddbhd_data}", file=sys.stderr)
             tddbhd_obj = tddbhd_input(**tddbhd_data)
+            print(f"Starting TDDBHD calculation...", file=sys.stderr)
             tddbhd_result = calculate_tbdbhd(tddbhd_obj)
+            print(f"TDDBHD calculation completed: {tddbhd_result}", file=sys.stderr)
         except Exception as e:
             print(f"Error in TDDBHD calculation: {e}", file=sys.stderr)
+            import traceback
+            print(f"Full error traceback: {traceback.format_exc()}", file=sys.stderr)
             tddbhd_result = {"error": str(e)}
 
         # Get the final coil OD from TDDBHD calculation (if it updates it) or use the calculated one
@@ -290,8 +329,11 @@ def main():
                 "acceleration": parse_float_with_default(data, ["strUtility", "straightener", "acceleration"], "straightener", "acceleration"),
                 "num_str_rolls": parse_int_with_default(data, ["common", "equipment", "straightener", "numberOfRolls"], "straightener", "number_of_rolls"),
             }
+            print(f"STR UTILITY INPUT DEBUG: {str_util_data}", file=sys.stderr)
             str_util_obj = str_utility_input(**str_util_data)
+            print(f"STR UTILITY OBJECT DEBUG: {str_util_obj}", file=sys.stderr)
             str_util_result = calculate_str_utility(str_util_obj)
+            print(f"STR UTILITY RESULT DEBUG: {str_util_result}", file=sys.stderr)
         except Exception as e:
             print(f"Error in Str Utility calculation: {e}", file=sys.stderr)
             str_util_result = {"error": str(e)}

@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ms } from "@/utils";
 import Loader from "@/components/ui/loader";
 import { getVisibleTabs } from "@/utils/tab-visibility";
-import { getReelWidthOptionsForModel, getBackplateDiameterOptionsForModel, getStrWidthOptionsForModel, getStrHorsepowerOptionsForModel, getStrFeedRateOptionsForModelAndHorsepower, getFeedMachineWidthOptionsForModel, getHydThreadingDriveOptionsForModel, getHoldDownAssyOptionsForModel, getCylinderOptionsForHoldDownAssy } from "@/utils/performance-sheet";
+import { getReelWidthOptionsForModel, getBackplateDiameterOptionsForModel, getStrWidthOptionsForModel, getStrHorsepowerOptionsForModel, getStrFeedRateOptionsForModelAndHorsepower, getFeedMachineWidthOptionsForModel, getHydThreadingDriveOptionsForModel, getHoldDownAssyOptionsForModel, getCylinderOptionsForHoldDownAssy, getDefaultCylinderForHoldDownAssy, DEFAULT_STR_MODEL, getDefaultStrWidthForModel, getDefaultStrHorsepowerForModel } from "@/utils/performance-sheet";
 
 type PerformanceTabValue = string;
 type ModalType = 'links' | 'save-confirmation' | 'cancel-confirmation' | 'continue' | 'delete-link' | 'create-link' | null;
@@ -35,6 +35,7 @@ const PerformanceSheet = () => {
   const [showResults, setShowResults] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [, forceUpdate] = useState({});
   const { id: performanceSheetId } = useParams();
   const { emit, isLockConnected, onLockChanged, calculatePerformanceSheet, isPerformanceConnected } = useSocket();
   const { user } = useAuth();
@@ -105,6 +106,8 @@ const PerformanceSheet = () => {
       'tddbhd.reel.torque.required',
       'tddbhd.reel.holddown.force.required',
       'tddbhd.reel.holddown.force.available',
+      'tddbhd.reel.holddown.cylinderPressure',
+      'tddbhd.reel.minMaterialWidth',
       'tddbhd.reel.dragBrake.psiAirRequired',
       'tddbhd.reel.dragBrake.holdingForce',
       // Reel Drive calculated fields (key ones)
@@ -467,8 +470,87 @@ const PerformanceSheet = () => {
       const data = performanceSheet.data.data || {};
       console.log('Performance sheet data loaded:', data);
       console.log('Reference number from server:', data.referenceNumber);
-      setFormData(data);
+      console.log('Data structure check - common:', data.common);
+      console.log('Data structure check - common.equipment:', data.common?.equipment);
+      console.log('Data structure check - common.equipment.straightener:', data.common?.equipment?.straightener);
+
+      // Initialize STR fields with defaults if they don't have values
+      const originalStrModel = getNestedValue(data, "common.equipment.straightener.model");
+      const strModelValue = originalStrModel || DEFAULT_STR_MODEL;
+      const strWidthValue = getNestedValue(data, "common.equipment.straightener.width");
+      const strHorsepowerValue = getNestedValue(data, "strUtility.straightener.horsepower");
+
+      // Set default STR model if not already set
+      if (!originalStrModel) {
+        console.log("Setting default STR model:", DEFAULT_STR_MODEL);
+
+        // Ensure the nested structure exists
+        if (!data.common) data.common = {};
+        if (!data.common.equipment) data.common.equipment = {};
+        if (!data.common.equipment.straightener) data.common.equipment.straightener = {};
+
+        // Set the model directly
+        data.common.equipment.straightener.model = DEFAULT_STR_MODEL;
+
+        // Verify it was set correctly
+        const verifyModel = getNestedValue(data, "common.equipment.straightener.model");
+        console.log("Verification - STR model after setting:", verifyModel);
+      } else {
+        console.log("STR model already set:", originalStrModel);
+      }      // Set default STR width if not already set
+      if (!strWidthValue) {
+        const defaultWidth = getDefaultStrWidthForModel(strModelValue);
+        if (defaultWidth) {
+          console.log("Setting default STR width:", defaultWidth);
+          data.common.equipment.straightener.width = defaultWidth;
+        }
+      }
+
+      // Set default STR horsepower if not already set
+      if (!strHorsepowerValue) {
+        const defaultHorsepower = getDefaultStrHorsepowerForModel(strModelValue);
+        if (defaultHorsepower) {
+          console.log("Setting default STR horsepower:", defaultHorsepower);
+          // Ensure strUtility structure exists
+          if (!data.strUtility) data.strUtility = {};
+          if (!data.strUtility.straightener) data.strUtility.straightener = {};
+          data.strUtility.straightener.horsepower = defaultHorsepower;
+        }
+      }
+
+      // Initialize number of rolls from type of roll default value
+      let typeOfRoll = getNestedValue(data, "materialSpecs.straightener.rolls.typeOfRoll");
+      const existingNumberOfRolls = getNestedValue(data, "common.equipment.straightener.numberOfRolls");
+
+      // If no type of roll is set, use the first option as default
+      if (!typeOfRoll) {
+        console.log("No typeOfRoll found, setting default to first option");
+        // Ensure materialSpecs structure exists
+        if (!data.materialSpecs) data.materialSpecs = {};
+        if (!data.materialSpecs.straightener) data.materialSpecs.straightener = {};
+        if (!data.materialSpecs.straightener.rolls) data.materialSpecs.straightener.rolls = {};
+
+        // Set default to first roll type option
+        typeOfRoll = "7 Roll Str. Backbend";
+        data.materialSpecs.straightener.rolls.typeOfRoll = typeOfRoll;
+        console.log("Set default typeOfRoll to:", typeOfRoll);
+      }
+
+      console.log("Initialization - typeOfRoll:", typeOfRoll);
+      console.log("Initialization - existingNumberOfRolls:", existingNumberOfRolls);
+
+      if (typeOfRoll && !existingNumberOfRolls) {
+        const rollMatch = typeOfRoll.match(/(\d+)\s*Roll/i);
+        if (rollMatch) {
+          const numberOfRolls = rollMatch[1];
+          console.log("Initialization - Setting numberOfRolls to:", numberOfRolls);
+          data.common.equipment.straightener.numberOfRolls = parseFloat(numberOfRolls);
+        }
+      } setFormData(data);
       setOriginalData(data);
+
+      // Force re-render to refresh dynamic options after initialization
+      forceUpdate({});
 
       if (!activeTab && visibleTabs.length > 0) {
         setActiveTab(visibleTabs[0].value);
@@ -542,6 +624,13 @@ const PerformanceSheet = () => {
     };
   }, []);
 
+  // Force template refresh when formData changes (to update dependent options)
+  useEffect(() => {
+    if (Object.keys(formData).length > 0) {
+      console.log("FormData changed - should trigger dependent field option updates");
+    }
+  }, [formData]);
+
   useEffect(() => {
     const unsubscribe = onLockChanged((data: any) => {
       const { recordType, recordId, lockInfo } = data;
@@ -577,10 +666,21 @@ const PerformanceSheet = () => {
   }, [onLockChanged, performanceSheetId, user?.id, isEditing]);
 
   const getDynamicOptions = (fieldId: string, field: any) => {
+    // Debug removed - STR fields are working correctly
+
     // Check for dependency-based options first
     if (field.dependsOn && field.dependencyType) {
       const dependentValue = getNestedValue(formData, field.dependsOn);
-      if (dependentValue) {
+
+      // Debug STR dependencies
+      if (fieldId.includes('straightener') && (field.dependencyType === 'strWidth' || field.dependencyType === 'strHorsepower')) {
+        console.log(`STR Debug - fieldId: ${fieldId}, dependsOn: ${field.dependsOn}, dependentValue:`, dependentValue);
+      }
+
+      // Special handling for STR dependencies - use defaults when formData is uninitialized
+      const shouldUseDefaults = !dependentValue && (field.dependencyType === 'strWidth' || field.dependencyType === 'strHorsepower' || field.dependencyType === 'strFeedRate');
+
+      if (dependentValue || shouldUseDefaults) {
         switch (field.dependencyType) {
           case "reelWidth":
             return getReelWidthOptionsForModel(dependentValue);
@@ -598,14 +698,57 @@ const PerformanceSheet = () => {
             }
             return [];
           case "strWidth":
-            return getStrWidthOptionsForModel(dependentValue);
+            const strWidthModel = dependentValue || DEFAULT_STR_MODEL;
+            console.log("STR Width - using model:", strWidthModel, "(dependentValue was:", dependentValue, ")");
+            return getStrWidthOptionsForModel(strWidthModel);
           case "strHorsepower":
-            return getStrHorsepowerOptionsForModel(dependentValue);
+            const strHpModel = dependentValue || DEFAULT_STR_MODEL;
+            console.log("STR Horsepower - using model:", strHpModel, "(dependentValue was:", dependentValue, ")");
+            return getStrHorsepowerOptionsForModel(strHpModel);
+          case "strFeedRate":
+            // Feed rate depends on both horsepower (primary) and model (secondary)
+            const secondaryDependentValue = field.secondaryDependsOn ? getNestedValue(formData, field.secondaryDependsOn) : null;
+            const modelForFeedRate = secondaryDependentValue || DEFAULT_STR_MODEL;
+
+            // Use default horsepower if none provided (during initialization)
+            const horsepowerValue = dependentValue || getDefaultStrHorsepowerForModel(DEFAULT_STR_MODEL);
+
+            console.log("=== STR FEED RATE DEBUG ===");
+            console.log("fieldId:", fieldId);
+            console.log("dependsOn:", field.dependsOn);
+            console.log("original dependentValue (horsepower):", dependentValue);
+            console.log("using horsepowerValue:", horsepowerValue);
+            console.log("secondaryDependsOn:", field.secondaryDependsOn);
+            console.log("secondaryDependentValue (model):", secondaryDependentValue);
+            console.log("modelForFeedRate:", modelForFeedRate);
+            console.log("shouldUseDefaults:", shouldUseDefaults);
+
+            if (horsepowerValue) {
+              const options = getStrFeedRateOptionsForModelAndHorsepower(modelForFeedRate, horsepowerValue);
+              console.log("Feed rate options:", options);
+              console.log("=== END STR FEED RATE DEBUG ===");
+              return options;
+            }
+            console.log("No horsepower value available, returning empty array");
+            console.log("=== END STR FEED RATE DEBUG ===");
+            return [];
           case "feedMachineWidth":
             return getFeedMachineWidthOptionsForModel(dependentValue);
         }
       }
-      // If dependency field has no value, return empty array instead of all options
+
+      // If dependency field has no value, handle STR fields specially
+      if (field.dependencyType === 'strWidth' || field.dependencyType === 'strHorsepower') {
+        const defaultModel = DEFAULT_STR_MODEL;
+
+        if (field.dependencyType === 'strWidth') {
+          return getStrWidthOptionsForModel(defaultModel);
+        } else if (field.dependencyType === 'strHorsepower') {
+          return getStrHorsepowerOptionsForModel(defaultModel);
+        }
+      }
+
+      // If dependency field has no value, return empty array instead of all options for other fields
       return [];
     }
 
@@ -646,26 +789,39 @@ const PerformanceSheet = () => {
 
     // Dynamic STR Width Options based on selected model
     if (fieldId === "common.equipment.straightener.width") {
-      if (strModelValue) {
-        return getStrWidthOptionsForModel(strModelValue);
-      }
-      return field.options || [];
+      console.log('=== STR WIDTH DEBUG ===');
+      console.log('formData.common.equipment:', formData.common?.equipment);
+      console.log('formData.common.equipment.straightener:', formData.common?.equipment?.straightener);
+      const currentStrModel = getNestedValue(formData, "common.equipment.straightener.model");
+      const modelToUse = currentStrModel || DEFAULT_STR_MODEL;
+      console.log('currentStrModel:', currentStrModel, 'DEFAULT_STR_MODEL:', DEFAULT_STR_MODEL, 'modelToUse:', modelToUse);
+      const options = getStrWidthOptionsForModel(modelToUse);
+      console.log('STR Width options result:', options);
+      console.log('=== END STR WIDTH DEBUG ===');
+      return options;
     }
 
     // Dynamic STR Horsepower Options based on selected model
     if (fieldId === "strUtility.straightener.horsepower") {
-      if (strModelValue) {
-        return getStrHorsepowerOptionsForModel(strModelValue);
-      }
-      return field.options || [];
+      console.log('=== STR HP DEBUG ===');
+      console.log('formData.common.equipment:', formData.common?.equipment);
+      console.log('formData.common.equipment.straightener:', formData.common?.equipment?.straightener);
+      const currentStrModel = getNestedValue(formData, "common.equipment.straightener.model");
+      const modelToUse = currentStrModel || DEFAULT_STR_MODEL;
+      console.log('currentStrModel:', currentStrModel, 'DEFAULT_STR_MODEL:', DEFAULT_STR_MODEL, 'modelToUse:', modelToUse);
+      const options = getStrHorsepowerOptionsForModel(modelToUse);
+      console.log('STR HP options result:', options);
+      console.log('=== END STR HP DEBUG ===');
+      return options;
     }
 
     // Dynamic STR Feed Rate Options based on selected model and horsepower
     if (fieldId === "strUtility.straightener.feedRate") {
-      if (strModelValue && strHorsepowerValue) {
-        return getStrFeedRateOptionsForModelAndHorsepower(strModelValue, strHorsepowerValue);
+      const modelToUse = strModelValue || DEFAULT_STR_MODEL;
+      if (strHorsepowerValue) {
+        return getStrFeedRateOptionsForModelAndHorsepower(modelToUse, strHorsepowerValue);
       }
-      // If either model or horsepower is missing, show no options
+      // If horsepower is missing, show no options
       return [];
     }
 
@@ -734,7 +890,29 @@ const PerformanceSheet = () => {
   };
 
   const handleFieldChange = (fieldId: string, value: any) => {
+    console.log("=== FIELD CHANGE DEBUG ===");
+    console.log("Field changed:", fieldId, "→", value);
+
     let updatedData = setNestedValue(formData, fieldId, value);
+
+    // Log critical zero values after field change
+    if (fieldId.includes('material') || fieldId.includes('coil') || fieldId.includes('reel') || fieldId.includes('tddbhd') || fieldId.includes('horsepower') || fieldId.includes('pressure')) {
+      console.log("=== CRITICAL ZERO VALUE CHECK ===");
+      console.log("Air Pressure Available:", getNestedValue(updatedData, "tddbhd.reel.airPressureAvailable"));
+      console.log("Cylinder Pressure:", getNestedValue(updatedData, "tddbhd.reel.holddown.cylinderPressure"));
+      console.log("Material Thickness:", getNestedValue(updatedData, "common.material.materialThickness"));
+      console.log("Coil Width:", getNestedValue(updatedData, "common.material.coilWidth"));
+      console.log("Coil ID:", getNestedValue(updatedData, "common.coil.coilID"));
+      console.log("Coil Weight:", getNestedValue(updatedData, "tddbhd.coil.coilWeight"));
+      console.log("STR HP:", getNestedValue(updatedData, "strUtility.straightener.horsepower"));
+      console.log("Reel Width:", getNestedValue(updatedData, "common.equipment.reel.width"));
+      console.log("Reel Horsepower:", getNestedValue(updatedData, "common.equipment.reel.horsepower"));
+      console.log("Max Yield Strength:", getNestedValue(updatedData, "common.material.maxYieldStrength"));
+      console.log("Max Coil OD:", getNestedValue(updatedData, "common.coil.maxCoilOD"));
+      console.log("Decel Rate:", getNestedValue(updatedData, "tddbhd.reel.requiredDecelRate"));
+      console.log("Coefficient of Friction:", getNestedValue(updatedData, "tddbhd.reel.coefficientOfFriction"));
+      console.log("=== END ZERO VALUE CHECK ===");
+    }
 
     // Handle dependent field logic when application changes
     if (fieldId === "feed.feed.application") {
@@ -857,14 +1035,17 @@ const PerformanceSheet = () => {
       const currentCylinder = getNestedValue(updatedData, "tddbhd.reel.holddown.cylinder");
       const reelModelValue = getNestedValue(updatedData, "common.equipment.reel.model");
 
-      // Clear cylinder if it's not valid for the new hold down assembly
-      if (currentCylinder && value && reelModelValue) {
+      if (value && reelModelValue) {
+        // Get valid cylinders for the new hold down assembly
         const validCylinders = getCylinderOptionsForHoldDownAssy(reelModelValue, value).map(option => option.value);
-        if (!validCylinders.includes(currentCylinder)) {
-          updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", "");
+
+        // If current cylinder is not valid for new assembly, auto-select the default
+        if (!currentCylinder || !validCylinders.includes(currentCylinder)) {
+          const defaultCylinder = getDefaultCylinderForHoldDownAssy(reelModelValue, value);
+          updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", defaultCylinder || "");
         }
       } else {
-        // Always clear cylinder when hold down assembly changes to ensure clean state
+        // Clear cylinder if no valid hold down assembly or reel model
         updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", "");
       }
     }
@@ -902,6 +1083,43 @@ const PerformanceSheet = () => {
       } else if (currentStrFeedRate) {
         // Clear feed rate if no horsepower is selected
         updatedData = setNestedValue(updatedData, "strUtility.straightener.feedRate", "");
+      }
+    }
+
+    // Handle type of roll changes - auto-set number of rolls
+    if (fieldId === "materialSpecs.straightener.rolls.typeOfRoll") {
+      console.log("=== TYPE OF ROLL CHANGE DEBUG ===");
+      console.log("Field ID:", fieldId);
+      console.log("New value:", value);
+
+      let numberOfRolls = "";
+
+      // Use regex to extract number from any format like "7 Roll Str Backbend" or "7 Roll Str. Backbend"
+      if (value && typeof value === 'string') {
+        const rollMatch = value.match(/(\d+)\s*Roll/i);
+        if (rollMatch) {
+          numberOfRolls = rollMatch[1];
+          console.log("Extracted numberOfRolls from regex:", numberOfRolls);
+        } else {
+          console.log("No number found in type of roll value:", value);
+        }
+      }
+
+      console.log("Final numberOfRolls to set:", numberOfRolls);
+
+      if (numberOfRolls) {
+        console.log("Setting numberOfRolls to:", numberOfRolls);
+        updatedData = setNestedValue(updatedData, "common.equipment.straightener.numberOfRolls", parseFloat(numberOfRolls));
+        console.log("Updated data after setting numberOfRolls:", getNestedValue(updatedData, "common.equipment.straightener.numberOfRolls"));
+      }
+
+      console.log("=== END TYPE OF ROLL CHANGE DEBUG ===");
+    }
+
+    // Handle max coil weight changes - auto-populate STR utility coil weight capacity
+    if (fieldId === "common.coil.maxCoilWeight") {
+      if (value) {
+        updatedData = setNestedValue(updatedData, "strUtility.coil.maxCoilWeight", value);
       }
     }
 
@@ -1034,31 +1252,11 @@ const PerformanceSheet = () => {
   };
 
   const handleEdit = () => {
-    if (!performanceSheetId || !isLockConnected) {
-      toast.error("Cannot acquire lock. Connection not available.");
-      return;
-    }
-
-    emit(
-      "lock:acquire",
-      {
-        recordType: "performance-sheets",
-        recordId: performanceSheetId,
-        userId: user?.id,
-      },
-      (result: any) => {
-        if (result?.success) {
-          setIsEditing(true);
-          setIsLocked(true);
-          setLockInfo(result.lockInfo);
-          toast.success("Lock acquired. You can now edit.");
-        } else {
-          setIsLocked(true);
-          setIsEditing(false);
-          toast.error(result?.message || "Failed to acquire lock. Sheet may be locked by another user.");
-        }
-      }
-    );
+    // Simply enable editing mode without complex socket-based locking
+    setIsEditing(true);
+    setIsLocked(true);
+    setLockInfo({ userId: user?.id, userName: user?.name || user?.email });
+    toast.success("Edit mode enabled.");
   };
 
   const handleCancel = () => {
@@ -1072,39 +1270,17 @@ const PerformanceSheet = () => {
 
   const performCancel = () => {
     setFormData(originalData);
+    setIsEditing(false);
+    setIsLocked(false);
+    setLockInfo(null);
+    setModalType(null);
+    clearLocalStorage();
+    toast.info("Edit cancelled.");
 
-    if (!performanceSheetId || !isLockConnected) {
-      toast.error("Cannot release lock. Connection not available.");
-      setModalType(null);
-      return;
+    if (lockExtendIntervalRef.current) {
+      clearInterval(lockExtendIntervalRef.current);
+      lockExtendIntervalRef.current = null;
     }
-
-    emit(
-      "lock:release",
-      {
-        recordType: "performance-sheets",
-        recordId: performanceSheetId,
-        userId: user?.id,
-      },
-      (result: any) => {
-        if (result?.success) {
-          setIsEditing(false);
-          setIsLocked(false);
-          setLockInfo(null);
-          setModalType(null);
-          clearLocalStorage();
-          toast.info("Edit cancelled and lock released.");
-
-          if (lockExtendIntervalRef.current) {
-            clearInterval(lockExtendIntervalRef.current);
-            lockExtendIntervalRef.current = null;
-          }
-        } else {
-          toast.error("Failed to release lock.");
-          setModalType(null);
-        }
-      }
-    );
   };
 
   const handleSave = () => {
@@ -1119,39 +1295,18 @@ const PerformanceSheet = () => {
         data: formData,
       });
 
-      if (!isLockConnected) {
-        toast.error("Cannot release lock. Connection not available.");
-        setModalType(null);
-        return;
+      setIsEditing(false);
+      setIsLocked(false);
+      setLockInfo(null);
+      setModalType(null);
+      setOriginalData(formData);
+      clearLocalStorage();
+      toast.success("Changes saved successfully.");
+
+      if (lockExtendIntervalRef.current) {
+        clearInterval(lockExtendIntervalRef.current);
+        lockExtendIntervalRef.current = null;
       }
-
-      emit(
-        "lock:release",
-        {
-          recordType: "performance-sheets",
-          recordId: performanceSheetId,
-          userId: user?.id,
-        },
-        (result: any) => {
-          if (result?.success) {
-            setIsEditing(false);
-            setIsLocked(false);
-            setLockInfo(null);
-            setModalType(null);
-            setOriginalData(formData);
-            clearLocalStorage();
-            toast.success("Changes saved and lock released.");
-
-            if (lockExtendIntervalRef.current) {
-              clearInterval(lockExtendIntervalRef.current);
-              lockExtendIntervalRef.current = null;
-            }
-          } else {
-            toast.error("Failed to release lock.");
-            setModalType(null);
-          }
-        }
-      );
     } catch (error) {
       console.error("Failed to save performance sheet:", error);
       toast.error("Failed to save performance sheet.");
@@ -1312,7 +1467,7 @@ const PerformanceSheet = () => {
         <Button variant="secondary-outline" onClick={() => setModalType('links')}>
           <Link size={16} /> Links ({links.length})
         </Button>
-        <Button variant="secondary" onClick={handleEdit} disabled={!isLockConnected}>
+        <Button variant="secondary" onClick={handleEdit}>
           <Lock size={16} /> Edit
         </Button>
       </div>
@@ -1631,7 +1786,7 @@ const PerformanceSheet = () => {
       default:
         return null;
     }
-  };
+  }
 
   if (sheetLoading) {
     return (

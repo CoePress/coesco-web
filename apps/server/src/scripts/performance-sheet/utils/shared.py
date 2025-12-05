@@ -75,14 +75,14 @@ DEFAULTS = {
     # Reel defaults
     'reel': {
         'model': 'CPR-040',
-        'horsepower': 0.0,
-        'width': 0.0,
-        'backplate_diameter': 0.0,
+        'horsepower': 5.0,  # Default HP to prevent division by zero
+        'width': 12.0,  # Default width to prevent division by zero
+        'backplate_diameter': 16.0,  # Default backplate diameter
         'style': 'Single Ended',
-        'required_decel_rate': 0.0,
-        'coefficient_of_friction': 0.0,
-        'air_pressure_available': 0.0,
-        'drag_brake_quantity': 0,
+        'required_decel_rate': 1.0,  # Default decel rate to prevent division by zero
+        'coefficient_of_friction': 0.6,  # Default friction coefficient
+        'air_pressure_available': 80.0,  # Default air pressure to prevent division by zero
+        'drag_brake_quantity': 1,
         'drag_brake_model': 'Single Stage',
         'holddown_cylinder': 'Hydraulic',
         'holddown_assy': 'SD',

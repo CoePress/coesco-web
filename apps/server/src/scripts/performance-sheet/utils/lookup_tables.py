@@ -46,6 +46,48 @@ lookup_ab_feed = LOOKUP_DATA.get("lookup_ab_feed", {})
 ######
 # TDDBHD methods
 ######
+
+def get_valid_cylinder_options(model: str, hold_down_assy: str) -> list:
+    """Get valid cylinder options for a given model and holddown assembly."""
+    try:
+        hold_down_family = lookup_model_families[model]["holddown_family"]
+        holddown_sort = lookup_holddown_sort[hold_down_assy]["sort"]
+    except KeyError:
+        return []
+    
+    # Find all valid combinations for this model/assembly
+    prefix = f"{hold_down_family}+{holddown_sort}+{hold_down_assy}+"
+    valid_cylinders = []
+    
+    for entry in lookup_holddown_matrix:
+        if entry["key"].startswith(prefix):
+            cylinder = entry["key"].split('+')[-1]
+            if cylinder not in valid_cylinders:
+                valid_cylinders.append(cylinder)
+    
+    return valid_cylinders
+
+def get_fallback_cylinder(model: str, hold_down_assy: str, preferred_cylinder: str = None) -> str:
+    """Get a fallback cylinder option when the preferred one is not available."""
+    valid_options = get_valid_cylinder_options(model, hold_down_assy)
+    
+    if not valid_options:
+        return None
+        
+    # If preferred cylinder is valid, return it
+    if preferred_cylinder and preferred_cylinder in valid_options:
+        return preferred_cylinder
+    
+    # Fallback priority: Hydraulic > Air > others
+    fallback_priority = ["Hydraulic", "Air", "8in Air", "5in Air", "4in Air"]
+    
+    for fallback in fallback_priority:
+        if fallback in valid_options:
+            return fallback
+    
+    # Return first available option if no priority match
+    return valid_options[0] if valid_options else None
+
 ## Reel Models
 def get_reel_models():
     """Return a list of available reel models."""
@@ -112,17 +154,45 @@ def get_fpm_buffer(key: str = "DEFAULT") -> float:
 ## Holddown Matrix
 def get_hold_down_matrix_label(model: str, hold_down_assy: str, cylinder: str) -> str:
     """Form and return hold down matrix label."""
+    # Input validation
+    if not model or not model.strip():
+        raise ValueError(f"Model cannot be empty")
+    if not hold_down_assy or not hold_down_assy.strip():
+        raise ValueError(f"Hold down assembly cannot be empty")
+    if not cylinder or not cylinder.strip():
+        raise ValueError(f"Cylinder type cannot be empty")
+    
+    # Clean inputs
+    model = model.strip()
+    hold_down_assy = hold_down_assy.strip()
+    cylinder = cylinder.strip()
+    
     try:
         hold_down_family = lookup_model_families[model]["holddown_family"]
     except KeyError:
-        raise ValueError(f"Unknown family: {model}")
+        available_models = list(lookup_model_families.keys())[:10]  # First 10 for brevity
+        raise ValueError(f"Unknown model '{model}'. Available models include: {available_models}")
 
     try:
         holddown_sort = lookup_holddown_sort[hold_down_assy]["sort"]
     except KeyError:
-        raise ValueError(f"Unknown holddown assembly: {hold_down_assy}")
+        available_assemblies = list(lookup_holddown_sort.keys())
+        raise ValueError(f"Unknown holddown assembly '{hold_down_assy}'. Available assemblies: {available_assemblies}")
 
-    return f"{hold_down_family}+{holddown_sort}+{hold_down_assy}+{cylinder}"
+    matrix_key = f"{hold_down_family}+{holddown_sort}+{hold_down_assy}+{cylinder}"
+    
+    # Validate that the constructed key exists in the matrix
+    if not any(entry["key"] == matrix_key for entry in lookup_holddown_matrix):
+        # Find valid cylinder options for this model/assembly combo
+        valid_keys = [entry["key"] for entry in lookup_holddown_matrix 
+                     if entry["key"].startswith(f"{hold_down_family}+{holddown_sort}+{hold_down_assy}+")]
+        if valid_keys:
+            valid_cylinders = [key.split('+')[-1] for key in valid_keys]
+            raise ValueError(f"Invalid combination: Model '{model}', Assembly '{hold_down_assy}', Cylinder '{cylinder}'. Valid cylinder options for this combination: {valid_cylinders}")
+        else:
+            raise ValueError(f"No valid combinations found for Model '{model}' with Assembly '{hold_down_assy}'")
+    
+    return matrix_key
 
 ## Pressure PSI
 def get_pressure_psi(holddown_matrix_key: str, air_pressure: float) -> float:
@@ -132,7 +202,16 @@ def get_pressure_psi(holddown_matrix_key: str, air_pressure: float) -> float:
     None  # default if not found
     )
     if holddown_matrix is None:
-        raise ValueError(f"Holddown matrix key {holddown_matrix_key} not found")
+        # Get available keys for debugging
+        available_keys = [entry["key"] for entry in lookup_holddown_matrix]
+        similar_keys = [key for key in available_keys if holddown_matrix_key.split('+')[0] in key][:5]
+        
+        error_msg = f"Holddown matrix key '{holddown_matrix_key}' not found. "
+        if similar_keys:
+            error_msg += f"Similar available keys: {similar_keys}"
+        else:
+            error_msg += f"Total available keys: {len(available_keys)}"
+        raise ValueError(error_msg)
 
     pressure_label = holddown_matrix["PressureLabel"]
     max_psi = holddown_matrix["MaxPSI"]
@@ -144,14 +223,23 @@ def get_pressure_psi(holddown_matrix_key: str, air_pressure: float) -> float:
         return psi
 
 ## Holddown Force Available
-def get_holddown_force_available(holddown_matrix_key: str, holddown_pressure: str) -> float:
+def get_holddown_force_available(holddown_matrix_key: str, holddown_pressure: float) -> float:
     """Return Force Factor based off Holddown Matrix Key"""
     holddown_matrix = next(
         (entry for entry in lookup_holddown_matrix if entry["key"] == holddown_matrix_key),
         None  # default if not found
     )
     if holddown_matrix is None:
-        raise ValueError(f"Holddown matrix key {holddown_matrix_key} not found")
+        # Get available keys for debugging
+        available_keys = [entry["key"] for entry in lookup_holddown_matrix]
+        similar_keys = [key for key in available_keys if holddown_matrix_key.split('+')[0] in key][:5]
+        
+        error_msg = f"Holddown matrix key '{holddown_matrix_key}' not found. "
+        if similar_keys:
+            error_msg += f"Similar available keys: {similar_keys}"
+        else:
+            error_msg += f"Total available keys: {len(available_keys)}"
+        raise ValueError(error_msg)
 
     force_factor = holddown_matrix["ForceFactor"]
     return force_factor * holddown_pressure
@@ -164,7 +252,16 @@ def get_min_material_width(holddown_matrix_key: str) -> float:
         None  # default if not found
     )
     if holddown_matrix is None:
-        raise ValueError(f"Holddown matrix key {holddown_matrix_key} not found")
+        # Get available keys for debugging
+        available_keys = [entry["key"] for entry in lookup_holddown_matrix]
+        similar_keys = [key for key in available_keys if holddown_matrix_key.split('+')[0] in key][:5]
+        
+        error_msg = f"Holddown matrix key '{holddown_matrix_key}' not found. "
+        if similar_keys:
+            error_msg += f"Similar available keys: {similar_keys}"
+        else:
+            error_msg += f"Total available keys: {len(available_keys)}"
+        raise ValueError(error_msg)
 
     min_material_width = holddown_matrix["MinWidth"]
     return min_material_width
@@ -192,6 +289,15 @@ def get_drive_torque(drive_key: str) -> float:
     try:
         return lookup_drive_torque[drive_key]["torque"]
     except KeyError:
+        # Try to find a fallback for None hydraulic drives
+        if drive_key.endswith("+None"):
+            # Look for any key with the same prefix
+            prefix = drive_key.rsplit("+", 1)[0] + "+"
+            fallback_keys = [key for key in lookup_drive_torque.keys() if key.startswith(prefix)]
+            if fallback_keys:
+                # Use the first available fallback
+                fallback_key = fallback_keys[0]
+                return lookup_drive_torque[fallback_key]["torque"]
         raise ValueError(f"Unknown drive key: {drive_key}")
 
 ## Motor Inertia
@@ -270,11 +376,27 @@ def get_str_model_value(model: str, field: str, label: str = None):
     Raises:
         ValueError: If the model or field is not found.
     """
+    import sys
+    import sys
     model_key = model.upper()
     label = label or field
+    
+    print(f"STR MODEL LOOKUP - model: {model}, model_key: {model_key}, field: {field}", file=sys.stderr)
+    print(f"STR MODEL LOOKUP - available models: {list(lookup_str_model.keys())}", file=sys.stderr)
+    
     try:
-        return lookup_str_model[model_key][field]
-    except KeyError:
+        result = lookup_str_model[model_key][field]
+        print(f"STR MODEL LOOKUP - found {field}: {result}", file=sys.stderr)
+        return result
+    except KeyError as e:
+        print(f"STR MODEL LOOKUP - KeyError: {e}", file=sys.stderr)
+        if model_key not in lookup_str_model:
+            print(f"STR MODEL LOOKUP - Model {model_key} not found in lookup table", file=sys.stderr)
+            raise ValueError(f"Unknown model: {label} for model '{model}'")
+        elif field not in lookup_str_model[model_key]:
+            print(f"STR MODEL LOOKUP - Field {field} not found for model {model_key}", file=sys.stderr)
+            print(f"STR MODEL LOOKUP - Available fields for {model_key}: {list(lookup_str_model[model_key].keys())}", file=sys.stderr)
+            raise ValueError(f"Unknown field: {label} for model '{model}'")
         raise ValueError(f"Unknown model or missing field: {label} for model '{model}'")
 
 #####

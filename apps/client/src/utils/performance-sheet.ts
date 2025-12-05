@@ -90,6 +90,9 @@ export const RFQ_TYPE_OF_LINE_OPTIONS = [
   { value: "Conventional", label: "Conventional" },
 ];
 
+// Default STR model for new performance sheets
+export const DEFAULT_STR_MODEL = "CPPS-250";
+
 export const TYPE_OF_LINE_OPTIONS = [
   { value: "Compact", label: "Compact" },
   { value: "Compact CTL", label: "Compact CTL" },
@@ -467,6 +470,17 @@ export const getCylinderOptionsForHoldDownAssy = (model: string, holdDownAssy: s
   return cylinderOptions.map(cylinder => ({ value: cylinder, label: cylinder }));
 };
 
+export const getDefaultCylinderForHoldDownAssy = (model: string, holdDownAssy: string): string | null => {
+  const modelDependencies = HOLD_DOWN_CYLINDER_DEPENDENCIES[model];
+  if (!modelDependencies) return null;
+
+  const cylinderOptions = modelDependencies[holdDownAssy];
+  if (!cylinderOptions || cylinderOptions.length === 0) return null;
+
+  // Return the first option as default
+  return cylinderOptions[0];
+};
+
 export const BRAKE_MODEL_OPTIONS = [
   { value: "Single Stage", label: "Single Stage" },
   { value: "Double Stage", label: "Double Stage" },
@@ -605,6 +619,23 @@ export const getStrHorsepowerOptionsForModel = (model: string) => {
   if (!dependencies) return STR_HORSEPOWER_OPTIONS;
 
   return dependencies.horsepowers.map(hp => ({ value: hp, label: `${hp} HP` }));
+};
+
+// Helper functions for STR defaults
+export const getDefaultStrWidthForModel = (model: string): string => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies || dependencies.widths.length === 0) return "12";
+
+  // Return the first available width as default
+  return dependencies.widths[0];
+};
+
+export const getDefaultStrHorsepowerForModel = (model: string): string => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies || dependencies.horsepowers.length === 0) return "3";
+
+  // Return the first available horsepower as default
+  return dependencies.horsepowers[0];
 };
 
 export const getStrFeedRateOptionsForModelAndHorsepower = (model: string, horsepower: string) => {
@@ -867,7 +898,86 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
   const { patch, loading: updateLoading, error: updateError } = useApi();
 
   // Local state management
-  const [localData, setLocalData] = useState<PerformanceData>(initialData);
+  const [localData, setLocalData] = useState<PerformanceData>(() => {
+    // Initialize STR defaults if they don't exist
+    const initData = { ...initialData };
+
+    console.log("STR Initialization - Starting with initData:", initData);
+
+    // Check if this is a new sheet (no STR model set) or if STR fields need initialization
+    const strModel = initData?.common?.equipment?.straightener?.model;
+    const strWidth = initData?.common?.equipment?.straightener?.width;
+    const strHorsepower = initData?.strUtility?.straightener?.horsepower;
+
+    console.log("STR Initialization - Current values:", { strModel, strWidth, strHorsepower });
+
+    if (!strModel) {
+      console.log("STR Initialization - Setting default model:", DEFAULT_STR_MODEL);
+      // Set default STR model
+      if (!initData.common) initData.common = {};
+      if (!initData.common.equipment) initData.common.equipment = {};
+      if (!initData.common.equipment.straightener) initData.common.equipment.straightener = {};
+      initData.common.equipment.straightener.model = DEFAULT_STR_MODEL;
+    }
+
+    const finalStrModel = initData?.common?.equipment?.straightener?.model || DEFAULT_STR_MODEL;
+
+    // Initialize STR width if not set or is zero/empty
+    if (!strWidth || strWidth === 0 || (typeof strWidth === 'string' && strWidth === "")) {
+      const defaultWidth = parseFloat(getDefaultStrWidthForModel(finalStrModel));
+      console.log("STR Initialization - Setting default width:", defaultWidth, "for model:", finalStrModel);
+      if (!initData.common) initData.common = {};
+      if (!initData.common.equipment) initData.common.equipment = {};
+      if (!initData.common.equipment.straightener) initData.common.equipment.straightener = {};
+      initData.common.equipment.straightener.width = defaultWidth;
+    }
+
+    // Initialize STR horsepower if not set or is zero/empty
+    if (!strHorsepower || strHorsepower === 0 || (typeof strHorsepower === 'string' && strHorsepower === "")) {
+      const defaultHorsepower = parseFloat(getDefaultStrHorsepowerForModel(finalStrModel));
+      console.log("STR Initialization - Setting default horsepower:", defaultHorsepower, "for model:", finalStrModel);
+      if (!initData.strUtility) initData.strUtility = {};
+      if (!initData.strUtility.straightener) initData.strUtility.straightener = {};
+      initData.strUtility.straightener.horsepower = defaultHorsepower;
+    }
+
+    // Initialize STR utility coil weight capacity from max coil weight
+    const maxCoilWeight = initData?.common?.coil?.maxCoilWeight;
+    const strCoilWeight = (initData?.strUtility?.coil as any)?.maxCoilWeight;
+    if (maxCoilWeight && (!strCoilWeight || strCoilWeight === 0)) {
+      console.log("STR Initialization - Setting coil weight capacity:", maxCoilWeight);
+      if (!initData.strUtility) initData.strUtility = {};
+      if (!initData.strUtility.coil) initData.strUtility.coil = {};
+      (initData.strUtility.coil as any).maxCoilWeight = maxCoilWeight;
+    }
+
+    // Initialize number of rolls based on type of roll
+    const typeOfRoll = initData?.materialSpecs?.straightener?.rolls?.typeOfRoll;
+    const numberOfRolls = initData?.common?.equipment?.straightener?.numberOfRolls;
+    if (typeOfRoll && (!numberOfRolls || numberOfRolls === 0)) {
+      let rollCount = "";
+
+      // Extract number from any format using regex
+      if (typeof typeOfRoll === 'string') {
+        const rollMatch = typeOfRoll.match(/(\d+)\s*Roll/i);
+        if (rollMatch) {
+          rollCount = rollMatch[1];
+          console.log("STR Initialization - Extracted roll count:", rollCount, "from:", typeOfRoll);
+        }
+      }
+
+      if (rollCount) {
+        console.log("STR Initialization - Setting number of rolls:", rollCount, "for type:", typeOfRoll);
+        if (!initData.common) initData.common = {};
+        if (!initData.common.equipment) initData.common.equipment = {};
+        if (!initData.common.equipment.straightener) initData.common.equipment.straightener = {};
+        initData.common.equipment.straightener.numberOfRolls = parseFloat(rollCount);
+      }
+    }
+
+    console.log("STR Initialization - Final initData:", initData);
+    return initData;
+  });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -897,10 +1007,55 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
       try {
         console.log("=== PERFORMANCE DATA SERVICE SAVE ===");
         const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
+
+        // Add detailed logging for tddbhd fields
+        console.log("TDDBHD Debug - Material Properties:", {
+          materialThickness: updatedData?.common?.material?.materialThickness,
+          coilWidth: updatedData?.common?.material?.coilWidth,
+          coilWeight: updatedData?.common?.material?.coilWeight,
+          maxYieldStrength: updatedData?.common?.material?.maxYieldStrength,
+          reqMaxFPM: updatedData?.common?.material?.reqMaxFPM
+        });
+
+        console.log("TDDBHD Debug - Coil Properties:", {
+          maxCoilOD: updatedData?.common?.coil?.maxCoilOD,
+          coilID: updatedData?.common?.coil?.coilID
+        });
+
+        console.log("TDDBHD Debug - Equipment Properties:", {
+          reelModel: updatedData?.common?.equipment?.reel?.model,
+          reelWidth: updatedData?.common?.equipment?.reel?.width,
+          holddownAssy: updatedData?.tddbhd?.reel?.holddown?.assy,
+          cylinder: updatedData?.tddbhd?.reel?.holddown?.cylinder,
+          cylinderPressure: updatedData?.tddbhd?.reel?.holddown?.cylinderPressure,
+          airPressure: updatedData?.tddbhd?.reel?.airPressureAvailable
+        });
+
+        console.log("=== CRITICAL ZERO VALUE CHECK ===");
+        console.log("Air Pressure Available:", updatedData?.tddbhd?.reel?.airPressureAvailable);
+        console.log("Cylinder Pressure:", updatedData?.tddbhd?.reel?.holddown?.cylinderPressure);
+        console.log("Material Thickness:", updatedData?.common?.material?.materialThickness);
+        console.log("Coil Width:", updatedData?.common?.material?.coilWidth);
+        console.log("Coil ID:", updatedData?.common?.coil?.coilID);
+        console.log("Coil Weight:", updatedData?.common?.material?.coilWeight);
+        console.log("STR HP:", updatedData?.common?.equipment?.straightener?.horsepower);
+        console.log("Reel Width:", updatedData?.common?.equipment?.reel?.width);
+        console.log("Reel Horsepower:", updatedData?.common?.equipment?.reel?.horsepower);
+        console.log("Max Yield Strength:", updatedData?.common?.material?.maxYieldStrength);
+        console.log("Max Coil OD:", updatedData?.common?.coil?.maxCoilOD);
+        console.log("Decel Rate:", updatedData?.tddbhd?.reel?.requiredDecelRate);
+        console.log("Coefficient of Friction:", updatedData?.tddbhd?.reel?.coefficientOfFriction);
+        console.log("=== END ZERO VALUE CHECK ===");
+
         console.log("1. Sending data to backend:", JSON.stringify(updatedData, null, 2));
 
         const response = await patch(`/performance/sheets/${performanceSheetId}`, { data: updatedData });
         console.log("2. Backend response:", response);
+
+        // Log any calculation errors specifically
+        if (response?.tddbhd && typeof response.tddbhd === 'string' && response.tddbhd.includes('ERROR')) {
+          console.error("TDDBHD Calculation Error:", response.tddbhd);
+        }
 
         // Handle calculated values from backend - merge the entire response
         if (response) {
@@ -945,6 +1100,16 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
     const checked = (e.target as HTMLInputElement).checked;
     const actualValue = type === "checkbox" ? checked : value;
 
+    // Log critical field changes that might affect tddbhd calculation
+    if (name.includes('material') || name.includes('coil') || name.includes('reel') || name.includes('tddbhd')) {
+      console.log("CRITICAL FIELD CHANGE for TDDBHD:", {
+        fieldName: name,
+        oldValue: getFieldValue(name),
+        newValue: actualValue,
+        type: type
+      });
+    }
+
     // Clear field error
     if (fieldErrors[name]) {
       setFieldErrors((prev) => {
@@ -958,6 +1123,12 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
     const error = validateField(name, actualValue);
     if (error) {
       setFieldErrors(prev => ({ ...prev, [name]: error }));
+      return;
+    }
+
+    // Check if this is an STR model change
+    if (name === "common.equipment.straightener.model") {
+      handleStrModelChange(actualValue as string);
       return;
     }
 
@@ -1033,6 +1204,50 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
     return current;
   }, [localData]);
 
+  // Handler for STR model changes that updates dependent fields
+  const handleStrModelChange = useCallback((newModel: string) => {
+    if (!isEditing) return;
+
+    console.log("STR Model changed to:", newModel);
+
+    // Get the current values
+    const currentWidth = getFieldValue("common.equipment.straightener.width");
+    const currentHorsepower = getFieldValue("strUtility.straightener.horsepower");
+
+    // Get valid options for the new model
+    const validWidths = getStrWidthOptionsForModel(newModel).map(opt => opt.value);
+    const validHorsepowers = getStrHorsepowerOptionsForModel(newModel).map(opt => opt.value);
+
+    // Check if current values are still valid (handle undefined safely)
+    const isCurrentWidthValid = currentWidth !== undefined && validWidths.includes(currentWidth.toString());
+    const isCurrentHorsepowerValid = currentHorsepower !== undefined && validHorsepowers.includes(currentHorsepower.toString());
+
+    // Update model first
+    setLocalData(prevData => setNestedValue(prevData, "common.equipment.straightener.model", newModel));
+
+    // Update width if current value is invalid
+    if (!isCurrentWidthValid) {
+      const defaultWidth = parseFloat(getDefaultStrWidthForModel(newModel));
+      console.log("Updating STR width to:", defaultWidth);
+      setLocalData(prevData => setNestedValue(prevData, "common.equipment.straightener.width", defaultWidth));
+      pendingChangesRef.current["common.equipment.straightener.width"] = defaultWidth;
+    }
+
+    // Update horsepower if current value is invalid
+    if (!isCurrentHorsepowerValid) {
+      const defaultHorsepower = parseFloat(getDefaultStrHorsepowerForModel(newModel));
+      console.log("Updating STR horsepower to:", defaultHorsepower);
+      setLocalData(prevData => setNestedValue(prevData, "strUtility.straightener.horsepower", defaultHorsepower));
+      pendingChangesRef.current["strUtility.straightener.horsepower"] = defaultHorsepower;
+    }
+
+    // Track all changes
+    pendingChangesRef.current["common.equipment.straightener.model"] = newModel;
+    setIsDirty(true);
+
+    debouncedSave();
+  }, [isEditing, getFieldValue, debouncedSave]);
+
   // Reset to initial data
   const resetData = useCallback(() => {
     setLocalData(initialData);
@@ -1072,6 +1287,12 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
     getFieldError,
     hasPendingChanges: isDirty,
     isLoading: updateLoading,
+    // STR utility helpers
+    handleStrModelChange,
+    getStrWidthOptionsForModel,
+    getStrHorsepowerOptionsForModel,
+    getDefaultStrWidthForModel,
+    getDefaultStrHorsepowerForModel,
   };
 }
 
