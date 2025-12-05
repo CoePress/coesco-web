@@ -1,6 +1,14 @@
 import { Router } from "express";
 
-import { auditController, deletedRecordsController, employeeController, permissionController, roleController, sessionsController } from "@/controllers";
+import { auditController, deletedRecordsController, employeeController, sessionsController } from "@/controllers";
+import { createCrudEntity } from "@/factories";
+import { permissionRepository, roleRepository } from "@/repositories";
+import {
+  CreatePermissionSchema,
+  CreateRoleSchema,
+  UpdatePermissionSchema,
+  UpdateRoleSchema,
+} from "@/schemas";
 
 const router = Router();
 
@@ -31,19 +39,25 @@ router.get("/employees/:employeeId", employeeController.getEmployee);
 router.patch("/employees/:employeeId", employeeController.updateEmployee);
 router.delete("/employees/:employeeId", employeeController.deleteEmployee);
 
-// Permissions
-router.post("/permissions", permissionController.createPermission);
-router.get("/permissions", permissionController.getPermissions);
-router.get("/permissions/:permissionId", permissionController.getPermission);
-router.patch("/permissions/:permissionId", permissionController.updatePermission);
-router.delete("/permissions/:permissionId", permissionController.deletePermission);
+// Permissions - using CRUD factory
+createCrudEntity(router, {
+  repository: permissionRepository,
+  entityName: "Permission",
+  basePath: "/permissions",
+  idParam: "permissionId",
+  createSchema: CreatePermissionSchema,
+  updateSchema: UpdatePermissionSchema,
+});
 
-// Roles
-router.post("/roles", roleController.createRole);
-router.get("/roles", roleController.getRoles);
-router.get("/roles/:roleId", roleController.getRole);
-router.patch("/roles/:roleId", roleController.updateRole);
-router.delete("/roles/:roleId", roleController.deleteRole);
+// Roles - using CRUD factory
+createCrudEntity(router, {
+  repository: roleRepository,
+  entityName: "Role",
+  basePath: "/roles",
+  idParam: "roleId",
+  createSchema: CreateRoleSchema,
+  updateSchema: UpdateRoleSchema,
+});
 
 // Deleted Records
 router.get("/deleted-records", deletedRecordsController.getDeletedRecords);

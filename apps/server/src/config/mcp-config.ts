@@ -2,81 +2,82 @@ import type { IQueryParams, ISchema, ITool } from "@/types";
 
 import { logger } from "@/utils/logger";
 
-const serviceMap: Record<string, string> = {
-  "address": "addressService",
-  "audit-log": "auditLogService",
-  "chat": "chatService",
-  "coil-type": "coilTypeService",
-  "company": "companyService",
-  "configuration": "configurationService",
-  "configuration-option": "configurationOptionService",
-  "contact": "contactService",
-  "draft": "draftService",
-  "employee": "employeeService",
-  "item": "itemService",
-  "journey": "journeyService",
-  "journey-interaction": "journeyInteractionService",
-  "machine": "machineService",
-  "machine-status": "machineStatusService",
-  "message": "messageService",
-  "ntfy-device": "ntfyDeviceService",
-  "option-category": "optionCategoryService",
-  "option-details": "optionDetailsService",
-  "option-header": "optionHeaderService",
-  "option-rule": "optionRuleService",
-  "option-rule-target": "optionRuleTargetService",
-  "option-rule-trigger": "optionRuleTriggerService",
-  "performance-sheet": "performanceSheetService",
-  "performance-sheet-link": "performanceSheetLinkService",
-  "performance-sheet-version": "performanceSheetVersionService",
-  "permission": "permissionService",
-  "permission-exception": "permissionExceptionService",
-  "product-class": "productClassService",
-  "product-class-option-category": "productClassOptionCategoryService",
-  "quote-details": "quoteDetailsService",
-  "quote-header": "quoteHeaderService",
-  "quote-item": "quoteItemService",
-  "quote-note": "quoteNoteService",
-  "quote-terms": "quoteTermsService",
-  "role": "roleService",
-  "role-assignment": "roleAssignmentService",
-  "role-permission": "rolePermissionService",
-  "user": "userService",
+const repositoryMap: Record<string, string> = {
+  "address": "addressRepository",
+  "audit-log": "auditLogRepository",
+  "chat": "chatRepository",
+  "coil-type": "coilTypeRepository",
+  "company": "companyRepository",
+  "configuration": "configurationRepository",
+  "configuration-option": "configurationOptionRepository",
+  "contact": "contactRepository",
+  "draft": "draftRepository",
+  "employee": "employeeRepository",
+  "item": "itemRepository",
+  "journey": "journeyRepository",
+  "journey-interaction": "journeyInteractionRepository",
+  "machine": "machineRepository",
+  "machine-status": "machineStatusRepository",
+  "message": "messageRepository",
+  "ntfy-device": "ntfyDeviceRepository",
+  "option-category": "optionCategoryRepository",
+  "option-details": "optionDetailsRepository",
+  "option-header": "optionHeaderRepository",
+  "option-rule": "optionRuleRepository",
+  "option-rule-target": "optionRuleTargetRepository",
+  "option-rule-trigger": "optionRuleTriggerRepository",
+  "performance-sheet": "performanceSheetRepository",
+  "performance-sheet-link": "performanceSheetLinkRepository",
+  "performance-sheet-version": "performanceSheetVersionRepository",
+  "permission": "permissionRepository",
+  "permission-exception": "permissionExceptionRepository",
+  "product-class": "productClassRepository",
+  "product-class-option-category": "productClassOptionCategoryRepository",
+  "quote": "quoteRepository",
+  "quote-item": "quoteItemRepository",
+  "quote-note": "quoteNoteRepository",
+  "quote-terms": "quoteTermsRepository",
+  "role": "roleRepository",
+  "role-assignment": "roleAssignmentRepository",
+  "role-permission": "rolePermissionRepository",
+  "user": "userRepository",
+  "tag": "tagRepository",
+  "note": "noteRepository",
 };
 
-async function getServiceForEntity(entity: string) {
-  const serviceName = serviceMap[entity];
-  if (!serviceName) {
-    throw new Error(`No service found for entity: ${entity}`);
+async function getRepositoryForEntity(entity: string) {
+  const repositoryName = repositoryMap[entity];
+  if (!repositoryName) {
+    throw new Error(`No repository found for entity: ${entity}`);
   }
 
   const repositoryModule = await import("../repositories");
-  return (repositoryModule as any)[serviceName];
+  return (repositoryModule as any)[repositoryName];
 }
 
 async function getAll(entity: string, params?: IQueryParams<any>) {
-  const service = await getServiceForEntity(entity);
-  return service.getAll(params);
+  const repository = await getRepositoryForEntity(entity);
+  return repository.getAll(params);
 }
 
 async function getById(entity: string, id: string, _include?: string[] | Record<string, any> | string) {
-  const service = await getServiceForEntity(entity);
-  return service.getById(id);
+  const repository = await getRepositoryForEntity(entity);
+  return repository.getById(id);
 }
 
 async function _create(entity: string, data: any) {
-  const service = await getServiceForEntity(entity);
-  return service.create(data);
+  const repository = await getRepositoryForEntity(entity);
+  return repository.create(data);
 }
 
 async function _update(entity: string, id: string, data: any) {
-  const service = await getServiceForEntity(entity);
-  return service.update(id, data);
+  const repository = await getRepositoryForEntity(entity);
+  return repository.update(id, data);
 }
 
 async function _deleteRecord(entity: string, id: string) {
-  const service = await getServiceForEntity(entity);
-  return service.delete(id);
+  const repository = await getRepositoryForEntity(entity);
+  return repository.delete(id);
 }
 
 export const TOOLS: ITool[] = [

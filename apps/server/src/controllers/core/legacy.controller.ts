@@ -1,234 +1,165 @@
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
 
 import { legacyService } from "@/services";
-import { buildQueryParams } from "@/utils";
+import { asyncWrapper, buildQueryParams } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
 
 export class LegacyController {
-  async create(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table } = req.params;
-      const result = await legacyService.create(database, table, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  create = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table } = req.params;
+    const result = await legacyService.create(database, table, req.body);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table } = req.params;
-      const params = buildQueryParams<any>(req.query);
+  getAll = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table } = req.params;
+    const params = buildQueryParams<any>(req.query);
 
-      if (req.query.filter && typeof req.query.filter === "string") {
-        try {
-          params.filter = JSON.parse(req.query.filter);
-        }
-        catch {
-          // keep it as a string for backwards compatibility
-        }
+    if (req.query.filter && typeof req.query.filter === "string") {
+      try {
+        params.filter = JSON.parse(req.query.filter);
       }
-
-      const result = await legacyService.getAll(database, table, params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table, id } = req.params;
-
-      const fieldsParam = req.query.fields as string | undefined;
-      const fields = fieldsParam ? fieldsParam.split(",") : null;
-
-      const result = await legacyService.getById(database, table, id, fields);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getAllByCustomFilter(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table } = req.params;
-      const queryParams = { ...req.query };
-
-      // Extract filters from query parameters
-      // Support both single filter (filterField/filterValue) and multiple filters
-      const filters: Record<string, string> = {};
-
-      // Handle legacy single filter format
-      if (queryParams.filterField && queryParams.filterValue) {
-        filters[String(queryParams.filterField)] = String(queryParams.filterValue);
-        delete queryParams.filterField;
-        delete queryParams.filterValue;
+      catch {
+        // keep it as a string for backwards compatibility
       }
+    }
 
-      // Handle multiple filters format (any query param that's not a standard param)
-      const reservedParams = ["limit", "offset", "sort", "order", "fields"];
-      Object.entries(queryParams).forEach(([key, value]) => {
-        if (!reservedParams.includes(key) && value !== undefined) {
-          filters[key] = String(value);
-          delete queryParams[key];
-        }
-      });
+    const result = await legacyService.getAll(database, table, params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-      if (Object.keys(filters).length === 0) {
-        return res.status(400).json({ error: "At least one filter parameter is required" });
+  getById = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table, id } = req.params;
+
+    const fieldsParam = req.query.fields as string | undefined;
+    const fields = fieldsParam ? fieldsParam.split(",") : null;
+
+    const result = await legacyService.getById(database, table, id, fields);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  getAllByCustomFilter = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table } = req.params;
+    const queryParams = { ...req.query };
+
+    const filters: Record<string, string> = {};
+
+    if (queryParams.filterField && queryParams.filterValue) {
+      filters[String(queryParams.filterField)] = String(queryParams.filterValue);
+      delete queryParams.filterField;
+      delete queryParams.filterValue;
+    }
+
+    const reservedParams = ["limit", "offset", "sort", "order", "fields"];
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (!reservedParams.includes(key) && value !== undefined) {
+        filters[key] = String(value);
+        delete queryParams[key];
       }
+    });
 
-      const params = buildQueryParams<any>(queryParams);
-      const result = await legacyService.getAllByCustomFilter(database, table, filters, params);
-      res.status(200).json(result);
+    if (Object.keys(filters).length === 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "At least one filter parameter is required" });
     }
-    catch (error) {
-      next(error);
+
+    const params = buildQueryParams<any>(queryParams);
+    const result = await legacyService.getAllByCustomFilter(database, table, filters, params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  update = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table, id } = req.params;
+    const result = await legacyService.update(database, table, id, req.body);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  updateByCustomFilter = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table } = req.params;
+    const updateData = req.body;
+    const queryParams = { ...req.query };
+
+    const filters: Record<string, string> = {};
+
+    if (queryParams.filterField && queryParams.filterValue) {
+      filters[String(queryParams.filterField)] = String(queryParams.filterValue);
+      delete queryParams.filterField;
+      delete queryParams.filterValue;
     }
-  }
 
-  async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table, id } = req.params;
-      const result = await legacyService.update(database, table, id, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async updateByCustomFilter(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table } = req.params;
-      const updateData = req.body;
-      const queryParams = { ...req.query };
-
-      // Extract filters from query parameters
-      const filters: Record<string, string> = {};
-
-      // Handle legacy single filter format
-      if (queryParams.filterField && queryParams.filterValue) {
-        filters[String(queryParams.filterField)] = String(queryParams.filterValue);
-        delete queryParams.filterField;
-        delete queryParams.filterValue;
+    const reservedParams = ["limit", "offset", "sort", "order"];
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (!reservedParams.includes(key) && value !== undefined) {
+        filters[key] = String(value);
+        delete queryParams[key];
       }
+    });
 
-      // Handle multiple filters format (any query param that's not a standard param)
-      const reservedParams = ["limit", "offset", "sort", "order"];
-      Object.entries(queryParams).forEach(([key, value]) => {
-        if (!reservedParams.includes(key) && value !== undefined) {
-          filters[key] = String(value);
-          delete queryParams[key];
-        }
-      });
+    if (Object.keys(filters).length === 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "At least one filter parameter is required" });
+    }
 
-      if (Object.keys(filters).length === 0) {
-        return res.status(400).json({ error: "At least one filter parameter is required" });
+    const result = await legacyService.updateByCustomFilter(database, table, filters, updateData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  delete = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table, id } = req.params;
+    const result = await legacyService.delete(database, table, id);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  deleteByCustomFilter = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table } = req.params;
+    const queryParams = { ...req.query };
+
+    const filters: Record<string, string> = {};
+
+    if (queryParams.filterField && queryParams.filterValue) {
+      filters[String(queryParams.filterField)] = String(queryParams.filterValue);
+      delete queryParams.filterField;
+      delete queryParams.filterValue;
+    }
+
+    const reservedParams = ["limit", "offset", "sort", "order"];
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (!reservedParams.includes(key) && value !== undefined) {
+        filters[key] = String(value);
+        delete queryParams[key];
       }
+    });
 
-      const result = await legacyService.updateByCustomFilter(database, table, filters, updateData);
-      res.status(200).json(result);
+    if (Object.keys(filters).length === 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "At least one filter parameter is required for deletion" });
     }
-    catch (error) {
-      next(error);
-    }
-  }
 
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table, id } = req.params;
-      const result = await legacyService.delete(database, table, id);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+    const result = await legacyService.deleteByCustomFilter(database, table, filters);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteByCustomFilter(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table } = req.params;
-      const queryParams = { ...req.query };
+  getTables = asyncWrapper(async (req: Request, res: Response) => {
+    const { database } = req.params;
+    const result = await legacyService.getTables(database as "job" | "quote" | "std");
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-      // Extract filters from query parameters
-      const filters: Record<string, string> = {};
+  getFields = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table } = req.params;
+    const result = await legacyService.getFields(database, table);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-      // Handle legacy single filter format
-      if (queryParams.filterField && queryParams.filterValue) {
-        filters[String(queryParams.filterField)] = String(queryParams.filterValue);
-        delete queryParams.filterField;
-        delete queryParams.filterValue;
-      }
+  getMaxValue = asyncWrapper(async (req: Request, res: Response) => {
+    const { database, table, field } = req.params;
+    const result = await legacyService.getMaxValue(database, table, field);
+    res.status(HTTP_STATUS.OK).json({ maxValue: result });
+  });
 
-      // Handle multiple filters format (any query param that's not a standard param)
-      const reservedParams = ["limit", "offset", "sort", "order"];
-      Object.entries(queryParams).forEach(([key, value]) => {
-        if (!reservedParams.includes(key) && value !== undefined) {
-          filters[key] = String(value);
-          delete queryParams[key];
-        }
-      });
-
-      if (Object.keys(filters).length === 0) {
-        return res.status(400).json({ error: "At least one filter parameter is required for deletion" });
-      }
-
-      const result = await legacyService.deleteByCustomFilter(database, table, filters);
-      res.status(200).json(result);
+  getQuoteValue = asyncWrapper(async (req: Request, res: Response) => {
+    const { quoteKeyValue } = req.query;
+    if (!quoteKeyValue || typeof quoteKeyValue !== "string") {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Quote key value is required" });
     }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getTables(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database } = req.params;
-      const result = await legacyService.getTables(database as "job" | "quote" | "std");
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getFields(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table } = req.params;
-      const result = await legacyService.getFields(database, table);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getMaxValue(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { database, table, field } = req.params;
-      const result = await legacyService.getMaxValue(database, table, field);
-      res.status(200).json({ maxValue: result });
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getQuoteValue(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { quoteKeyValue } = req.query;
-      if (!quoteKeyValue || typeof quoteKeyValue !== "string") {
-        return res.status(400).json({ error: "Quote key value is required" });
-      }
-      const result = await legacyService.getQuoteValue(quoteKeyValue);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+    const result = await legacyService.getQuoteValue(quoteKeyValue);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 }

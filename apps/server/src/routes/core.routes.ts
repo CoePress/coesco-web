@@ -1,9 +1,27 @@
 import { Router } from "express";
 import multer from "multer";
 
-import { assetController, chatController, imageController, lockController, noteController, searchController, settingsController, tagController } from "@/controllers";
+import { assetController, chatController, imageController, lockController, searchController, settingsController } from "@/controllers";
+import { createCrudEntity } from "@/factories";
+import { noteRepository, tagRepository } from "@/repositories";
 
 const router = Router();
+
+// Tags - using CRUD factory
+createCrudEntity(router, {
+  repository: tagRepository,
+  entityName: "Tag",
+  basePath: "/tags",
+  idParam: "tagId",
+});
+
+// Notes - using CRUD factory
+createCrudEntity(router, {
+  repository: noteRepository,
+  entityName: "Note",
+  basePath: "/notes",
+  idParam: "noteId",
+});
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -45,22 +63,8 @@ router.get("/settings/:id", settingsController.getUserSetting);
 router.patch("/settings/:id", settingsController.updateUserSettings);
 router.delete("/settings/:id", settingsController.deleteUserSettings);
 
-// Tags
-router.post("/tags", tagController.createTag);
-router.get("/tags", tagController.getTags);
-router.get("/tags/:tagId", tagController.getTag);
-router.patch("/tags/:tagId", tagController.updateTag);
-router.delete("/tags/:tagId", tagController.deleteTag);
-
 // Search
 router.get("/search", searchController.searchEntities);
-
-// Notes
-router.post("/notes", noteController.createNote);
-router.get("/notes", noteController.getNotes);
-router.get("/notes/:noteId", noteController.getNote);
-router.patch("/notes/:noteId", noteController.updateNote);
-router.delete("/notes/:noteId", noteController.deleteNote);
 
 // Images
 router.post("/images", upload.any(), imageController.uploadImages);

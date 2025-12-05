@@ -1,50 +1,107 @@
+import type { JourneyContact } from "@prisma/client";
+
 import { Router } from "express";
 
-import { customerController, journeyController, performanceController, quoteController } from "@/controllers";
+import { performanceController, quoteController } from "@/controllers";
+import { createCrudEntity } from "@/factories";
+import {
+  addressRepository,
+  companyRelationshipRepository,
+  companyRepository,
+  contactRepository,
+  journeyRepository,
+} from "@/repositories";
+import {
+  CreateAddressSchema,
+  CreateCompanyRelationshipSchema,
+  CreateCompanySchema,
+  CreateContactSchema,
+  CreateJourneyContactSchema,
+  UpdateAddressSchema,
+  UpdateCompanyRelationshipSchema,
+  UpdateCompanySchema,
+  UpdateContactSchema,
+  UpdateJourneyContactSchema,
+} from "@/schemas";
+import { journeyContactService } from "@/services";
+import { asyncWrapper, buildQueryParams } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
 
 const router = Router();
 
-// Companies
-router.post("/companies", customerController.createCompany);
-router.get("/companies", customerController.getCompanies);
-router.get("/companies/:companyId", customerController.getCompany);
-router.patch("/companies/:companyId", customerController.updateCompany);
-router.delete("/companies/:companyId", customerController.deleteCompany);
+// Journeys - using CRUD factory
+createCrudEntity(router, {
+  repository: journeyRepository,
+  entityName: "Journey",
+  basePath: "/journeys",
+  idParam: "journeyId",
+});
 
-// Addresses
-router.post("/addresses", customerController.createAddress);
-router.get("/addresses", customerController.getAddresses);
-router.get("/addresses/:addressId", customerController.getAddress);
-router.patch("/addresses/:addressId", customerController.updateAddress);
-router.delete("/addresses/:addressId", customerController.deleteAddress);
+// Companies - using CRUD factory with validation
+createCrudEntity(router, {
+  repository: companyRepository,
+  entityName: "Company",
+  basePath: "/companies",
+  idParam: "companyId",
+  createSchema: CreateCompanySchema,
+  updateSchema: UpdateCompanySchema,
+});
 
-// Contacts
-router.post("/contacts", customerController.createContact);
-router.get("/contacts", customerController.getContacts);
-router.get("/contacts/:contactId", customerController.getContact);
-router.patch("/contacts/:contactId", customerController.updateContact);
-router.delete("/contacts/:contactId", customerController.deleteContact);
+// Addresses - using CRUD factory with validation
+createCrudEntity(router, {
+  repository: addressRepository,
+  entityName: "Address",
+  basePath: "/addresses",
+  idParam: "addressId",
+  createSchema: CreateAddressSchema,
+  updateSchema: UpdateAddressSchema,
+});
 
-// Company Relationships
-router.post("/company-relationships", customerController.createCompanyRelationship);
-router.get("/company-relationships", customerController.getCompanyRelationships);
-router.get("/company-relationships/:relationshipId", customerController.getCompanyRelationship);
-router.patch("/company-relationships/:relationshipId", customerController.updateCompanyRelationship);
-router.delete("/company-relationships/:relationshipId", customerController.deleteCompanyRelationship);
+// Contacts - using CRUD factory with validation and default include
+createCrudEntity(router, {
+  repository: contactRepository,
+  entityName: "Contact",
+  basePath: "/contacts",
+  idParam: "contactId",
+  createSchema: CreateContactSchema,
+  updateSchema: UpdateContactSchema,
+  defaultInclude: { image: true },
+});
 
-// Journey Contacts
-router.post("/journey-contacts", customerController.createJourneyContact);
-router.get("/journey-contacts", customerController.getJourneyContacts);
-router.get("/journey-contacts/:journeyContactId", customerController.getJourneyContact);
-router.patch("/journey-contacts/:journeyContactId", customerController.updateJourneyContact);
-router.delete("/journey-contacts/:journeyContactId", customerController.deleteJourneyContact);
+// Company Relationships - using CRUD factory with validation
+createCrudEntity(router, {
+  repository: companyRelationshipRepository,
+  entityName: "CompanyRelationship",
+  basePath: "/company-relationships",
+  idParam: "relationshipId",
+  createSchema: CreateCompanyRelationshipSchema,
+  updateSchema: UpdateCompanyRelationshipSchema,
+});
 
-// Journeys
-router.post("/journeys", journeyController.createJourney);
-router.get("/journeys", journeyController.getJourneys);
-router.get("/journeys/:journeyId", journeyController.getJourney);
-router.patch("/journeys/:journeyId", journeyController.updateJourney);
-router.delete("/journeys/:journeyId", journeyController.deleteJourney);
+// Journey Contacts - has business logic (primary contact handling)
+router.post("/journey-contacts", asyncWrapper(async (req, res) => {
+  const validData = CreateJourneyContactSchema.parse(req.body);
+  const result = await journeyContactService.createJourneyContact(validData);
+  res.status(HTTP_STATUS.CREATED).json(result);
+}));
+router.get("/journey-contacts", asyncWrapper(async (req, res) => {
+  const params = buildQueryParams<JourneyContact>(req.query);
+  const result = await journeyContactService.getAllJourneyContacts(params);
+  res.status(HTTP_STATUS.OK).json(result);
+}));
+router.get("/journey-contacts/:journeyContactId", asyncWrapper(async (req, res) => {
+  const result = await journeyContactService.getJourneyContactById(req.params.journeyContactId);
+  res.status(HTTP_STATUS.OK).json(result);
+}));
+router.patch("/journey-contacts/:journeyContactId", asyncWrapper(async (req, res) => {
+  const validData = UpdateJourneyContactSchema.parse(req.body);
+  const result = await journeyContactService.updateJourneyContact(req.params.journeyContactId, validData);
+  res.status(HTTP_STATUS.OK).json(result);
+}));
+router.delete("/journey-contacts/:journeyContactId", asyncWrapper(async (req, res) => {
+  await journeyContactService.deleteJourneyContact(req.params.journeyContactId);
+  res.status(HTTP_STATUS.NO_CONTENT).send();
+}));
 
 // Metrics
 router.get("/quotes/metrics", quoteController.getMetrics);

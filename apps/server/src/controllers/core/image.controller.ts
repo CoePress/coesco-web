@@ -1,51 +1,38 @@
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
 
 import { imageService } from "@/services";
+import { asyncWrapper } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
 
 export class ImageController {
-  async uploadImages(req: Request, res: Response, next: NextFunction) {
-    try {
-      if (!req.file && (!req.files || (req.files as Express.Multer.File[]).length === 0)) {
-        return res.status(400).json({ error: "No image files provided" });
-      }
+  uploadImages = asyncWrapper(async (req: Request, res: Response) => {
+    if (!req.file && (!req.files || (req.files as Express.Multer.File[]).length === 0)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "No image files provided" });
+    }
 
-      if (req.file) {
-        const result = await imageService.uploadImage(req.file);
-        return res.status(200).json(result);
-      }
+    if (req.file) {
+      const result = await imageService.uploadImage(req.file);
+      return res.status(HTTP_STATUS.OK).json(result);
+    }
 
-      if (req.files) {
-        const result = await imageService.uploadImages(req.files as Express.Multer.File[]);
-        return res.status(200).json(result);
-      }
+    if (req.files) {
+      const result = await imageService.uploadImages(req.files as Express.Multer.File[]);
+      return res.status(HTTP_STATUS.OK).json(result);
     }
-    catch (error) {
-      next(error);
-    }
-  }
+  });
 
-  async getAllImages(req: Request, res: Response, next: NextFunction) {
-    try {
-      const images = await imageService.getAllImages();
-      res.status(200).json(images);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getAllImages = asyncWrapper(async (_req: Request, res: Response) => {
+    const images = await imageService.getAllImages();
+    res.status(HTTP_STATUS.OK).json(images);
+  });
 
-  async deleteImage(req: Request, res: Response, next: NextFunction) {
-    try {
-      const imageId = Number.parseInt(req.params.id);
-      if (Number.isNaN(imageId)) {
-        return res.status(400).json({ error: "Invalid image ID" });
-      }
+  deleteImage = asyncWrapper(async (req: Request, res: Response) => {
+    const imageId = Number.parseInt(req.params.id);
+    if (Number.isNaN(imageId)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Invalid image ID" });
+    }
 
-      await imageService.deleteImage(imageId);
-      res.status(200).json({ message: "Image deleted successfully" });
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+    await imageService.deleteImage(imageId);
+    res.status(HTTP_STATUS.OK).json({ message: "Image deleted successfully" });
+  });
 }
