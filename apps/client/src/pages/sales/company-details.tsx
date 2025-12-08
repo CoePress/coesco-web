@@ -401,6 +401,7 @@ function CompanyDetails() {
           BalanceDate: companyEditData.balanceDate || null,
           CreditNote: companyEditData.creditNote || null,
           Notes: companyEditData.notes || null,
+          URL: companyEditData.website || null,
         };
 
         pendingCompanySaveDataRef.current = companyEditData;
@@ -418,6 +419,7 @@ function CompanyDetails() {
           balanceDate: data.balanceDate,
           creditNote: data.creditNote,
           notes: data.notes,
+          website: data.website,
         });
         setIsCustomRsmInput(false);
         pendingCompanySaveDataRef.current = null;
@@ -449,6 +451,7 @@ function CompanyDetails() {
       balanceDate: company.balanceDate,
       creditNote: company.creditNote,
       notes: company.notes,
+      website: company.website,
     });
   };
 
@@ -743,7 +746,7 @@ function CompanyDetails() {
               name: processedCompanyData.CustDlrName || `Company ${processedCompanyData.Company_ID}`,
               phone: primaryContact?.phone || processedCompanyData.BillToPhone || "",
               email: primaryContact?.email || "",
-              website: "",
+              website: processedCompanyData.URL || "",
               active: Number(processedCompanyData.Active) === 1,
               isDealer: Number(processedCompanyData.IsDealer) || 0,
               creditStatus: processedCompanyData.CreditStatus,
@@ -1594,6 +1597,27 @@ function CompanyDetails() {
                     <input
                       type="text"
                       value={company.active ? "Active" : "Inactive"}
+                      readOnly
+                      className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
+                    />
+                  )}
+            </div>
+            <div className="flex flex-col gap-1 col-span-2">
+              <span className="text-text-muted">Website</span>
+              {companyEditor.isEditing
+                ? (
+                    <input
+                      type="url"
+                      value={companyEditor.editData.website || ""}
+                      onChange={e => companyEditor.updateField("website", e.target.value)}
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                      placeholder="https://example.com"
+                    />
+                  )
+                : (
+                    <input
+                      type="text"
+                      value={company.website || "-"}
                       readOnly
                       className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
                     />
