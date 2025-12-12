@@ -14,10 +14,15 @@ if (!fs.existsSync(logsDir)) {
 const baseFormat = combine(
   errors({ stack: true }),
   timestamp({ format: "YYYY-MM-DD hh:mm:ss.SSS A" }),
-  align(),
   printf((info) => {
+    const splat = (info as any)[Symbol.for("splat")] as unknown[] | undefined;
+    const meta =
+      splat && splat.length
+        ? ` ${JSON.stringify(splat.length === 1 ? splat[0] : splat)}`
+        : "";
+
     const msg = info.stack ?? info.message;
-    return `[${info.timestamp}] ${info.level}: ${msg}`;
+    return `[${info.timestamp}] ${info.level}: ${msg}${meta}`;
   }),
 );
 

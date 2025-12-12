@@ -1,6 +1,8 @@
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import morgan from 'morgan';
 import axios from 'axios';
+import compression from "compression";
+import cookieParser from "cookie-parser";
 import logger from './lib/logger';
 import env from './lib/env';
 import router from './routes';
@@ -28,22 +30,23 @@ const morganMiddleware = morgan(
   }
 );
 
+app.use(compression());
+app.use(cookieParser());
+app.use(express.json());
+
 app.use(morganMiddleware);
 
-app.get('/crypto', async (req, res) => {
-  try {
-    const response = await axios.get(
-      'https://api2.binance.com/api/v3/ticker/24hr',
-    );
-    const tickerPrice = response.data;
-    res.json(tickerPrice);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('Internal server error');
-  }
+app.get('/health', async (req, res) => {
+  res.json({ status: 'ok' });
 });
 
 app.use('/v1', router);
+
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  const err = new Error(`Route not found: ${req.method} ${req.originalUrl}`) as any;
+  err.status = 404;
+  next(err);
+});
 
 app.use(errorHandler);
 

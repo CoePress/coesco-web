@@ -9,12 +9,14 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
+    "dev": "nodemon src/index.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",
     "axios": "^1.13.2",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
     "morgan": "^1.10.1",
     "odbc": "^2.4.9",
     "pg": "^8.16.3",
