@@ -19,6 +19,7 @@
     "compression": "^1.8.1",
     "cookie": "^0.7.2",
     "cookie-parser": "^1.4.7",
+    "express-session": "^1.18.2",
     "morgan": "^1.10.1",
     "node-cron": "^4.2.1",
     "odbc": "^2.4.9",
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@types/cookie": "^0.6.0",
     "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
     "@types/node": "^24.6.1",
     "dotenv": "^10.0.0",
     "eslint": "^9.39.1",
