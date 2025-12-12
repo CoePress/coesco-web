@@ -1,18 +1,25 @@
-import express, { NextFunction, Request, Response } from 'express';
-import morgan from 'morgan';
-import axios from 'axios';
+// src/index.ts
+import express, { NextFunction, Request, Response } from "express";
+import morgan from "morgan";
 import compression from "compression";
 import cookieParser from "cookie-parser";
-import logger from './lib/logger';
-import env from './lib/env';
-import router from './routes';
-import { errorHandler } from './middleware/error-handler';
-import { startCron } from './lib/cron';
-import { jobs } from './jobs';
-import { requestId } from './middleware/request-id';
-import { prisma } from './lib/prisma';
+import http from "http";
+
+import logger from "./lib/logger";
+import env from "./lib/env";
+import router from "./routes";
+import { errorHandler } from "./middleware/error-handler";
+import { startCron } from "./lib/cron";
+import { jobs } from "./jobs";
+import { requestId } from "./middleware/request-id";
+import { prisma } from "./lib/prisma";
+import { createSocketServer } from "./ws";
+import { seedUsers } from "./utils/seed-users";
 
 const app = express();
+const server = http.createServer(app);
+
+/* ----------------------------- middleware ----------------------------- */
 
 const morganMiddleware = morgan(
   (tokens, req, res) =>
@@ -33,7 +40,6 @@ const morganMiddleware = morgan(
   },
 );
 
-
 app.use(compression());
 app.use(cookieParser());
 app.use(express.json());
@@ -41,11 +47,13 @@ app.use(express.json());
 app.use(requestId);
 app.use(morganMiddleware);
 
-app.get('/health', async (req, res) => {
-  res.json({ status: 'ok' });
+/* -------------------------------- routes ------------------------------ */
+
+app.get("/health", async (_req, res) => {
+  res.json({ status: "ok" });
 });
 
-app.use('/v1', router);
+app.use("/v1", router);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   const err = new Error(`Route not found: ${req.method} ${req.originalUrl}`) as any;
@@ -55,7 +63,9 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 app.use(errorHandler);
 
-async function setupShutdown() {
+/* --------------------------- graceful shutdown -------------------------- */
+
+function setupShutdown() {
   const shutdown = async (signal: string) => {
     logger.info("shutdown.start", { signal });
 
@@ -73,16 +83,19 @@ async function setupShutdown() {
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
 }
 
-async function main() { 
+/* --------------------------------- main -------------------------------- */
+
+async function main() {
   await prisma.$queryRaw`SELECT 1`;
 
-  app.listen(env.PORT, (err) => {
-    if (err) {
-      console.error('Failed to start server:', err);
-      process.exit(1);
-    }
-    
-    console.log(`Server is running on port ${env.PORT}`);
+  await seedUsers(prisma, [
+    { username: "admin", password: "admin123", isActive: true },
+  ]);
+
+  createSocketServer(server);
+
+  server.listen(env.PORT, () => {
+    logger.info("server.started", { port: env.PORT });
     setupShutdown();
     startCron(jobs);
   });

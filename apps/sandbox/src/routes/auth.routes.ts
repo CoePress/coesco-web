@@ -3,18 +3,20 @@ import { protect } from "../middleware/protect";
 import crypto from "node:crypto";
 import { clearAuthCookies, newRefreshToken, setAuthCookies, signAccessToken } from "../lib/auth";
 import { prisma } from "../lib/prisma";
+import bcrypt from "bcryptjs";
 
 const authRouter = Router();
 
 authRouter.post("/login", async (req, res, next) => {
   try {
-    const { email, password } = req.body as { email: string; password: string };
+    const { username, password } = req.body as { username: string; password: string };
 
-    // TODO: replace with your real user lookup + password verify
-    const user = await prisma.user.findFirst({ where: { /* email */ } as any });
+    const user = await prisma.user.findFirst({ where: { username } });
     if (!user) return res.status(401).json({ error: { message: "Invalid credentials" } });
 
-    // if (!(await verifyPassword(password, user.passwordHash))) ...
+    if (!(await bcrypt.compare(password, user.password ?? ""))) { 
+      return res.status(401).json({ error: { message: "Invalid credentials" } });
+    }
 
     const access = signAccessToken({ sub: user.id });
     const { token: refresh, hash } = newRefreshToken();
