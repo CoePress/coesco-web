@@ -14,7 +14,8 @@ const envSchema = z.object({
       z.literal('production'),
     ])
     .default('development'),
-  LOG_LEVEL: z.string().default("info")
+  LOG_LEVEL: z.string().default("info"),
+  DATABASE_URL: z.string(),
 });
 
 const env = envSchema.parse(process.env);

@@ -18,6 +18,7 @@
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
     "odbc": "^2.4.9",
     "pg": "^8.16.3",
     "winston": "^3.19.0",

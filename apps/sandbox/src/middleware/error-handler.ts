@@ -1,18 +1,24 @@
-import { Request, Response, NextFunction } from 'express';
-import logger from '../lib/logger';
+import type { NextFunction, Request, Response } from "express";
+import logger from "../lib/logger";
 
-export interface AppError extends Error {
-  status?: number;
-}
+export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
+  const status = err.status ?? 500;
+  const requestId = (req as any).requestId;
 
-export const errorHandler = (
-  err: AppError,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  logger.error(err.message, { stack: err.stack });
-  res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
+  logger.error("request.error", {
+    request_id: requestId,
+    status,
+    method: req.method,
+    url: req.originalUrl,
+    message: err.message,
+    stack: err.stack,
   });
-};
+
+  res.status(status).json({
+    error: {
+      message: status === 500 ? "Internal Server Error" : err.message,
+      status,
+      request_id: requestId,
+    },
+  });
+}
