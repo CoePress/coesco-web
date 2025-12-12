@@ -16,6 +16,7 @@ const envSchema = z.object({
     .default('development'),
   LOG_LEVEL: z.string().default("info"),
   DATABASE_URL: z.string(),
+  ACCESS_TOKEN_SECRET: z.string(),
 });
 
 const env = envSchema.parse(process.env);

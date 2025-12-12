@@ -1,13 +1,14 @@
 import { Router } from "express";
 import accountRouter from "./account.routes"
-import authRouter from "./auth.routes"
 import contactRouter from "./contact.routes"
+import authRouter from "./auth.routes";
+import { protect } from "../middleware/protect";
 
 const router = Router();
 
 router.use('/auth', authRouter);
 
-// protect these routes
+router.use(protect)
 router.use('/accounts', accountRouter);
 router.use('/contacts', contactRouter);
 
