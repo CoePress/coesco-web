@@ -1,17 +1,17 @@
-import { NextFunction, Request, Response, Router } from "express";
-import { CreateAccountSchema } from "../validators/account";
+import type { NextFunction, Request, Response } from "express";
+import { Router } from "express";
+import { CreateAccountSchema, UpdateAccountSchema, UUIDSchema } from "../validators/account";
 import { prisma } from "../lib/prisma";
 
-const router = Router();
+const accountRouter = Router();
 
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+// CREATE
+accountRouter.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const input = CreateAccountSchema.parse(req.body);
 
     const account = await prisma.account.create({
-      data: {
-        ...input,
-      },
+      data: { ...input },
     });
 
     res.status(201).json({ account });
@@ -20,9 +20,68 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-router.get('/', () => {});
-router.get('/:id', () => {});
-router.patch('/:id', () => {});
-router.delete('/:id', () => {});
+// LIST
+accountRouter.get("/", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const accounts = await prisma.account.findMany({
+      orderBy: { createdAt: "desc" },
+    });
 
-export default router;
+    res.json({ accounts });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET ONE
+accountRouter.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = UUIDSchema.parse(req.params);
+
+    const account = await prisma.account.findUnique({
+      where: { id },
+    });
+
+    if (!account) {
+      return res.status(404).json({ error: { message: "Account not found" } });
+    }
+
+    res.json({ account });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// UPDATE
+accountRouter.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = UUIDSchema.parse(req.params);
+    const patch = UpdateAccountSchema.parse(req.body);
+
+    const account = await prisma.account.update({
+      where: { id },
+      data: patch,
+    });
+
+    res.json({ account });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE
+accountRouter.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = UUIDSchema.parse(req.params);
+
+    await prisma.account.delete({
+      where: { id },
+    });
+
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default accountRouter;

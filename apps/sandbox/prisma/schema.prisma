@@ -86,6 +86,10 @@ model Account {
   projects Project[]
   acttivities Activity[]
 
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
   @@index([ownerEmployeeId])
   @@map("accounts")
 }
