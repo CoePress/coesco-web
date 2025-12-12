@@ -70,6 +70,13 @@ model Employee {
 model Account {
   id String @id @default(uuid())
 
+  name     String
+  website  String?
+  phone    String?
+  industry String?
+  status   AccountStatus @default(ACTIVE)
+  notes    String?
+
   ownerEmployeeId String?
   owner           Employee? @relation("AccountOwner", fields: [ownerEmployeeId], references: [id], onDelete: SetNull)
 
@@ -81,6 +88,12 @@ model Account {
 
   @@index([ownerEmployeeId])
   @@map("accounts")
+}
+
+enum AccountStatus {
+  ACTIVE
+  PROSPECT
+  INACTIVE
 }
 
 model Contact {
