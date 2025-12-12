@@ -1,16 +1,18 @@
 import cron from "node-cron";
+
 import logger from "./logger";
 
-export type CronJob = {
+export interface CronJob {
   name: string;
   schedule: string;
   enabled?: boolean;
   run: () => Promise<void> | void;
-};
+}
 
 export function startCron(jobs: CronJob[]) {
   for (const job of jobs) {
-    if (job.enabled === false) continue;
+    if (job.enabled === false)
+      continue;
 
     if (!cron.validate(job.schedule)) {
       throw new Error(`Invalid cron schedule for ${job.name}: ${job.schedule}`);
@@ -19,7 +21,8 @@ export function startCron(jobs: CronJob[]) {
     cron.schedule(job.schedule, async () => {
       try {
         await job.run();
-      } catch (err) {
+      }
+      catch (err) {
         logger.error("cron.job_failed", { job: job.name, err });
       }
     });

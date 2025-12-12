@@ -1,10 +1,12 @@
-import { Server } from "socket.io";
-import type { Server as HttpServer } from "http";
+import type { Server as HttpServer } from "node:http";
+
 import cookie from "cookie";
+import { Server } from "socket.io";
+
 import { verifyAccessToken } from "../lib/auth";
-import { registerRooms } from "./rooms";
-import { registerHandlers } from "./handlers";
 import logger from "../lib/logger";
+import { registerHandlers } from "./handlers";
+import { registerRooms } from "./rooms";
 
 export function createSocketServer(httpServer: HttpServer) {
   const io = new Server(httpServer, {
@@ -22,7 +24,8 @@ export function createSocketServer(httpServer: HttpServer) {
       const claims = verifyAccessToken(token);
       socket.data.userId = claims.sub;
       next();
-    } catch {
+    }
+    catch {
       next(new Error("unauthorized"));
     }
   });

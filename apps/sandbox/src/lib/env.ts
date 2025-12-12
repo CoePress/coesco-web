@@ -1,7 +1,7 @@
-import { z } from 'zod'
-
+/* eslint-disable node/no-process-env */
 import dotenv from "dotenv";
 import process from "node:process";
+import { z } from "zod";
 
 dotenv.config();
 
@@ -9,11 +9,11 @@ const envSchema = z.object({
   PORT: z.coerce.number().min(1000),
   ENV: z
     .union([
-      z.literal('development'),
-      z.literal('testing'),
-      z.literal('production'),
+      z.literal("development"),
+      z.literal("testing"),
+      z.literal("production"),
     ])
-    .default('development'),
+    .default("development"),
   LOG_LEVEL: z.string().default("info"),
   DATABASE_URL: z.string(),
   ACCESS_TOKEN_SECRET: z.string(),

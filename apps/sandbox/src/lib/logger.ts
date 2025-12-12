@@ -1,10 +1,11 @@
-import winston from "winston";
-import "winston-daily-rotate-file";
-import env from "./env";
 import fs from "node:fs";
+import "winston-daily-rotate-file";
 import path from "node:path";
+import winston from "winston";
 
-const { combine, timestamp, printf, colorize, align, errors } = winston.format;
+import env from "./env";
+
+const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 const logsDir = path.resolve("logs");
 if (!fs.existsSync(logsDir)) {
@@ -16,8 +17,8 @@ const baseFormat = combine(
   timestamp({ format: "YYYY-MM-DD hh:mm:ss.SSS A" }),
   printf((info) => {
     const splat = (info as any)[Symbol.for("splat")] as unknown[] | undefined;
-    const meta =
-      splat && splat.length
+    const meta
+      = splat && splat.length
         ? ` ${JSON.stringify(splat.length === 1 ? splat[0] : splat)}`
         : "";
 
@@ -30,14 +31,15 @@ const consoleFormat = combine(colorize({ all: true }), baseFormat);
 
 const fileFormat = baseFormat;
 
-const rotate = (filename: string, level?: string) =>
-  new winston.transports.DailyRotateFile({
+function rotate(filename: string, level?: string) {
+  return new winston.transports.DailyRotateFile({
     filename: path.join(logsDir, `${filename}-%DATE%.log`),
     datePattern: "YYYY-MM-DD",
     maxFiles: "14d",
     level,
     format: fileFormat,
   });
+}
 
 const logger = winston.createLogger({
   level: env.LOG_LEVEL,

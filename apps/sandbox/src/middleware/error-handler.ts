@@ -1,14 +1,16 @@
 import type { NextFunction, Request, Response } from "express";
+
 import { ZodError } from "zod";
-import logger from "../lib/logger";
+
 import { AppError, isAppError } from "../lib/errors";
+import logger from "../lib/logger";
 
 function isPrismaKnownRequestError(err: any): err is { name: string; code: string; meta?: any; message?: string } {
   return (
-    err &&
-    typeof err === "object" &&
-    err.name === "PrismaClientKnownRequestError" &&
-    typeof err.code === "string"
+    err
+    && typeof err === "object"
+    && err.name === "PrismaClientKnownRequestError"
+    && typeof err.code === "string"
   );
 }
 

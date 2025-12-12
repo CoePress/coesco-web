@@ -1,9 +1,10 @@
+import bcrypt from "bcryptjs";
 import { Router } from "express";
-import { protect } from "../middleware/protect";
 import crypto from "node:crypto";
+
 import { clearAuthCookies, newRefreshToken, setAuthCookies, signAccessToken } from "../lib/auth";
 import { prisma } from "../lib/prisma";
-import bcrypt from "bcryptjs";
+import { protect } from "../middleware/protect";
 
 const authRouter = Router();
 
@@ -12,9 +13,10 @@ authRouter.post("/login", async (req, res, next) => {
     const { username, password } = req.body as { username: string; password: string };
 
     const user = await prisma.user.findFirst({ where: { username } });
-    if (!user) return res.status(401).json({ error: { message: "Invalid credentials" } });
+    if (!user)
+      return res.status(401).json({ error: { message: "Invalid credentials" } });
 
-    if (!(await bcrypt.compare(password, user.password ?? ""))) { 
+    if (!(await bcrypt.compare(password, user.password ?? ""))) {
       return res.status(401).json({ error: { message: "Invalid credentials" } });
     }
 
@@ -31,7 +33,8 @@ authRouter.post("/login", async (req, res, next) => {
 
     setAuthCookies(res, access, refresh);
     res.json({ ok: true });
-  } catch (err) {
+  }
+  catch (err) {
     next(err);
   }
 });
@@ -39,7 +42,8 @@ authRouter.post("/login", async (req, res, next) => {
 authRouter.post("/refresh", async (req, res, next) => {
   try {
     const refresh = req.cookies?.refresh;
-    if (!refresh) return res.status(401).json({ error: { message: "Unauthorized" } });
+    if (!refresh)
+      return res.status(401).json({ error: { message: "Unauthorized" } });
 
     const hash = crypto.createHash("sha256").update(refresh).digest("hex");
 
@@ -71,7 +75,8 @@ authRouter.post("/refresh", async (req, res, next) => {
     setAuthCookies(res, access, nextRefresh);
 
     res.json({ ok: true });
-  } catch (err) {
+  }
+  catch (err) {
     next(err);
   }
 });
@@ -89,14 +94,14 @@ authRouter.post("/logout", async (req, res, next) => {
 
     clearAuthCookies(res);
     res.json({ ok: true });
-  } catch (err) {
+  }
+  catch (err) {
     next(err);
   }
 });
 
-authRouter.get('/me', protect, async (req, res) => {
+authRouter.get("/me", protect, async (req, res) => {
   res.json({ userId: (req as any).userId });
 });
-
 
 export default authRouter;

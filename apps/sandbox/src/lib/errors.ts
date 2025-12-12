@@ -1,11 +1,11 @@
-export type ErrorCode =
-  | "UNAUTHORIZED"
-  | "FORBIDDEN"
-  | "NOT_FOUND"
-  | "CONFLICT"
-  | "BAD_REQUEST"
-  | "RATE_LIMITED"
-  | "INTERNAL";
+export type ErrorCode
+  = | "UNAUTHORIZED"
+    | "FORBIDDEN"
+    | "NOT_FOUND"
+    | "CONFLICT"
+    | "BAD_REQUEST"
+    | "RATE_LIMITED"
+    | "INTERNAL";
 
 export class AppError extends Error {
   public readonly status: number;

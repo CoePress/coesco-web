@@ -1,10 +1,10 @@
-import odbc from "odbc";
+import type odbc from "odbc";
 
 export class ODBC {
   async connect() { }
 
   async close() { }
-  
+
   async create() { }
 
   async getAll() { }
@@ -18,5 +18,4 @@ export class ODBCConnection {
   private stdConnection?: odbc.Connection;
   private jobConnection?: odbc.Connection;
   private quoteConnection?: odbc.Connection;
-
 }

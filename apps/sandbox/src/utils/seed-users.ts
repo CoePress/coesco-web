@@ -1,12 +1,13 @@
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "../generated/client";
 
-export type SeedUser = {
+import type { PrismaClient } from "../generated/client";
+
+export interface SeedUser {
   username: string;
   password?: string;
   microsoftId?: string | null;
   isActive?: boolean;
-};
+}
 
 export async function seedUsers(prisma: PrismaClient, users: SeedUser[]) {
   for (const u of users) {

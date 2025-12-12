@@ -1,8 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
+
 import { Router } from "express";
-import { CreateAccountSchema, UpdateAccountSchema, UUIDSchema } from "../validators/account";
-import { prisma } from "../lib/prisma";
+
 import { errors } from "../lib/errors";
+import { prisma } from "../lib/prisma";
+import { CreateAccountSchema, UpdateAccountSchema, UUIDSchema } from "../validators/account";
 
 const accountRouter = Router();
 
@@ -16,7 +18,8 @@ accountRouter.post("/", async (req: Request, res: Response, next: NextFunction) 
     });
 
     res.status(201).json({ account });
-  } catch (err) {
+  }
+  catch (err) {
     next(err);
   }
 });
@@ -29,7 +32,8 @@ accountRouter.get("/", async (_req: Request, res: Response, next: NextFunction) 
     });
 
     res.json({ accounts });
-  } catch (err) {
+  }
+  catch (err) {
     next(err);
   }
 });
@@ -44,11 +48,13 @@ accountRouter.get("/:id", async (req: Request, res: Response, next: NextFunction
     });
 
     if (!account) {
-      if (!account) throw errors.notFound("Account not found");
+      if (!account)
+        throw errors.notFound("Account not found");
     }
 
     res.json({ account });
-  } catch (err) {
+  }
+  catch (err) {
     next(err);
   }
 });
@@ -65,7 +71,8 @@ accountRouter.patch("/:id", async (req: Request, res: Response, next: NextFuncti
     });
 
     res.json({ account });
-  } catch (err) {
+  }
+  catch (err) {
     next(err);
   }
 });
@@ -80,7 +87,8 @@ accountRouter.delete("/:id", async (req: Request, res: Response, next: NextFunct
     });
 
     res.status(204).send();
-  } catch (err) {
+  }
+  catch (err) {
     next(err);
   }
 });

@@ -1,20 +1,23 @@
+/* eslint-disable node/prefer-global/process */
 // src/index.ts
-import express, { NextFunction, Request, Response } from "express";
-import morgan from "morgan";
+import type { NextFunction, Request, Response } from "express";
+
 import compression from "compression";
 import cookieParser from "cookie-parser";
-import http from "http";
+import express from "express";
+import morgan from "morgan";
+import http from "node:http";
 
-import logger from "./lib/logger";
-import env from "./lib/env";
-import router from "./routes";
-import { errorHandler } from "./middleware/error-handler";
-import { startCron } from "./lib/cron";
 import { jobs } from "./jobs";
-import { requestId } from "./middleware/request-id";
+import { startCron } from "./lib/cron";
+import env from "./lib/env";
+import logger from "./lib/logger";
 import { prisma } from "./lib/prisma";
-import { createSocketServer } from "./ws";
+import { errorHandler } from "./middleware/error-handler";
+import { requestId } from "./middleware/request-id";
+import router from "./routes";
 import { seedUsers } from "./utils/seed-users";
+import { createSocketServer } from "./ws";
 
 const app = express();
 const server = http.createServer(app);
@@ -73,7 +76,8 @@ function setupShutdown() {
       await prisma.$disconnect();
       logger.info("shutdown.done", { signal });
       process.exit(0);
-    } catch (err) {
+    }
+    catch (err) {
       logger.error("shutdown.failed", { signal, err });
       process.exit(1);
     }

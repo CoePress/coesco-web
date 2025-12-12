@@ -1,6 +1,6 @@
 export interface QueryParams<
   TFilter extends Record<string, unknown> = Record<string, unknown>,
-  TSortField extends string = string
+  TSortField extends string = string,
 > {
   page?: number;
   pageSize?: number;

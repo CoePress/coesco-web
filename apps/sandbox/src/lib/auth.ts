@@ -1,11 +1,13 @@
+import type { Response } from "express";
+
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
-import type { Response } from "express";
+
 import env, { __prod__ } from "./env";
 
-export type AccessClaims = {
+export interface AccessClaims {
   sub: string; // userId
-};
+}
 
 export function signAccessToken(claims: AccessClaims) {
   return jwt.sign(claims, env.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });

@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import { requireRole } from "../middleware/protect";
 
 const adminRouter = Router();
