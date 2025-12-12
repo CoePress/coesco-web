@@ -1,0 +1,383 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String    @id @default(uuid())
+  username    String    @unique
+  password    String?
+  microsoftId String?   @unique
+  isActive    Boolean   @default(false)
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employee Employee?
+
+  @@map("users")
+}
+
+model Employee {
+  id              String    @id @default(uuid())
+  number          String    @unique
+  firstName       String
+  lastName        String
+  initials        String
+  email           String?   @unique
+  phoneNumber     String?
+  title           String
+  hireDate        DateTime?
+  startDate       DateTime?
+  terminationDate DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+  deletedById     String
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ownedAccounts        Account[]        @relation("AccountOwner")
+  ownedContacts        Contact[]        @relation("ContactOwner")
+  ownedDeals           Deal[]           @relation("DealOwner")
+  ownedTasks           Task[]           @relation("TaskOwner")
+  performedActivities  Activity[]       @relation("ActivityActor")
+  ownedQuotes          Quote[]          @relation("QuoteOwner")
+  createdRevisions     QuoteRevision[]  @relation("QuoteRevisionCreator")
+  acceptedQuotes       QuoteAcceptance[] @relation("QuoteAcceptanceActor")
+  deliveredRevisions   QuoteDelivery[]  @relation("QuoteDeliveryActor")
+  managedProjects      Project[]        @relation("ProjectManager")
+
+  @@index([userId])
+  @@map("employees")
+}
+
+model Account {
+  id String @id @default(uuid())
+
+  ownerEmployeeId String?
+  owner           Employee? @relation("AccountOwner", fields: [ownerEmployeeId], references: [id], onDelete: SetNull)
+
+  contacts Contact[]
+  deals    Deal[]
+  quotes   Quote[]
+  projects Project[]
+  acttivities Activity[]
+
+  @@index([ownerEmployeeId])
+  @@map("accounts")
+}
+
+model Contact {
+  id String @id @default(uuid())
+
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  ownerEmployeeId String?
+  owner           Employee? @relation("ContactOwner", fields: [ownerEmployeeId], references: [id], onDelete: SetNull)
+
+  deals  Deal[]  @relation("DealPrimaryContact")
+  projects Project[] @relation("ProjectPrimaryContact")
+  quotes Quote[]
+  acttivities Activity[]
+
+  @@index([accountId])
+  @@index([ownerEmployeeId])
+  @@map("contacts")
+}
+
+model Deal {
+  id String @id @default(uuid())
+
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  stageId String
+  stage   Stage @relation(fields: [stageId], references: [id], onDelete: Restrict)
+
+  ownerEmployeeId String?
+  owner           Employee? @relation("DealOwner", fields: [ownerEmployeeId], references: [id], onDelete: SetNull)
+
+  primaryContactId String?
+  primaryContact   Contact? @relation("DealPrimaryContact", fields: [primaryContactId], references: [id], onDelete: SetNull)
+
+  tasks      Task[]
+  activities Activity[]
+  quotes     Quote[]
+  projects   Project[]
+
+  @@index([accountId])
+  @@index([stageId])
+  @@index([ownerEmployeeId])
+  @@index([primaryContactId])
+  @@map("deals")
+}
+
+model Stage {
+  id String @id @default(uuid())
+
+  deals Deal[]
+
+  @@map("stages")
+}
+
+model Task {
+  id String @id @default(uuid())
+
+  ownerEmployeeId String?
+  owner           Employee? @relation("TaskOwner", fields: [ownerEmployeeId], references: [id], onDelete: SetNull)
+
+  dealId String?
+  deal   Deal? @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([ownerEmployeeId])
+  @@index([dealId])
+  @@index([projectId])
+  @@map("tasks")
+}
+
+model Activity {
+  id String @id @default(uuid())
+
+  actorEmployeeId String?
+  actor           Employee? @relation("ActivityActor", fields: [actorEmployeeId], references: [id], onDelete: SetNull)
+
+  dealId String?
+  deal   Deal? @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([actorEmployeeId])
+  @@index([dealId])
+  @@index([contactId])
+  @@index([accountId])
+  @@index([projectId])
+  @@map("activities")
+}
+
+model Product {
+  id String @id @default(uuid())
+
+  optionCategories     ProductOptionCategory[]
+  configurations       ProductConfigurtion[]
+  quoteRevisionLines   QuoteRevisionLine[]
+
+  @@map("products")
+}
+
+model ProductOptionCategory {
+  id String @id @default(uuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  options ProductOption[]
+
+  @@index([productId])
+  @@map("product_option_categories")
+}
+
+model ProductOption {
+  id String @id @default(uuid())
+
+  categoryId String
+  category   ProductOptionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@map("product_options")
+}
+
+model ProductConfigurtion {
+  id String @id @default(uuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  quoteRevisionLines QuoteRevisionLine[]
+
+  @@index([productId])
+  @@map("product_configurations")
+}
+
+model Quote {
+  id String @id @default(uuid())
+
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  dealId String?
+  deal   Deal? @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  ownerEmployeeId String?
+  owner           Employee? @relation("QuoteOwner", fields: [ownerEmployeeId], references: [id], onDelete: SetNull)
+
+  currentRevisionId String? @unique
+  currentRevision   QuoteRevision? @relation("QuoteCurrentRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull)
+
+  revisions   QuoteRevision[]
+  acceptances QuoteAcceptance[]
+  scopes      ProjectScope[]
+
+  @@index([accountId])
+  @@index([contactId])
+  @@index([dealId])
+  @@index([ownerEmployeeId])
+  @@index([currentRevisionId])
+  @@map("quotes")
+}
+
+model QuoteRevision {
+  id String @id @default(uuid())
+
+  quoteId String
+  quote   Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  createdByEmployeeId String?
+  createdBy           Employee? @relation("QuoteRevisionCreator", fields: [createdByEmployeeId], references: [id], onDelete: SetNull)
+
+  // back-reference for Quote.currentRevision
+  currentForQuote Quote? @relation("QuoteCurrentRevision")
+
+  lines       QuoteRevisionLine[]
+  deliveries  QuoteDelivery[]
+  acceptances QuoteAcceptance[]
+  scopes      ProjectScope[]
+
+  @@index([quoteId])
+  @@index([createdByEmployeeId])
+  @@map("quote_revisions")
+}
+
+model QuoteRevisionLine {
+  id String @id @default(uuid())
+
+  quoteRevisionId String
+  quoteRevision   QuoteRevision @relation(fields: [quoteRevisionId], references: [id], onDelete: Cascade)
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  productConfigurationId String?
+  productConfiguration   ProductConfigurtion? @relation(fields: [productConfigurationId], references: [id], onDelete: SetNull)
+
+  options QuoteRevisionLineOption[]
+
+  @@index([quoteRevisionId])
+  @@index([productId])
+  @@index([productConfigurationId])
+  @@map("quote_revision_lines")
+}
+
+model QuoteRevisionLineOption {
+  id String @id @default(uuid())
+
+  quoteRevisionLineId String
+  quoteRevisionLine   QuoteRevisionLine @relation(fields: [quoteRevisionLineId], references: [id], onDelete: Cascade)
+
+  @@index([quoteRevisionLineId])
+  @@map("quote_revision_line_options")
+}
+
+model QuoteAcceptance {
+  id String @id @default(uuid())
+
+  quoteId String
+  quote   Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  quoteRevisionId String
+  quoteRevision   QuoteRevision @relation(fields: [quoteRevisionId], references: [id], onDelete: Cascade)
+
+  actorEmployeeId String?
+  actor           Employee? @relation("QuoteAcceptanceActor", fields: [actorEmployeeId], references: [id], onDelete: SetNull)
+
+  scopes ProjectScope[]
+
+  @@index([quoteId])
+  @@index([quoteRevisionId])
+  @@index([actorEmployeeId])
+  @@map("quote_acceptances")
+}
+
+model QuoteDelivery {
+  id String @id @default(uuid())
+
+  quoteRevisionId String
+  quoteRevision   QuoteRevision @relation(fields: [quoteRevisionId], references: [id], onDelete: Cascade)
+
+  actorEmployeeId String?
+  actor           Employee? @relation("QuoteDeliveryActor", fields: [actorEmployeeId], references: [id], onDelete: SetNull)
+
+  @@index([quoteRevisionId])
+  @@index([actorEmployeeId])
+  @@map("quote_deliveries")
+}
+
+model Project {
+  id String @id @default(uuid())
+
+  dealId String
+  deal   Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  primaryContactId String?
+  primaryContact   Contact? @relation("ProjectPrimaryContact", fields: [primaryContactId], references: [id], onDelete: SetNull)
+
+  projectManagerEmployeeId String?
+  projectManager           Employee? @relation("ProjectManager", fields: [projectManagerEmployeeId], references: [id], onDelete: SetNull)
+
+  scopes     ProjectScope[]
+  tasks      Task[]
+  activities Activity[]
+
+  @@index([dealId])
+  @@index([accountId])
+  @@index([primaryContactId])
+  @@index([projectManagerEmployeeId])
+  @@map("projects")
+}
+
+model ProjectScope {
+  id String @id @default(uuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  quoteId String?
+  quote   Quote? @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
+  quoteRevisionId String?
+  quoteRevision   QuoteRevision? @relation(fields: [quoteRevisionId], references: [id], onDelete: SetNull)
+
+  quoteAcceptanceId String?
+  quoteAcceptance   QuoteAcceptance? @relation(fields: [quoteAcceptanceId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([quoteId])
+  @@index([quoteRevisionId])
+  @@index([quoteAcceptanceId])
+  @@map("project_scopes")
+}
