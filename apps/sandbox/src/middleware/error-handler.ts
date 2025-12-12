@@ -1,37 +1,39 @@
 import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
-import { Prisma } from "@prisma/client";
 import logger from "../lib/logger";
 import { AppError, isAppError } from "../lib/errors";
 
-function mapPrismaKnownError(err: Prisma.PrismaClientKnownRequestError): AppError {
-  // Expand as you see patterns in your app
-  switch (err.code) {
-    case "P2002": // unique constraint
-      return new AppError({
-        status: 409,
-        code: "CONFLICT",
-        message: "Conflict",
-        details: { prisma: { code: err.code, meta: err.meta } },
-        expose: true,
-      });
+function isPrismaKnownRequestError(err: any): err is { name: string; code: string; meta?: any; message?: string } {
+  return (
+    err &&
+    typeof err === "object" &&
+    err.name === "PrismaClientKnownRequestError" &&
+    typeof err.code === "string"
+  );
+}
 
-    case "P2025": // record not found
+function mapPrismaKnown(err: { code: string; meta?: any; message?: string }) {
+  switch (err.code) {
+    case "P2025":
       return new AppError({
         status: 404,
         code: "NOT_FOUND",
         message: "Not found",
         details: { prisma: { code: err.code, meta: err.meta } },
-        expose: true,
       });
-
+    case "P2002":
+      return new AppError({
+        status: 409,
+        code: "CONFLICT",
+        message: "Conflict",
+        details: { prisma: { code: err.code, meta: err.meta } },
+      });
     default:
       return new AppError({
         status: 400,
         code: "BAD_REQUEST",
         message: "Bad request",
         details: { prisma: { code: err.code, meta: err.meta } },
-        expose: true,
       });
   }
 }
@@ -39,39 +41,29 @@ function mapPrismaKnownError(err: Prisma.PrismaClientKnownRequestError): AppErro
 export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   const requestId = (req as any).requestId;
 
-  // Zod -> AppError(400)
   if (err instanceof ZodError) {
-    const appErr = new AppError({
-      status: 400,
-      code: "BAD_REQUEST",
-      message: "Validation failed",
-      details: { issues: err.issues },
-      expose: true,
-    });
-
     logger.warn("request.validation_error", {
       request_id: requestId,
-      status: appErr.status,
-      code: appErr.code,
+      status: 400,
       method: req.method,
       url: req.originalUrl,
-      details: appErr.details,
+      issues: err.issues,
     });
 
-    return res.status(appErr.status).json({
+    return res.status(400).json({
       error: {
-        message: appErr.message,
-        code: appErr.code,
-        status: appErr.status,
+        message: "Validation failed",
+        code: "BAD_REQUEST",
+        status: 400,
         request_id: requestId,
-        ...(appErr.details ? appErr.details : null),
+        issues: err.issues,
       },
     });
   }
 
-  // Prisma -> AppError(mapped)
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    const appErr = mapPrismaKnownError(err);
+  // ✅ Prisma mapping that works even when instanceof fails
+  if (isPrismaKnownRequestError(err)) {
+    const appErr = mapPrismaKnown(err);
 
     logger.warn("request.prisma_error", {
       request_id: requestId,
@@ -79,7 +71,8 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
       code: appErr.code,
       method: req.method,
       url: req.originalUrl,
-      details: appErr.details,
+      prisma_code: err.code,
+      meta: err.meta,
     });
 
     return res.status(appErr.status).json({
@@ -92,26 +85,23 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
     });
   }
 
-  // Your reusable AppError
   if (isAppError(err)) {
-    const appErr = err;
-
     logger.warn("request.app_error", {
       request_id: requestId,
-      status: appErr.status,
-      code: appErr.code,
+      status: err.status,
+      code: err.code,
       method: req.method,
       url: req.originalUrl,
-      details: appErr.details,
+      details: err.details,
     });
 
-    return res.status(appErr.status).json({
+    return res.status(err.status).json({
       error: {
-        message: appErr.message,
-        code: appErr.code,
-        status: appErr.status,
+        message: err.message,
+        code: err.code,
+        status: err.status,
         request_id: requestId,
-        ...(appErr.details ? { details: appErr.details } : {}),
+        ...(err.details ? { details: err.details } : {}),
       },
     });
   }
