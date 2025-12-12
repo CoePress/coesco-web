@@ -2,81 +2,134 @@ import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { Prisma } from "@prisma/client";
 import logger from "../lib/logger";
+import { AppError, isAppError } from "../lib/errors";
 
-function isHttpError(err: any): err is { status: number; message: string } {
-  return err && typeof err === "object" && typeof err.status === "number";
+function mapPrismaKnownError(err: Prisma.PrismaClientKnownRequestError): AppError {
+  // Expand as you see patterns in your app
+  switch (err.code) {
+    case "P2002": // unique constraint
+      return new AppError({
+        status: 409,
+        code: "CONFLICT",
+        message: "Conflict",
+        details: { prisma: { code: err.code, meta: err.meta } },
+        expose: true,
+      });
+
+    case "P2025": // record not found
+      return new AppError({
+        status: 404,
+        code: "NOT_FOUND",
+        message: "Not found",
+        details: { prisma: { code: err.code, meta: err.meta } },
+        expose: true,
+      });
+
+    default:
+      return new AppError({
+        status: 400,
+        code: "BAD_REQUEST",
+        message: "Bad request",
+        details: { prisma: { code: err.code, meta: err.meta } },
+        expose: true,
+      });
+  }
 }
 
 export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   const requestId = (req as any).requestId;
 
-  // --- Zod validation errors -> 400
+  // Zod -> AppError(400)
   if (err instanceof ZodError) {
-    logger.warn("request.validation_error", {
-      request_id: requestId,
+    const appErr = new AppError({
       status: 400,
-      method: req.method,
-      url: req.originalUrl,
-      issues: err.issues,
+      code: "BAD_REQUEST",
+      message: "Validation failed",
+      details: { issues: err.issues },
+      expose: true,
     });
 
-    return res.status(400).json({
+    logger.warn("request.validation_error", {
+      request_id: requestId,
+      status: appErr.status,
+      code: appErr.code,
+      method: req.method,
+      url: req.originalUrl,
+      details: appErr.details,
+    });
+
+    return res.status(appErr.status).json({
       error: {
-        message: "Validation failed",
-        status: 400,
+        message: appErr.message,
+        code: appErr.code,
+        status: appErr.status,
         request_id: requestId,
-        issues: err.issues,
+        ...(appErr.details ? appErr.details : null),
       },
     });
   }
 
-  // --- Prisma errors (optional but recommended)
+  // Prisma -> AppError(mapped)
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    // P2002 = unique constraint
-    const status =
-      err.code === "P2002" ? 409 :
-      err.code === "P2025" ? 404 :
-      400;
+    const appErr = mapPrismaKnownError(err);
 
     logger.warn("request.prisma_error", {
       request_id: requestId,
-      status,
+      status: appErr.status,
+      code: appErr.code,
       method: req.method,
       url: req.originalUrl,
-      code: err.code,
-      message: err.message,
-      meta: err.meta,
+      details: appErr.details,
     });
 
-    return res.status(status).json({
+    return res.status(appErr.status).json({
       error: {
-        message:
-          err.code === "P2002" ? "Conflict" :
-          err.code === "P2025" ? "Not found" :
-          "Bad request",
-        status,
+        message: appErr.message,
+        code: appErr.code,
+        status: appErr.status,
         request_id: requestId,
-        code: err.code,
       },
     });
   }
 
-  // --- Existing behavior for everything else
-  const status = isHttpError(err) ? err.status : 500;
+  // Your reusable AppError
+  if (isAppError(err)) {
+    const appErr = err;
+
+    logger.warn("request.app_error", {
+      request_id: requestId,
+      status: appErr.status,
+      code: appErr.code,
+      method: req.method,
+      url: req.originalUrl,
+      details: appErr.details,
+    });
+
+    return res.status(appErr.status).json({
+      error: {
+        message: appErr.message,
+        code: appErr.code,
+        status: appErr.status,
+        request_id: requestId,
+        ...(appErr.details ? { details: appErr.details } : {}),
+      },
+    });
+  }
 
   logger.error("request.error", {
     request_id: requestId,
-    status,
+    status: 500,
     method: req.method,
     url: req.originalUrl,
     message: err?.message ?? String(err),
     stack: err?.stack,
   });
 
-  return res.status(status).json({
+  return res.status(500).json({
     error: {
-      message: status === 500 ? "Internal Server Error" : (err?.message ?? "Error"),
-      status,
+      message: "Internal Server Error",
+      code: "INTERNAL",
+      status: 500,
       request_id: requestId,
     },
   });

@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
 import { CreateAccountSchema, UpdateAccountSchema, UUIDSchema } from "../validators/account";
 import { prisma } from "../lib/prisma";
+import { errors } from "../lib/errors";
 
 const accountRouter = Router();
 
@@ -43,7 +44,7 @@ accountRouter.get("/:id", async (req: Request, res: Response, next: NextFunction
     });
 
     if (!account) {
-      return res.status(404).json({ error: { message: "Account not found" } });
+      if (!account) throw errors.notFound("Account not found");
     }
 
     res.json({ account });
