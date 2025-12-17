@@ -1,10 +1,18 @@
-type Props = {
-  children: React.ReactNode;
-}
+import { Outlet } from 'react-router-dom'
+import Sidebar from './sidebar'
+import Topbar from './topbar'
 
-const Layout = ({ children }: Props) => {
+const Layout = () => {
   return (
-    <div className="flex flex-col h-[100dvh] bg-red-500">Layout</div>
+    <div className="flex h-screen w-screen overflow-hidden">
+      <Sidebar />
+      <div className="flex flex-1 flex-col">
+        <Topbar />
+        <main className="flex-1 overflow-auto p-4">
+          <Outlet />
+        </main>
+      </div>
+    </div>
   )
 }
 
