@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\jar\\Code\\coesco-web\\apps\\sandbox\\logs\\.47614d9ca9813f7e6ef02c5cd0ac48b4d4baee0b-audit.json",
+    "files": [
+        {
+            "date": 1765560824480,
+            "name": "C:\\Users\\jar\\Code\\coesco-web\\apps\\sandbox\\logs\\app-debug-2025-12-12.log",
+            "hash": "7e00e81b9c3635e7d2864397dcf33ac33d41cf957fc460946bd1e2bde7915965"
+        }
+    ],
+    "hashType": "sha256"
+}
