@@ -1,4 +1,4 @@
-import { UserRole } from "../generated";
+import { UserRole } from "../generated/enums";
 import env from "./env";
 import logger from "./logger";
 import { prisma } from "./prisma";
@@ -20,6 +20,11 @@ interface MicrosoftUser {
   surname: string | null;
   jobTitle: string | null;
   department: string | null;
+}
+
+interface GraphResponse {
+  "value": MicrosoftUser[];
+  "@odata.nextLink"?: string;
 }
 
 async function getMicrosoftToken(): Promise<string> {
@@ -54,7 +59,7 @@ async function getMicrosoftUsers(): Promise<MicrosoftUser[]> {
 
   while (url) {
     const token = await getMicrosoftToken();
-    const response = await fetch(url, {
+    const response: Response = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(30000),
     });
@@ -64,7 +69,7 @@ async function getMicrosoftUsers(): Promise<MicrosoftUser[]> {
       throw new Error(`Failed to fetch Microsoft users: ${error}`);
     }
 
-    const data = await response.json();
+    const data: GraphResponse = await response.json();
     allUsers.push(...data.value);
     url = data["@odata.nextLink"] || null;
   }
