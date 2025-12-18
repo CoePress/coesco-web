@@ -503,13 +503,13 @@ export class LegacyService {
       const columns: ColumnSchema[] = result.map(row => ({
         name: String(row["_Field-Name"] ?? ""),
         dataType: String(row["_Data-Type"] ?? ""),
-        extent: Number(row["_Extent"] ?? 0),
-        format: String(row["_Format"] ?? ""),
-        label: String(row["_Label"] ?? ""),
-        mandatory: Boolean(row["_Mandatory"]),
-        order: Number(row["_Order"] ?? 0),
-        initialValue: row["_Initial"] ? String(row["_Initial"]) : null,
-        description: row["_Desc"] ? String(row["_Desc"]) : null,
+        extent: Number(row._Extent ?? 0),
+        format: String(row._Format ?? ""),
+        label: String(row._Label ?? ""),
+        mandatory: Boolean(row._Mandatory),
+        order: Number(row._Order ?? 0),
+        initialValue: row._Initial ? String(row._Initial) : null,
+        description: row._Desc ? String(row._Desc) : null,
       }));
 
       return {
