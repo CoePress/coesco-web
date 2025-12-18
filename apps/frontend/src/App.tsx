@@ -3,7 +3,6 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { SidebarProvider } from '@/components/sidebar-provider'
 import Layout from './app/layout'
 import MainMenu from './pages/main-menu'
-import ExamplePage from './pages/example-page'
 import NotFound from './pages/not-found'
 
 function App() {
@@ -14,7 +13,6 @@ function App() {
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<MainMenu />} />
-              <Route path="example" element={<ExamplePage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
