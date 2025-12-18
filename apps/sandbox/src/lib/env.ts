@@ -33,6 +33,10 @@ const envSchema = z.object({
   QUOTE_HOST: z.string(),
   QUOTE_PORT: z.coerce.number(),
   QUOTE_DB: z.string(),
+
+  AZURE_TENANT_ID: z.string(),
+  AZURE_CLIENT_ID: z.string(),
+  AZURE_CLIENT_SECRET: z.string(),
 });
 
 const env = envSchema.parse(process.env);

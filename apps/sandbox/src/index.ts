@@ -12,6 +12,7 @@ import { jobs } from "./jobs";
 import { startCron } from "./lib/cron";
 import env from "./lib/env";
 import logger from "./lib/logger";
+import { syncMicrosoftUsers } from "./lib/microsoft";
 import { prisma } from "./lib/prisma";
 import { errorHandler } from "./middleware/error-handler";
 import { requestId } from "./middleware/request-id";
@@ -95,6 +96,8 @@ async function main() {
   await seedUsers(prisma, [
     { username: "admin", password: "admin123", isActive: true },
   ]);
+
+  await syncMicrosoftUsers();
 
   createSocketServer(server);
 
