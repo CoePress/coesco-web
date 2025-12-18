@@ -1,3 +1,5 @@
+import { read } from "fs";
+
 export const DAYS_PER_WEEK_OPTIONS = [
   { value: "1", label: "1 Day" },
   { value: "2", label: "2 Days" },
@@ -2004,7 +2006,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 8,
-          required: false,
+          required: true,
         },
       ],
     },
@@ -2022,6 +2024,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "tddbhd.reel.threadingDrive.hydThreadingDrive",
@@ -2977,6 +2980,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: false,
           options: PAYOFF_OPTIONS,
+          default: "top",
         },
         {
           id: "common.equipment.straightener.model",
@@ -3485,14 +3489,6 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           sequence: 5,
           required: false,
         },
-        {
-          id: "common.material.materialDensity",
-          label: "Material Density (lb/in³)",
-          type: "number",
-          size: 1,
-          sequence: 6,
-          required: false,
-        },
       ],
     },
     {
@@ -3543,11 +3539,20 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           required: false,
         },
         {
+          id: "rollStrBackbend.straightener.rolls.backbend.hiddenValue",
+          label: "Hidden Calculation Value",
+          type: "number",
+          size: 1,
+          sequence: 6,
+          required: false,
+          defaultValue: 9957.34211927781,
+        },
+        {
           id: "rollStrBackbend.straightener.rolls.depth.withMaterial",
           label: "Max Roller Depth with Material (in)",
           type: "number",
           size: 1,
-          sequence: 6,
+          sequence: 7,
           required: false,
         },
         {
@@ -3555,7 +3560,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           label: "Total Depth Required (in)",
           type: "number",
           size: 1,
-          sequence: 7,
+          sequence: 8,
           required: false,
         },
         {
@@ -3563,7 +3568,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           label: "Total Force Required (lbs)",
           type: "number",
           size: 1,
-          sequence: 8,
+          sequence: 9,
           required: false,
         },
         {
@@ -3571,7 +3576,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           label: "Yield Requirements Met",
           type: "text",
           size: 1,
-          sequence: 9,
+          sequence: 10,
           required: false,
         },
       ],
@@ -4112,6 +4117,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           sequence: 2,
           required: false,
           options: LINE_APPLICATION_OPTIONS,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.type",
@@ -4122,6 +4128,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           required: false,
           options: FEED_TYPE_OPTIONS,
           defaultValue: "Sigma 5",
+          readOnly: true,
         },
         {
           id: "feed.feed.feedCheck",
@@ -4130,6 +4137,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.machineWidth",
@@ -4141,6 +4149,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           options: MACHINE_WIDTH_OPTIONS,
           dependsOn: "common.equipment.feed.model",
           dependencyType: "feedMachineWidth",
+          default: "6",
         },
         {
           id: "common.equipment.feed.loopPit",
@@ -4159,22 +4168,6 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           sequence: 7,
           required: false,
           options: YES_NO_OPTIONS,
-        },
-        {
-          id: "common.equipment.feed.controlsLevel",
-          label: "Controls Level",
-          type: "text",
-          size: 1,
-          sequence: 8,
-          required: false,
-        },
-        {
-          id: "common.equipment.feed.controls",
-          label: "Feed Controls",
-          type: "text",
-          size: 1,
-          sequence: 9,
-          required: false,
         },
       ],
     },
@@ -4206,7 +4199,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 3,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.materialDensity",
@@ -4215,6 +4208,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.materialInLoop",
@@ -4239,6 +4233,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.amp",
@@ -4247,15 +4242,18 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.strMaxSpeed",
           label: "STR Max Speed (ft/min)",
-          type: "select",
+          type: "number",
           size: 1,
           sequence: 3,
           required: false,
-          options: STR_FEED_RATE_OPTIONS,
+          readOnly: true,
+          dependsOn: "strUtility.straightener.feedRate",
+          dependencyType: "copy",
         },
         {
           id: "feed.feed.frictionInDie",
@@ -4263,7 +4261,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 4,
-          required: false,
+          required: true,
         },
         {
           id: "feed.feed.accelerationRate",
@@ -4271,7 +4269,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 5,
-          required: false,
+          required: true,
         },
         {
           id: "feed.feed.defaultAcceleration",
@@ -4280,6 +4278,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          defaultValue: 60,
         },
         {
           id: "feed.feed.maxMotorRPM",
@@ -4327,7 +4326,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 12,
-          required: false,
+          required: true,
         },
         {
           id: "feed.feed.lengthIncrement",
@@ -4335,7 +4334,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 13,
-          required: false,
+          required: true,
         },
         {
           id: "feed.feed.feedAngle1",
@@ -4343,7 +4342,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "select",
           size: 1,
           sequence: 14,
-          required: false,
+          required: true,
           options: FEED_ANGLE_OPTIONS,
         },
         {
@@ -4352,7 +4351,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "select",
           size: 1,
           sequence: 15,
-          required: false,
+          required: true,
           options: FEED_ANGLE_OPTIONS,
         },
       ],
@@ -4466,6 +4465,10 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
       title: "Pull-Through Configuration",
       sequence: 6,
       columns: 4,
+      conditionalVisibility: {
+        dependsOn: "common.equipment.feed.type",
+        showWhen: "Sigma 5 w/ Pull Through"
+      },
       fields: [
         {
           id: "feed.feed.pullThru.centerDistance",
@@ -4474,6 +4477,10 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          conditional: {
+            dependsOn: "common.equipment.feed.type",
+            showWhen: "Sigma 5 w/ Pull Through"
+          },
         },
         {
           id: "feed.feed.pullThru.yieldStrength",
@@ -4482,6 +4489,10 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          conditional: {
+            dependsOn: "common.equipment.feed.type",
+            showWhen: "Sigma 5 w/ Pull Through"
+          },
         },
         {
           id: "feed.feed.pullThru.kConst",
@@ -4490,6 +4501,10 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          conditional: {
+            dependsOn: "common.equipment.feed.type",
+            showWhen: "Sigma 5 w/ Pull Through"
+          },
         },
         {
           id: "feed.feed.pullThru.pinchRolls",
@@ -4499,89 +4514,10 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           sequence: 4,
           required: false,
           options: STRAIGHTENER_ROLLS_OPTIONS,
-        },
-      ],
-    },
-    {
-      id: "section-feed-rates",
-      title: "Feed Length & Speed Settings",
-      sequence: 7,
-      columns: 3,
-      fields: [
-        {
-          id: "common.feedRates.average.length",
-          label: "Average Length",
-          type: "number",
-          size: 1,
-          sequence: 1,
-          required: false,
-        },
-        {
-          id: "common.feedRates.average.spm",
-          label: "Average SPM",
-          type: "number",
-          size: 1,
-          sequence: 2,
-          required: false,
-        },
-        {
-          id: "common.feedRates.average.fpm",
-          label: "Average FPM",
-          type: "number",
-          size: 1,
-          sequence: 3,
-          required: false,
-          readonly: true,
-        },
-        {
-          id: "common.feedRates.max.length",
-          label: "Max Length",
-          type: "number",
-          size: 1,
-          sequence: 4,
-          required: false,
-        },
-        {
-          id: "common.feedRates.max.spm",
-          label: "Max SPM",
-          type: "number",
-          size: 1,
-          sequence: 5,
-          required: false,
-        },
-        {
-          id: "common.feedRates.max.fpm",
-          label: "Max FPM",
-          type: "number",
-          size: 1,
-          sequence: 6,
-          required: false,
-          readonly: true,
-        },
-        {
-          id: "common.feedRates.min.length",
-          label: "Min Length",
-          type: "number",
-          size: 1,
-          sequence: 7,
-          required: false,
-        },
-        {
-          id: "common.feedRates.min.spm",
-          label: "Min SPM",
-          type: "number",
-          size: 1,
-          sequence: 8,
-          required: false,
-        },
-        {
-          id: "common.feedRates.min.fpm",
-          label: "Min FPM",
-          type: "number",
-          size: 1,
-          sequence: 9,
-          required: false,
-          readonly: true,
+          conditional: {
+            dependsOn: "common.equipment.feed.type",
+            showWhen: "Sigma 5 w/ Pull Through"
+          },
         },
       ],
     },
@@ -4969,6 +4905,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "rfq.dates.date",
@@ -4977,6 +4914,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -4993,6 +4931,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.reel.width",
@@ -5001,7 +4940,10 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
+
+
         {
           id: "common.equipment.reel.backplate.diameter",
           label: "Backplate Diameter",
@@ -5009,6 +4951,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.motorization.isMotorized",
@@ -5017,6 +4960,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "materialSpecs.reel.style",
@@ -5025,6 +4969,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -5041,6 +4986,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.threadingDrive.hydThreadingDrive",
@@ -5049,6 +4995,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -5065,6 +5012,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.holddown.cylinderPressure",
@@ -5073,6 +5021,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -5089,6 +5038,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.dragBrake.quantity",
@@ -5097,9 +5047,11 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
+
     {
       id: "section-motorized-reel",
       title: "Motorized Reel",
@@ -5113,6 +5065,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.motorization.speed",
@@ -5121,6 +5074,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.motorization.accelRate",
@@ -5129,6 +5083,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.motorization.regenRequired",
@@ -5137,6 +5092,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -5153,6 +5109,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.straightener.numberOfRolls",
@@ -5161,6 +5118,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.payoff",
@@ -5169,6 +5127,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.straightener.width",
@@ -5177,6 +5136,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.feedRate",
@@ -5185,6 +5145,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.acceleration",
@@ -5193,6 +5154,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.horsepower",
@@ -5201,6 +5163,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -5217,6 +5180,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.model",
@@ -5225,6 +5189,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.machineWidth",
@@ -5233,6 +5198,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.loopPit",
@@ -5241,6 +5207,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.fullWidthRolls",
@@ -5249,6 +5216,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.feedAngle1",
@@ -5257,6 +5225,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.feedAngle2",
@@ -5265,6 +5234,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.press.bedLength",
@@ -5273,14 +5243,16 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 8,
           required: false,
+          readOnly: true,
         },
         {
-          id: "common.equipment.feed.maximumVelocity",
+          id: "common.equipment.feed.maxVelocity",
           label: "Maximum Velocity ft/min",
           type: "text",
           size: 1,
           sequence: 9,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.accelerationRate",
@@ -5289,6 +5261,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 10,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.ratio",
@@ -5297,6 +5270,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 11,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.pullThru.straightenerRolls",
@@ -5305,6 +5279,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 12,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.pullThru.pinchRolls",
@@ -5313,6 +5288,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 13,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.direction",
@@ -5321,6 +5297,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 14,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.controlsLevel",
@@ -5329,6 +5306,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 15,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.typeOfLine",
@@ -5337,6 +5315,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 16,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.passline",
@@ -5345,6 +5324,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 17,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.lightGuageNonMarking",
@@ -5353,6 +5333,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 18,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.nonMarking",
@@ -5361,6 +5342,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 19,
           required: false,
+          readOnly: true,
         },
       ],
     },

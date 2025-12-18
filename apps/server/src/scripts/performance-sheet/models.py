@@ -99,6 +99,7 @@ class roll_str_backbend_input(BaseModel):
     material_thickness: float
     str_model: str
     num_str_rolls: int
+    hidden_value: float = 9957.34211927781
 
 # Hidden Constant Calculation for Roll Str Backbend
 class hidden_const_input(BaseModel):

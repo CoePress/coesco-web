@@ -71,7 +71,12 @@ const PerformanceSheet = () => {
             // Merge calculated values without overwriting user input
             if (response.result) {
               console.log("Merging calculated values with current form data");
-              setFormData(currentFormData => mergeCalculatedValues(currentFormData, response.result));
+              setFormData(currentFormData => {
+                const newData = mergeCalculatedValues(currentFormData, response.result);
+                // Force re-render to update check field visual indicators
+                forceUpdate({});
+                return newData;
+              });
             }
           }
         });
@@ -184,7 +189,7 @@ const PerformanceSheet = () => {
 
       // Roll Str Backbend calculated fields  
       'rollStrBackbend.rollConfiguration',
-      'rollStrBackbend.straightener.rollDiameter',
+      'common.equipment.straightener.rollDiameter',
       'rollStrBackbend.straightener.centerDistance',
       'rollStrBackbend.straightener.jackForceAvailable',
       'rollStrBackbend.straightener.rolls.depth.withMaterial',
@@ -200,18 +205,173 @@ const PerformanceSheet = () => {
       'rollStrBackbend.straightener.rolls.backbend.rollers.first.height',
       'rollStrBackbend.straightener.rolls.backbend.rollers.first.forceRequired',
       'rollStrBackbend.straightener.rolls.backbend.rollers.first.numberOfYieldStrainsAtSurface',
+      // First roller up/down fields
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.radiusAfterSpringback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.radiusAfterSpringback',
+      // Middle roller fields
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.height',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.forceRequired',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.numberOfYieldStrainsAtSurface',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.radiusAfterSpringback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.radiusAfterSpringback',
+      // Last roller fields
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.height',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.forceRequired',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.numberOfYieldStrainsAtSurface',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.radiusAfterSpringback',
 
       // Shear calculated fields
       'shear.shear.blade.angleOfBlade',
       'shear.shear.blade.initialCut.length',
-      'shear.shear.blade.initialCut.area'
+      'shear.shear.blade.initialCut.area',
+
+      // CHECK FIELDS - These need to update in real-time without page refresh
+      // TDDBHD Check Fields
+      'tddbhd.reel.checks.tddbhdCheck',
+      'tddbhd.reel.checks.minMaterialWidthCheck',
+      'tddbhd.reel.checks.airPressureCheck',
+      'tddbhd.reel.checks.rewindTorqueCheck',
+      'tddbhd.reel.checks.holdDownForceCheck',
+      'tddbhd.reel.checks.brakePressCheck',
+      'tddbhd.reel.checks.torqueRequiredCheck',
+
+      // Reel Drive Check Fields
+      'reelDrive.reel.torque.empty.horsepowerCheck',
+      'reelDrive.reel.torque.full.horsepowerCheck',
+      'reelDrive.reel.torque.empty.regenCheck',
+      'reelDrive.reel.torque.full.regenCheck',
+
+      // STR Utility Check Fields
+      'strUtility.straightener.required.horsepowerCheck',
+      'strUtility.straightener.required.jackForceCheck',
+      'strUtility.straightener.required.backupRollsCheck',
+      'strUtility.straightener.required.feedRateCheck',
+      'strUtility.straightener.required.pinchRollCheck',
+      'strUtility.straightener.required.strRollCheck',
+      'strUtility.straightener.required.fpmCheck',
+
+      // Roll STR Backbend Check Fields
+      'rollStrBackbend.straightener.rolls.backbend.rollers.depthRequiredCheck',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequiredCheck',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.percentYieldCheck',
+
+      // Feed Check Fields
+      'feed.feed.feedCheck',
+      'feed.feed.matchCheck',
+      'feed.feed.torque.peakCheck',
+      'feed.feed.torque.accelerationCheck',
+      'feed.feed.torque.rms.motorCheck',
+      'feed.feed.torque.rms.feedAngle1Check',
+      'feed.feed.torque.rms.feedAngle2Check',
+
+      // Additional feed fields
+      'common.material.materialDensity',
+      'common.equipment.feed.maxVelocity',
+      'feed.feed.strMaxSpeed',
+      'feed.feed.pullThru.pinchRolls',
+      'feed.feed.machineWidth',
+      'feed.feed.fullWidthRolls',
+      'feed.feed.feedAngle1',
+      'feed.feed.accelerationRate',
+      
+      // Motorization fields
+      'reelDrive.reel.motorization.driveHorsepower',
+      'reelDrive.reel.motorization.speed',
+      'reelDrive.reel.motorization.accelRate',
+      'reelDrive.reel.motorization.regenRequired',
+      'reelDrive.reel.motorization.isMotorized',
+
+      // Summary report fields - these are readonly and get their values from other tabs
+      'common.customer',
+      'rfq.dates.date',
+      'common.equipment.reel.model',
+      'common.equipment.reel.width',
+      'common.equipment.reel.backplate.diameter',
+      'materialSpecs.reel.style',
+      'reelDrive.reel.motorization.isMotorized',
+      'tddbhd.reel.threadingDrive.airClutch',
+      'tddbhd.reel.threadingDrive.hydThreadingDrive',
+      'tddbhd.reel.holddown.assy',
+      'tddbhd.reel.holddown.cylinderPressure',
+      'tddbhd.reel.dragBrake.model',
+      'tddbhd.reel.dragBrake.quantity',
+      'reelDrive.reel.motorization.driveHorsepower',
+      'reelDrive.reel.motorization.speed',
+      'reelDrive.reel.motorization.accelRate',
+      'reelDrive.reel.motorization.regenRequired',
+      'common.equipment.straightener.model',
+      'common.equipment.straightener.numberOfRolls',
+      'common.equipment.straightener.width',
+      'strUtility.straightener.feedRate',
+      'strUtility.straightener.acceleration',
+      'strUtility.straightener.horsepower',
+      'strUtility.straightener.payoff',
+      'strUtility.straightener.payoff',
+      'feed.feed.application',
+      'common.equipment.feed.model',
+      'feed.feed.machineWidth',
+      'common.equipment.feed.loopPit',
+      'feed.feed.fullWidthRolls',
+      'feed.feed.feedAngle1',
+      'feed.feed.feedAngle2',
+      'common.press.bedLength',
+      'common.equipment.feed.maximumVelocity',
+      'feed.feed.accelerationRate',
+      'feed.feed.ratio',
+      'feed.feed.pullThru.straightenerRolls',
+      'feed.feed.pullThru.pinchRolls',
+      'common.equipment.feed.direction',
+      'common.equipment.feed.controlsLevel',
+      'common.equipment.feed.typeOfLine',
+      'common.equipment.feed.passline',
+      'common.equipment.feed.lightGuageNonMarking',
+      'common.equipment.feed.nonMarking',
+
+      // Shear Check Fields
+      'shear.shear.conclusions.force.requiredToShearCheck'
     ];
 
-    // Only update calculated fields, preserve user input fields
+    // Update calculated fields and ensure input fields are preserved/copied
     calculatedFieldPaths.forEach(path => {
       const calculatedValue = getNestedValue(calculatedData, path);
+      const inputValue = getNestedValue(formData, path);
+      
+      // Priority: calculated value > existing input value
       if (calculatedValue !== undefined && calculatedValue !== null) {
         mergedData = setNestedValue(mergedData, path, calculatedValue);
+      } else if (inputValue !== undefined && inputValue !== null) {
+        // Ensure input field values are available in merged data
+        mergedData = setNestedValue(mergedData, path, inputValue);
       }
     });
 
@@ -253,8 +413,8 @@ const PerformanceSheet = () => {
     if (value === null || value === undefined) return false;
     if (fieldType === 'checkbox') return true;
     if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'number') return true;
-    return false;
+    if (typeof value === 'number') return !isNaN(value); // Accept 0 as valid
+    return Boolean(value);
   };
 
   const isCheckField = (fieldId: string): boolean => {
@@ -518,6 +678,120 @@ const PerformanceSheet = () => {
         }
       }
 
+      // Initialize basic reel values if missing
+      const reelWidth = getNestedValue(data, "common.equipment.reel.width");
+      const reelHorsepower = getNestedValue(data, "common.equipment.reel.horsepower");
+      const backplateDiameter = getNestedValue(data, "common.equipment.reel.backplate.diameter");
+      
+      if (reelWidth === null || reelWidth === undefined) {
+        console.log("Initializing missing reel width to 24");
+        if (!data.common) data.common = {};
+        if (!data.common.equipment) data.common.equipment = {};
+        if (!data.common.equipment.reel) data.common.equipment.reel = {};
+        data.common.equipment.reel.width = 24;
+      }
+      
+      if (reelHorsepower === null || reelHorsepower === undefined) {
+        console.log("Initializing missing reel horsepower to 5");
+        data.common.equipment.reel.horsepower = 5;
+      }
+      
+      if (backplateDiameter === null || backplateDiameter === undefined) {
+        console.log("Initializing missing backplate diameter to 27");
+        if (!data.common.equipment.reel.backplate) data.common.equipment.reel.backplate = {};
+        data.common.equipment.reel.backplate.diameter = 27;
+      }
+
+      // Initialize missing feed values (let source tabs handle their defaults)
+      const fullWidthRolls = getNestedValue(data, "feed.feed.fullWidthRolls");
+      const feedAngle1 = getNestedValue(data, "feed.feed.feedAngle1");
+      
+      if (!data.feed) data.feed = {};
+      if (!data.feed.feed) data.feed.feed = {};
+      
+      if (fullWidthRolls === null || fullWidthRolls === undefined) {
+        console.log("Initializing missing full width rolls to Yes");
+        data.feed.feed.fullWidthRolls = "Yes";
+      }
+      
+      if (feedAngle1 === null || feedAngle1 === undefined) {
+        console.log("Initializing missing feed angle 1 to 180");
+        data.feed.feed.feedAngle1 = 180;
+      }
+
+      // Initialize missing material specs values
+      const reelStyle = getNestedValue(data, "materialSpecs.reel.style");
+      if (reelStyle === null || reelStyle === undefined) {
+        console.log("Initializing missing reel style to Single Ended");
+        if (!data.materialSpecs) data.materialSpecs = {};
+        if (!data.materialSpecs.reel) data.materialSpecs.reel = {};
+        data.materialSpecs.reel.style = "Single Ended";
+      }
+
+      // Initialize missing TDDBHD values
+      const hydThreadingDrive = getNestedValue(data, "tddbhd.reel.threadingDrive.hydThreadingDrive");
+      const brakeQuantity = getNestedValue(data, "tddbhd.reel.dragBrake.quantity");
+      
+      if (hydThreadingDrive === null || hydThreadingDrive === undefined) {
+        console.log("Initializing missing hyd threading drive");
+        if (!data.tddbhd) data.tddbhd = {};
+        if (!data.tddbhd.reel) data.tddbhd.reel = {};
+        if (!data.tddbhd.reel.threadingDrive) data.tddbhd.reel.threadingDrive = {};
+        data.tddbhd.reel.threadingDrive.hydThreadingDrive = "22 cu in (D-12689)";
+      }
+      
+      if (brakeQuantity === null || brakeQuantity === undefined) {
+        console.log("Initializing missing brake quantity to 1");
+        if (!data.tddbhd.reel.dragBrake) data.tddbhd.reel.dragBrake = {};
+        data.tddbhd.reel.dragBrake.quantity = 1;
+      }
+
+      // Initialize missing motorization values 
+      const isMotorized = getNestedValue(data, "reelDrive.reel.motorization.isMotorized");
+      const driveHorsepower = getNestedValue(data, "reelDrive.reel.motorization.driveHorsepower");
+      const motorSpeed = getNestedValue(data, "reelDrive.reel.motorization.speed");
+      const accelRate = getNestedValue(data, "reelDrive.reel.motorization.accelRate");
+      const regenRequired = getNestedValue(data, "reelDrive.reel.motorization.regenRequired");
+      
+      if (!data.reelDrive) data.reelDrive = {};
+      if (!data.reelDrive.reel) data.reelDrive.reel = {};
+      if (!data.reelDrive.reel.motorization) data.reelDrive.reel.motorization = {};
+      
+      if (isMotorized === null || isMotorized === undefined) {
+        console.log("Initializing missing isMotorized to No");
+        data.reelDrive.reel.motorization.isMotorized = "No";
+      }
+      
+      if (driveHorsepower === null || driveHorsepower === undefined) {
+        console.log("Initializing missing drive horsepower to 0");
+        data.reelDrive.reel.motorization.driveHorsepower = 0;
+      }
+      
+      if (motorSpeed === null || motorSpeed === undefined) {
+        console.log("Initializing missing motor speed to 0");
+        data.reelDrive.reel.motorization.speed = 0;
+      }
+      
+      if (accelRate === null || accelRate === undefined) {
+        console.log("Initializing missing accel rate to 0");
+        data.reelDrive.reel.motorization.accelRate = 0;
+      }
+      
+      if (regenRequired === null || regenRequired === undefined) {
+        console.log("Initializing missing regen required to 0");
+        data.reelDrive.reel.motorization.regenRequired = 0;
+      }
+
+      // Payoff should come from STR utility tab - let source tab handle defaults
+
+      // Initialize missing pull-through pinch rolls
+      const pinchRolls = getNestedValue(data, "feed.feed.pullThru.pinchRolls");
+      if (pinchRolls === null || pinchRolls === undefined) {
+        console.log("Initializing missing pinch rolls to 0");
+        if (!data.feed.feed.pullThru) data.feed.feed.pullThru = {};
+        data.feed.feed.pullThru.pinchRolls = 0;
+      }
+
       // Initialize number of rolls from type of roll default value
       let typeOfRoll = getNestedValue(data, "materialSpecs.straightener.rolls.typeOfRoll");
       const existingNumberOfRolls = getNestedValue(data, "common.equipment.straightener.numberOfRolls");
@@ -546,7 +820,37 @@ const PerformanceSheet = () => {
           console.log("Initialization - Setting numberOfRolls to:", numberOfRolls);
           data.common.equipment.straightener.numberOfRolls = parseFloat(numberOfRolls);
         }
-      } setFormData(data);
+      }
+
+      // Initialize default values for all fields that have defaultValue property
+      const initializeDefaultValues = (sections: any[]) => {
+        sections?.forEach((section: any) => {
+          section.fields?.forEach((field: any) => {
+            if (field.defaultValue !== undefined && field.defaultValue !== null) {
+              const currentValue = getNestedValue(data, field.id);
+              if (currentValue === undefined || currentValue === null || currentValue === '') {
+                console.log(`Setting default value for ${field.id}:`, field.defaultValue);
+                data = setNestedValue(data, field.id, field.defaultValue);
+              }
+            }
+          });
+        });
+      };
+
+      // Apply defaults to all tabs
+      console.log("=== CHECKING FIELD DEFAULTS ===");
+      performanceSheet?.data?.version?.tabs?.forEach((tab: any) => {
+        console.log(`Processing tab: ${tab.label}`);
+        initializeDefaultValues(tab.sections);
+      });
+      
+      // Debug check specific fields after initialization
+      console.log("After initialization:");
+      console.log("feed.feed.machineWidth:", getNestedValue(data, "feed.feed.machineWidth"));
+      console.log("strUtility.straightener.payoff:", getNestedValue(data, "strUtility.straightener.payoff"));
+      console.log("=== END FIELD DEFAULTS CHECK ===");
+
+      setFormData(data);
       setOriginalData(data);
 
       // Force re-render to refresh dynamic options after initialization
@@ -574,7 +878,39 @@ const PerformanceSheet = () => {
         setActiveTab(visibleTabs[0].value);
       }
     }
-  }, [activeTab, visibleTabs]);
+
+    // Debug formData when switching to summary report
+    if (activeTab === 'summary-report') {
+
+    }
+  }, [activeTab, visibleTabs, formData]);
+
+  // Sync form data to summary report fields whenever data changes
+  useEffect(() => {
+    if (formData && Object.keys(formData).length > 0) {
+      // Summary report fields should automatically show current formData since they use the same paths
+      // This effect just ensures the component re-renders when data changes
+      const summaryFieldPaths = [
+        'reel.width',
+        'reel.backplate.diameter',
+        'reel.motorization.isMotorized',
+        'reel.style',
+        'reel.threadingDrive.hydThreadingDrive',
+        'reel.dragBrake.quantity',
+        'reel.motorization.driveHorsepower',
+        'reel.motorization.speed',
+        'reel.motorization.accelRate',
+        'reel.motorization.regenRequired',
+        'straightener.payoff',
+        'feed.machineWidth',
+        'feed.fullWidthRolls',
+        'feed.feedAngle1',
+        'feed.maximunVelocity'
+      ];
+
+      // Summary report fields automatically display data through shared field paths
+    }
+  }, [formData]);
 
   const hasChanges = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(originalData);
@@ -911,6 +1247,10 @@ const PerformanceSheet = () => {
       console.log("Max Coil OD:", getNestedValue(updatedData, "common.coil.maxCoilOD"));
       console.log("Decel Rate:", getNestedValue(updatedData, "tddbhd.reel.requiredDecelRate"));
       console.log("Coefficient of Friction:", getNestedValue(updatedData, "tddbhd.reel.coefficientOfFriction"));
+      console.log("=== DEBUG SUMMARY FIELDS ===");
+      console.log("Machine Width (feed tab):", getNestedValue(updatedData, "feed.feed.machineWidth"));
+      console.log("Payoff (str utility tab):", getNestedValue(updatedData, "strUtility.straightener.payoff"));
+      console.log("=== END SUMMARY FIELD DEBUG ===");
       console.log("=== END ZERO VALUE CHECK ===");
     }
 
@@ -1315,16 +1655,10 @@ const PerformanceSheet = () => {
   };
 
   const renderField = (field: any) => {
-    const value = getNestedValue(formData, field.id) ?? "";
+    const rawValue = getNestedValue(formData, field.id);
+    const value = (rawValue !== undefined && rawValue !== null) ? rawValue : (field.defaultValue ?? "");
 
-    // Debug logging for reference number field
-    if (field.id === "referenceNumber") {
-      console.log('Rendering reference number field:');
-      console.log('- Field ID:', field.id);
-      console.log('- Current formData:', formData);
-      console.log('- Retrieved value:', value);
-      console.log('- getNestedValue result:', getNestedValue(formData, field.id));
-    }
+
 
     const isFilled = isFieldFilled(value, field.type);
     const isCheck = isCheckField(field.id);
@@ -1333,6 +1667,8 @@ const PerformanceSheet = () => {
     const requiredBgClassName = field.required && isEditing && !isCheck
       ? (isFilled ? 'bg-success-light' : 'bg-error-light')
       : '';
+
+
 
     const checkBorderClassName = isCheck && checkStatus !== 'pending'
       ? (checkStatus === 'pass' ? 'border-l-4 border-l-success' : 'border-l-4 border-l-error')
@@ -1831,7 +2167,25 @@ const PerformanceSheet = () => {
       <div className="flex-1 overflow-auto">
         <div className="flex justify-center w-full">
           <div className="p-8 max-w-4xl w-full">
-            {activeTabData?.sections?.map((section: any, index: number) => {
+            {activeTabData?.sections?.filter((section: any) => {
+              // Handle section-level conditionals
+              if (section.conditionalVisibility) {
+                const dependentValue = getNestedValue(formData, section.conditionalVisibility.dependsOn);
+                if (section.conditionalVisibility.showWhen && dependentValue !== section.conditionalVisibility.showWhen) {
+                  return false;
+                }
+                if (section.conditionalVisibility.hideWhen) {
+                  if (Array.isArray(section.conditionalVisibility.hideWhen)) {
+                    if (section.conditionalVisibility.hideWhen.includes(dependentValue)) {
+                      return false;
+                    }
+                  } else if (dependentValue === section.conditionalVisibility.hideWhen) {
+                    return false;
+                  }
+                }
+              }
+              return true;
+            })?.map((section: any, index: number) => {
               const isCollapsed = collapsedSections.has(section.id);
               const totalFields = section.fields?.length || 0;
               const filledFields = section.fields?.filter((field: any) => {
@@ -1885,6 +2239,25 @@ const PerformanceSheet = () => {
                       }}
                     >
                       {section.fields
+                        ?.filter((field: any) => {
+                          // Handle field-level conditionals
+                          if (field.conditional) {
+                            const dependentValue = getNestedValue(formData, field.conditional.dependsOn);
+                            if (field.conditional.showWhen && dependentValue !== field.conditional.showWhen) {
+                              return false;
+                            }
+                            if (field.conditional.hideWhen) {
+                              if (Array.isArray(field.conditional.hideWhen)) {
+                                if (field.conditional.hideWhen.includes(dependentValue)) {
+                                  return false;
+                                }
+                              } else if (dependentValue === field.conditional.hideWhen) {
+                                return false;
+                              }
+                            }
+                          }
+                          return true;
+                        })
                         ?.sort((a: any, b: any) => a.sequence - b.sequence)
                         .map((field: any) => renderField(field))}
                     </div>

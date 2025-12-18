@@ -167,7 +167,7 @@
       "confirmedMinWidth": false,
       "brakePadDiameter": 0,
       "threadingDrive": {
-        "airClutch": "Yes",
+        "airClutch": "No",
         "hydThreadingDrive": "22 cu in (D-12689)"
       },
       "holddown": {

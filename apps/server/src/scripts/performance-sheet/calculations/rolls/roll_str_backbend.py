@@ -92,22 +92,30 @@ def check_roller_force_required(roller_force_required, jack_force_available):
     else:
         return "NOT ENOUGH FORCE"
 
-def calc_roll_height_first_up(main_value):
-    if (main_value - 10000) / 1000 < 0:
+def calc_roll_height_first_up(main_value, max_roll_depth_with_material):
+    desired_roll_height = (main_value - 10000) / 1000
+    if max_roll_depth_with_material > desired_roll_height:
         return "TOO DEEP!"
     else:
-        return round(((main_value - 10000) / 1000), 3)
+        return desired_roll_height
 
 def calc_roll_height_last(thickness):
     return thickness * 0.8
 
 def calc_mid_heights(num_mid_rolls, roll_height_first_up, roll_height_last):
     mid_heights = []
-    prev_height = roll_height_first_up
-    for _ in range(num_mid_rolls):
-        mid_height = prev_height + (roll_height_last - prev_height) / 2
+    if num_mid_rolls == 1:
+        mid_height = roll_height_first_up + (roll_height_last - roll_height_first_up) * 0.5
         mid_heights.append(mid_height)
-        prev_height = mid_height
+    elif num_mid_rolls == 2:
+        mid_height_1 = roll_height_first_up + (roll_height_last - roll_height_first_up) * 0.333333333333333
+        mid_height_2 = roll_height_first_up + (roll_height_last - roll_height_first_up) * 0.666666666666667
+        mid_heights.extend([mid_height_1, mid_height_2])
+    elif num_mid_rolls == 3:
+        mid_height_1 = roll_height_first_up + (roll_height_last - roll_height_first_up) * 0.25
+        mid_height_2 = roll_height_first_up + (roll_height_last - roll_height_first_up) * 0.5
+        mid_height_3 = roll_height_first_up + (roll_height_last - roll_height_first_up) * 0.75
+        mid_heights.extend([mid_height_1, mid_height_2, mid_height_3])
     return mid_heights
 
 def compute_stage_values(res_rad, prev_radius_after_springback, modules, width, thickness, curve_at_yield, bending_moment_to_yield):
@@ -132,6 +140,9 @@ def calc_percent_yield(r_ri, curve_at_yield):
 
 def calc_force_required(mb, center_dist):
     return mb * 5.333 / center_dist
+
+def calc_force_required_last(mb, center_dist):
+    return mb * 5.3333 / center_dist
 
 def check_force_required(force_required, jack_force_available):
     if force_required > jack_force_available:
@@ -173,7 +184,8 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
     bending_moment_to_yield = calc_bending_moment_to_yield(data.width, data.yield_strength, data.thickness)
     radius_off_coil_after_springback = calc_radius_off_coil_after_springback(radius_off_coil, curve_at_yield, creep_factor)
     one_radius_off_coil = calc_one_radius_off_coil(radius_off_coil_after_springback)
-    main_value = calc_main_value(str_model["center_dist"], radius_at_yield, data.thickness)
+    # Use frontend hidden_value instead of calculating main_value
+    main_value = data.hidden_value
     max_roll_depth_with_material = calc_max_roll_depth_with_material(
         str_model["str_roll_dia"], data.thickness, str_model["center_dist"], str_model["max_roll_depth_without_material"]
     )
@@ -181,7 +193,7 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
     roller_depth_required_check = check_roller_depth_required(roller_depth_required, str_model["max_roll_depth_without_material"])
     roller_force_required = calc_roller_force_required(data.yield_strength, data.width, data.thickness, str_model["center_dist"])
     roller_force_required_check = check_roller_force_required(roller_force_required, str_model["jack_force_available"])
-    roll_height_first_up = calc_roll_height_first_up(main_value)
+    roll_height_first_up = calc_roll_height_first_up(main_value, max_roll_depth_with_material)
     roll_height_last = calc_roll_height_last(data.thickness)
     
     # Check if we got error responses that prevent further calculation
@@ -202,7 +214,7 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
     r_ri_first_down, mb_first_down, mb_my_first_down, springback_first_down, radius_after_springback_first_down = compute_stage_values(
         res_rad_first_down, radius_after_springback_first_up, modules, data.width, data.thickness, curve_at_yield, bending_moment_to_yield
     )
-    r_ri_first_up = 1 / res_rad_first_up - (1 / radius_off_coil_after_springback)
+    # Don't recalculate r_ri_first_up - use the value from compute_stage_values
 
     # Mid rollers
     mid_results = {}
@@ -226,25 +238,25 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
         force_required_check_mid = check_force_required(force_required_mid, str_model["jack_force_available"])
 
         mid_results[f"mid_up_{idx}"] = {
-            "roll_height_mid_up": round(roll_height_mid, 3),
-            "res_rad_mid_up": round(res_rad_mid_up, 3),
-            "r_ri_mid_up": round(r_ri_mid_up, 4),
-            "mb_mid_up": round(mb_mid_up, 3),
-            "mb_my_mid_up": round(mb_my_mid_up, 4),
-            "springback_mid_up": round(springback_mid_up, 4),
-            "radius_after_springback_mid_up": round(radius_after_springback_mid_up, 3),
-            "force_required_mid_up": round(force_required_mid, 3),
+            "roll_height_mid_up": roll_height_mid,
+            "res_rad_mid_up": res_rad_mid_up,
+            "r_ri_mid_up": r_ri_mid_up,
+            "mb_mid_up": mb_mid_up,
+            "mb_my_mid_up": mb_my_mid_up,
+            "springback_mid_up": springback_mid_up,
+            "radius_after_springback_mid_up": radius_after_springback_mid_up,
+            "force_required_mid_up": force_required_mid,
             "force_required_check_mid_up": force_required_check_mid,
             "percent_yield_mid_up": percent_yield_mid_up,
             "number_of_yield_strains_mid_up": number_of_yield_strains_mid,
         }
         mid_results[f"mid_down_{idx}"] = {
-            "res_rad_mid_down": round(res_rad_mid_down, 3),
-            "r_ri_mid_down": round(r_ri_mid_down, 4),
-            "mb_mid_down": round(mb_mid_down, 3),
-            "mb_my_mid_down": round(mb_my_mid_down, 4),
-            "springback_mid_down": round(springback_mid_down, 4),
-            "radius_after_springback_mid_down": round(radius_after_springback_mid_down, 3),
+            "res_rad_mid_down": res_rad_mid_down,
+            "r_ri_mid_down": r_ri_mid_down,
+            "mb_mid_down": mb_mid_down,
+            "mb_my_mid_down": mb_my_mid_down,
+            "springback_mid_down": springback_mid_down,
+            "radius_after_springback_mid_down": radius_after_springback_mid_down,
             "percent_yield_mid_down": percent_yield_mid_down,
         }
 
@@ -259,7 +271,7 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
         res_rad_last, prev_radius_after_springback_down, modules, data.width, data.thickness, curve_at_yield, bending_moment_to_yield
     )
     radius_after_springback_last = calc_radius_after_springback_last(res_rad_last, springback_last)
-    force_required_last = calc_force_required(mb_last, str_model["center_dist"])
+    force_required_last = calc_force_required_last(mb_last, str_model["center_dist"])
 
     percent_yield_first_up, number_of_yield_strains_first = calc_percent_yield(r_ri_first_up, curve_at_yield)
     percent_yield_first_down, _ = calc_percent_yield(r_ri_first_down, curve_at_yield)
@@ -299,37 +311,37 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
     }
     result["first_up"] = {
         "roll_height_first_up": roll_height_first_up,
-        "res_rad_first_up": round(res_rad_first_up, 3),
-        "r_ri_first_up": round(r_ri_first_up, 4),
-        "mb_first_up": round(mb_first_up, 3),
-        "mb_my_first_up": round(mb_my_first_up, 4),
-        "springback_first_up": round(springback_first_up, 4),
-        "radius_after_springback_first_up": round(radius_after_springback_first_up, 3),
-        "force_required_first_up": round(force_required_first, 3),
+        "res_rad_first_up": res_rad_first_up,
+        "r_ri_first_up": r_ri_first_up,
+        "mb_first_up": mb_first_up,
+        "mb_my_first_up": mb_my_first_up,
+        "springback_first_up": springback_first_up,
+        "radius_after_springback_first_up": radius_after_springback_first_up,
+        "force_required_first_up": force_required_first,
         "force_required_check_first_up": force_required_check_first,
         "percent_yield_first_up": percent_yield_first_up,
         "number_of_yield_strains_first_up": number_of_yield_strains_first,
     }
     result["first_down"] = {
-        "res_rad_first_down": round(res_rad_first_down, 3),
-        "r_ri_first_down": round(r_ri_first_down, 4),
-        "mb_first_down": round(mb_first_down, 3),
-        "mb_my_first_down": round(mb_my_first_down, 4),
-        "springback_first_down": round(springback_first_down, 4),
-        "radius_after_springback_first_down": round(radius_after_springback_first_down, 3),
+        "res_rad_first_down": res_rad_first_down,
+        "r_ri_first_down": r_ri_first_down,
+        "mb_first_down": mb_first_down,
+        "mb_my_first_down": mb_my_first_down,
+        "springback_first_down": springback_first_down,
+        "radius_after_springback_first_down": radius_after_springback_first_down,
         "percent_yield_first_down": percent_yield_first_down,
     }
     for mid_key, mid_data in mid_results.items():
         result[mid_key] = mid_data
     result["last"] = {
-        "roll_height_last": round(roll_height_last, 3),
-        "res_rad_last": round(res_rad_last, 4),
-        "r_ri_last": round(r_ri_last, 3),
-        "mb_last": round(mb_last, 3),
-        "mb_my_last": round(mb_my_last, 3),
-        "springback_last": round(springback_last, 4),
-        "radius_after_springback_last": round(radius_after_springback_last, 3) if not isinstance(radius_after_springback_last, str) else radius_after_springback_last,
-        "force_required_last": round(force_required_last, 3),
+        "roll_height_last": roll_height_last,
+        "res_rad_last": res_rad_last,
+        "r_ri_last": r_ri_last,
+        "mb_last": mb_last,
+        "mb_my_last": mb_my_last,
+        "springback_last": springback_last,
+        "radius_after_springback_last": radius_after_springback_last if not isinstance(radius_after_springback_last, str) else radius_after_springback_last,
+        "force_required_last": force_required_last,
         "force_required_check_last": force_required_check_last,
         "percent_yield_last": percent_yield_last,
         "number_of_yield_strains_last": number_of_yield_strains_last,

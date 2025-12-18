@@ -309,6 +309,36 @@ def main():
         if not final_coil_od:
             final_coil_od = calculated_coil_od
 
+        # --- Roll Str Backbend ---
+        try:
+            roll_str_backbend_data = {
+                "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
+                "thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
+                "width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
+                "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
+                "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
+                "str_model": parse_str_with_default(data, ["common", "equipment", "straightener", "model"], "straightener", "model"),
+                "num_str_rolls": parse_int_with_default(data, ["common", "equipment", "straightener", "numberOfRolls"], "straightener", "number_of_rolls"),
+                "hidden_value": parse_float(get_nested(data, ["rollStrBackbend", "straightener", "rolls", "backbend", "hiddenValue"]), 9957.34211927781),
+            }
+            roll_str_backbend_obj = roll_str_backbend_input(**roll_str_backbend_data)
+            roll_str_backbend_result = calculate_roll_str_backbend(roll_str_backbend_obj)
+        except Exception as e:
+            print(f"Error in Roll Str Backbend calculation: {e}", file=sys.stderr)
+            roll_str_backbend_result = {"error": str(e)}
+
+        # Calculate yield_met based on roll str backbend result
+        try:
+            from utils.shared import roll_str_backbend_state, get_percent_material_yielded_check
+            percent_material_yielded = roll_str_backbend_state.get("percent_material_yielded", 0)
+            # For now, assume confirm_check is False - this might need to be a user input later
+            confirm_check = False
+            yield_met_status = get_percent_material_yielded_check(percent_material_yielded, confirm_check)
+            print(f"YIELD_MET DEBUG: percent_material_yielded={percent_material_yielded}, yield_met_status={yield_met_status}", file=sys.stderr)
+        except Exception as e:
+            print(f"Error calculating yield_met: {e}", file=sys.stderr)
+            yield_met_status = DEFAULTS.get("reel", {}).get("yield_met", "NOT OK")
+
         # --- Str Utility ---
         try:
             str_util_data = {
@@ -319,12 +349,12 @@ def main():
                 "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
                 "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
                 "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
-                "yield_met": reel_drive_result.get("yield_met", DEFAULTS.get("reel", {}).get("yield_met", False)) if isinstance(reel_drive_result, dict) else False,
+                "yield_met": yield_met_status,
                 "str_model": parse_str_with_default(data, ["common", "equipment", "straightener", "model"], "straightener", "model"),
                 "str_width": parse_float_with_default(data, ["common", "equipment", "straightener", "width"], "straightener", "width"),
                 "horsepower": parse_float_with_default(data, ["strUtility", "straightener", "horsepower"], "straightener", "horsepower"),
                 "feed_rate": parse_float_with_default(data, ["strUtility", "straightener", "feedRate"], "feed", "rate"),
-                "max_feed_rate": parse_float_with_default(data, ["strUtility", "straightener", "feedRate"], "feed", "rate"),
+                "max_feed_rate": parse_float_with_default(data, ["common", "feedRates", "max", "fpm"], "max", "fpm"),
                 "auto_brake_compensation": parse_str_with_default(data, ["strUtility", "straightener", "autoBrakeCompensation"], "straightener", "auto_brake_compensation"),
                 "acceleration": parse_float_with_default(data, ["strUtility", "straightener", "acceleration"], "straightener", "acceleration"),
                 "num_str_rolls": parse_int_with_default(data, ["common", "equipment", "straightener", "numberOfRolls"], "straightener", "number_of_rolls"),
@@ -337,23 +367,6 @@ def main():
         except Exception as e:
             print(f"Error in Str Utility calculation: {e}", file=sys.stderr)
             str_util_result = {"error": str(e)}
-
-        # --- Roll Str Backbend ---
-        try:
-            roll_str_backbend_data = {
-                "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
-                "thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
-                "width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
-                "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
-                "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
-                "str_model": parse_str_with_default(data, ["common", "equipment", "straightener", "model"], "straightener", "model"),
-                "num_str_rolls": parse_int_with_default(data, ["common", "equipment", "straightener", "numberOfRolls"], "straightener", "number_of_rolls"),
-            }
-            roll_str_backbend_obj = roll_str_backbend_input(**roll_str_backbend_data)
-            roll_str_backbend_result = calculate_roll_str_backbend(roll_str_backbend_obj)
-        except Exception as e:
-            print(f"Error in Roll Str Backbend calculation: {e}", file=sys.stderr)
-            roll_str_backbend_result = {"error": str(e)}
 
         # --- Feed (choose which) ---
         feed_result = None

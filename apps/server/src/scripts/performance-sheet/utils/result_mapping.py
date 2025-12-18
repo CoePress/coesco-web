@@ -1,9 +1,25 @@
+import sys
+
+# Helper function to safely get nested values
+def get_nested_value(obj, path):
+    keys = path.split('.')
+    for key in keys:
+        if isinstance(obj, dict) and key in obj:
+            obj = obj[key]
+        else:
+            return None
+    return obj
+
 def map_calculation_results_to_data_structure(data, calculation_results):
     """
     Map calculation results from main.py to the proper variables in the data structure.
     
     Args:
-        data (dict): The original data structure
+        data (dict): The orig        else:
+            # Calculation failed - preserve original values and log error
+            print(f"Reel Drive calculation failed, preserving original values: {reel_results}", file=sys.stderr)
+    
+    # --- STR Utility Mappings ---data structure
         calculation_results (dict): Results from calculations containing rfq, material_specs, etc.
     
     Returns:
@@ -23,6 +39,21 @@ def map_calculation_results_to_data_structure(data, calculation_results):
             obj = obj[key]
         if value is not None:
             obj[keys[-1]] = value
+    
+    # Always populate material density if material type is available
+    material_type = get_nested_value(updated_data, 'common.material.materialType')
+    if material_type and isinstance(material_type, str):
+        try:
+            from utils.lookup_tables import get_material_density
+            density = get_material_density(material_type.upper())
+            set_nested_value(updated_data, 'common.material.materialDensity', density)
+        except Exception as e:
+            print(f"Failed to get material density for {material_type}: {e}", file=sys.stderr)
+    
+    # Set default acceleration rate if not present
+    current_accel = get_nested_value(updated_data, 'feed.feed.accelerationRate')
+    if current_accel is None or current_accel == '' or current_accel == 0:
+        set_nested_value(updated_data, 'feed.feed.accelerationRate', 60)
     
     # Helper function to safely get values from results
     def get_result_value(results_dict, key, default=None):
@@ -118,7 +149,7 @@ def map_calculation_results_to_data_structure(data, calculation_results):
             set_nested_value(updated_data, 'tddbhd.reel.checks.tddbhdCheck', get_result_value(tddbhd_results, 'overall_check', 'ERROR'))
         else:
             # Calculation failed - preserve original values and log error
-            print(f"TDDBHD calculation failed, preserving original values: {tddbhd_results}")
+            print(f"TDDBHD calculation failed, preserving original values: {tddbhd_results}", file=sys.stderr)
     
     # --- Reel Drive Mappings ---
     if 'reel_drive' in calculation_results:
@@ -289,15 +320,20 @@ def map_calculation_results_to_data_structure(data, calculation_results):
             
             # Validation checks
             set_nested_value(updated_data, 'strUtility.straightener.required.horsepowerCheck', get_result_value(str_results, 'horsepower_check', 'ERROR'))
-            set_nested_value(updated_data, 'strUtility.straightener.required.jackForceCheck', get_result_value(str_results, 'jack_force_check', 'ERROR'))
-            set_nested_value(updated_data, 'strUtility.straightener.required.backupRollsCheck', get_result_value(str_results, 'backup_rolls_check', 'ERROR'))
+            set_nested_value(updated_data, 'strUtility.straightener.required.jackForceCheck', get_result_value(str_results, 'required_force_check', 'ERROR'))
+            set_nested_value(updated_data, 'strUtility.straightener.required.backupRollsCheck', get_result_value(str_results, 'backup_rolls_recommended', 'ERROR'))
             set_nested_value(updated_data, 'strUtility.straightener.required.feedRateCheck', get_result_value(str_results, 'feed_rate_check', 'ERROR'))
+            
+            # Sync feed rate to Feed tab STR Max Speed
+            feed_rate = get_nested_value(updated_data, 'strUtility.straightener.feedRate')
+            if feed_rate:
+                set_nested_value(updated_data, 'feed.feed.strMaxSpeed', str(feed_rate))
             set_nested_value(updated_data, 'strUtility.straightener.required.pinchRollCheck', get_result_value(str_results, 'pinch_roll_check', 'ERROR'))
             set_nested_value(updated_data, 'strUtility.straightener.required.strRollCheck', get_result_value(str_results, 'str_roll_check', 'ERROR'))
             set_nested_value(updated_data, 'strUtility.straightener.required.fpmCheck', get_result_value(str_results, 'fpm_check', 'ERROR'))
         else:
             # Calculation failed - preserve original values and log error
-            print(f"STR calculation failed, preserving original values: {str_results}")
+            print(f"STR calculation failed, preserving original values: {str_results}", file=sys.stderr)
             
         # CRITICAL: Always restore original user input values regardless of calculation success
         # These are input fields that the user enters, not calculated output values
@@ -324,7 +360,7 @@ def map_calculation_results_to_data_structure(data, calculation_results):
         set_nested_value(updated_data, 'rollStrBackbend.rollConfiguration', get_result_value(roll_results, 'num_str_rolls', 0))
         
         # Straightener specifications
-        set_nested_value(updated_data, 'rollStrBackbend.straightener.rollDiameter', get_result_value(roll_results, 'roll_diameter', 0))
+        set_nested_value(updated_data, 'common.equipment.straightener.rollDiameter', get_result_value(roll_results, 'roll_diameter', 0))
         set_nested_value(updated_data, 'rollStrBackbend.straightener.centerDistance', get_result_value(roll_results, 'center_distance', 0))
         set_nested_value(updated_data, 'rollStrBackbend.straightener.jackForceAvailable', get_result_value(roll_results, 'jack_force_available', 0))
         
@@ -370,55 +406,51 @@ def map_calculation_results_to_data_structure(data, calculation_results):
             set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.radiusAfterSpringback', get_result_value(first_down, 'radius_after_springback_first_down', 0))
         
         # Middle roller calculations
-        if 'middle_roller' in roll_results:
-            middle_roller = roll_results['middle_roller']
-            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.height', get_result_value(middle_roller, 'height', 0))
-            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.forceRequired', get_result_value(middle_roller, 'force_required', 0))
-            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.numberOfYieldStrainsAtSurface', get_result_value(middle_roller, 'yield_strains_at_surface', 0))
+        if 'mid_up_1' in roll_results:
+            mid_up_1 = roll_results['mid_up_1']
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.height', get_result_value(mid_up_1, 'roll_height_mid_up', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.forceRequired', get_result_value(mid_up_1, 'force_required_mid_up', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.numberOfYieldStrainsAtSurface', get_result_value(mid_up_1, 'number_of_yield_strains_mid_up', 0))
             
             # Middle roller up direction
-            if 'up' in middle_roller:
-                up_data = middle_roller['up']
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.resultingRadius', get_result_value(up_data, 'resulting_radius', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.curvatureDifference', get_result_value(up_data, 'curvature_difference', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMoment', get_result_value(up_data, 'bending_moment', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMomentRatio', get_result_value(up_data, 'bending_moment_ratio', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.springback', get_result_value(up_data, 'springback', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.percentOfThicknessYielded', get_result_value(up_data, 'percent_thickness_yielded', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.radiusAfterSpringback', get_result_value(up_data, 'radius_after_springback', 0))
-            
-            # Middle roller down direction
-            if 'down' in middle_roller:
-                down_data = middle_roller['down']
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.resultingRadius', get_result_value(down_data, 'resulting_radius', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.curvatureDifference', get_result_value(down_data, 'curvature_difference', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMoment', get_result_value(down_data, 'bending_moment', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMomentRatio', get_result_value(down_data, 'bending_moment_ratio', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.springback', get_result_value(down_data, 'springback', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.percentOfThicknessYielded', get_result_value(down_data, 'percent_thickness_yielded', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.radiusAfterSpringback', get_result_value(down_data, 'radius_after_springback', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.resultingRadius', get_result_value(mid_up_1, 'res_rad_mid_up', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.curvatureDifference', get_result_value(mid_up_1, 'r_ri_mid_up', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMoment', get_result_value(mid_up_1, 'mb_mid_up', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMomentRatio', get_result_value(mid_up_1, 'mb_my_mid_up', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.springback', get_result_value(mid_up_1, 'springback_mid_up', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.percentOfThicknessYielded', get_result_value(mid_up_1, 'percent_yield_mid_up', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.radiusAfterSpringback', get_result_value(mid_up_1, 'radius_after_springback_mid_up', 0))
+        
+        # Middle roller down direction
+        if 'mid_down_1' in roll_results:
+            mid_down_1 = roll_results['mid_down_1']
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.resultingRadius', get_result_value(mid_down_1, 'res_rad_mid_down', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.curvatureDifference', get_result_value(mid_down_1, 'r_ri_mid_down', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMoment', get_result_value(mid_down_1, 'mb_mid_down', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMomentRatio', get_result_value(mid_down_1, 'mb_my_mid_down', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.springback', get_result_value(mid_down_1, 'springback_mid_down', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.percentOfThicknessYielded', get_result_value(mid_down_1, 'percent_yield_mid_down', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.radiusAfterSpringback', get_result_value(mid_down_1, 'radius_after_springback_mid_down', 0))
         
         # Last roller calculations
-        if 'last_roller' in roll_results:
-            last_roller = roll_results['last_roller']
-            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.height', get_result_value(last_roller, 'height', 0))
-            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.forceRequired', get_result_value(last_roller, 'force_required', 0))
-            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.numberOfYieldStrainsAtSurface', get_result_value(last_roller, 'yield_strains_at_surface', 0))
+        if 'last' in roll_results:
+            last = roll_results['last']
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.height', get_result_value(last, 'roll_height_last', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.forceRequired', get_result_value(last, 'force_required_last', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.numberOfYieldStrainsAtSurface', get_result_value(last, 'number_of_yield_strains_last', 0))
             
             # Last roller up direction
-            if 'up' in last_roller:
-                up_data = last_roller['up']
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.resultingRadius', get_result_value(up_data, 'resulting_radius', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.curvatureDifference', get_result_value(up_data, 'curvature_difference', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.bendingMoment', get_result_value(up_data, 'bending_moment', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.bendingMomentRatio', get_result_value(up_data, 'bending_moment_ratio', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.springback', get_result_value(up_data, 'springback', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.percentOfThicknessYielded', get_result_value(up_data, 'percent_thickness_yielded', 0))
-                set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.radiusAfterSpringback', get_result_value(up_data, 'radius_after_springback', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.resultingRadius', get_result_value(last, 'res_rad_last', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.curvatureDifference', get_result_value(last, 'r_ri_last', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.bendingMoment', get_result_value(last, 'mb_last', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.bendingMomentRatio', get_result_value(last, 'mb_my_last', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.springback', get_result_value(last, 'springback_last', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.percentOfThicknessYielded', get_result_value(last, 'percent_yield_last', 0))
+            set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.radiusAfterSpringback', get_result_value(last, 'radius_after_springback_last', 0))
         
         # Validation checks
-        set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.depthRequiredCheck', get_result_value(roll_results, 'depth_required_check', 'ERROR'))
-        set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequiredCheck', get_result_value(roll_results, 'force_required_check', 'ERROR'))
+        set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.depthRequiredCheck', get_result_value(roll_results, 'roller_depth_required_check', 'ERROR'))
+        set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequiredCheck', get_result_value(roll_results, 'roller_force_required_check', 'ERROR'))
         set_nested_value(updated_data, 'rollStrBackbend.straightener.rolls.backbend.rollers.percentYieldCheck', get_result_value(roll_results, 'percent_yield_check', 'ERROR'))
     
     # --- Feed Mappings ---
@@ -427,6 +459,39 @@ def map_calculation_results_to_data_structure(data, calculation_results):
         
         # Only map calculated values if we have valid results (not error)
         if isinstance(feed_results, dict) and 'error' not in feed_results:
+            # Material density - populate from material type lookup
+            material_type = get_nested_value(updated_data, 'common.material.materialType')
+            if material_type and isinstance(material_type, str):
+                try:
+                    from utils.lookup_tables import get_material_density
+                    density = get_material_density(material_type.upper())
+                    set_nested_value(updated_data, 'common.material.materialDensity', density)
+                except Exception as e:
+                    print(f"Failed to get material density for {material_type}: {e}", file=sys.stderr)
+            
+            # Material in loop - calculated from feed results
+            material_loop = get_result_value(feed_results, 'material_loop', None)
+            if material_loop is not None:
+                set_nested_value(updated_data, 'feed.feed.materialInLoop', material_loop)
+            
+            # Motor and amp information from feed model specs
+            motor_info = get_result_value(feed_results, 'motor', '')
+            amp_info = get_result_value(feed_results, 'amp', '')
+            if motor_info:
+                set_nested_value(updated_data, 'feed.feed.motor', motor_info)
+            if amp_info:
+                set_nested_value(updated_data, 'feed.feed.amp', amp_info)
+            
+            # Max velocity mapping
+            max_velocity = get_result_value(feed_results, 'max_vel', None)
+            if max_velocity is not None:
+                set_nested_value(updated_data, 'common.equipment.feed.maxVelocity', max_velocity)
+            
+            # STR Max Speed sync from STR Utility tab
+            str_feed_rate = get_nested_value(updated_data, 'strUtility.straightener.feedRate')
+            if str_feed_rate is not None:
+                set_nested_value(updated_data, 'feed.feed.strMaxSpeed', str_feed_rate)
+            
             # Motor and drive specifications - only update calculated values
             set_nested_value(updated_data, 'feed.feed.ratio', get_result_value(feed_results, 'ratio', 0))
             set_nested_value(updated_data, 'feed.feed.maxMotorRPM', get_result_value(feed_results, 'max_motor_rpm', 0))
@@ -462,10 +527,10 @@ def map_calculation_results_to_data_structure(data, calculation_results):
             set_nested_value(updated_data, 'feed.feed.feedCheck', get_result_value(feed_results, 'feed_check', 'ERROR'))
             set_nested_value(updated_data, 'feed.feed.matchCheck', get_result_value(feed_results, 'match_check', 'ERROR'))
             set_nested_value(updated_data, 'feed.feed.torque.peakCheck', get_result_value(feed_results, 'peak_torque_check', 'ERROR'))
-            set_nested_value(updated_data, 'feed.feed.torque.accelerationCheck', get_result_value(feed_results, 'acceleration_check', 'ERROR'))
-            set_nested_value(updated_data, 'feed.feed.torque.rms.motorCheck', get_result_value(feed_results, 'motor_check', 'ERROR'))
-            set_nested_value(updated_data, 'feed.feed.torque.rms.feedAngle1Check', get_result_value(feed_results, 'feed_angle1_check', 'ERROR'))
-            set_nested_value(updated_data, 'feed.feed.torque.rms.feedAngle2Check', get_result_value(feed_results, 'feed_angle2_check', 'ERROR'))
+            set_nested_value(updated_data, 'feed.feed.torque.accelerationCheck', get_result_value(feed_results, 'acceleration_torque_check', 'ERROR'))
+            set_nested_value(updated_data, 'feed.feed.torque.rms.motorCheck', get_result_value(feed_results, 'motor_rms_check', 'ERROR'))
+            set_nested_value(updated_data, 'feed.feed.torque.rms.feedAngle1Check', get_result_value(feed_results, 'rms_torque_fa1_check', 'ERROR'))
+            set_nested_value(updated_data, 'feed.feed.torque.rms.feedAngle2Check', get_result_value(feed_results, 'rms_torque_fa2_check', 'ERROR'))
             
             # Table values (performance data)
             table_values = get_result_value(feed_results, 'table_values', 0)
@@ -473,7 +538,7 @@ def map_calculation_results_to_data_structure(data, calculation_results):
                 set_nested_value(updated_data, 'feed.feed.tableValues', table_values)
         else:
             # Calculation failed - preserve original values and log error
-            print(f"Feed calculation failed, preserving original values: {feed_results}")
+            print(f"Feed calculation failed, preserving original values: {feed_results}", file=sys.stderr)
     
     # --- Shear Mappings ---
     if 'shear' in calculation_results:
@@ -516,7 +581,7 @@ def map_calculation_results_to_data_structure(data, calculation_results):
             set_nested_value(updated_data, 'shear.shear.conclusions.perHour.parts', get_result_value(shear_results, 'parts_per_hour', 0))
         else:
             # Calculation failed - preserve original values and log error
-            print(f"Shear calculation failed, preserving original values: {shear_results}")
+            print(f"Shear calculation failed, preserving original values: {shear_results}", file=sys.stderr)
     
     return updated_data
 
@@ -537,5 +602,5 @@ def process_performance_calculations(data_structure, calculation_results):
         updated_data = map_calculation_results_to_data_structure(data_structure, calculation_results)
         return updated_data
     except Exception as e:
-        print(f"Error mapping calculation results: {e}")
+        print(f"Error mapping calculation results: {e}", file=sys.stderr)
         return data_structure

@@ -74,7 +74,7 @@ const Input = ({
       <input
         type={type}
         placeholder={placeholder}
-        value={checkIconPrefix && value ? `${checkIconPrefix}${value}` : value}
+        value={checkIconPrefix && value ? `${checkIconPrefix}${value}` : (type === 'number' && (value === 'NONE' || value === 'N/A') ? '' : value)}
         onChange={onChange}
         onBlur={onBlur}
         onKeyDown={handleKeyDown}

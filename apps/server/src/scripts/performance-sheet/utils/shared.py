@@ -87,7 +87,7 @@ DEFAULTS = {
         'holddown_cylinder': 'Hydraulic',
         'holddown_assy': 'SD',
         'threading_drive_hyd': '22 cu in (D-12689)',
-        'threading_drive_air_clutch': 'Yes',
+        'threading_drive_air_clutch': 'No',
         'confirmed_min_width': False,
         'yield_met': 'NOT OK'
     },

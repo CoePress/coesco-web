@@ -32,6 +32,8 @@ SPEC_KEYS_SIGMA_FIVE = {
     "friction_torque": ("fric_torque", "friction_torque"),
     "watts_lost": ("watts_lost", "watts_lost"),
     "ec": ("ec", "ec"),
+    "motor": ("motor", "motor"),
+    "amp": ("amp", "amp"),
 }
 
 # Flexible spec loader
@@ -99,6 +101,8 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
     friction_torque = spec_values["friction_torque"]
     watts_lost = spec_values["watts_lost"]
     ec = spec_values["ec"]
+    motor = spec_values["motor"]
+    amp = spec_values["amp"]
 
     # Max Velocity ft/min
     max_vel = max_motor_rpm / ratio * (l_roll * pi / 720) * 60
@@ -219,7 +223,7 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
             "ratio": ratio,
             "motor_peak_torque": motor_peak_torque,
             "motor_rms_torque": motor_rms_torque,
-            "frictiaonal_torque": frictional_torque,
+            "frictional_torque": frictional_torque,
             "loop_torque": loop_torque,
             "settle_torque": settle_torque,
             "regen": 0.0,  # Default value when regen calculation fails
@@ -232,6 +236,7 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
             "rms_torque_fa1_check": "ERROR",
             "rms_torque_fa2": 0,
             "rms_torque_fa2_check": "ERROR",
+            "motor_rms_check": "ERROR",
             "acceleration_torque": 0,
             "acceleration_torque_check": "ERROR",
             "feed_check": "ERROR",
@@ -269,7 +274,7 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
     # Acceleration Torque
     acceleration_torque = (((refl_inertia * rpm) / (9.55 * feed_angle_1_values[0]["acceleration_time"])) / efficiency) + ((motor_inertia * rpm) / (9.55 * feed_angle_1_values[0]["acceleration_time"]))
 
-    if acceleration_torque < motor_peak_torque:
+    if motor_peak_torque > acceleration_torque:
         acceleration_torque_check = "OK"
     else:
         acceleration_torque_check = "EXCESS"
@@ -309,6 +314,13 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
     else:
         rms_torque_fa2_check = "EXCESS"
 
+    # Motor RMS Check - overall motor adequacy
+    max_required_rms = max(rms_torque_fa1, rms_torque_fa2)
+    if motor_rms_torque > max_required_rms:
+        motor_rms_check = "OK"
+    else:
+        motor_rms_check = "EXCESS"
+
     # Calculate Regen
     regen = regen_input(
         match = match,
@@ -324,6 +336,7 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
     if (peak_torque_check == "OK" and 
         rms_torque_fa1_check == "OK" and 
         rms_torque_fa2_check == "OK" and 
+        motor_rms_check == "OK" and
         acceleration_torque_check == "OK" and
         data.width >= data.material_width):
         feed_check = "OK"
@@ -336,10 +349,13 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
         "max_vel": max_vel,
         "settle_time": settle_time,
         "ratio": ratio,
+        "motor": motor,
+        "amp": amp,
+        "material_loop": material_loop,
 
         "motor_peak_torque": motor_peak_torque,
         "motor_rms_torque": motor_rms_torque,
-        "frictiaonal_torque": frictional_torque,
+        "frictional_torque": frictional_torque,
         "loop_torque": loop_torque,
         "settle_torque": settle_torque,
 
@@ -354,6 +370,7 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
         "rms_torque_fa1_check": rms_torque_fa1_check,
         "rms_torque_fa2": rms_torque_fa2,
         "rms_torque_fa2_check": rms_torque_fa2_check,
+        "motor_rms_check": motor_rms_check,
         "acceleration_torque": acceleration_torque,
         "acceleration_torque_check": acceleration_torque_check,
         "feed_check": feed_check,
