@@ -15,7 +15,9 @@
     "schema:extract": "ts-node src/scripts/extract-legacy-schema.ts",
     "schema:extract:std": "ts-node src/scripts/extract-legacy-schema.ts std",
     "schema:extract:job": "ts-node src/scripts/extract-legacy-schema.ts job",
-    "schema:extract:quote": "ts-node src/scripts/extract-legacy-schema.ts quote"
+    "schema:extract:quote": "ts-node src/scripts/extract-legacy-schema.ts quote",
+    "schema:generate": "ts-node src/scripts/generate-legacy-types.ts",
+    "schema:sync": "npm run schema:extract && npm run schema:generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
