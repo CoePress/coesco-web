@@ -63,7 +63,6 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
     });
   }
 
-  // ✅ Prisma mapping that works even when instanceof fails
   if (isPrismaKnownRequestError(err)) {
     const appErr = mapPrismaKnown(err);
 
