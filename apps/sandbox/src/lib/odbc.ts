@@ -1,21 +1,13 @@
-import type odbc from "odbc";
+import { connectionManager } from "./odbc-connection";
 
-export class ODBC {
-  async connect() { }
+export { connectionManager, ConnectionManager } from "./odbc-connection";
+export { legacyService, LegacyService } from "./odbc-service";
+export * from "./odbc-types";
 
-  async close() { }
-
-  async create() { }
-
-  async getAll() { }
-
-  async update() { }
-
-  async delete() { }
+export async function initializeLegacyService(): Promise<void> {
+  await connectionManager.initialize();
 }
 
-export class ODBCConnection {
-  private stdConnection?: odbc.Connection;
-  private jobConnection?: odbc.Connection;
-  private quoteConnection?: odbc.Connection;
+export async function closeLegacyService(): Promise<void> {
+  await connectionManager.close();
 }

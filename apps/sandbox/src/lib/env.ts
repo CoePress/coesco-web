@@ -17,6 +17,22 @@ const envSchema = z.object({
   LOG_LEVEL: z.string().default("info"),
   DATABASE_URL: z.string(),
   ACCESS_TOKEN_SECRET: z.string(),
+
+  ODBC_DRIVER: z.string(),
+  PROSQL_USER: z.string(),
+  PROSQL_PASSWORD: z.string(),
+
+  STD_HOST: z.string(),
+  STD_PORT: z.coerce.number(),
+  STD_DB: z.string(),
+
+  JOB_HOST: z.string(),
+  JOB_PORT: z.coerce.number(),
+  JOB_DB: z.string(),
+
+  QUOTE_HOST: z.string(),
+  QUOTE_PORT: z.coerce.number(),
+  QUOTE_DB: z.string(),
 });
 
 const env = envSchema.parse(process.env);
