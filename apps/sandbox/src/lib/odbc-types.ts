@@ -30,3 +30,27 @@ export interface FilterParams {
   filters?: FilterCondition[];
   operator?: string;
 }
+
+export interface ColumnSchema {
+  name: string;
+  dataType: string;
+  extent: number;
+  format: string;
+  label: string;
+  mandatory: boolean;
+  order: number;
+  initialValue: string | null;
+  description: string | null;
+}
+
+export interface TableSchema {
+  name: string;
+  description: string | null;
+  columns: ColumnSchema[];
+}
+
+export interface DatabaseSchema {
+  database: DatabaseName;
+  extractedAt: string;
+  tables: TableSchema[];
+}

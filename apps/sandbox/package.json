@@ -11,7 +11,11 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "lint:fix": "eslint src --ext .ts --fix",
+    "schema:extract": "ts-node src/scripts/extract-legacy-schema.ts",
+    "schema:extract:std": "ts-node src/scripts/extract-legacy-schema.ts std",
+    "schema:extract:job": "ts-node src/scripts/extract-legacy-schema.ts job",
+    "schema:extract:quote": "ts-node src/scripts/extract-legacy-schema.ts quote"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",

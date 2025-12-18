@@ -1,11 +1,14 @@
 import type { Connection } from "odbc";
 
 import type {
+  ColumnSchema,
   DatabaseName,
+  DatabaseSchema,
   FilterCondition,
   FilterParams,
   PaginatedResult,
   PaginationParams,
+  TableSchema,
 } from "./odbc-types";
 
 import logger from "./logger";
@@ -467,6 +470,80 @@ export class LegacyService {
       logger.error("Error in getFields:", err);
       return null;
     }
+  }
+
+  async getTableSchema(database: DatabaseName, table: string): Promise<TableSchema | null> {
+    const connection = this.getConnection(database);
+    if (!connection)
+      return null;
+
+    const query = `
+      SELECT
+        f."_Field-Name",
+        f."_Data-Type",
+        f."_Extent",
+        f."_Format",
+        f."_Label",
+        f."_Mandatory",
+        f."_Order",
+        f."_Initial",
+        f."_Desc",
+        t."_Desc" as "tbl_desc"
+      FROM PUB."_Field" f
+      JOIN PUB."_File" t ON f."_File-recid" = t.ROWID
+      WHERE t."_File-Name" = '${table.replace(/'/g, "''")}'
+      ORDER BY f."_Order"
+    `;
+
+    try {
+      const result = (await connection.query(query)) as Record<string, unknown>[];
+      if (!result?.length)
+        return null;
+
+      const columns: ColumnSchema[] = result.map(row => ({
+        name: String(row["_Field-Name"] ?? ""),
+        dataType: String(row["_Data-Type"] ?? ""),
+        extent: Number(row["_Extent"] ?? 0),
+        format: String(row["_Format"] ?? ""),
+        label: String(row["_Label"] ?? ""),
+        mandatory: Boolean(row["_Mandatory"]),
+        order: Number(row["_Order"] ?? 0),
+        initialValue: row["_Initial"] ? String(row["_Initial"]) : null,
+        description: row["_Desc"] ? String(row["_Desc"]) : null,
+      }));
+
+      return {
+        name: table,
+        description: result[0]?.tbl_desc ? String(result[0].tbl_desc) : null,
+        columns,
+      };
+    }
+    catch (err) {
+      logger.error(`Error in getTableSchema for ${table}:`, err);
+      return null;
+    }
+  }
+
+  async getDatabaseSchema(database: DatabaseName): Promise<DatabaseSchema | null> {
+    const tables = await this.getTables(database);
+    if (!tables)
+      return null;
+
+    logger.info(`Extracting schema for ${database.toUpperCase()} (${tables.length} tables)...`);
+
+    const tableSchemas: TableSchema[] = [];
+    for (const table of tables) {
+      const schema = await this.getTableSchema(database, table);
+      if (schema) {
+        tableSchemas.push(schema);
+      }
+    }
+
+    return {
+      database,
+      extractedAt: new Date().toISOString(),
+      tables: tableSchemas,
+    };
   }
 }
 
