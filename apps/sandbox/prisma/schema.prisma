@@ -23,7 +23,13 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  employee Employee?
+  graphAccessToken    String?
+  graphRefreshToken   String?
+  graphTokenExpiresAt DateTime?
+  graphTokenScope     String?
+  graphTokenUpdatedAt DateTime?
+
+  employee      Employee?
   refreshTokens RefreshToken[]
 
   @@map("users")

@@ -37,6 +37,8 @@ const envSchema = z.object({
   AZURE_TENANT_ID: z.string(),
   AZURE_CLIENT_ID: z.string(),
   AZURE_CLIENT_SECRET: z.string(),
+  AZURE_REDIRECT_URI: z.string(),
+  GRAPH_ENCRYPTION_KEY: z.string().min(32),
 });
 
 const env = envSchema.parse(process.env);

@@ -20,6 +20,7 @@
     "schema:sync": "npm run schema:extract && npm run schema:generate"
   },
   "dependencies": {
+    "@azure/msal-node": "^3.8.4",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",
     "@prisma/client-runtime-utils": "^7.1.0",
