@@ -4,6 +4,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import compression from "compression";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import express from "express";
 import morgan from "morgan";
 import http from "node:http";
@@ -45,6 +46,10 @@ const morganMiddleware = morgan(
 );
 
 app.use(compression());
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:3000"],
+  credentials: true,
+}));
 app.use(cookieParser());
 app.use(express.json());
 

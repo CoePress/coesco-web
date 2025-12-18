@@ -4,3 +4,9 @@ node_modules
 
 generated
 logs
+dist
+
+# Generated files
+.generated-credentials.json
+.sync-state.json
+

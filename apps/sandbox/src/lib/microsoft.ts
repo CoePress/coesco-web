@@ -7,6 +7,7 @@ import { UserRole } from "../generated/enums";
 import env from "./env";
 import logger from "./logger";
 import { initializeLegacyService, legacyService } from "./odbc";
+import { generateAndHashPassword, saveCredential } from "./passwords";
 import { prisma } from "./prisma";
 
 const SYNC_STATE_FILE = path.join(__dirname, "../../.sync-state.json");
@@ -178,16 +179,22 @@ export async function syncMicrosoftUsers(force = false) {
       const existing = await prisma.employee.findUnique({ where: { number: empNumber } });
 
       if (!existing) {
+        const { plain: password, hash: passwordHash } = await generateAndHashPassword();
+
         await prisma.user.create({
           data: {
             username: email,
-            isActive: false,
+            password: passwordHash,
+            isActive: true,
             role: UserRole.USER,
             employee: {
               create: { number: empNumber, firstName, lastName, initials, email, title, hireDate, startDate, terminationDate, createdById: "system", updatedById: "system" },
             },
           },
         });
+
+        saveCredential(email, password);
+        logger.info("sync.user_created_with_password", { email });
         legacyCreated++;
       }
       else {
