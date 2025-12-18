@@ -16,7 +16,7 @@ import FormSubmission from "./pages/forms/form-submission-details";
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="ui-theme">
+    <ThemeProvider defaultTheme="dark">
       <BrowserRouter>
         <AuthProvider>
           <SidebarProvider>
