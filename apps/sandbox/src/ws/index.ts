@@ -21,6 +21,8 @@ export function createSocketServer(httpServer: HttpServer) {
     try {
       const cookies = cookie.parse(socket.request.headers.cookie ?? "");
       const token = cookies.access;
+      if (!token)
+        throw new Error("no token");
       const claims = verifyAccessToken(token);
       socket.data.userId = claims.sub;
       next();

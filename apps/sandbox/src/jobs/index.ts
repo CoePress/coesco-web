@@ -1,4 +1,4 @@
-import { syncMicrosoftUsers } from "@/lib/microsoft";
+import { syncMicrosoftUsers } from "../lib/microsoft";
 
 export const jobs = [
   {
@@ -11,6 +11,6 @@ export const jobs = [
   {
     name: "microsoft.sync",
     schedule: "0 2 * * *",
-    run: syncMicrosoftUsers,
+    run: async () => { await syncMicrosoftUsers(); },
   },
 ];

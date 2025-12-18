@@ -16,6 +16,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",
+    "@prisma/client-runtime-utils": "^7.1.0",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
@@ -32,7 +33,6 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "prisma": "^7.1.0",
     "@types/cookie": "^0.6.0",
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.18.2",
@@ -43,6 +43,7 @@
     "install": "^0.13.0",
     "nodemon": "^3.1.11",
     "npm": "^11.7.0",
+    "prisma": "^7.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   }

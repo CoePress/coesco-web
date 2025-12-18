@@ -24,7 +24,7 @@ model User {
   updatedAt   DateTime  @updatedAt
 
   employee Employee?
-  // refreshTokens RefreshToken[]
+  refreshTokens RefreshToken[]
 
   @@map("users")
 }
@@ -67,38 +67,38 @@ model Employee {
   @@map("employees")
 }
 
-// model Account {
-//   id String @id @default(uuid())
+model Account {
+  id String @id @default(uuid())
 
-//   name     String
-//   website  String?
-//   phone    String?
-//   industry String?
-//   status   AccountStatus @default(ACTIVE)
-//   notes    String?
+  name     String
+  website  String?
+  phone    String?
+  industry String?
+  status   AccountStatus @default(ACTIVE)
+  notes    String?
 
-//   ownerEmployeeId String?
-//   owner           Employee? @relation("AccountOwner", fields: [ownerEmployeeId], references: [id], onDelete: SetNull)
+  // ownerEmployeeId String?
+  // owner           Employee? @relation("AccountOwner", fields: [ownerEmployeeId], references: [id], onDelete: SetNull)
 
-//   contacts Contact[]
-//   deals    Deal[]
-//   quotes   Quote[]
-//   projects Project[]
-//   acttivities Activity[]
+  // contacts Contact[]
+  // deals    Deal[]
+  // quotes   Quote[]
+  // projects Project[]
+  // acttivities Activity[]
 
-//   createdAt   DateTime  @default(now())
-//   updatedAt   DateTime  @updatedAt
-//   deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
-//   @@index([ownerEmployeeId])
-//   @@map("accounts")
-// }
+  // @@index([ownerEmployeeId])
+  @@map("accounts")
+}
 
-// enum AccountStatus {
-//   ACTIVE
-//   PROSPECT
-//   INACTIVE
-// }
+enum AccountStatus {
+  ACTIVE
+  PROSPECT
+  INACTIVE
+}
 
 // model Contact {
 //   id String @id @default(uuid())
@@ -406,17 +406,17 @@ model Employee {
 //   @@map("project_scopes")
 // }
 
-// model RefreshToken {
-//   id        String   @id @default(uuid())
-//   userId    String
-//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-//   tokenHash String   @unique
-//   expiresAt DateTime
-//   revokedAt DateTime?
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
 
-//   createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-//   @@index([userId])
-//   @@map("refresh_tokens")
-// }
+  @@index([userId])
+  @@map("refresh_tokens")
+}
