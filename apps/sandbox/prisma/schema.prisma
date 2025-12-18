@@ -47,7 +47,7 @@ model Employee {
   deletedAt       DateTime?
   createdById     String
   updatedById     String
-  deletedById     String
+  deletedById     String?
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -86,9 +86,12 @@ model Account {
   // projects Project[]
   // acttivities Activity[]
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+  deletedById     String?
 
   // @@index([ownerEmployeeId])
   @@map("accounts")

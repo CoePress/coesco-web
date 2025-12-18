@@ -1,8 +1,30 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { UserRole } from "../generated/enums";
 import env from "./env";
 import logger from "./logger";
 import { initializeLegacyService, legacyService } from "./odbc";
 import { prisma } from "./prisma";
+
+const SYNC_STATE_FILE = path.join(__dirname, "../../.sync-state.json");
+const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function shouldSync(): boolean {
+  try {
+    if (!fs.existsSync(SYNC_STATE_FILE))
+      return true;
+    const state = JSON.parse(fs.readFileSync(SYNC_STATE_FILE, "utf-8"));
+    return Date.now() - state.lastSync > SYNC_INTERVAL_MS;
+  }
+  catch {
+    return true;
+  }
+}
+
+function updateSyncState(): void {
+  fs.writeFileSync(SYNC_STATE_FILE, JSON.stringify({ lastSync: Date.now() }));
+}
 
 const blacklistedEmails = [
   "ads@cpec.com",
@@ -103,85 +125,98 @@ async function getAllLegacyEmployees(): Promise<LegacyEmployee[]> {
   return result.data as LegacyEmployee[];
 }
 
-export async function syncMicrosoftUsers() {
+export async function syncMicrosoftUsers(force = false) {
+  if (!force && !shouldSync()) {
+    logger.info("sync.skipped", { reason: "recently synced" });
+    return null;
+  }
+
   logger.info("sync.started");
 
   await initializeLegacyService();
 
   // Step 1: Sync ALL legacy employees (creates User + Employee for everyone)
   logger.info("sync.legacy_employees_started");
-  const legacyEmployees = await getAllLegacyEmployees();
-  logger.info("sync.legacy_employees_fetched", { count: legacyEmployees.length });
+  const allLegacyEmployees = await getAllLegacyEmployees();
+
+  // Deduplicate by initials - keep the one with the latest hire date
+  const legacyByInitials = new Map<string, LegacyEmployee>();
+  let legacySkippedNoInitials = 0;
+  for (const emp of allLegacyEmployees) {
+    if (!emp.EmpInitials) {
+      legacySkippedNoInitials++;
+      continue;
+    }
+    const initials = emp.EmpInitials.toString().trim().toUpperCase();
+    const existing = legacyByInitials.get(initials);
+    if (!existing) {
+      legacyByInitials.set(initials, emp);
+    }
+    else {
+      const existingDate = existing.HireDate ? new Date(existing.HireDate) : new Date(0);
+      const newDate = emp.HireDate ? new Date(emp.HireDate) : new Date(0);
+      if (newDate > existingDate) {
+        legacyByInitials.set(initials, emp);
+      }
+    }
+  }
+  const legacyEmployees = Array.from(legacyByInitials.values());
+  logger.info("sync.legacy_employees_fetched", { total: allLegacyEmployees.length, deduplicated: legacyEmployees.length });
 
   let legacyCreated = 0;
   let legacyUpdated = 0;
-  let legacySkippedNoInitials = 0;
-  let legacySkippedNoEmpNum = 0;
+  let legacySkipped = 0;
   let legacyErrors = 0;
 
   for (const legacyEmp of legacyEmployees) {
     try {
-      if (!legacyEmp.EmpInitials) {
-        legacySkippedNoInitials++;
+      if (!legacyEmp.EmpNum)
         continue;
-      }
 
-      if (!legacyEmp.EmpNum) {
-        legacySkippedNoEmpNum++;
-        continue;
-      }
-
-      const initials = legacyEmp.EmpInitials.toString().trim().toUpperCase();
+      const initials = legacyEmp.EmpInitials!.toString().trim().toUpperCase();
       const email = `${initials.toLowerCase()}@cpec.com`;
       const empNumber = legacyEmp.EmpNum.toString();
+      const firstName = legacyEmp.EmpFirstName?.trim() || "Unknown";
+      const lastName = legacyEmp.EmpLastName?.trim() || "Unknown";
+      const title = legacyEmp.Emptitle?.trim() || "Employee";
+      const hireDate = legacyEmp.HireDate ? new Date(legacyEmp.HireDate) : null;
+      const startDate = legacyEmp.StartDate ? new Date(legacyEmp.StartDate) : null;
+      const terminationDate = legacyEmp.TermDate ? new Date(legacyEmp.TermDate) : null;
 
-      const existingEmployee = await prisma.employee.findFirst({
-        where: { OR: [{ email }, { number: empNumber }, { initials }] },
-        include: { user: true },
-      });
+      const existing = await prisma.employee.findUnique({ where: { number: empNumber } });
 
-      if (existingEmployee) {
-        // Update existing
-        await prisma.employee.update({
-          where: { id: existingEmployee.id },
-          data: {
-            firstName: legacyEmp.EmpFirstName?.trim() || existingEmployee.firstName,
-            lastName: legacyEmp.EmpLastName?.trim() || existingEmployee.lastName,
-            title: legacyEmp.Emptitle?.trim() || existingEmployee.title,
-            hireDate: legacyEmp.HireDate ? new Date(legacyEmp.HireDate) : existingEmployee.hireDate,
-            startDate: legacyEmp.StartDate ? new Date(legacyEmp.StartDate) : existingEmployee.startDate,
-            terminationDate: legacyEmp.TermDate ? new Date(legacyEmp.TermDate) : existingEmployee.terminationDate,
-          },
-        });
-        legacyUpdated++;
-      }
-      else {
-        // Create new User + Employee
+      if (!existing) {
         await prisma.user.create({
           data: {
             username: email,
             isActive: false,
             role: UserRole.USER,
             employee: {
-              create: {
-                number: empNumber,
-                firstName: legacyEmp.EmpFirstName?.trim() || "Unknown",
-                lastName: legacyEmp.EmpLastName?.trim() || "Unknown",
-                initials,
-                email,
-                title: legacyEmp.Emptitle?.trim() || "Employee",
-                hireDate: legacyEmp.HireDate ? new Date(legacyEmp.HireDate) : null,
-                startDate: legacyEmp.StartDate ? new Date(legacyEmp.StartDate) : null,
-                terminationDate: legacyEmp.TermDate ? new Date(legacyEmp.TermDate) : null,
-                createdById: "system",
-                updatedById: "system",
-                deletedById: "system",
-              },
+              create: { number: empNumber, firstName, lastName, initials, email, title, hireDate, startDate, terminationDate, createdById: "system", updatedById: "system" },
             },
           },
         });
-        logger.debug("sync.legacy_created", { email, empNumber });
         legacyCreated++;
+      }
+      else {
+        const changed
+          = existing.firstName !== firstName
+            || existing.lastName !== lastName
+            || existing.title !== title
+            || existing.hireDate?.getTime() !== hireDate?.getTime()
+            || existing.startDate?.getTime() !== startDate?.getTime()
+            || existing.terminationDate?.getTime() !== terminationDate?.getTime();
+
+        if (changed) {
+          await prisma.employee.update({
+            where: { number: empNumber },
+            data: { firstName, lastName, title, hireDate, startDate, terminationDate },
+          });
+          legacyUpdated++;
+        }
+        else {
+          legacySkipped++;
+        }
       }
     }
     catch (error: any) {
@@ -193,8 +228,8 @@ export async function syncMicrosoftUsers() {
   logger.info("sync.legacy_employees_completed", {
     created: legacyCreated,
     updated: legacyUpdated,
+    skipped: legacySkipped,
     skippedNoInitials: legacySkippedNoInitials,
-    skippedNoEmpNum: legacySkippedNoEmpNum,
     errors: legacyErrors,
   });
 
@@ -230,34 +265,32 @@ export async function syncMicrosoftUsers() {
       });
 
       if (!employee) {
-        logger.debug("sync.ms_skip_no_employee", { email: msUser.mail });
+        logger.info("sync.ms_skip_no_employee", { email: msUser.mail });
         msSkipped++;
         continue;
       }
 
       const isAdmin = msUser.department === "MIS";
+      const newRole = isAdmin ? UserRole.ADMIN : UserRole.USER;
 
-      await prisma.$transaction([
-        prisma.user.update({
+      const hasChanges
+        = employee.user.microsoftId !== msUser.id
+          || employee.user.role !== newRole
+          || (isAdmin && !employee.user.isActive);
+
+      if (hasChanges) {
+        await prisma.user.update({
           where: { id: employee.userId },
           data: {
             microsoftId: msUser.id,
-            role: isAdmin ? UserRole.ADMIN : UserRole.USER,
+            role: newRole,
             ...(isAdmin && { isActive: true }),
           },
-        }),
-        prisma.employee.update({
-          where: { id: employee.id },
-          data: {
-            firstName: msUser.givenName || employee.firstName,
-            lastName: msUser.surname || employee.lastName,
-            title: msUser.jobTitle || employee.title,
-          },
-        }),
-      ]);
+        });
 
-      logger.debug("sync.ms_updated", { email: msUser.mail, isAdmin });
-      msUpdated++;
+        logger.info("sync.ms_updated", { email: msUser.mail, isAdmin });
+        msUpdated++;
+      }
     }
     catch (error: any) {
       logger.error("sync.ms_error", { email: msUser.mail, error: error.message });
@@ -271,12 +304,12 @@ export async function syncMicrosoftUsers() {
     errors: msErrors,
   });
 
-  const legacySkipped = legacySkippedNoInitials + legacySkippedNoEmpNum;
-
   logger.info("sync.completed", {
-    legacy: { created: legacyCreated, updated: legacyUpdated, skipped: legacySkipped, skippedNoInitials: legacySkippedNoInitials, skippedNoEmpNum: legacySkippedNoEmpNum, errors: legacyErrors },
+    legacy: { created: legacyCreated, updated: legacyUpdated, skipped: legacySkipped, errors: legacyErrors },
     microsoft: { updated: msUpdated, skipped: msSkipped, errors: msErrors },
   });
+
+  updateSyncState();
 
   return {
     legacy: { created: legacyCreated, updated: legacyUpdated, skipped: legacySkipped, errors: legacyErrors },

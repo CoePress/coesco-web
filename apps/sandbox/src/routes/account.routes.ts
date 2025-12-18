@@ -14,7 +14,16 @@ accountRouter.post("/", async (req: Request, res: Response, next: NextFunction) 
     const input = CreateAccountSchema.parse(req.body);
 
     const account = await prisma.account.create({
-      data: { ...input },
+      data: {
+        name: input.name,
+        website: input.website,
+        phone: input.phone,
+        industry: input.industry,
+        status: input.status,
+        notes: input.notes,
+        createdById: "system",
+        updatedById: "system",
+      },
     });
 
     res.status(201).json({ account });
@@ -48,8 +57,7 @@ accountRouter.get("/:id", async (req: Request, res: Response, next: NextFunction
     });
 
     if (!account) {
-      if (!account)
-        throw errors.notFound("Account not found");
+      throw errors.notFound("Account not found");
     }
 
     res.json({ account });
@@ -67,7 +75,10 @@ accountRouter.patch("/:id", async (req: Request, res: Response, next: NextFuncti
 
     const account = await prisma.account.update({
       where: { id },
-      data: patch,
+      data: {
+        ...patch,
+        updatedById: "system",
+      },
     });
 
     res.json({ account });
