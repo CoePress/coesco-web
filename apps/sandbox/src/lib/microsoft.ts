@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import type { legacy } from "./legacy-types";
+
 import { UserRole } from "../generated/enums";
 import env from "./env";
 import logger from "./logger";
@@ -45,17 +47,7 @@ interface MicrosoftUser {
   department: string | null;
 }
 
-interface LegacyEmployee {
-  EmpNum?: number | string;
-  EmpFirstName?: string;
-  EmpLastName?: string;
-  EmpInitials?: string;
-  Emptitle?: string;
-  HireDate?: string;
-  StartDate?: string;
-  TermDate?: string;
-  DeptCode?: string;
-}
+type LegacyEmployee = Partial<legacy.std.Employee>;
 
 interface GraphResponse {
   "value": MicrosoftUser[];
