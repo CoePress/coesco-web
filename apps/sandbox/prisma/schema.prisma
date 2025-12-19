@@ -429,3 +429,186 @@ model RefreshToken {
   @@index([userId])
   @@map("refresh_tokens")
 }
+
+// ======================= FORMS =======================
+
+model Form {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  status      FormStatus @default(DRAFT)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  createdById String
+  updatedById String
+
+  pages            FormPage[]
+  submissions      FormSubmission[]
+  conditionalRules FormConditionalRule[]
+
+  @@map("forms")
+}
+
+enum FormStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model FormPage {
+  id          String   @id @default(uuid())
+  formId      String
+  title       String
+  sequence    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  updatedById String
+
+  form     Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
+  sections FormSection[]
+
+  @@unique([formId, sequence])
+  @@map("form_pages")
+}
+
+model FormSection {
+  id          String   @id @default(uuid())
+  pageId      String
+  title       String
+  description String?
+  sequence    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  updatedById String
+
+  page   FormPage    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  fields FormField[]
+
+  @@unique([pageId, sequence])
+  @@map("form_sections")
+}
+
+model FormField {
+  id               String               @id @default(uuid())
+  sectionId        String
+  label            String
+  variable         String
+  controlType      FormFieldControlType
+  dataType         FormFieldDataType
+  options          Json                 @default("{}")
+  isRequired       Boolean              @default(false)
+  isReadOnly       Boolean              @default(false)
+  isHiddenOnDevice Boolean              @default(false)
+  isHiddenOnReport Boolean              @default(false)
+  sequence         Int
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  createdById      String
+  updatedById      String
+
+  section FormSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, sequence])
+  @@map("form_fields")
+}
+
+enum FormFieldControlType {
+  INPUT
+  TEXT_AREA
+  TEXTBOX
+  DROPDOWN
+  RADIO_BUTTON
+  MULTI_SELECT
+  BUTTON_GROUP
+  GEO_LOCATION
+  DATE_SELECTOR
+  TIME_SELECTOR
+  STAMP
+  SKETCH_PAD
+  CAMERA
+  SIGNATURE_PAD
+}
+
+enum FormFieldDataType {
+  TEXT
+  EMAIL
+  EMAIL_ADDRESS
+  URL
+  PHONE_NUMBER
+  INTEGER
+  DECIMAL
+  CURRENCY
+  GEO_LOCATION
+  DATE
+  TIME
+  DATE_TIME
+  IMAGE
+  SIGNATURE
+}
+
+model FormSubmission {
+  id          String               @id @default(uuid())
+  formId      String
+  status      FormSubmissionStatus @default(DRAFT)
+  answers     Json                 @default("{}")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@map("form_submissions")
+}
+
+enum FormSubmissionStatus {
+  DRAFT
+  SUBMITTED
+  ARCHIVED
+}
+
+model FormConditionalRule {
+  id          String              @id @default(uuid())
+  formId      String
+  name        String?
+  targetType  ConditionalTarget
+  targetId    String
+  action      ConditionalAction
+  conditions  Json
+  operator    ConditionalOperator @default(AND)
+  priority    Int                 @default(0)
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  createdById String
+  updatedById String
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId, targetId])
+  @@map("form_conditional_rules")
+}
+
+enum ConditionalTarget {
+  PAGE
+  SECTION
+  FIELD
+}
+
+enum ConditionalAction {
+  SHOW
+  HIDE
+  ENABLE
+  DISABLE
+  REQUIRE
+  OPTIONAL
+}
+
+enum ConditionalOperator {
+  AND
+  OR
+}

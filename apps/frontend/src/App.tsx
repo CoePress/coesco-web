@@ -10,6 +10,7 @@ import Settings from "./pages/general/settings";
 import Login from "./pages/general/login";
 import Forms from "./pages/forms/forms";
 import FormDetails from "./pages/forms/form-details";
+import FormBuilder from "./pages/forms/form-builder";
 import FormSubmissions from "./pages/forms/form-submissions";
 import FormSubmit from "./pages/forms/form-submit";
 import FormSubmission from "./pages/forms/form-submission-details";
@@ -33,6 +34,7 @@ function App() {
 
                   <Route path="forms" element={<Forms />} />
                   <Route path="forms/:id" element={<FormDetails />} />
+                  <Route path="forms/:id/edit" element={<FormBuilder />} />
                   <Route path="forms/:id/submissions" element={<FormSubmissions />} />
                   <Route path="forms/:id/submissions/:submissionId" element={<FormSubmission />} />
                   <Route path="forms/:id/submit" element={<FormSubmit />} />
