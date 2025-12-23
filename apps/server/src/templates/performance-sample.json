@@ -24,6 +24,7 @@
       "coilWeight": 10000,
       "materialType": "Cold Rolled Steel",
       "maxYieldStrength": 40000,
+      "yieldStrength": 40000,
       "maxTensileStrength": 0,
       "reqMaxFPM": 160,
       "materialDensity": 0
@@ -61,7 +62,8 @@
         "lightGuageNonMarking": "No",
         "nonMarking": "No",
         "maximumVelocity": 0,
-        "loopPit": "No"
+        "loopPit": "No",
+        "lineType": "Conventional"
       }
     },
     "feedRates": {
@@ -131,11 +133,11 @@
     "equipmentSpaceWidth": 0,
     "obstructions": "",
     "mount": {
-      "feederMountedToPress": "",
-      "adequateSupport": "",
-      "customMounting": ""
+      "feederMountedToPress": "No",
+      "adequateSupport": "No",
+      "customMounting": "No"
     },
-    "requireGuarding": "",
+    "requireGuarding": "No",
     "specialConsiderations": ""
   },
   "materialSpecs": {
@@ -529,7 +531,272 @@
         "straightenerTorque": 0,
         "payoffMaxSpeed": 0
       },
-      "tableValues": []
+      "tableValues": [
+        {
+          "length": 19,
+          "feedAngle1": 36,
+          "feedAngle2": 42,
+          "spmAt180": 84,
+          "fpm180": 131,
+          "indexTime1": 0.357,
+          "spmAt240": 112,
+          "fpm240": 174,
+          "indexTime2": 0.357
+        },
+        {
+          "length": 4,
+          "feedAngle1": 35,
+          "feedAngle2": 40,
+          "spmAt180": 162,
+          "fpm180": 54,
+          "indexTime1": 0.184,
+          "spmAt240": 217,
+          "fpm240": 72,
+          "indexTime2": 0.184
+        },
+        {
+          "length": 8,
+          "feedAngle1": 36,
+          "feedAngle2": 41,
+          "spmAt180": 122,
+          "fpm180": 81,
+          "indexTime1": 0.246,
+          "spmAt240": 162,
+          "fpm240": 108,
+          "indexTime2": 0.246
+        },
+        {
+          "length": 12,
+          "feedAngle1": 36,
+          "feedAngle2": 42,
+          "spmAt180": 102,
+          "fpm180": 102,
+          "indexTime1": 0.293,
+          "spmAt240": 136,
+          "fpm240": 136,
+          "indexTime2": 0.293
+        },
+        {
+          "length": 16,
+          "feedAngle1": 36,
+          "feedAngle2": 42,
+          "spmAt180": 90,
+          "fpm180": 120,
+          "indexTime1": 0.333,
+          "spmAt240": 120,
+          "fpm240": 160,
+          "indexTime2": 0.333
+        },
+        {
+          "length": 20,
+          "feedAngle1": 36,
+          "feedAngle2": 41,
+          "spmAt180": 81,
+          "fpm180": 135,
+          "indexTime1": 0.369,
+          "spmAt240": 99,
+          "fpm240": 165,
+          "indexTime2": 0.369
+        },
+        {
+          "length": 24,
+          "feedAngle1": 35,
+          "feedAngle2": 40,
+          "spmAt180": 74,
+          "fpm180": 148,
+          "indexTime1": 0.403,
+          "spmAt240": 82,
+          "fpm240": 164,
+          "indexTime2": 0.403
+        },
+        {
+          "length": 28,
+          "feedAngle1": 33,
+          "feedAngle2": 38,
+          "spmAt180": 68,
+          "fpm180": 159,
+          "indexTime1": 0.437,
+          "spmAt240": 70,
+          "fpm240": 163,
+          "indexTime2": 0.437
+        },
+        {
+          "length": 32,
+          "feedAngle1": 32,
+          "feedAngle2": 37,
+          "spmAt180": 61,
+          "fpm180": 163,
+          "indexTime1": 0.472,
+          "spmAt240": 61,
+          "fpm240": 163,
+          "indexTime2": 0.472
+        },
+        {
+          "length": 36,
+          "feedAngle1": 31,
+          "feedAngle2": 36,
+          "spmAt180": 55,
+          "fpm180": 165,
+          "indexTime1": 0.506,
+          "spmAt240": 55,
+          "fpm240": 165,
+          "indexTime2": 0.506
+        },
+        {
+          "length": 40,
+          "feedAngle1": 30,
+          "feedAngle2": 35,
+          "spmAt180": 49,
+          "fpm180": 163,
+          "indexTime1": 0.541,
+          "spmAt240": 49,
+          "fpm240": 163,
+          "indexTime2": 0.541
+        },
+        {
+          "length": 44,
+          "feedAngle1": 30,
+          "feedAngle2": 34,
+          "spmAt180": 45,
+          "fpm180": 165,
+          "indexTime1": 0.575,
+          "spmAt240": 45,
+          "fpm240": 165,
+          "indexTime2": 0.575
+        },
+        {
+          "length": 48,
+          "feedAngle1": 29,
+          "feedAngle2": 34,
+          "spmAt180": 41,
+          "fpm180": 164,
+          "indexTime1": 0.610,
+          "spmAt240": 41,
+          "fpm240": 164,
+          "indexTime2": 0.610
+        },
+        {
+          "length": 52,
+          "feedAngle1": 28,
+          "feedAngle2": 33,
+          "spmAt180": 38,
+          "fpm180": 165,
+          "indexTime1": 0.644,
+          "spmAt240": 38,
+          "fpm240": 165,
+          "indexTime2": 0.644
+        },
+        {
+          "length": 56,
+          "feedAngle1": 28,
+          "feedAngle2": 32,
+          "spmAt180": 35,
+          "fpm180": 163,
+          "indexTime1": 0.679,
+          "spmAt240": 35,
+          "fpm240": 163,
+          "indexTime2": 0.679
+        },
+        {
+          "length": 60,
+          "feedAngle1": 27,
+          "feedAngle2": 31,
+          "spmAt180": 33,
+          "fpm180": 165,
+          "indexTime1": 0.713,
+          "spmAt240": 33,
+          "fpm240": 165,
+          "indexTime2": 0.713
+        },
+        {
+          "length": 64,
+          "feedAngle1": 27,
+          "feedAngle2": 31,
+          "spmAt180": 30,
+          "fpm180": 160,
+          "indexTime1": 0.748,
+          "spmAt240": 30,
+          "fpm240": 160,
+          "indexTime2": 0.748
+        },
+        {
+          "length": 68,
+          "feedAngle1": 26,
+          "feedAngle2": 30,
+          "spmAt180": 29,
+          "fpm180": 164,
+          "indexTime1": 0.782,
+          "spmAt240": 29,
+          "fpm240": 164,
+          "indexTime2": 0.782
+        },
+        {
+          "length": 72,
+          "feedAngle1": 26,
+          "feedAngle2": 30,
+          "spmAt180": 27,
+          "fpm180": 162,
+          "indexTime1": 0.817,
+          "spmAt240": 27,
+          "fpm240": 162,
+          "indexTime2": 0.817
+        },
+        {
+          "length": 76,
+          "feedAngle1": 25,
+          "feedAngle2": 29,
+          "spmAt180": 26,
+          "fpm180": 165,
+          "indexTime1": 0.851,
+          "spmAt240": 26,
+          "fpm240": 165,
+          "indexTime2": 0.851
+        },
+        {
+          "length": 80,
+          "feedAngle1": 25,
+          "feedAngle2": 29,
+          "spmAt180": 24,
+          "fpm180": 160,
+          "indexTime1": 0.885,
+          "spmAt240": 24,
+          "fpm240": 160,
+          "indexTime2": 0.885
+        },
+        {
+          "length": 84,
+          "feedAngle1": 25,
+          "feedAngle2": 29,
+          "spmAt180": 23,
+          "fpm180": 161,
+          "indexTime1": 0.920,
+          "spmAt240": 23,
+          "fpm240": 161,
+          "indexTime2": 0.920
+        },
+        {
+          "length": 88,
+          "feedAngle1": 24,
+          "feedAngle2": 28,
+          "spmAt180": 22,
+          "fpm180": 161,
+          "indexTime1": 0.954,
+          "spmAt240": 22,
+          "fpm240": 161,
+          "indexTime2": 0.954
+        },
+        {
+          "length": 92,
+          "feedAngle1": 24,
+          "feedAngle2": 28,
+          "spmAt180": 21,
+          "fpm180": 161,
+          "indexTime1": 0.989,
+          "spmAt240": 21,
+          "fpm240": 161,
+          "indexTime2": 0.989
+        }
+      ]
     }
   },
   "shear": {
@@ -549,9 +816,9 @@
         }
       },
       "cylinder": {
-        "boreSize": 9.00,
-        "rodDiameter": 6.00,
-        "stroke": 2.00,
+        "boreSize": 9.0,
+        "rodDiameter": 6.0,
+        "stroke": 2.0,
         "minStroke": {
           "forBlade": 0,
           "requiredForOpening": 0
@@ -568,7 +835,7 @@
       },
       "time": {
         "forDownwardStroke": 0.5,
-        "dwellTime": 1.00
+        "dwellTime": 1.0
       },
       "conclusions": {
         "force": {

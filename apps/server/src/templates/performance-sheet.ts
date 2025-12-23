@@ -1026,6 +1026,9 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: true,
+          validation: {
+            min: "common.coil.minCoilWidth",
+          },
         },
         {
           id: "common.coil.minCoilWidth",
@@ -1034,6 +1037,9 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: true,
+          validation: {
+            max: "common.coil.maxCoilWidth",
+          },
         },
         {
           id: "common.coil.maxCoilOD",
@@ -1058,6 +1064,9 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: true,
+          validation: {
+            max: "common.coil.maxCoilHandlingCap",
+          },
         },
         {
           id: "common.coil.maxCoilHandlingCap",
@@ -1066,6 +1075,9 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          validation: {
+            min: "common.coil.maxCoilWeight",
+          },
         },
         {
           id: "rfq.coil.slitEdge",
@@ -1195,6 +1207,9 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: true,
+          validation: {
+            min: "common.material.yieldStrength",
+          },
         },
         {
           id: "common.material.maxTensileStrength",
@@ -1643,12 +1658,15 @@ export const MATERIAL_SPECS_PERFORMANCE_SHEET_SEED = {
           options: MATERIAL_TYPE_OPTIONS,
         },
         {
-          id: "common.material.maxYieldStrength",
+          id: "common.material.yieldStrength",
           label: "Yield Strength (psi)",
           type: "number",
           size: 1,
           sequence: 5,
           required: true,
+          validation: {
+            max: "common.material.maxYieldStrength",
+          },
         },
         {
           id: "common.material.maxTensileStrength",
@@ -1895,7 +1913,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 5,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.materialThickness",
@@ -1903,15 +1921,15 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 6,
-          required: false,
+          required: true,
         },
         {
-          id: "common.material.maxYieldStrength",
+          id: "common.material.yieldStrength",
           label: "Material Yield Strength (psi)",
           type: "number",
           size: 1,
           sequence: 7,
-          required: false,
+          required: true,
         },
         {
           id: "tddbhd.reel.airPressureAvailable",
@@ -2177,6 +2195,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readonly: true,
         },
         {
           id: "tddbhd.reel.confirmedMinWidth",
@@ -3008,7 +3027,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 4,
-          required: false,
+          required: true,
         },
       ],
     },
@@ -3024,7 +3043,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 1,
-          required: false,
+          required: true,
         },
         {
           id: "common.coil.coilID",
@@ -3032,7 +3051,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.coilWidth",
@@ -3040,7 +3059,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 3,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.materialThickness",
@@ -3048,15 +3067,15 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 4,
-          required: false,
+          required: true,
         },
         {
-          id: "common.material.maxYieldStrength",
+          id: "common.material.yieldStrength",
           label: "Yield Strength (psi)",
           type: "number",
           size: 1,
           sequence: 5,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.materialType",
@@ -3092,7 +3111,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
         },
         {
           id: "strUtility.straightener.feedRate",
@@ -3463,7 +3482,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.coilWidth",
@@ -3471,15 +3490,15 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 3,
-          required: false,
+          required: true,
         },
         {
-          id: "common.material.maxYieldStrength",
+          id: "common.material.yieldStrength",
           label: "Yield Strength (psi)",
           type: "number",
           size: 1,
           sequence: 4,
-          required: false,
+          required: true,
         },
         {
           id: "strUtility.straightener.modulus",
@@ -4108,6 +4127,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: true,
           options: FEED_MODEL_OPTIONS,
+          default: "CPRF-S1",
         },
         {
           id: "feed.feed.application",
@@ -4183,7 +4203,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 1,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.materialThickness",
@@ -4191,7 +4211,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
         },
         {
           id: "common.press.bedLength",
@@ -4344,6 +4364,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           sequence: 14,
           required: true,
           options: FEED_ANGLE_OPTIONS,
+          default: "180",
         },
         {
           id: "feed.feed.feedAngle2",
@@ -4353,6 +4374,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           sequence: 15,
           required: true,
           options: FEED_ANGLE_OPTIONS,
+          default: "180",
         },
       ],
     },
@@ -4574,6 +4596,23 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+        },
+      ],
+    },
+    {
+      id: "section-feed-performance",
+      title: "Feed Performance Data",
+      sequence: 7,
+      columns: 1,
+      fields: [
+        {
+          id: "feed.feed.tableValues",
+          label: "Feed Performance Table & Graph",
+          type: "custom",
+          size: 2,
+          sequence: 1,
+          required: false,
+          readOnly: true,
         },
       ],
     },
@@ -5348,17 +5387,18 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
     },
     {
       id: "section-performance-results",
-      title: "Performance Results",
+      title: "Feed Performance Data",
       sequence: 9,
       columns: 1,
       fields: [
         {
           id: "feed.feed.tableValues",
-          label: "Performance Table Data",
-          type: "text",
+          label: "Feed Performance Table & Graph",
+          type: "custom",
           size: 2,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
       ],
     },

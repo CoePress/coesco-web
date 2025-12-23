@@ -155,7 +155,7 @@ def main():
             mat_data = {
                 "material_type": parse_str_with_default(data, ["common", "material", "materialType"], "material", "material_type"),
                 "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
-                "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
+                "yield_strength": parse_float_with_default(data, ["common", "material", "yieldStrength"], "material", "yield_strength"),
                 "coil_width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
                 "coil_weight": parse_float_with_default(data, ["common", "coil", "maxCoilWeight"], "material", "max_coil_weight"),
                 "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "material", "coil_id"),
@@ -235,7 +235,8 @@ def main():
                 air_clutch_value = "No"
                 hyd_threading_drive_value = "None"
             else:
-                air_clutch_value = str2bool(get_nested(data, ["tddbhd", "reel", "threadingDrive", "airClutch"])) or DEFAULTS["reel"]["threading_drive_air_clutch"]
+                air_clutch_bool = str2bool(get_nested(data, ["tddbhd", "reel", "threadingDrive", "airClutch"])) or DEFAULTS["reel"]["threading_drive_air_clutch"]
+                air_clutch_value = "Yes" if air_clutch_bool else "No"
                 hyd_threading_drive_value = parse_str_with_default(data, ["tddbhd", "reel", "threadingDrive", "hydThreadingDrive"], "reel", "threading_drive_hyd")
             
             # Parse and log critical values before TDDBHD calculation
@@ -267,7 +268,7 @@ def main():
                 "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
                 "reel_drive_tqempty": None,  # Not present
                 "motor_hp": parse_float_with_default(data, ["common", "equipment", "reel", "horsepower"], "reel", "horsepower"),
-                "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
+                "yield_strength": parse_float_with_default(data, ["common", "material", "yieldStrength"], "material", "yield_strength"),
                 "thickness": material_thickness,
                 "width": coil_width,
                 "coil_id": coil_id,
@@ -312,7 +313,7 @@ def main():
         # --- Roll Str Backbend ---
         try:
             roll_str_backbend_data = {
-                "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
+                "yield_strength": parse_float_with_default(data, ["common", "material", "yieldStrength"], "material", "yield_strength"),
                 "thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
                 "width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
                 "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
@@ -347,7 +348,7 @@ def main():
                 "coil_od": final_coil_od,
                 "coil_width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
                 "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
-                "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
+                "yield_strength": parse_float_with_default(data, ["common", "material", "yieldStrength"], "material", "yield_strength"),
                 "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
                 "yield_met": yield_met_status,
                 "str_model": parse_str_with_default(data, ["common", "equipment", "straightener", "model"], "straightener", "model"),

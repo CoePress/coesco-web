@@ -4,12 +4,13 @@ import { useParams, Link as RouterLink } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
-import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox } from "@/components";
+import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox, FeedPerformanceDisplay } from "@/components";
 import { useToast } from "@/hooks/use-toast";
 import { ms } from "@/utils";
 import Loader from "@/components/ui/loader";
 import { getVisibleTabs } from "@/utils/tab-visibility";
 import { getReelWidthOptionsForModel, getBackplateDiameterOptionsForModel, getStrWidthOptionsForModel, getStrHorsepowerOptionsForModel, getStrFeedRateOptionsForModelAndHorsepower, getFeedMachineWidthOptionsForModel, getHydThreadingDriveOptionsForModel, getHoldDownAssyOptionsForModel, getCylinderOptionsForHoldDownAssy, getDefaultCylinderForHoldDownAssy, DEFAULT_STR_MODEL, getDefaultStrWidthForModel, getDefaultStrHorsepowerForModel } from "@/utils/performance-sheet";
+import { validateFieldValue, findFieldsReferencingField } from "@/utils/field-validation";
 
 type PerformanceTabValue = string;
 type ModalType = 'links' | 'save-confirmation' | 'cancel-confirmation' | 'continue' | 'delete-link' | 'create-link' | null;
@@ -24,6 +25,7 @@ const PerformanceSheet = () => {
   const [addMode, setAddMode] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [originalData, setOriginalData] = useState<Record<string, any>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const [newLink, setNewLink] = useState<{
     entityType: string;
@@ -67,10 +69,8 @@ const PerformanceSheet = () => {
         const bundledData = bundleFormDataByTabsAndSections(data);
         calculatePerformanceSheet(bundledData, "main.py", (response) => {
           if (response?.ok) {
-            console.log("Calculation result:", response.result);
             // Merge calculated values without overwriting user input
             if (response.result) {
-              console.log("Merging calculated values with current form data");
               setFormData(currentFormData => {
                 const newData = mergeCalculatedValues(currentFormData, response.result);
                 // Force re-render to update check field visual indicators
@@ -154,6 +154,7 @@ const PerformanceSheet = () => {
       'feed.feed.pullThru.kConst',
       'feed.feed.pullThru.straightenerRolls',
       'feed.feed.pullThru.straightenerTorque',
+      'feed.feed.tableValues',
 
       // Str Utility calculated fields
       'strUtility.straightener.centerDistance',
@@ -303,7 +304,7 @@ const PerformanceSheet = () => {
       'feed.feed.fullWidthRolls',
       'feed.feed.feedAngle1',
       'feed.feed.accelerationRate',
-      
+
       // Motorization fields
       'reelDrive.reel.motorization.driveHorsepower',
       'reelDrive.reel.motorization.speed',
@@ -365,7 +366,7 @@ const PerformanceSheet = () => {
     calculatedFieldPaths.forEach(path => {
       const calculatedValue = getNestedValue(calculatedData, path);
       const inputValue = getNestedValue(formData, path);
-      
+
       // Priority: calculated value > existing input value
       if (calculatedValue !== undefined && calculatedValue !== null) {
         mergedData = setNestedValue(mergedData, path, calculatedValue);
@@ -497,7 +498,7 @@ const PerformanceSheet = () => {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error('Failed to parse saved performance sheet data:', e);
+
         return null;
       }
     }
@@ -598,7 +599,7 @@ const PerformanceSheet = () => {
         setLockInfo((response as any)?.lockInfo || null);
       }
     } catch (err) {
-      console.error("Failed to fetch lock status:", err);
+
     }
   };
 
@@ -627,12 +628,8 @@ const PerformanceSheet = () => {
 
   useEffect(() => {
     if (performanceSheet?.data) {
-      const data = performanceSheet.data.data || {};
-      console.log('Performance sheet data loaded:', data);
-      console.log('Reference number from server:', data.referenceNumber);
-      console.log('Data structure check - common:', data.common);
-      console.log('Data structure check - common.equipment:', data.common?.equipment);
-      console.log('Data structure check - common.equipment.straightener:', data.common?.equipment?.straightener);
+      let data = performanceSheet.data.data || {};
+
 
       // Initialize STR fields with defaults if they don't have values
       const originalStrModel = getNestedValue(data, "common.equipment.straightener.model");
@@ -642,7 +639,7 @@ const PerformanceSheet = () => {
 
       // Set default STR model if not already set
       if (!originalStrModel) {
-        console.log("Setting default STR model:", DEFAULT_STR_MODEL);
+
 
         // Ensure the nested structure exists
         if (!data.common) data.common = {};
@@ -652,16 +649,10 @@ const PerformanceSheet = () => {
         // Set the model directly
         data.common.equipment.straightener.model = DEFAULT_STR_MODEL;
 
-        // Verify it was set correctly
-        const verifyModel = getNestedValue(data, "common.equipment.straightener.model");
-        console.log("Verification - STR model after setting:", verifyModel);
-      } else {
-        console.log("STR model already set:", originalStrModel);
       }      // Set default STR width if not already set
       if (!strWidthValue) {
         const defaultWidth = getDefaultStrWidthForModel(strModelValue);
         if (defaultWidth) {
-          console.log("Setting default STR width:", defaultWidth);
           data.common.equipment.straightener.width = defaultWidth;
         }
       }
@@ -670,7 +661,6 @@ const PerformanceSheet = () => {
       if (!strHorsepowerValue) {
         const defaultHorsepower = getDefaultStrHorsepowerForModel(strModelValue);
         if (defaultHorsepower) {
-          console.log("Setting default STR horsepower:", defaultHorsepower);
           // Ensure strUtility structure exists
           if (!data.strUtility) data.strUtility = {};
           if (!data.strUtility.straightener) data.strUtility.straightener = {};
@@ -682,22 +672,22 @@ const PerformanceSheet = () => {
       const reelWidth = getNestedValue(data, "common.equipment.reel.width");
       const reelHorsepower = getNestedValue(data, "common.equipment.reel.horsepower");
       const backplateDiameter = getNestedValue(data, "common.equipment.reel.backplate.diameter");
-      
+
       if (reelWidth === null || reelWidth === undefined) {
-        console.log("Initializing missing reel width to 24");
+
         if (!data.common) data.common = {};
         if (!data.common.equipment) data.common.equipment = {};
         if (!data.common.equipment.reel) data.common.equipment.reel = {};
         data.common.equipment.reel.width = 24;
       }
-      
+
       if (reelHorsepower === null || reelHorsepower === undefined) {
-        console.log("Initializing missing reel horsepower to 5");
+
         data.common.equipment.reel.horsepower = 5;
       }
-      
+
       if (backplateDiameter === null || backplateDiameter === undefined) {
-        console.log("Initializing missing backplate diameter to 27");
+
         if (!data.common.equipment.reel.backplate) data.common.equipment.reel.backplate = {};
         data.common.equipment.reel.backplate.diameter = 27;
       }
@@ -705,24 +695,24 @@ const PerformanceSheet = () => {
       // Initialize missing feed values (let source tabs handle their defaults)
       const fullWidthRolls = getNestedValue(data, "feed.feed.fullWidthRolls");
       const feedAngle1 = getNestedValue(data, "feed.feed.feedAngle1");
-      
+
       if (!data.feed) data.feed = {};
       if (!data.feed.feed) data.feed.feed = {};
-      
+
       if (fullWidthRolls === null || fullWidthRolls === undefined) {
-        console.log("Initializing missing full width rolls to Yes");
+
         data.feed.feed.fullWidthRolls = "Yes";
       }
-      
+
       if (feedAngle1 === null || feedAngle1 === undefined) {
-        console.log("Initializing missing feed angle 1 to 180");
+
         data.feed.feed.feedAngle1 = 180;
       }
 
       // Initialize missing material specs values
       const reelStyle = getNestedValue(data, "materialSpecs.reel.style");
       if (reelStyle === null || reelStyle === undefined) {
-        console.log("Initializing missing reel style to Single Ended");
+
         if (!data.materialSpecs) data.materialSpecs = {};
         if (!data.materialSpecs.reel) data.materialSpecs.reel = {};
         data.materialSpecs.reel.style = "Single Ended";
@@ -731,17 +721,17 @@ const PerformanceSheet = () => {
       // Initialize missing TDDBHD values
       const hydThreadingDrive = getNestedValue(data, "tddbhd.reel.threadingDrive.hydThreadingDrive");
       const brakeQuantity = getNestedValue(data, "tddbhd.reel.dragBrake.quantity");
-      
+
       if (hydThreadingDrive === null || hydThreadingDrive === undefined) {
-        console.log("Initializing missing hyd threading drive");
+
         if (!data.tddbhd) data.tddbhd = {};
         if (!data.tddbhd.reel) data.tddbhd.reel = {};
         if (!data.tddbhd.reel.threadingDrive) data.tddbhd.reel.threadingDrive = {};
         data.tddbhd.reel.threadingDrive.hydThreadingDrive = "22 cu in (D-12689)";
       }
-      
+
       if (brakeQuantity === null || brakeQuantity === undefined) {
-        console.log("Initializing missing brake quantity to 1");
+
         if (!data.tddbhd.reel.dragBrake) data.tddbhd.reel.dragBrake = {};
         data.tddbhd.reel.dragBrake.quantity = 1;
       }
@@ -752,33 +742,33 @@ const PerformanceSheet = () => {
       const motorSpeed = getNestedValue(data, "reelDrive.reel.motorization.speed");
       const accelRate = getNestedValue(data, "reelDrive.reel.motorization.accelRate");
       const regenRequired = getNestedValue(data, "reelDrive.reel.motorization.regenRequired");
-      
+
       if (!data.reelDrive) data.reelDrive = {};
       if (!data.reelDrive.reel) data.reelDrive.reel = {};
       if (!data.reelDrive.reel.motorization) data.reelDrive.reel.motorization = {};
-      
+
       if (isMotorized === null || isMotorized === undefined) {
-        console.log("Initializing missing isMotorized to No");
+
         data.reelDrive.reel.motorization.isMotorized = "No";
       }
-      
+
       if (driveHorsepower === null || driveHorsepower === undefined) {
-        console.log("Initializing missing drive horsepower to 0");
+
         data.reelDrive.reel.motorization.driveHorsepower = 0;
       }
-      
+
       if (motorSpeed === null || motorSpeed === undefined) {
-        console.log("Initializing missing motor speed to 0");
+
         data.reelDrive.reel.motorization.speed = 0;
       }
-      
+
       if (accelRate === null || accelRate === undefined) {
-        console.log("Initializing missing accel rate to 0");
+
         data.reelDrive.reel.motorization.accelRate = 0;
       }
-      
+
       if (regenRequired === null || regenRequired === undefined) {
-        console.log("Initializing missing regen required to 0");
+
         data.reelDrive.reel.motorization.regenRequired = 0;
       }
 
@@ -787,7 +777,7 @@ const PerformanceSheet = () => {
       // Initialize missing pull-through pinch rolls
       const pinchRolls = getNestedValue(data, "feed.feed.pullThru.pinchRolls");
       if (pinchRolls === null || pinchRolls === undefined) {
-        console.log("Initializing missing pinch rolls to 0");
+
         if (!data.feed.feed.pullThru) data.feed.feed.pullThru = {};
         data.feed.feed.pullThru.pinchRolls = 0;
       }
@@ -798,7 +788,6 @@ const PerformanceSheet = () => {
 
       // If no type of roll is set, use the first option as default
       if (!typeOfRoll) {
-        console.log("No typeOfRoll found, setting default to first option");
         // Ensure materialSpecs structure exists
         if (!data.materialSpecs) data.materialSpecs = {};
         if (!data.materialSpecs.straightener) data.materialSpecs.straightener = {};
@@ -807,17 +796,11 @@ const PerformanceSheet = () => {
         // Set default to first roll type option
         typeOfRoll = "7 Roll Str. Backbend";
         data.materialSpecs.straightener.rolls.typeOfRoll = typeOfRoll;
-        console.log("Set default typeOfRoll to:", typeOfRoll);
       }
-
-      console.log("Initialization - typeOfRoll:", typeOfRoll);
-      console.log("Initialization - existingNumberOfRolls:", existingNumberOfRolls);
-
       if (typeOfRoll && !existingNumberOfRolls) {
         const rollMatch = typeOfRoll.match(/(\d+)\s*Roll/i);
         if (rollMatch) {
           const numberOfRolls = rollMatch[1];
-          console.log("Initialization - Setting numberOfRolls to:", numberOfRolls);
           data.common.equipment.straightener.numberOfRolls = parseFloat(numberOfRolls);
         }
       }
@@ -829,7 +812,7 @@ const PerformanceSheet = () => {
             if (field.defaultValue !== undefined && field.defaultValue !== null) {
               const currentValue = getNestedValue(data, field.id);
               if (currentValue === undefined || currentValue === null || currentValue === '') {
-                console.log(`Setting default value for ${field.id}:`, field.defaultValue);
+
                 data = setNestedValue(data, field.id, field.defaultValue);
               }
             }
@@ -838,17 +821,9 @@ const PerformanceSheet = () => {
       };
 
       // Apply defaults to all tabs
-      console.log("=== CHECKING FIELD DEFAULTS ===");
       performanceSheet?.data?.version?.tabs?.forEach((tab: any) => {
-        console.log(`Processing tab: ${tab.label}`);
         initializeDefaultValues(tab.sections);
       });
-      
-      // Debug check specific fields after initialization
-      console.log("After initialization:");
-      console.log("feed.feed.machineWidth:", getNestedValue(data, "feed.feed.machineWidth"));
-      console.log("strUtility.straightener.payoff:", getNestedValue(data, "strUtility.straightener.payoff"));
-      console.log("=== END FIELD DEFAULTS CHECK ===");
 
       setFormData(data);
       setOriginalData(data);
@@ -879,7 +854,7 @@ const PerformanceSheet = () => {
       }
     }
 
-    // Debug formData when switching to summary report
+
     if (activeTab === 'summary-report') {
 
     }
@@ -890,25 +865,6 @@ const PerformanceSheet = () => {
     if (formData && Object.keys(formData).length > 0) {
       // Summary report fields should automatically show current formData since they use the same paths
       // This effect just ensures the component re-renders when data changes
-      const summaryFieldPaths = [
-        'reel.width',
-        'reel.backplate.diameter',
-        'reel.motorization.isMotorized',
-        'reel.style',
-        'reel.threadingDrive.hydThreadingDrive',
-        'reel.dragBrake.quantity',
-        'reel.motorization.driveHorsepower',
-        'reel.motorization.speed',
-        'reel.motorization.accelRate',
-        'reel.motorization.regenRequired',
-        'straightener.payoff',
-        'feed.machineWidth',
-        'feed.fullWidthRolls',
-        'feed.feedAngle1',
-        'feed.maximunVelocity'
-      ];
-
-      // Summary report fields automatically display data through shared field paths
     }
   }, [formData]);
 
@@ -963,7 +919,7 @@ const PerformanceSheet = () => {
   // Force template refresh when formData changes (to update dependent options)
   useEffect(() => {
     if (Object.keys(formData).length > 0) {
-      console.log("FormData changed - should trigger dependent field option updates");
+
     }
   }, [formData]);
 
@@ -1002,15 +958,15 @@ const PerformanceSheet = () => {
   }, [onLockChanged, performanceSheetId, user?.id, isEditing]);
 
   const getDynamicOptions = (fieldId: string, field: any) => {
-    // Debug removed - STR fields are working correctly
+
 
     // Check for dependency-based options first
     if (field.dependsOn && field.dependencyType) {
       const dependentValue = getNestedValue(formData, field.dependsOn);
 
-      // Debug STR dependencies
+
       if (fieldId.includes('straightener') && (field.dependencyType === 'strWidth' || field.dependencyType === 'strHorsepower')) {
-        console.log(`STR Debug - fieldId: ${fieldId}, dependsOn: ${field.dependsOn}, dependentValue:`, dependentValue);
+
       }
 
       // Special handling for STR dependencies - use defaults when formData is uninitialized
@@ -1035,11 +991,11 @@ const PerformanceSheet = () => {
             return [];
           case "strWidth":
             const strWidthModel = dependentValue || DEFAULT_STR_MODEL;
-            console.log("STR Width - using model:", strWidthModel, "(dependentValue was:", dependentValue, ")");
+
             return getStrWidthOptionsForModel(strWidthModel);
           case "strHorsepower":
             const strHpModel = dependentValue || DEFAULT_STR_MODEL;
-            console.log("STR Horsepower - using model:", strHpModel, "(dependentValue was:", dependentValue, ")");
+
             return getStrHorsepowerOptionsForModel(strHpModel);
           case "strFeedRate":
             // Feed rate depends on both horsepower (primary) and model (secondary)
@@ -1049,24 +1005,15 @@ const PerformanceSheet = () => {
             // Use default horsepower if none provided (during initialization)
             const horsepowerValue = dependentValue || getDefaultStrHorsepowerForModel(DEFAULT_STR_MODEL);
 
-            console.log("=== STR FEED RATE DEBUG ===");
-            console.log("fieldId:", fieldId);
-            console.log("dependsOn:", field.dependsOn);
-            console.log("original dependentValue (horsepower):", dependentValue);
-            console.log("using horsepowerValue:", horsepowerValue);
-            console.log("secondaryDependsOn:", field.secondaryDependsOn);
-            console.log("secondaryDependentValue (model):", secondaryDependentValue);
-            console.log("modelForFeedRate:", modelForFeedRate);
-            console.log("shouldUseDefaults:", shouldUseDefaults);
+
+
 
             if (horsepowerValue) {
               const options = getStrFeedRateOptionsForModelAndHorsepower(modelForFeedRate, horsepowerValue);
-              console.log("Feed rate options:", options);
-              console.log("=== END STR FEED RATE DEBUG ===");
+
               return options;
             }
-            console.log("No horsepower value available, returning empty array");
-            console.log("=== END STR FEED RATE DEBUG ===");
+
             return [];
           case "feedMachineWidth":
             return getFeedMachineWidthOptionsForModel(dependentValue);
@@ -1125,29 +1072,18 @@ const PerformanceSheet = () => {
 
     // Dynamic STR Width Options based on selected model
     if (fieldId === "common.equipment.straightener.width") {
-      console.log('=== STR WIDTH DEBUG ===');
-      console.log('formData.common.equipment:', formData.common?.equipment);
-      console.log('formData.common.equipment.straightener:', formData.common?.equipment?.straightener);
       const currentStrModel = getNestedValue(formData, "common.equipment.straightener.model");
       const modelToUse = currentStrModel || DEFAULT_STR_MODEL;
-      console.log('currentStrModel:', currentStrModel, 'DEFAULT_STR_MODEL:', DEFAULT_STR_MODEL, 'modelToUse:', modelToUse);
       const options = getStrWidthOptionsForModel(modelToUse);
-      console.log('STR Width options result:', options);
-      console.log('=== END STR WIDTH DEBUG ===');
       return options;
     }
 
     // Dynamic STR Horsepower Options based on selected model
     if (fieldId === "strUtility.straightener.horsepower") {
-      console.log('=== STR HP DEBUG ===');
-      console.log('formData.common.equipment:', formData.common?.equipment);
-      console.log('formData.common.equipment.straightener:', formData.common?.equipment?.straightener);
+
       const currentStrModel = getNestedValue(formData, "common.equipment.straightener.model");
       const modelToUse = currentStrModel || DEFAULT_STR_MODEL;
-      console.log('currentStrModel:', currentStrModel, 'DEFAULT_STR_MODEL:', DEFAULT_STR_MODEL, 'modelToUse:', modelToUse);
       const options = getStrHorsepowerOptionsForModel(modelToUse);
-      console.log('STR HP options result:', options);
-      console.log('=== END STR HP DEBUG ===');
       return options;
     }
 
@@ -1226,33 +1162,7 @@ const PerformanceSheet = () => {
   };
 
   const handleFieldChange = (fieldId: string, value: any) => {
-    console.log("=== FIELD CHANGE DEBUG ===");
-    console.log("Field changed:", fieldId, "→", value);
-
     let updatedData = setNestedValue(formData, fieldId, value);
-
-    // Log critical zero values after field change
-    if (fieldId.includes('material') || fieldId.includes('coil') || fieldId.includes('reel') || fieldId.includes('tddbhd') || fieldId.includes('horsepower') || fieldId.includes('pressure')) {
-      console.log("=== CRITICAL ZERO VALUE CHECK ===");
-      console.log("Air Pressure Available:", getNestedValue(updatedData, "tddbhd.reel.airPressureAvailable"));
-      console.log("Cylinder Pressure:", getNestedValue(updatedData, "tddbhd.reel.holddown.cylinderPressure"));
-      console.log("Material Thickness:", getNestedValue(updatedData, "common.material.materialThickness"));
-      console.log("Coil Width:", getNestedValue(updatedData, "common.material.coilWidth"));
-      console.log("Coil ID:", getNestedValue(updatedData, "common.coil.coilID"));
-      console.log("Coil Weight:", getNestedValue(updatedData, "tddbhd.coil.coilWeight"));
-      console.log("STR HP:", getNestedValue(updatedData, "strUtility.straightener.horsepower"));
-      console.log("Reel Width:", getNestedValue(updatedData, "common.equipment.reel.width"));
-      console.log("Reel Horsepower:", getNestedValue(updatedData, "common.equipment.reel.horsepower"));
-      console.log("Max Yield Strength:", getNestedValue(updatedData, "common.material.maxYieldStrength"));
-      console.log("Max Coil OD:", getNestedValue(updatedData, "common.coil.maxCoilOD"));
-      console.log("Decel Rate:", getNestedValue(updatedData, "tddbhd.reel.requiredDecelRate"));
-      console.log("Coefficient of Friction:", getNestedValue(updatedData, "tddbhd.reel.coefficientOfFriction"));
-      console.log("=== DEBUG SUMMARY FIELDS ===");
-      console.log("Machine Width (feed tab):", getNestedValue(updatedData, "feed.feed.machineWidth"));
-      console.log("Payoff (str utility tab):", getNestedValue(updatedData, "strUtility.straightener.payoff"));
-      console.log("=== END SUMMARY FIELD DEBUG ===");
-      console.log("=== END ZERO VALUE CHECK ===");
-    }
 
     // Handle dependent field logic when application changes
     if (fieldId === "feed.feed.application") {
@@ -1428,9 +1338,6 @@ const PerformanceSheet = () => {
 
     // Handle type of roll changes - auto-set number of rolls
     if (fieldId === "materialSpecs.straightener.rolls.typeOfRoll") {
-      console.log("=== TYPE OF ROLL CHANGE DEBUG ===");
-      console.log("Field ID:", fieldId);
-      console.log("New value:", value);
 
       let numberOfRolls = "";
 
@@ -1439,21 +1346,19 @@ const PerformanceSheet = () => {
         const rollMatch = value.match(/(\d+)\s*Roll/i);
         if (rollMatch) {
           numberOfRolls = rollMatch[1];
-          console.log("Extracted numberOfRolls from regex:", numberOfRolls);
+
         } else {
-          console.log("No number found in type of roll value:", value);
+
         }
       }
 
-      console.log("Final numberOfRolls to set:", numberOfRolls);
+
 
       if (numberOfRolls) {
-        console.log("Setting numberOfRolls to:", numberOfRolls);
         updatedData = setNestedValue(updatedData, "common.equipment.straightener.numberOfRolls", parseFloat(numberOfRolls));
-        console.log("Updated data after setting numberOfRolls:", getNestedValue(updatedData, "common.equipment.straightener.numberOfRolls"));
       }
 
-      console.log("=== END TYPE OF ROLL CHANGE DEBUG ===");
+
     }
 
     // Handle max coil weight changes - auto-populate STR utility coil weight capacity
@@ -1492,8 +1397,65 @@ const PerformanceSheet = () => {
 
     setFormData(updatedData);
 
+    // Validate the changed field
+    if (performanceSheet?.data?.version?.sections) {
+      const field = findFieldById(performanceSheet.data.version.sections, fieldId);
+      if (field?.validation) {
+        const error = validateFieldValue(
+          value,
+          field.validation,
+          (id: string) => getNestedValue(updatedData, id)
+        );
+        
+        setFieldErrors(prev => {
+          const newErrors = { ...prev };
+          if (error) {
+            newErrors[fieldId] = error;
+          } else {
+            delete newErrors[fieldId];
+          }
+          return newErrors;
+        });
+      }
+
+      // Re-validate fields that reference this field as min/max
+      const referencingFields = findFieldsReferencingField(performanceSheet.data.version.sections, fieldId);
+      referencingFields.forEach(refFieldId => {
+        const refField = findFieldById(performanceSheet.data.version.sections, refFieldId);
+        if (refField?.validation) {
+          const refValue = getNestedValue(updatedData, refFieldId);
+          const error = validateFieldValue(
+            refValue,
+            refField.validation,
+            (id: string) => getNestedValue(updatedData, id)
+          );
+          
+          setFieldErrors(prev => {
+            const newErrors = { ...prev };
+            if (error) {
+              newErrors[refFieldId] = error;
+            } else {
+              delete newErrors[refFieldId];
+            }
+            return newErrors;
+          });
+        }
+      });
+    }
+
     // Trigger debounced calculation
     debouncedCalculate(updatedData);
+  };
+
+  // Helper function to find a field by ID in the template
+  const findFieldById = (sections: any[], fieldId: string): any => {
+    for (const tab of sections) {
+      for (const section of tab.sections || []) {
+        const field = section.fields?.find((f: any) => f.id === fieldId);
+        if (field) return field;
+      }
+    }
+    return null;
   };
 
   const bundleFormDataByTabsAndSections = (data: Record<string, any>) => {
@@ -1564,7 +1526,7 @@ const PerformanceSheet = () => {
         setSearchResults(response?.data || []);
         setShowResults(true);
       } catch (error) {
-        console.error("Search failed:", error);
+
         setSearchResults([]);
       } finally {
         setIsSearching(false);
@@ -1648,13 +1610,25 @@ const PerformanceSheet = () => {
         lockExtendIntervalRef.current = null;
       }
     } catch (error) {
-      console.error("Failed to save performance sheet:", error);
+
       toast.error("Failed to save performance sheet.");
       setModalType(null);
     }
   };
 
   const renderField = (field: any) => {
+    // Handle custom field type for feed performance display
+    if (field.type === 'custom' && field.id === 'feed.feed.tableValues') {
+      const tableValues = getNestedValue(formData, field.id) || [];
+      return (
+        <div key={field.id} className="col-span-full">
+          <FeedPerformanceDisplay
+            tableValues={tableValues}
+          />
+        </div>
+      );
+    }
+
     const rawValue = getNestedValue(formData, field.id);
     const value = (rawValue !== undefined && rawValue !== null) ? rawValue : (field.defaultValue ?? "");
 
@@ -1664,8 +1638,14 @@ const PerformanceSheet = () => {
     const isCheck = isCheckField(field.id);
     const checkStatus = isCheck ? getCheckStatus(value) : null;
 
-    const requiredBgClassName = field.required && isEditing && !isCheck
-      ? (isFilled ? 'bg-success-light' : 'bg-error-light')
+    // Select fields should always be green (they have options so always have a value)
+    const isSelectField = field.type === 'select' && field.options && field.options.length > 0;
+
+    const requiredBgClassName = isEditing && !isCheck
+      ? (field.required
+        ? (isFilled ? 'bg-success-light' : 'bg-error-light')
+        : ''
+      ) || (isSelectField ? 'bg-success-light' : '')
       : '';
 
 
@@ -1678,6 +1658,8 @@ const PerformanceSheet = () => {
       ? (checkStatus === 'pass' ? '✓ ' : '✗ ')
       : '';
 
+    const fieldError = fieldErrors[field.id];
+
     const commonProps = {
       id: field.id,
       name: field.id,
@@ -1689,6 +1671,7 @@ const PerformanceSheet = () => {
       requiredBgClassName,
       checkBorderClassName,
       checkIconPrefix,
+      error: fieldError,
     };
 
     const getSizeClass = () => {

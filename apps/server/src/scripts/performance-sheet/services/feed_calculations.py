@@ -257,14 +257,16 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
                 try:
                     table_values.append({
                         "length": feed_angle_1_values[i]["length"],
+                        "feedAngle1": data.feed_angle_1,
+                        "feedAngle2": data.feed_angle_2,
                         "rms_torque_fa1": feed_angle_1_values[i]["rms_torque"],
                         "rms_torque_fa2": feed_angle_2_values[i]["rms_torque"],
-                        "spm_at_fa1": feed_angle_1_values[i]["strokes_per_minute"],
-                        "fpm_fa1":  ((feed_angle_1_values[i]["length"] * feed_angle_1_values[i]["strokes_per_minute"]) / 12),
-                        "index_time_fa1": feed_angle_1_values[i]["index_time"],
-                        "spm_at_fa2": feed_angle_2_values[i]["strokes_per_minute"],
-                        "fpm_fa2":  ((feed_angle_2_values[i]["length"] * feed_angle_2_values[i]["strokes_per_minute"]) / 12),
-                        "index_time_fa2": feed_angle_2_values[i]["index_time"],
+                        "spmAt180": feed_angle_1_values[i]["strokes_per_minute"],
+                        "fpm180":  ((feed_angle_1_values[i]["length"] * feed_angle_1_values[i]["strokes_per_minute"]) / 12),
+                        "indexTime1": feed_angle_1_values[i]["index_time"],
+                        "spmAt240": feed_angle_2_values[i]["strokes_per_minute"],
+                        "fpm240":  ((feed_angle_2_values[i]["length"] * feed_angle_2_values[i]["strokes_per_minute"]) / 12),
+                        "indexTime2": feed_angle_2_values[i]["index_time"],
                     })
                 except (IndexError, KeyError, TypeError) as table_error:
                     raise

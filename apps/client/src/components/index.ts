@@ -32,3 +32,5 @@ export { default as Toast } from "./ui/toast";
 export { default as ToggleSwitch } from "./ui/toggle-switch";
 export { default as Tooltip } from "./ui/tooltip";
 export { default as Checkbox } from "./ui/checkbox";
+export { default as FeedPerformanceDisplay } from "./performance/feed-performance-display";
+export { default as CustomLineChart } from "./charts/line-chart";
