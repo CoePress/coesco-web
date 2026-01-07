@@ -86,9 +86,9 @@ const Toolbar = ({
   }
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex flex-col md:flex-row md:items-center gap-2 ${className}`}>
       {onSearch && (
-        <div className="flex-1">
+        <div className="w-full md:flex-1">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-text-muted" />
@@ -105,27 +105,29 @@ const Toolbar = ({
         </div>
       )}
 
-      {filters && filters.map((filter) => (
-        <div key={filter.key} className="min-w-[150px]">
-          <Select
-            options={filter.options}
-            value={filterValues[filter.key] || ''}
-            onChange={handleFilterChange(filter.key)}
-            placeholder={filter.placeholder || `Filter by ${filter.label}`}
-            className="h-[38px]"
-          />
-        </div>
-      ))}
+      <div className="flex items-center gap-2 flex-wrap">
+        {filters && filters.map((filter) => (
+          <div key={filter.key} className="min-w-[150px]">
+            <Select
+              options={filter.options}
+              value={filterValues[filter.key] || ''}
+              onChange={handleFilterChange(filter.key)}
+              placeholder={filter.placeholder || `Filter by ${filter.label}`}
+              className="h-[38px]"
+            />
+          </div>
+        ))}
 
-      {showExport && onExport && (
-        <Button onClick={onExport}>
-          <Download size={16} />
-          Export
-        </Button>
-      )}
+        {showExport && onExport && (
+          <Button onClick={onExport}>
+            <Download size={16} />
+            Export
+          </Button>
+        )}
 
-      {actions}
-      {children}
+        {actions}
+        {children}
+      </div>
     </div>
   )
 }

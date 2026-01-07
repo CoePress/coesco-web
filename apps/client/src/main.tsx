@@ -10,11 +10,14 @@ import { SocketProvider } from "./contexts/socket.context.tsx";
 import { ToastProvider } from "./contexts/toast.context.tsx";
 import { PostHogProvider } from 'posthog-js/react'
 import { env, __dev__ } from "./config/env.ts";
-import ErrorBoundary from "./components/ErrorBoundary.tsx";
+import ErrorBoundary from "./components/error-boundary.tsx";
+import { initOutbox } from "./services/outbox-init.ts";
 
 const options = {
   api_host: env.VITE_PUBLIC_POSTHOG_HOST
 }
+
+initOutbox();
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>

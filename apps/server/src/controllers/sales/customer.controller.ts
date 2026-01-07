@@ -1,10 +1,10 @@
-import type { Address, Company, Contact, JourneyContact } from "@prisma/client";
+import type { Activity, Address, Company, CompanyRelationship, Contact, JourneyContact } from "@prisma/client";
 import type { Request, Response } from "express";
 
-import { CompanyStatus, ContactType, Industry } from "@prisma/client";
+import { ActivitySentiment, ActivityType, CompanyStatus, ContactType, Industry } from "@prisma/client";
 import { z } from "zod";
 
-import { addressService, contactService, customerService, journeyContactService } from "@/services";
+import { activityService, addressService, companyRelationshipService, contactService, customerService, journeyContactService } from "@/services";
 import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
 
@@ -50,12 +50,15 @@ const CreateContactSchema = z.object({
   legacyCompanyId: z.string().nullable().optional(),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().nullable().optional(),
+  owner: z.string().nullable().optional(),
   email: z.union([z.string().email(), z.literal(""), z.null()]).optional(),
   phone: z.string().nullable().optional(),
   phoneExtension: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
   type: z.nativeEnum(ContactType).optional(),
   isPrimary: z.boolean().optional(),
+  imageId: z.number().int().nullable().optional(),
+  profileUrl: z.string().nullable().optional(),
   createdById: z.string().optional(),
   updatedById: z.string().optional(),
 });
@@ -71,6 +74,29 @@ const CreateJourneyContactSchema = z.object({
 });
 
 const UpdateJourneyContactSchema = CreateJourneyContactSchema.partial().omit({ journeyId: true, contactId: true });
+
+const CreateActivitySchema = z.object({
+  activityType: z.nativeEnum(ActivityType),
+  sentiment: z.nativeEnum(ActivitySentiment),
+  timestamp: z.coerce.date(),
+  description: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  entityType: z.string().nullable().optional(),
+  entityId: z.string().nullable().optional(),
+  createdBy: z.string().nullable().optional(),
+});
+
+const UpdateActivitySchema = CreateActivitySchema.partial();
+
+const CreateCompanyRelationshipSchema = z.object({
+  parentId: z.string().min(1, "Parent company ID is required"),
+  childId: z.string().min(1, "Child company ID is required"),
+  relationshipType: z.string().nullable().optional(),
+  createdById: z.string().optional(),
+  updatedById: z.string().optional(),
+});
+
+const UpdateCompanyRelationshipSchema = CreateCompanyRelationshipSchema.partial().omit({ parentId: true, childId: true });
 
 export class CustomerController {
   // Companies
@@ -100,6 +126,11 @@ export class CustomerController {
   deleteCompany = asyncWrapper(async (req: Request, res: Response) => {
     const result = await customerService.deleteCompany(req.params.companyId);
     res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  getCompanyActivities = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await activityService.getActivitiesByCompany(req.params.companyId);
+    res.status(HTTP_STATUS.OK).json({ success: true, data: result });
   });
 
   // Addresses
@@ -145,7 +176,9 @@ export class CustomerController {
   });
 
   getContact = asyncWrapper(async (req: Request, res: Response) => {
-    const result = await contactService.getContactById(req.params.contactId);
+    const result = await contactService.getContactById(req.params.contactId, {
+      include: { image: true },
+    });
     res.status(HTTP_STATUS.OK).json(result);
   });
 
@@ -185,6 +218,62 @@ export class CustomerController {
 
   deleteJourneyContact = asyncWrapper(async (req: Request, res: Response) => {
     const result = await journeyContactService.deleteJourneyContact(req.params.journeyContactId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  createActivity = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateActivitySchema.parse(req.body);
+    const result = await activityService.createActivity(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
+
+  getActivities = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<Activity>(req.query);
+    const result = await activityService.getAllActivities(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  getActivity = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await activityService.getActivityById(req.params.activityId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  updateActivity = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateActivitySchema.parse(req.body);
+    const result = await activityService.updateActivity(req.params.activityId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  deleteActivity = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await activityService.deleteActivity(req.params.activityId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  createCompanyRelationship = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateCompanyRelationshipSchema.parse(req.body);
+    const result = await companyRelationshipService.createCompanyRelationship(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
+
+  getCompanyRelationships = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<CompanyRelationship>(req.query);
+    const result = await companyRelationshipService.getAllCompanyRelationships(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  getCompanyRelationship = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await companyRelationshipService.getCompanyRelationshipById(req.params.relationshipId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  updateCompanyRelationship = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateCompanyRelationshipSchema.parse(req.body);
+    const result = await companyRelationshipService.updateCompanyRelationship(req.params.relationshipId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  deleteCompanyRelationship = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await companyRelationshipService.deleteCompanyRelationship(req.params.relationshipId);
     res.status(HTTP_STATUS.OK).json(result);
   });
 }

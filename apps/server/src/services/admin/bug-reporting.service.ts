@@ -41,11 +41,9 @@ export class BugReportingService {
   }
 
   async createBugReport(input: CreateBugReportInput): Promise<BugReportResponse> {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    const title = input.userName
-      ? `Bug Report - ${input.userName} - ${dateStr}`
-      : `Bug Report - ${dateStr}`;
+    const userName = input.userName || "Anonymous";
+    const truncatedDescription = input.description.substring(0, 45);
+    const title = `${userName} - ${truncatedDescription}`;
 
     const bugReportRecord = await bugReportRepository.create({
       title,
@@ -84,6 +82,14 @@ export class BugReportingService {
     }
 
     return jiraResult;
+  }
+
+  async getUserBugReports(userId: string) {
+    return await bugReportRepository.getAll({
+      where: { createdById: userId },
+      sort: "createdAt",
+      order: "desc",
+    } as any);
   }
 
   private async createJiraIssue(options: CreateJiraIssueOptions): Promise<BugReportResponse> {

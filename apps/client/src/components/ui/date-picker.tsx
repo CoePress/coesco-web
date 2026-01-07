@@ -82,26 +82,45 @@ const DatePicker = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
     setInputValue(input);
+  };
 
-    const datePattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-    const match = input.match(datePattern);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const input = inputValue;
+      const datePattern = /^(\d{1,2})\D?(\d{1,2})\D?(\d{2,4})$/;
+      const match = input.match(datePattern);
 
-    if (match) {
-      const month = parseInt(match[1], 10) - 1;
-      const day = parseInt(match[2], 10);
-      const year = parseInt(match[3], 10);
+      if (match) {
+        const month = parseInt(match[1], 10) - 1;
+        const day = parseInt(match[2], 10);
+        const yearInput = parseInt(match[3], 10);
+        const year = yearInput < 100 ? 2000 + yearInput : yearInput;
 
-      const date = new Date(year, month, day);
+        const date = new Date(year, month, day);
 
-      if (!isNaN(date.getTime()) &&
-          date.getMonth() === month &&
-          date.getDate() === day &&
-          date.getFullYear() === year) {
+        if (!isNaN(date.getTime()) &&
+            date.getMonth() === month &&
+            date.getDate() === day &&
+            date.getFullYear() === year) {
 
-        if (isDateInRange(date)) {
-          setSelectedDate(date);
-          setViewMonth(date);
-          onChange(formatDateForValue(date));
+          if (isDateInRange(date)) {
+            setSelectedDate(date);
+            setViewMonth(date);
+            setInputValue(formatDateForDisplay(date));
+            onChange(formatDateForValue(date));
+          } else {
+            if (selectedDate) {
+              setInputValue(formatDateForDisplay(selectedDate));
+            } else {
+              setInputValue('');
+            }
+          }
+        } else {
+          if (selectedDate) {
+            setInputValue(formatDateForDisplay(selectedDate));
+          } else {
+            setInputValue('');
+          }
         }
       }
     }
@@ -228,8 +247,8 @@ const DatePicker = ({
           name={name}
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
-          placeholder={placeholder}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder || "MM/DD/YY or MM/DD/YYYY"}
           disabled={disabled}
           className={`
             w-full text-sm px-3 py-1.5 pr-10 rounded

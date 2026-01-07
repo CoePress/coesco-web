@@ -22,7 +22,7 @@ import {
   rolePermissionRepository,
   roleRepository,
 } from "@/repositories";
-import { _migrateDepartments, _migrateEmployeeManagers, _migrateEmployees, _migrateJourneyNotes, _migrateContacts, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { _migrateContacts, _migrateDepartments, _migrateEmployeeManagers, _migrateEmployees, _migrateJourneyNotes, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService, microsoftService } from "@/services";
 import {
   FEED_PERFORMANCE_SHEET_SEED,
@@ -838,7 +838,7 @@ async function seedJourneys() {
       return;
     }
 
-    const DUMMY_LEGACY_COMPANY_UUID = '00000000-0000-0000-0000-000000000000';
+    const DUMMY_LEGACY_COMPANY_UUID = "00000000-0000-0000-0000-000000000000";
 
     let dummyCompany = await prisma.company.findUnique({
       where: { id: DUMMY_LEGACY_COMPANY_UUID },

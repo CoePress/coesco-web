@@ -55,12 +55,12 @@
       "modulus": 15500000,
       "density": 0.1630
     }
-  }, 
+  },
   "lookup_fpm_buffer": {
     "DEFAULT": 1.2
   },
   "lookup_type_of_line": {
-    "Compact":  {
+    "Compact": {
       "application": "Press Feed",
       "reel_type": "Motorized",
       "pull_thru_used": "No",
@@ -151,7 +151,7 @@
       "shear_used": "Yes"
     },
     "Pull Through": {
-    "application": "Press Feed",
+      "application": "Press Feed",
       "reel_type": "Motorized",
       "pull_thru_used": "Yes",
       "reel_used": "Yes",
@@ -2275,7 +2275,7 @@
       "full_od_backplate": 72,
       "backplate_thickness": 1.5
     },
-    "CPR-300" :  {
+    "CPR-300": {
       "bearing_dist": 29.8,
       "fbearing_dia": 13.19,
       "rbearing_dia": 11.65,
@@ -2285,7 +2285,7 @@
       "full_od_backplate": 72,
       "backplate_thickness": 1.5
     },
-    "CPR-400":  {
+    "CPR-400": {
       "bearing_dist": 29.8,
       "fbearing_dia": 15.43,
       "rbearing_dia": 12.68,
@@ -2305,7 +2305,7 @@
       "full_od_backplate": 72,
       "backplate_thickness": 1.5
     },
-    "CPR-600":  {
+    "CPR-600": {
       "bearing_dist": 29.8,
       "fbearing_dia": 15.35,
       "rbearing_dia": 13.19,

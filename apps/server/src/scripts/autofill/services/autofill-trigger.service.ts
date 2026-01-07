@@ -6,9 +6,11 @@
  * (Migrated from client to server)
  */
 
-import { PerformanceData } from '../types/performance-data.types';
-import { getVisibleTabs, VisibleTab } from '../utils/tab-visibility';
-import { ValidationAwareAutofillService } from './validation-aware-autofill.service';
+import type { PerformanceData } from "../types/performance-data.types";
+import type { VisibleTab } from "../utils/tab-visibility";
+
+import { getVisibleTabs } from "../utils/tab-visibility";
+import { ValidationAwareAutofillService } from "./validation-aware-autofill.service";
 
 export interface AutofillTriggerMapping {
   fieldName: string;
@@ -24,119 +26,118 @@ export interface AutofillStrategy {
 }
 
 export class AutofillTriggerService {
-
   /**
    * Define which fields trigger autofill for which sections
    */
   private static readonly AUTOFILL_TRIGGERS: AutofillTriggerMapping[] = [
     // Material specifications (highest priority - triggers most calculations)
     {
-      fieldName: 'common.material.materialType',
-      triggersFor: ['rfq', 'material-specs', 'summary-report', 'roll-str-backbend', 'str-utility', 'feed', 'reel-drive', 'tddbhd'],
+      fieldName: "common.material.materialType",
+      triggersFor: ["rfq", "material-specs", "summary-report", "roll-str-backbend", "str-utility", "feed", "reel-drive", "tddbhd"],
       priority: 100,
-      requiresMinimumData: ['common.material.materialThickness']
+      requiresMinimumData: ["common.material.materialThickness"],
     },
     {
-      fieldName: 'common.material.materialThickness',
-      triggersFor: ['material-specs', 'roll-str-backbend', 'str-utility', 'feed', 'shear'],
+      fieldName: "common.material.materialThickness",
+      triggersFor: ["material-specs", "roll-str-backbend", "str-utility", "feed", "shear"],
       priority: 95,
-      requiresMinimumData: ['common.material.materialType']
+      requiresMinimumData: ["common.material.materialType"],
     },
     {
-      fieldName: 'common.material.maxYieldStrength',
-      triggersFor: ['material-specs', 'roll-str-backbend', 'str-utility', 'shear'],
-      priority: 90
+      fieldName: "common.material.maxYieldStrength",
+      triggersFor: ["material-specs", "roll-str-backbend", "str-utility", "shear"],
+      priority: 90,
     },
     {
-      fieldName: 'common.material.coilWidth',
-      triggersFor: ['material-specs', 'summary-report', 'feed', 'reel-drive', 'tddbhd'],
-      priority: 85
+      fieldName: "common.material.coilWidth",
+      triggersFor: ["material-specs", "summary-report", "feed", "reel-drive", "tddbhd"],
+      priority: 85,
     },
 
     // Configuration fields that drive tab visibility (critical for proper autofill)
     {
-      fieldName: 'feed.feed.application',
-      triggersFor: ['rfq', 'feed', 'str-utility', 'tddbhd', 'reel-drive', 'shear'],
+      fieldName: "feed.feed.application",
+      triggersFor: ["rfq", "feed", "str-utility", "tddbhd", "reel-drive", "shear"],
       priority: 95,
-      requiresMinimumData: []
+      requiresMinimumData: [],
     },
     {
-      fieldName: 'common.equipment.feed.lineType',
-      triggersFor: ['rfq', 'str-utility', 'reel-drive', 'tddbhd'],
+      fieldName: "common.equipment.feed.lineType",
+      triggersFor: ["rfq", "str-utility", "reel-drive", "tddbhd"],
       priority: 90,
-      requiresMinimumData: []
+      requiresMinimumData: [],
     },
     {
-      fieldName: 'common.equipment.feed.typeOfLine',
-      triggersFor: ['rfq', 'str-utility', 'reel-drive', 'shear'],
+      fieldName: "common.equipment.feed.typeOfLine",
+      triggersFor: ["rfq", "str-utility", "reel-drive", "shear"],
       priority: 88,
-      requiresMinimumData: []
+      requiresMinimumData: [],
     },
     {
-      fieldName: 'feed.feed.pullThru.isPullThru',
-      triggersFor: ['reel-drive', 'summary-report'],
+      fieldName: "feed.feed.pullThru.isPullThru",
+      triggersFor: ["reel-drive", "summary-report"],
       priority: 85,
-      requiresMinimumData: []
+      requiresMinimumData: [],
     },
     {
-      fieldName: 'common.equipment.feed.controlsLevel',
-      triggersFor: ['feed', 'str-utility'],
+      fieldName: "common.equipment.feed.controlsLevel",
+      triggersFor: ["feed", "str-utility"],
       priority: 80,
-      requiresMinimumData: []
+      requiresMinimumData: [],
     },
     {
-      fieldName: 'materialSpecs.feed.controls',
-      triggersFor: ['feed'],
+      fieldName: "materialSpecs.feed.controls",
+      triggersFor: ["feed"],
       priority: 75,
-      requiresMinimumData: []
+      requiresMinimumData: [],
     },
     {
-      fieldName: 'materialSpecs.straightener.rolls.typeOfRoll',
-      triggersFor: ['roll-str-backbend'],
+      fieldName: "materialSpecs.straightener.rolls.typeOfRoll",
+      triggersFor: ["roll-str-backbend"],
       priority: 90,
-      requiresMinimumData: ['common.material.materialThickness', 'common.material.maxYieldStrength']
+      requiresMinimumData: ["common.material.materialThickness", "common.material.maxYieldStrength"],
     },
 
     // Equipment models (high priority - determines calculations available)
     {
-      fieldName: 'common.equipment.straightener.model',
-      triggersFor: ['str-utility', 'roll-str-backbend'],
-      priority: 85
+      fieldName: "common.equipment.straightener.model",
+      triggersFor: ["str-utility", "roll-str-backbend"],
+      priority: 85,
     },
     {
-      fieldName: 'common.equipment.feed.model',
-      triggersFor: ['feed'],
-      priority: 80
+      fieldName: "common.equipment.feed.model",
+      triggersFor: ["feed"],
+      priority: 80,
     },
     {
-      fieldName: 'common.equipment.reel.model',
-      triggersFor: ['reel-drive', 'tddbhd'],
-      priority: 75
+      fieldName: "common.equipment.reel.model",
+      triggersFor: ["reel-drive", "tddbhd"],
+      priority: 75,
     },
 
     // Feed rates and operations
     {
-      fieldName: 'common.feedRates.average.length',
-      triggersFor: ['feed', 'str-utility'],
-      priority: 80
+      fieldName: "common.feedRates.average.length",
+      triggersFor: ["feed", "str-utility"],
+      priority: 80,
     },
     {
-      fieldName: 'common.feedRates.average.spm',
-      triggersFor: ['feed', 'str-utility', 'reel-drive'],
-      priority: 75
+      fieldName: "common.feedRates.average.spm",
+      triggersFor: ["feed", "str-utility", "reel-drive"],
+      priority: 75,
     },
 
     // Coil specifications
     {
-      fieldName: 'common.coil.maxCoilWeight',
-      triggersFor: ['material-specs', 'summary-report', 'reel-drive', 'tddbhd'],
-      priority: 55
+      fieldName: "common.coil.maxCoilWeight",
+      triggersFor: ["material-specs", "summary-report", "reel-drive", "tddbhd"],
+      priority: 55,
     },
     {
-      fieldName: 'common.coil.maxCoilOD',
-      triggersFor: ['material-specs', 'summary-report', 'reel-drive', 'tddbhd'],
-      priority: 50
-    }
+      fieldName: "common.coil.maxCoilOD",
+      triggersFor: ["material-specs", "summary-report", "reel-drive", "tddbhd"],
+      priority: 50,
+    },
   ];
 
   /**
@@ -145,10 +146,11 @@ export class AutofillTriggerService {
   public static getTriggeredTabs(fieldName: string, data: PerformanceData): string[] {
     // Find all trigger mappings for this field
     const triggers = this.AUTOFILL_TRIGGERS.filter(trigger =>
-      trigger.fieldName === fieldName
+      trigger.fieldName === fieldName,
     );
 
-    if (triggers.length === 0) return [];
+    if (triggers.length === 0)
+      return [];
 
     // Get currently visible tabs
     const visibleTabs = getVisibleTabs(data);
@@ -160,16 +162,17 @@ export class AutofillTriggerService {
     for (const trigger of triggers) {
       // Check if minimum required data is present
       if (trigger.requiresMinimumData) {
-        const hasRequiredData = trigger.requiresMinimumData.every(requiredField => {
+        const hasRequiredData = trigger.requiresMinimumData.every((requiredField) => {
           const value = this.getNestedValue(data, requiredField);
           return this.hasMeaningfulValue(value);
         });
 
-        if (!hasRequiredData) continue;
+        if (!hasRequiredData)
+          continue;
       }
 
       // Add triggered tabs that are visible
-      trigger.triggersFor.forEach(tabName => {
+      trigger.triggersFor.forEach((tabName) => {
         if (visibleTabNames.includes(tabName)) {
           triggeredTabs.add(tabName);
         }
@@ -189,28 +192,28 @@ export class AutofillTriggerService {
     const strategy: AutofillStrategy = {
       immediate: [],
       conditional: [],
-      calculated: []
+      calculated: [],
     };
 
     for (const tabName of triggeredTabs) {
       switch (tabName) {
-        case 'rfq':
-        case 'summary-report':
+        case "rfq":
+        case "summary-report":
           // RFQ and summary can be filled immediately with defaults
           strategy.immediate.push(tabName);
           break;
 
-        case 'material-specs':
+        case "material-specs":
           // Material specs can often be filled immediately with calculated values
           strategy.calculated.push(tabName);
           break;
 
-        case 'roll-str-backbend':
-        case 'str-utility':
-        case 'feed':
-        case 'reel-drive':
-        case 'tddbhd':
-        case 'shear':
+        case "roll-str-backbend":
+        case "str-utility":
+        case "feed":
+        case "reel-drive":
+        case "tddbhd":
+        case "shear":
           // These require backend calculations
           strategy.calculated.push(tabName);
           break;
@@ -229,13 +232,15 @@ export class AutofillTriggerService {
   public static canTriggerAutofill(fieldName: string, data: PerformanceData): boolean {
     const triggers = this.AUTOFILL_TRIGGERS.filter(t => t.fieldName === fieldName);
 
-    if (triggers.length === 0) return false;
+    if (triggers.length === 0)
+      return false;
 
     // Check if we have minimum data for any trigger
-    return triggers.some(trigger => {
-      if (!trigger.requiresMinimumData) return true;
+    return triggers.some((trigger) => {
+      if (!trigger.requiresMinimumData)
+        return true;
 
-      return trigger.requiresMinimumData.every(requiredField => {
+      return trigger.requiresMinimumData.every((requiredField) => {
         const value = this.getNestedValue(data, requiredField);
         return this.hasMeaningfulValue(value);
       });
@@ -269,10 +274,10 @@ export class AutofillTriggerService {
     const maxYieldStrength = data?.common?.material?.maxYieldStrength;
     const coilWidth = data?.common?.material?.coilWidth;
 
-    const hasMaterialSpecs =
-      this.hasMeaningfulValue(materialType) &&
-      this.hasMeaningfulValue(materialThickness) &&
-      this.hasMeaningfulValue(maxYieldStrength);
+    const hasMaterialSpecs
+      = this.hasMeaningfulValue(materialType)
+        && this.hasMeaningfulValue(materialThickness)
+        && this.hasMeaningfulValue(maxYieldStrength);
 
     // Basic dimensions
     const hasDimensions = this.hasMeaningfulValue(coilWidth);
@@ -281,11 +286,11 @@ export class AutofillTriggerService {
     const hasApplication = this.hasMeaningfulValue(data?.feed?.feed?.application);
 
     // At least one equipment model or basic configuration
-    const hasEquipmentModel =
-      this.hasMeaningfulValue(data?.common?.equipment?.straightener?.model) ||
-      this.hasMeaningfulValue(data?.common?.equipment?.feed?.model) ||
-      this.hasMeaningfulValue(data?.common?.equipment?.reel?.model) ||
-      this.hasMeaningfulValue(data?.common?.equipment?.feed?.lineType);
+    const hasEquipmentModel
+      = this.hasMeaningfulValue(data?.common?.equipment?.straightener?.model)
+        || this.hasMeaningfulValue(data?.common?.equipment?.feed?.model)
+        || this.hasMeaningfulValue(data?.common?.equipment?.reel?.model)
+        || this.hasMeaningfulValue(data?.common?.equipment?.feed?.lineType);
 
     // Sufficient data for autofill if we have material specs + dimensions + (application OR equipment)
     return hasMaterialSpecs && hasDimensions && (hasApplication || hasEquipmentModel);
@@ -303,31 +308,31 @@ export class AutofillTriggerService {
    * Helper: Get nested value from object using dot notation
    */
   public static getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => current?.[key], obj);
+    return path.split(".").reduce((current, key) => current?.[key], obj);
   }
 
   /**
    * Helper: Check if value is meaningful (not empty/default)
    */
   public static hasMeaningfulValue(value: any): boolean {
-    if (value === null || value === undefined || value === '') {
+    if (value === null || value === undefined || value === "") {
       return false;
     }
 
     // Handle string numbers - convert to number for validation
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       const lowerValue = value.toLowerCase();
 
       // Check for selection prompts
-      if (lowerValue.includes('select') ||
-        lowerValue.includes('choose') ||
-        lowerValue.includes('default') ||
-        lowerValue === 'none') {
+      if (lowerValue.includes("select")
+        || lowerValue.includes("choose")
+        || lowerValue.includes("default")
+        || lowerValue === "none") {
         return false;
       }
 
       // Check if it's a numeric string
-      const numericValue = parseFloat(value);
+      const numericValue = Number.parseFloat(value);
       if (!isNaN(numericValue)) {
         return numericValue > 0; // Numeric strings are meaningful if > 0
       }
@@ -336,7 +341,7 @@ export class AutofillTriggerService {
       return value.trim().length > 0;
     }
 
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       return value > 0;
     }
 

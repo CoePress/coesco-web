@@ -22,6 +22,11 @@ const envSchema = z.object({
   AZURE_CLIENT_ID: z.string(),
   AZURE_CLIENT_SECRET: z.string(),
   AZURE_REDIRECT_URI: z.string(),
+  TEAMS_AZURE_TENANT_ID: z.string(),
+  TEAMS_AZURE_CLIENT_ID: z.string(),
+  TEAMS_AZURE_CLIENT_SECRET: z.string(),
+  TEAMS_AZURE_REDIRECT_URI: z.string(),
+  TEAMS_WEBHOOK_URL: z.string().url(),
   JWT_SECRET: z.string(),
   JWT_EXPIRES_IN: z.string().default("1d"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
@@ -58,6 +63,8 @@ const envSchema = z.object({
   QUOTE_DB: z.string(),
 
   API_KEYS: z.string().min(1).describe("Comma-separated list of valid API keys for system access"),
+
+  TOKEN_ENCRYPTION_KEY: z.string().length(64),
 
   BACKUP_DIR: z.string().optional(),
   BACKUP_RETENTION_DAYS: z.string().transform(Number).optional(),

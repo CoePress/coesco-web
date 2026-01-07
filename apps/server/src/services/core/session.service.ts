@@ -187,6 +187,52 @@ export class SessionService {
     return session;
   }
 
+  async findByRefreshToken(refreshToken: string): Promise<Session | null> {
+    const hashedToken = this.hashToken(refreshToken);
+
+    const result = await sessionRepository.getAll({
+      filter: { refreshToken: hashedToken },
+      limit: 1,
+    });
+
+    if (!result.success || !result.data || result.data.length === 0) {
+      return null;
+    }
+
+    const session = result.data[0];
+
+    if (!session.isActive) {
+      logger.warn(`Inactive session attempted with refresh token: ${session.id}`);
+      return null;
+    }
+
+    if (session.expiresAt < new Date()) {
+      logger.info(`Expired session attempted with refresh token: ${session.id}`);
+      await this.expireSession(session.id);
+      return null;
+    }
+
+    if (session.revokedAt) {
+      logger.warn(`Revoked session attempted with refresh token: ${session.id}`);
+      return null;
+    }
+
+    return session;
+  }
+
+  async updateTokens(sessionId: string, newAccessToken: string, newRefreshToken: string, expiresIn: number): Promise<void> {
+    const expiresAt = new Date(Date.now() + expiresIn);
+
+    await sessionRepository.update(sessionId, {
+      token: this.hashToken(newAccessToken),
+      refreshToken: this.hashToken(newRefreshToken),
+      expiresAt,
+      lastActivityAt: new Date(),
+    });
+
+    logger.info(`Tokens updated for session: ${sessionId}`);
+  }
+
   async updateActivity(sessionId: string): Promise<void> {
     await sessionRepository.update(sessionId, {
       lastActivityAt: new Date(),

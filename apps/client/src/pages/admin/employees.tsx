@@ -257,6 +257,7 @@ const Employees = () => {
             onRowClick={(row) => navigate(`/admin/employees/${row.id}`)}
             className="rounded border overflow-clip"
             emptyMessage="No employees found"
+            mobileCardView={true}
           />
         </div>
       </div>

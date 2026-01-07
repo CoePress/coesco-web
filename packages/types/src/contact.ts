@@ -8,12 +8,15 @@ export interface Contact {
   legacyCompanyId?: string;
   firstName: string;
   lastName?: string;
+  owner?: string;
   email?: string;
   phone?: string;
   phoneExtension?: string;
   title?: string;
   type?: ContactType;
   isPrimary?: boolean;
+  imageId?: number;
+  profileUrl?: string;
   createdAt?: Date | string;
   updatedAt: Date | string;
   deletedAt?: Date | string;
