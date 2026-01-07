@@ -5,6 +5,7 @@ import { legacyController } from "@/controllers";
 const router = Router();
 
 router.get("/quote-value", legacyController.getQuoteValue);
+router.post("/batch-quote-values", legacyController.getBatchQuoteValues);
 router.get("/:database/tables", legacyController.getTables);
 router.get("/:database/:table/fields", legacyController.getFields);
 router.get("/:database/:table/:field/max", legacyController.getMaxValue);

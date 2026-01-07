@@ -40,8 +40,6 @@ const Pipeline = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [journeyTags, setJourneyTags] = useState<Map<string, any[]>>(new Map());
 
-  const [legacyJourneys, setLegacyJourneys] = useState<any[] | null>(null);
-
   const fetchJourneyTags = async (journeyIds: string[]) => {
     const tagsMap = new Map<string, any[]>();
     if (journeyIds.length === 0) return tagsMap;
@@ -189,7 +187,8 @@ const Pipeline = () => {
   };
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+
     (async () => {
       try {
         const [journeysData, customersData, rsms, statuses] = await Promise.all([
@@ -205,19 +204,18 @@ const Pipeline = () => {
           fetchDemographicCategory({ get }, 'Journey_status')
         ]);
 
-        if (!cancelled && journeysData) {
+        if (journeysData) {
           const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
           const mapped = journeysArray.map(adaptLegacyJourney);
-          setLegacyJourneys(mapped);
           setJourneys(mapped);
         }
 
-        if (!cancelled && customersData) {
+        if (customersData) {
           const customersArray = customersData.data ? customersData.data : (Array.isArray(customersData) ? customersData : []);
           setCustomers(customersArray);
         }
 
-        if (!cancelled && rsms.length > 0) {
+        if (rsms.length > 0) {
           setAvailableRsms(rsms);
           const displayNamesMap = new Map<string, string>();
           rsms.forEach(rsm => {
@@ -226,18 +224,21 @@ const Pipeline = () => {
           setRsmDisplayNames(displayNamesMap);
         }
 
-        if (!cancelled && statuses.length > 0) {
+        if (statuses.length > 0) {
           setValidJourneyStatuses(statuses);
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error("Error fetching data:", error);
+        }
       }
     })();
-    return () => { cancelled = true; };
+
+    return () => controller.abort();
   }, []);
 
-  const baseJourneys = legacyJourneys?.length ? legacyJourneys : (journeys ?? []);
-  const isLegacyData = !!legacyJourneys?.length;
+  const baseJourneys = journeys ?? [];
+  const isLegacyData = true;
 
   const customersById = useMemo(() => {
     const map = new Map<string, any>((customers ?? []).map(c => [String(c.id), c]));
@@ -495,7 +496,7 @@ const Pipeline = () => {
     return filterConditions;
   };
 
-  const fetchListViewJourneys = useCallback(async () => {
+  const fetchListViewJourneys = useCallback(async (signal?: AbortSignal) => {
     if (isLoadingListView) return;
 
     setIsLoadingListView(true);
@@ -532,7 +533,7 @@ const Pipeline = () => {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await get('/legacy/base/Journey', params);
+      const raw = await get('/legacy/base/Journey', params, signal ? { signal } : undefined);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
@@ -550,13 +551,14 @@ const Pipeline = () => {
         }
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error("Error fetching list view journeys:", error);
     } finally {
       setIsLoadingListView(false);
     }
   }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, get, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
-  const fetchKanbanViewJourneys = useCallback(async () => {
+  const fetchKanbanViewJourneys = useCallback(async (signal?: AbortSignal) => {
     if (isLoadingKanbanView) return;
 
     const trimmedSearch = searchTerm.trim();
@@ -585,7 +587,7 @@ const Pipeline = () => {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await get('/legacy/base/Journey', params);
+      const raw = await get('/legacy/base/Journey', params, signal ? { signal } : undefined);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
@@ -593,6 +595,7 @@ const Pipeline = () => {
         setKanbanViewJourneys(mapped);
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error("Error fetching kanban view journeys:", error);
     } finally {
       setIsLoadingKanbanView(false);
@@ -600,14 +603,18 @@ const Pipeline = () => {
   }, [isLoadingKanbanView, kanbanBatchSize, get, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys, showDisabledJourneys]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     if (viewMode === 'list') {
-      fetchListViewJourneys();
+      fetchListViewJourneys(controller.signal);
     }
   }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     if (viewMode === 'kanban') {
-      fetchKanbanViewJourneys();
+      fetchKanbanViewJourneys(controller.signal);
     }
   }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
@@ -751,13 +758,13 @@ const Pipeline = () => {
   const handleTagsUpdated = useCallback(async () => {
     if (!showTags) return;
 
-    const journeysToUpdate = viewMode === 'kanban' ? kanbanViewJourneys : (legacyJourneys || journeys);
+    const journeysToUpdate = viewMode === 'kanban' ? kanbanViewJourneys : journeys;
     if (journeysToUpdate && journeysToUpdate.length > 0) {
       const journeyIds = journeysToUpdate.map((j: any) => j.id.toString());
       const tagsMap = await fetchJourneyTags(journeyIds);
       setJourneyTags(tagsMap);
     }
-  }, [showTags, viewMode, kanbanViewJourneys, legacyJourneys, journeys]);
+  }, [showTags, viewMode, kanbanViewJourneys, journeys]);
 
   const handleStageUpdate = useCallback(async (journeyId: string, newStage: number) => {
     const stageLabel = STAGES.find(s => s.id === newStage)?.label;
@@ -767,8 +774,8 @@ const Pipeline = () => {
     }
 
     const updateLocalState = () => {
-      setLegacyJourneys((prev) =>
-        (prev ?? []).map((j) =>
+      setJourneys((prev) =>
+        prev.map((j) =>
           j.id.toString() === journeyId
             ? { ...j, stage: newStage, updatedAt: new Date().toISOString() }
             : j
@@ -1198,14 +1205,8 @@ const Pipeline = () => {
           onSuccess={(newJourney) => {
             if (newJourney) {
               const adaptedJourney = adaptLegacyJourney(newJourney);
-              setLegacyJourneys(prev => {
-                const updated = prev ? [adaptedJourney, ...prev] : [adaptedJourney];
-                return updated;
-              });
-              setJourneys(prev => {
-                const updated = [adaptedJourney, ...prev];
-                return updated;
-              });
+              setJourneys(prev => [adaptedJourney, ...prev]);
+
               if (viewMode === 'kanban') {
                 fetchKanbanViewJourneys();
               }
@@ -1245,7 +1246,6 @@ const Pipeline = () => {
                 const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
                 const mappedJourneys = journeysArray.map(adaptLegacyJourney);
                 setJourneys(mappedJourneys);
-                setLegacyJourneys(mappedJourneys);
 
                 if (showTags) {
                   const journeyIds = mappedJourneys.map((j: any) => j.id.toString());

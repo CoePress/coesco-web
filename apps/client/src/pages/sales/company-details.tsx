@@ -390,51 +390,43 @@ function CompanyDetails() {
         if (!company || !id)
           throw new Error("Company not found");
 
-        const updateData = {
-          Active: companyEditData.active ? 1 : 0,
-          IsDealer: parseInt32(companyEditData.isDealer, 0),
-          CreditStatus: companyEditData.creditStatus || "",
-          CreditLimit: parseNumber(companyEditData.creditLimit, 0),
-          AcctBalance: parseNumber(companyEditData.acctBalance, 0),
-          TermsCode: companyEditData.termsCode ? String(companyEditData.termsCode) : "",
-          CoeRSM: parseInt32(companyEditData.coeRSM, 0),
-          BalanceDate: companyEditData.balanceDate || null,
-          CreditNote: companyEditData.creditNote || null,
-          Notes: companyEditData.notes || null,
-          URL: companyEditData.website || null,
-        };
+      const updateData = {
+        Active: data.active ? 1 : 0,
+        IsDealer: parseInt32(data.isDealer, 0),
+        CreditStatus: data.creditStatus || "",
+        CreditLimit: parseNumber(data.creditLimit, 0),
+        AcctBalance: parseNumber(data.acctBalance, 0),
+        TermsCode: data.termsCode ? String(data.termsCode) : "",
+        CoeRSM: parseInt32(data.coeRSM, 0),
+        BalanceDate: data.balanceDate || null,
+        CreditNote: data.creditNote || null,
+        Notes: data.notes || null,
+      };
 
-        pendingCompanySaveDataRef.current = companyEditData;
-        await api.patch(`/legacy/std/Company/${id}`, updateData);
-        const data = pendingCompanySaveDataRef.current;
-        setCompany({
-          ...company,
-          active: data.active,
-          isDealer: parseInt32(data.isDealer, 0),
-          creditStatus: data.creditStatus,
-          creditLimit: parseNumber(data.creditLimit, 0),
-          acctBalance: parseNumber(data.acctBalance, 0),
-          termsCode: data.termsCode,
-          coeRSM: parseInt32(data.coeRSM, 0),
-          balanceDate: data.balanceDate,
-          creditNote: data.creditNote,
-          notes: data.notes,
-          website: data.website,
-        });
-        setIsCustomRsmInput(false);
-        pendingCompanySaveDataRef.current = null;
-        setCompanyEditingId(null);
-        setCompanyEditData({});
-      } catch (error) {
-        console.error("Error saving company details:", error);
-        pendingCompanySaveDataRef.current = null;
-      } finally {
-        setCompanySaving(false);
-      }
+      pendingCompanySaveDataRef.current = data;
+      return await api.patch(`/legacy/std/Company/${id}`, updateData);
     },
-    cancel: () => {
-      setCompanyEditingId(null);
-      setCompanyEditData({});
+    onSuccess: (_result, _id) => {
+      const data = pendingCompanySaveDataRef.current;
+      setCompany({
+        ...company,
+        active: data.active,
+        isDealer: parseInt32(data.isDealer, 0),
+        creditStatus: data.creditStatus,
+        creditLimit: parseNumber(data.creditLimit, 0),
+        acctBalance: parseNumber(data.acctBalance, 0),
+        termsCode: data.termsCode,
+        coeRSM: parseInt32(data.coeRSM, 0),
+        balanceDate: data.balanceDate,
+        creditNote: data.creditNote,
+        notes: data.notes,
+      });
+      setIsCustomRsmInput(false);
+      pendingCompanySaveDataRef.current = null;
+    },
+    onError: (error) => {
+      console.error("Error saving company details:", error);
+      pendingCompanySaveDataRef.current = null;
     },
   };
 
