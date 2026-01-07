@@ -1,0 +1,1475 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialActions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User
+model User {
+  id          String    @id @default(uuid())
+  username    String    @unique
+  password    String?
+  microsoftId String?   @unique
+  role        UserRole  @default(USER)
+  isActive    Boolean   @default(false)
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employee          Employee?
+  roles             RoleAssignment[]
+  customPermissions PermissionException[]
+  tokens            Token[]
+  sessions          Session[]
+  loginHistory      LoginHistory[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model UserSettings {
+  id        String   @id @default(uuid())
+  userId    String
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+enum TokenType {
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+  TWO_FACTOR_AUTH
+}
+
+model Token {
+  id        String    @id @default(uuid())
+  userId    String
+  type      TokenType
+  token     String    @unique
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId, type])
+  @@map("tokens")
+}
+
+model Department {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  code        String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  employees Employee[]
+
+  @@map("departments")
+}
+
+model Employee {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  number          String    @unique
+  firstName       String
+  lastName        String
+  initials        String
+  email           String?   @unique
+  phoneNumber     String?
+  title           String
+  hireDate        DateTime?
+  startDate       DateTime?
+  terminationDate DateTime?
+  departmentId    String?
+  managerId       String?
+  isSalaried      Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  user             User                   @relation(fields: [userId], references: [id])
+  department       Department?            @relation(fields: [departmentId], references: [id])
+  manager          Employee?              @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates     Employee[]             @relation("ManagerSubordinates")
+  journeys         Journey[]              @relation("RsmJourneys")
+  createdCompanies Company[]              @relation("CustomerCreatedBy")
+  createdJourneys  Journey[]              @relation("JourneyCreatedBy")
+  chats            Chat[]
+  graphToken       MicrosoftGraphToken?
+
+  @@index([number])
+  @@index([createdById])
+  @@map("employees")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  resource    String
+  action      String
+  description String?
+  condition   Json? // optional ABAC-ish guard your app can evaluate
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+  exceptionGrants PermissionException[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model Role {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+  isSystem    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions RolePermission[]
+  assignments RoleAssignment[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+  condition    Json?
+
+  createdAt DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model RoleAssignment {
+  id          String    @id @default(uuid())
+  userId      String
+  roleId      String
+  scope       Json
+  scopeKey    String
+  expiresAt   DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId, scopeKey])
+  @@index([userId])
+  @@index([roleId])
+  @@map("role_assignments")
+}
+
+model PermissionException {
+  id           String    @id @default(uuid())
+  userId       String
+  permissionId String
+  scope        Json
+  scopeKey     String
+  reason       String?
+  expiresAt    DateTime?
+  createdById  String?
+  createdAt    DateTime  @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([permissionId])
+  @@map("permission_exceptions")
+}
+
+// CRM
+model Company {
+  id            String        @id @default(uuid())
+  name          String
+  website       String?
+  email         String?
+  phone         String?
+  fax           String?
+  industry      Industry?
+  yearFounded   Int?
+  revenue       Int?
+  employeeCount String?
+  customerSince DateTime?
+  paymentTerms  String?
+  creditLimit   Int?
+  taxId         String?
+  logoUrl       String?
+  notes         String?
+  tags          String[]
+  status        CompanyStatus @default(ACTIVE)
+  legacy        Json          @default("{}")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+  createdById   String
+  updatedById   String
+
+  createdBy        Employee? @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  addresses        Address[]
+  contacts         Contact[]
+  customerJourneys Journey[] @relation("CustomerJourneys")
+  dealerJourneys   Journey[] @relation("DealerJourneys")
+
+  @@index([createdById])
+  @@map("companies")
+}
+
+enum Industry {
+  AUTOMOTIVE
+  CONSTRUCTION
+  MANUFACTURING
+  OTHER
+}
+
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  SANDBOX
+  ARCHIVE
+}
+
+model CompanyRelationship {
+  id               String   @id @default(uuid())
+  parentId         String
+  childId          String
+  relationshipType String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdById      String
+  updatedById      String
+
+  @@unique([parentId, childId])
+  @@index([createdById])
+  @@map("company_relationships")
+}
+
+model Contact {
+  id              String      @id @default(uuid())
+  addressId       String?
+  companyId       String
+  legacyCompanyId String?
+  firstName       String
+  lastName        String?
+  owner           String?
+  email           String?
+  phone           String?
+  phoneExtension  String?
+  title           String?
+  type            ContactType @default(Sales)
+  isPrimary       Boolean     @default(false)
+  imageId         Int?
+  profileUrl      String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  company          Company          @relation(fields: [companyId], references: [id])
+  image            Image?           @relation(fields: [imageId], references: [id])
+  customerJourneys Journey[]        @relation("JourneyCustomerContact")
+  dealerJourneys   Journey[]        @relation("JourneyDealerContact")
+  journeyContacts  JourneyContact[]
+
+  /// @searchFields(firstName: 2, lastName: 2)
+
+  @@index([createdById])
+  @@index([companyId])
+  @@index([legacyCompanyId])
+  @@map("contacts")
+}
+
+enum ContactType {
+  Accounting
+  Engineering
+  Inactive
+  Left_Company
+  Parts_Service
+  Sales
+}
+
+enum ActivityType {
+  Call
+  Email
+  Meeting
+  TextChat
+  QuoteSent
+  QuotePresentation
+  Event
+  FormSubmission
+  WebsiteActivity
+  ContentDownloaded
+}
+
+enum ActivitySentiment {
+  Negative
+  Neutral
+  Positive
+}
+
+model Activity {
+  id           String            @id @default(uuid())
+  activityType ActivityType
+  sentiment    ActivitySentiment
+  timestamp    DateTime
+  description  String?           @db.Text
+  notes        String?           @db.Text
+  entityType   String?
+  entityId     String?
+  createdBy    String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+
+  @@index([entityType, entityId])
+  @@index([timestamp])
+  @@index([activityType])
+  @@index([createdBy])
+  @@map("activities")
+}
+
+model JourneyContact {
+  id          String    @id @default(uuid())
+  journeyId   String
+  contactId   String
+  isPrimary   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyId, contactId])
+  @@index([journeyId])
+  @@index([contactId])
+  @@index([createdById])
+  @@map("journey_contacts")
+}
+
+model Address {
+  id           String    @id @default(uuid())
+  companyId    String
+  addressLine1 String
+  addressLine2 String?
+  city         String?
+  state        String?
+  zip          String?
+  country      String?
+  isPrimary    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String
+
+  company          Company   @relation(fields: [companyId], references: [id])
+  customerJourneys Journey[] @relation("JourneyCustomerAddress")
+  dealerJourneys   Journey[] @relation("JourneyDealerAddress")
+
+  @@index([createdById])
+  @@map("addresses")
+}
+
+model PostalCode {
+  countryCode String @db.Char(2)
+  postalCode  String @db.VarChar(20)
+  latitude    Float
+  longitude   Float
+
+  @@id([countryCode, postalCode])
+  @@map("postal_code")
+}
+
+model Journey {
+  id                String           @id @default(uuid())
+  name              String?
+  rsmId             String?
+  customerId        String?
+  customerAddressId String?
+  customerContactId String?
+  dealerId          String?
+  dealerAddressId   String?
+  dealerContactId   String?
+  startDate         DateTime?
+  status            JourneyStatus?
+  type              JourneyType?
+  source            JourneySource?
+  priority          JourneyPriority?
+  confidence        Int?
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
+  createdById       String
+  updatedById       String
+
+  rsm             Employee?            @relation("RsmJourneys", fields: [rsmId], references: [id])
+  customer        Company?             @relation("CustomerJourneys", fields: [customerId], references: [id])
+  customerAddress Address?             @relation("JourneyCustomerAddress", fields: [customerAddressId], references: [id])
+  customerContact Contact?             @relation("JourneyCustomerContact", fields: [customerContactId], references: [id])
+  dealer          Company?             @relation("DealerJourneys", fields: [dealerId], references: [id])
+  dealerAddress   Address?             @relation("JourneyDealerAddress", fields: [dealerAddressId], references: [id])
+  dealerContact   Contact?             @relation("JourneyDealerContact", fields: [dealerContactId], references: [id])
+  createdBy       Employee?            @relation("JourneyCreatedBy", fields: [createdById], references: [id])
+  interactions    JourneyInteraction[] @relation("JourneyInteractions")
+
+  @@index([createdById])
+  @@map("journeys")
+}
+
+model Note {
+  id         String    @id @default(uuid())
+  entityId   String
+  entityType String
+  type       String    @default("note")
+  body       String
+  createdBy  String?
+  updatedBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  @@map("notes")
+}
+
+enum JourneyStatus {
+  ACTIVE
+  INACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum JourneyType {
+  STAMPING
+  CTL
+  ROLL_FORMING
+  UPGRADE
+  PARTS
+  SERVICE
+  RETROFIT
+}
+
+enum JourneySource {
+  WEBSITE
+  SOCIAL_MEDIA
+  REFERRAL
+  EVENT
+  OTHER
+}
+
+enum JourneyPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model JourneyInteraction {
+  id              String                 @id @default(uuid())
+  journeyId       String
+  interactionType JourneyInteractionType
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  journey Journey @relation("JourneyInteractions", fields: [journeyId], references: [id])
+
+  @@index([createdById])
+  @@map("journey_interactions")
+}
+
+enum JourneyInteractionType {
+  EMAIL
+  PHONE
+  IN_PERSON
+  VIDEO_CALL
+  TEXT_MESSAGE
+  SOCIAL_MEDIA
+  OTHER
+}
+
+// Quoting
+model Quote {
+  id                        String               @id @default(uuid())
+  journeyId                 String?
+  year                      String
+  number                    String
+  rsmId                     String?
+  customerId                String?
+  customerContactId         String?
+  customerAddressId         String?
+  dealerId                  String?
+  dealerContactId           String?
+  dealerAddressId           String?
+  priority                  String               @default("C")
+  confidence                Int                  @default(0)
+  status                    QuoteStatus          @default(OPEN)
+  latestRevision            String?
+  latestRevisionStatus      QuoteRevisionStatus?
+  latestRevisionTotalAmount Decimal?
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+  deletedAt                 DateTime?
+  createdById               String
+  updatedById               String
+  legacy                    Json                 @default("{}")
+
+  revisions QuoteRevision[]
+  /// @transform(quoteNumber: CONCAT(RIGHT(year, 2), '-', LPAD(number, 5, '0')))
+  /// @searchFields(year: 2, number: 3, quoteNumber: 5)
+  /// @sortFields(quoteNumber: [year, number])
+
+  @@unique([year, number])
+  @@map("quote_headers")
+}
+
+enum QuoteStatus {
+  OPEN
+  CLOSED
+}
+
+model QuoteRevision {
+  id           String              @id @default(uuid())
+  quoteId      String
+  revision     String              @default("A")
+  quoteDate    DateTime?
+  status       QuoteRevisionStatus @default(DRAFT)
+  approvedById String?
+  sentById     String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String
+
+  quote Quote?       @relation(fields: [quoteId], references: [id])
+  items QuoteItem[]
+  terms QuoteTerms[]
+
+  @@unique([quoteId, revision])
+  @@map("quote_details")
+}
+
+enum QuoteRevisionStatus {
+  DRAFT
+  APPROVED
+  SENT
+  REVISED
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+model QuoteItem {
+  id              String    @id @default(uuid())
+  quoteRevisionId String
+  configurationId String?
+  itemId          String?
+  model           String?
+  name            String?
+  description     String?
+  quantity        Int       @default(1)
+  unitPrice       Decimal
+  lineNumber      Int
+  isCustom        Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  quoteRevision QuoteRevision  @relation(fields: [quoteRevisionId], references: [id])
+  configuration Configuration? @relation(fields: [configurationId], references: [id])
+  item          Item?          @relation(fields: [itemId], references: [id])
+
+  @@index([createdById])
+  @@map("quote_items")
+}
+
+model QuoteTerms {
+  id              String   @id @default(uuid())
+  quoteRevisionId String
+  percentage      Int?
+  netDays         Int      @default(0)
+  amount          Decimal?
+  verbiage        String?
+  dueOrder        Int?
+  customTerms     String?
+  notToExceed     Decimal?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  quoteRevision QuoteRevision @relation(fields: [quoteRevisionId], references: [id], onDelete: Cascade)
+
+  @@map("quote_terms")
+}
+
+model QuoteNote {
+  id              String    @id @default(uuid())
+  quoteRevisionId String
+  body            String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  @@map("quote_notes")
+}
+
+// Catalog
+model CoilType {
+  id          String  @id @default(uuid())
+  description String?
+  multiplier  Decimal @default(1)
+  sortOrder   Int     @default(999)
+  isArchived  Boolean @default(false)
+  legacyId    String?
+
+  @@map("coil_types")
+}
+
+model ProductClass {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  name        String
+  description String?
+  parentId    String?
+  depth       Int     @default(0)
+  isActive    Boolean @default(true)
+
+  parent                       ProductClass?                @relation("ProductClassHierarchy", fields: [parentId], references: [id])
+  children                     ProductClass[]               @relation("ProductClassHierarchy")
+  options                      OptionDetails[]
+  configurations               Configuration[]
+  productClassOptionCategories ProductClassOptionCategory[]
+
+  @@map("product_classes")
+}
+
+model Item {
+  id             String    @id @default(uuid())
+  productClassId String?
+  modelNumber    String?
+  name           String?
+  description    String?
+  specifications Json      @default("{}")
+  unitPrice      Float     @default(0)
+  leadTime       Int?
+  type           ItemType
+  isActive       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
+
+  options    OptionDetails[]
+  quoteItems QuoteItem[]
+  /// @searchFields(modelNumber: 3, description: 2, type: 1)
+
+  @@index([createdById])
+  @@map("items")
+}
+
+enum ItemType {
+  Equipment
+  Parts
+  Service
+}
+
+// Configurations
+model OptionCategory {
+  id           String  @id @default(uuid())
+  name         String  @unique
+  description  String?
+  multiple     Boolean @default(false)
+  mandatory    Boolean @default(false)
+  standard     Boolean @default(false)
+  displayOrder Int
+  legacyId     String?
+
+  optionHeaders                OptionHeader[]
+  productClassOptionCategories ProductClassOptionCategory[]
+
+  @@map("option_categories")
+}
+
+model ProductClassOptionCategory {
+  productClassId   String
+  optionCategoryId String
+  displayOrder     Int       @default(0)
+  isRequired       Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  createdById      String
+  updatedById      String
+
+  productClass   ProductClass   @relation(fields: [productClassId], references: [id], onDelete: Cascade)
+  optionCategory OptionCategory @relation(fields: [optionCategoryId], references: [id], onDelete: Cascade)
+
+  @@id([productClassId, optionCategoryId])
+  @@index([createdById])
+  @@map("product_class_option_categories")
+}
+
+model OptionHeader {
+  id               String    @id @default(uuid())
+  optionCategoryId String
+  name             String
+  description      String?
+  legacyId         String?
+  displayOrder     Int       @default(0)
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  createdById      String
+  updatedById      String
+
+  category             OptionCategory        @relation(fields: [optionCategoryId], references: [id])
+  optionDetails        OptionDetails[]
+  optionRuleTargets    OptionRuleTarget[]
+  optionRuleTriggers   OptionRuleTrigger[]
+  configurationOptions ConfigurationOption[]
+
+  @@index([createdById])
+  @@map("option_headers")
+}
+
+model OptionDetails {
+  id             String    @id @default(uuid())
+  optionHeaderId String
+  productClassId String?
+  itemId         String?
+  price          Decimal
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
+
+  optionHeader OptionHeader  @relation(fields: [optionHeaderId], references: [id])
+  productClass ProductClass? @relation(fields: [productClassId], references: [id])
+  item         Item?         @relation(fields: [itemId], references: [id])
+
+  @@unique([productClassId, optionHeaderId])
+  @@index([createdById])
+  @@map("option_details")
+}
+
+model OptionRule {
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  action      OptionRuleAction
+  priority    Int              @default(0)
+  isActive    Boolean          @default(true)
+  condition   Json
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  targetOptions  OptionRuleTarget[]
+  triggerOptions OptionRuleTrigger[]
+
+  @@index([createdById])
+  @@map("option_rules")
+}
+
+enum OptionRuleAction {
+  DISABLE
+  REQUIRE
+}
+
+model OptionRuleTarget {
+  ruleId      String
+  optionId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  rule   OptionRule   @relation(fields: [ruleId], references: [id])
+  option OptionHeader @relation(fields: [optionId], references: [id])
+
+  @@id([ruleId, optionId])
+  @@index([createdById])
+  @@map("option_rule_targets")
+}
+
+model OptionRuleTrigger {
+  ruleId      String
+  optionId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  rule   OptionRule   @relation(fields: [ruleId], references: [id])
+  option OptionHeader @relation(fields: [optionId], references: [id])
+
+  @@id([ruleId, optionId])
+  @@index([createdById])
+  @@map("option_rule_triggers")
+}
+
+model Configuration {
+  id             String    @id @default(uuid())
+  productClassId String
+  name           String
+  description    String?
+  isTemplate     Boolean
+  isActive       Boolean
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
+
+  productClass    ProductClass          @relation(fields: [productClassId], references: [id])
+  selectedOptions ConfigurationOption[]
+  quoteItems      QuoteItem[]
+
+  @@index([createdById])
+  @@map("configurations")
+}
+
+model ConfigurationOption {
+  configurationId String
+  optionId        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  configuration Configuration @relation(fields: [configurationId], references: [id])
+  option        OptionHeader  @relation(fields: [optionId], references: [id])
+
+  @@id([configurationId, optionId])
+  @@index([createdById])
+  @@map("configuration_options")
+}
+
+// Production
+model Machine {
+  id             String                @id @default(uuid())
+  slug           String                @unique
+  name           String
+  type           MachineType
+  controllerType MachineControllerType
+  connectionUrl  String?
+  enabled        Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
+  deletedById    String?
+
+  statuses MachineStatus[]
+
+  @@index([createdById])
+  @@map("machines")
+}
+
+enum MachineType {
+  LATHE
+  MILL
+  GRINDER
+  OTHER
+}
+
+enum MachineControllerType {
+  MAZAK
+  FANUC
+  OTHER
+}
+
+model MachineStatus {
+  id           String       @id @default(uuid())
+  machineId    String
+  state        MachineState
+  execution    String
+  controller   String
+  program      String?
+  tool         String?
+  metrics      Json?
+  alarmCode    String?
+  alarmMessage String?
+  startTime    DateTime
+  endTime      DateTime?
+  duration     Int?
+  createdAt    DateTime     @default(now())
+
+  machine Machine @relation(fields: [machineId], references: [id])
+
+  @@map("machine_statuses")
+}
+
+enum MachineState {
+  ACTIVE
+  SETUP
+  IDLE
+  ALARM
+  OFFLINE
+  UNKNOWN
+}
+
+// Performance Sheet
+model PerformanceSheetVersion {
+  id          String    @id @default(uuid())
+  sections    Json      @default("[]")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  performanceSheets PerformanceSheet[]
+
+  @@index([createdById])
+  @@map("performance_sheet_versions")
+}
+
+model PerformanceSheet {
+  id          String    @id @default(uuid())
+  versionId   String
+  name        String?
+  data        Json      @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  version PerformanceSheetVersion @relation(fields: [versionId], references: [id])
+  links   PerformanceSheetLink[]
+
+  @@index([createdById])
+  @@map("performance_sheets")
+}
+
+model PerformanceSheetLink {
+  id                 String    @id @default(uuid())
+  performanceSheetId String
+  entityType         String
+  entityId           String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  createdById        String
+  updatedById        String
+
+  performanceSheet PerformanceSheet @relation(fields: [performanceSheetId], references: [id])
+
+  @@index([createdById])
+  @@map("performance_sheet_links")
+}
+
+// Forms
+model Form {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  status      FormStatus @default(DRAFT)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  createdById String
+  updatedById String
+
+  pages            FormPage[]
+  submissions      FormSubmission[]
+  conditionalRules FormConditionalRule[]
+
+  @@map("forms")
+}
+
+enum FormStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model FormPage {
+  id          String   @id @default(uuid())
+  formId      String
+  title       String
+  sequence    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  updatedById String
+
+  form     Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
+  sections FormSection[]
+
+  @@unique([formId, sequence])
+  @@map("form_pages")
+}
+
+model FormSection {
+  id          String   @id @default(uuid())
+  pageId      String
+  title       String
+  description String?
+  sequence    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  updatedById String
+
+  page   FormPage    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  fields FormField[]
+
+  @@unique([pageId, sequence])
+  @@map("form_sections")
+}
+
+model FormField {
+  id               String               @id @default(uuid())
+  sectionId        String
+  label            String
+  variable         String
+  controlType      FormFieldControlType
+  dataType         FormFieldDataType
+  options          Json                 @default("{}")
+  isRequired       Boolean              @default(false)
+  isReadOnly       Boolean              @default(false)
+  isHiddenOnDevice Boolean              @default(false)
+  isHiddenOnReport Boolean              @default(false)
+  sequence         Int
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  createdById      String
+  updatedById      String
+
+  section FormSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, sequence])
+  @@map("form_fields")
+}
+
+enum FormFieldRestrictions {
+  REQUIRED
+  READ_ONLY
+  HIDDEN_ON_DEVICE
+  HIDDEN_ON_REPORT
+}
+
+enum FormFieldControlType {
+  INPUT
+  TEXT_AREA
+  TEXTBOX
+  DROPDOWN
+  RADIO_BUTTON
+  MULTI_SELECT
+  BUTTON_GROUP
+  GEO_LOCATION
+  DATE_SELECTOR
+  TIME_SELECTOR
+  STAMP
+  SKETCH_PAD
+  CAMERA
+  SIGNATURE_PAD
+}
+
+enum FormFieldDataType {
+  TEXT
+  EMAIL
+  EMAIL_ADDRESS
+  URL
+  PHONE_NUMBER
+  INTEGER
+  DECIMAL
+  CURRENCY
+  GEO_LOCATION
+  DATE
+  TIME
+  DATE_TIME
+  IMAGE
+  SIGNATURE
+}
+
+model FormSubmission {
+  id          String               @id @default(uuid())
+  formId      String
+  status      FormSubmissionStatus @default(DRAFT)
+  answers     Json                 @default("{}")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@map("form_submissions")
+}
+
+enum FormSubmissionStatus {
+  DRAFT
+  SUBMITTED
+  ARCHIVED
+}
+
+model FormConditionalRule {
+  id          String              @id @default(uuid())
+  formId      String
+  name        String?
+  targetType  ConditionalTarget
+  targetId    String
+  action      ConditionalAction
+  conditions  Json
+  operator    ConditionalOperator @default(AND)
+  priority    Int                 @default(0)
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  createdById String
+  updatedById String
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId, targetId])
+  @@map("form_conditional_rules")
+}
+
+enum ConditionalTarget {
+  PAGE
+  SECTION
+  FIELD
+}
+
+enum ConditionalAction {
+  SHOW
+  HIDE
+  ENABLE
+  DISABLE
+  REQUIRE
+  OPTIONAL
+}
+
+enum ConditionalOperator {
+  AND
+  OR
+}
+
+// General
+model AuditLog {
+  id        String      @id @default(uuid())
+  action    AuditAction
+  model     String
+  recordId  String
+  changedBy String
+  diff      Json
+  createdAt DateTime    @default(now())
+
+  @@index([model])
+  @@index([recordId])
+  @@index([changedBy])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  SOFT_DELETE
+  RESTORE
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  description String
+  parentTable String
+  parentId    String
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([parentTable, parentId, description])
+  @@index([parentTable, parentId])
+  @@map("tag")
+}
+
+model Chat {
+  id          String    @id @default(uuid())
+  employeeId  String
+  name        String    @default("New Chat")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  employee Employee  @relation(fields: [employeeId], references: [id])
+  messages Message[]
+
+  @@map("chats")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  chatId    String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fileUrl   String?
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Image {
+  id         Int      @id @default(autoincrement())
+  path       String   @unique
+  uploadedAt DateTime @default(now())
+
+  contacts Contact[]
+
+  @@map("images")
+}
+
+model Draft {
+  id          String   @id @default(uuid())
+  entityType  String
+  entityId    String?
+  data        Json
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([createdById])
+  @@map("drafts")
+}
+
+model NtfyDevice {
+  id                 String    @id @default(uuid())
+  name               String
+  host               String
+  pingIntervalSec    Int       @default(30)
+  maxMissedPings     Int       @default(3)
+  currentMissedPings Int       @default(0)
+  enabled            Boolean   @default(true)
+  lastPingTime       DateTime?
+  lastPingSuccess    Boolean?
+  isDown             Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  createdById        String
+  updatedById        String
+
+  @@map("ntfy_devices")
+}
+
+model EmailLog {
+  id        String      @id @default(uuid())
+  to        String
+  subject   String
+  template  String?
+  status    EmailStatus @default(PENDING)
+  sentAt    DateTime?
+  error     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("email_logs")
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model ExternalAccessLink {
+  id           String        @id @default(uuid())
+  token        String        @unique
+  purpose      AccessPurpose
+  resourceId   String?
+  resourceType String?
+  expiresAt    DateTime?
+  usedAt       DateTime?
+  revokedAt    DateTime?
+  maxUses      Int?
+  useCount     Int           @default(0)
+  metadata     Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  createdById  String?
+  updatedById  String?
+
+  @@map("external_access_links")
+}
+
+enum AccessPurpose {
+  FORM_SUBMISSION
+  FILE_DOWNLOAD
+  CUSTOMER_FEEDBACK
+}
+
+model BugReport {
+  id          String          @id @default(uuid())
+  title       String
+  description String
+  userEmail   String?
+  userName    String?
+  url         String?
+  userAgent   String?
+  issueKey    String?
+  issueUrl    String?
+  status      BugReportStatus @default(SUBMITTED)
+  createdAt   DateTime        @default(now())
+  createdById String?
+
+  @@map("bug_reports")
+}
+
+enum BugReportStatus {
+  SUBMITTED
+  IN_JIRA
+  FAILED
+}
+
+model Session {
+  id               String      @id @default(uuid())
+  userId           String
+  token            String      @unique
+  refreshToken     String?     @unique
+  ipAddress        String?
+  userAgent        String?
+  deviceType       String?
+  deviceName       String?
+  location         Json?
+  loginMethod      LoginMethod
+  loginAt          DateTime    @default(now())
+  lastActivityAt   DateTime    @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  revokedReason    String?
+  logoutAt         DateTime?
+  isActive         Boolean     @default(true)
+  isSuspicious     Boolean     @default(false)
+  suspiciousReason String?
+  metadata         Json?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([lastActivityAt])
+  @@map("sessions")
+}
+
+enum LoginMethod {
+  PASSWORD
+  MICROSOFT
+  SSO
+  API_KEY
+  TEST_LOGIN
+}
+
+model LoginHistory {
+  id            String      @id @default(uuid())
+  userId        String?
+  username      String?
+  loginMethod   LoginMethod
+  success       Boolean
+  failureReason String?
+  ipAddress     String?
+  userAgent     String?
+  location      Json?
+  timestamp     DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([success])
+  @@map("login_history")
+}
+
+model MicrosoftGraphToken {
+  id              String   @id @default(uuid())
+  employeeId      String   @unique
+  accessToken     String
+  refreshToken    String
+  tokenType       String   @default("Bearer")
+  scope           String
+  expiresAt       DateTime
+  lastRefreshedAt DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([expiresAt])
+  @@map("microsoft_graph_tokens")
+}
+
+model TeamsChatCache {
+  id              String   @id @default(uuid())
+  employeeId      String
+  recipientUserId String
+  chatId          String
+  createdAt       DateTime @default(now())
+  lastUsedAt      DateTime @default(now())
+
+  @@unique([employeeId, recipientUserId])
+  @@index([employeeId])
+  @@map("teams_chat_cache")
+}

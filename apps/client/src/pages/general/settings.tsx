@@ -1,92 +1,98 @@
-import { useTheme } from "@/contexts/theme.context";
-import { useAuth } from "@/contexts/auth.context";
-import Button from "@/components/ui/button";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { User, Moon, Sun, LogOut, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/auth-context";
+import { useTheme } from "@/components/theme-provider";
 
 const Settings = () => {
-  const { theme, toggleTheme } = useTheme();
-  const { employee } = useAuth();
-  const [searchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "general";
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   return (
-    <div className="flex justify-center w-full h-full">
-      <div className="p-8 max-w-4xl w-full">
-      {activeTab === "security" && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm text-text-muted mb-1">Account security</h3>
-            <p className="text-xs text-text-muted">Set up security measure for better protection</p>
-          </div>
+    <div className="flex flex-1 flex-col p-4 gap-6 max-w-2xl">
+      <div>
+        <h1 className="text-2xl font-semibold">Settings</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your account and preferences
+        </p>
+      </div>
 
-          <div className="space-y-4">
-            <div className="py-3">
-              <div>
-                <div className="text-sm text-text mb-1">Email</div>
-                <div className="text-xs text-text-muted">{employee?.email || "user@example.com"}</div>
-              </div>
+      <div className="space-y-6">
+        <div className="rounded-lg border p-4">
+          <h2 className="text-sm font-medium text-muted-foreground mb-4">Account</h2>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary">
+              <User className="size-6" />
             </div>
-
-            <div className="border-t border-border"></div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <div className="text-sm text-text mb-1">Password</div>
-                <div className="text-xs text-text-muted">Change your account password</div>
+            <div className="flex-1">
+              <p className="font-medium">{user?.username || "Unknown"}</p>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                {user?.role === "ADMIN" && <ShieldCheck className="size-3" />}
+                {user?.role || "USER"}
               </div>
-              <Button
-                onClick={() => navigate("/settings/change-password")}
-                variant="secondary-outline"
-                size="sm"
-              >
-                Change Password
-              </Button>
             </div>
           </div>
         </div>
-      )}
 
-      {activeTab === "general" && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm text-text-muted mb-1">General</h3>
-            <p className="text-xs text-text-muted">Manage your general preferences</p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-3">
+        <div className="rounded-lg border p-4">
+          <h2 className="text-sm font-medium text-muted-foreground mb-4">Appearance</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {theme === "dark" ? (
+                <Moon className="size-5 text-muted-foreground" />
+              ) : (
+                <Sun className="size-5 text-muted-foreground" />
+              )}
               <div>
-                <div className="text-sm text-text mb-1">Theme</div>
-                <div className="text-xs text-text-muted">Switch between light and dark mode</div>
+                <p className="font-medium">Theme</p>
+                <p className="text-sm text-muted-foreground">
+                  {theme === "dark" ? "Dark mode" : "Light mode"}
+                </p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => theme === "dark" && toggleTheme()}
-                  className={`px-3 py-1.5 text-xs rounded border transition-all ${
-                    theme === "light"
-                      ? "bg-primary border-primary text-foreground"
-                      : "bg-transparent border-border text-text hover:bg-surface"
-                  }`}
-                >
+            </div>
+            <Button variant="outline" onClick={toggleTheme}>
+              {theme === "dark" ? (
+                <>
+                  <Sun className="size-4" />
                   Light
-                </button>
-                <button
-                  onClick={() => theme === "light" && toggleTheme()}
-                  className={`px-3 py-1.5 text-xs rounded border transition-all ${
-                    theme === "dark"
-                      ? "bg-primary border-primary text-foreground"
-                      : "bg-transparent border-border text-text hover:bg-surface"
-                  }`}
-                >
+                </>
+              ) : (
+                <>
+                  <Moon className="size-4" />
                   Dark
-                </button>
-              </div>
-            </div>
+                </>
+              )}
+            </Button>
           </div>
         </div>
-      )}
 
+        <div className="rounded-lg border border-destructive/20 p-4">
+          <h2 className="text-sm font-medium text-muted-foreground mb-4">Session</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <LogOut className="size-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">Sign out</p>
+                <p className="text-sm text-muted-foreground">
+                  End your current session
+                </p>
+              </div>
+            </div>
+            <Button variant="destructive" onClick={handleLogout}>
+              Sign Out
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

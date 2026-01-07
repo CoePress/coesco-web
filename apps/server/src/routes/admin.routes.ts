@@ -1,48 +1,177 @@
+import type { NextFunction, Request, Response } from "express";
+
 import { Router } from "express";
+import { z } from "zod";
 
-import { auditController, employeeController, permissionController, roleController, sessionsController } from "@/controllers";
+import { requireRole } from "../middleware/protect";
+import { errors } from "../lib/errors";
+import { prisma } from "../lib/prisma";
+import { ListQuerySchema, UUIDSchema } from "../validators/form";
 
-const router = Router();
+const UpdateUserSchema = z.object({
+  isActive: z.boolean().optional(),
+  role: z.enum(["ADMIN", "USER"]).optional(),
+});
 
-router.get("/logs", auditController.getAuditLogs);
-router.get("/logs/emails", auditController.getEmailLogs);
-router.get("/logs/bugs", auditController.getBugReports);
-router.get("/logs/login-attempts", auditController.getLoginAttempts);
-router.get("/logs/files", auditController.getLogFiles);
-router.get("/logs/files/:file", auditController.getLogFile);
+const adminRouter = Router();
 
-router.get("/backups", auditController.getBackupFiles);
-router.get("/backups/:file", auditController.getBackupFile);
+adminRouter.use(requireRole("ADMIN"));
 
-// Sessions
-router.get("/sessions/dashboard-metrics", sessionsController.getDashboardMetrics);
-router.get("/sessions", sessionsController.getSessions);
-router.get("/sessions/login-history", sessionsController.getLoginHistory);
-router.post("/sessions/:id/revoke", sessionsController.revokeSession);
-router.post("/sessions/users/:userId/revoke-all", sessionsController.revokeUserSessions);
+// ======================= USERS =======================
 
-// Employees
-router.post("/employees", employeeController.createEmployee);
-router.post("/employees/sync", employeeController.syncEmployees);
-router.post("/employees/sync/legacy", employeeController.syncEmployeesFromLegacy);
-router.post("/employees/sync/microsoft", employeeController.syncEmployeesFromMicrosoft);
-router.get("/employees", employeeController.getEmployees);
-router.get("/employees/:employeeId", employeeController.getEmployee);
-router.patch("/employees/:employeeId", employeeController.updateEmployee);
-router.delete("/employees/:employeeId", employeeController.deleteEmployee);
+// LIST USERS
+adminRouter.get("/users", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const query = ListQuerySchema.parse(req.query);
+    const { page, limit, sort, order, filter } = query;
 
-// Permissions
-router.post("/permissions", permissionController.createPermission);
-router.get("/permissions", permissionController.getPermissions);
-router.get("/permissions/:permissionId", permissionController.getPermission);
-router.patch("/permissions/:permissionId", permissionController.updatePermission);
-router.delete("/permissions/:permissionId", permissionController.deletePermission);
+    const skip = (page - 1) * limit;
+    const orderBy = sort ? { [sort]: order } : { createdAt: "desc" as const };
 
-// Roles
-router.post("/roles", roleController.createRole);
-router.get("/roles", roleController.getRoles);
-router.get("/roles/:roleId", roleController.getRole);
-router.patch("/roles/:roleId", roleController.updateRole);
-router.delete("/roles/:roleId", roleController.deleteRole);
+    let where = {};
+    if (filter) {
+      try {
+        where = JSON.parse(filter);
+      } catch {
+        // ignore invalid filter
+      }
+    }
 
-export default router;
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          isActive: true,
+          lastLogin: true,
+          createdAt: true,
+          updatedAt: true,
+          employee: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    res.json({
+      success: true,
+      data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// UPDATE USER (activate/deactivate, change role)
+adminRouter.patch("/users/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = UUIDSchema.parse(req.params);
+    const patch = UpdateUserSchema.parse(req.body);
+
+    const existingUser = await prisma.user.findUnique({ where: { id } });
+    if (!existingUser) {
+      throw errors.notFound("User not found");
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: patch,
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        isActive: true,
+        lastLogin: true,
+        createdAt: true,
+        updatedAt: true,
+        employee: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    res.json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ======================= EMPLOYEES =======================
+
+// LIST EMPLOYEES
+adminRouter.get("/employees", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const query = ListQuerySchema.parse(req.query);
+    const { page, limit, sort, order, filter } = query;
+
+    const skip = (page - 1) * limit;
+    const orderBy = sort ? { [sort]: order } : { lastName: "asc" as const };
+
+    let where: any = { deletedAt: null };
+    if (filter) {
+      try {
+        const filterObj = JSON.parse(filter);
+        where = { ...where, ...filterObj };
+      } catch {
+        // ignore invalid filter
+      }
+    }
+
+    const [employees, total] = await Promise.all([
+      prisma.employee.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              role: true,
+              isActive: true,
+            },
+          },
+        },
+      }),
+      prisma.employee.count({ where }),
+    ]);
+
+    res.json({
+      success: true,
+      data: employees,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default adminRouter;

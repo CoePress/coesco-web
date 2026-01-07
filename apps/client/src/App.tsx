@@ -1,152 +1,64 @@
-import { Routes, Route } from "react-router-dom";
-import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
-import modules from "./config/modules";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
+import { SidebarProvider } from "@/components/sidebar-provider";
+import { AuthProvider } from "@/contexts/auth-context";
+import { ProtectedRoute, PublicRoute } from "@/components/routes";
+import Layout from "./app/layout";
 import MainMenu from "./pages/general/main-menu";
 import NotFound from "./pages/general/not-found";
+import Settings from "./pages/general/settings";
 import Login from "./pages/general/login";
-import ChangePassword from "./pages/general/change-password";
 import ForgotPassword from "./pages/general/forgot-password";
-import ChatPage from "./pages/utility/chat";
-import { RecentChats, Resources, Settings } from "./pages";
-import { __dev__ } from "./config/env";
-import { useSessionMonitor } from "./hooks/use-session-monitor";
+import ResetPassword from "./pages/general/reset-password";
+import RequestAccess from "./pages/general/request-access";
+import Register from "./pages/general/register";
+import Forms from "./pages/forms/forms";
+import FormDetails from "./pages/forms/form-details";
+import FormBuilder from "./pages/forms/form-builder";
+import FormSubmissions from "./pages/forms/form-submissions";
+import FormSubmit from "./pages/forms/form-submit";
+import FormSubmission from "./pages/forms/form-submission-details";
+import Admin from "./pages/admin/users";
 
-const generateAllRoutes = (pages: any[], moduleSlug: string) => {
-  const routes: any[] = [];
-
-  pages.forEach((page) => {
-    if (page.slug) {
-      routes.push(
-        <Route
-          key={`${moduleSlug}-${page.slug}`}
-          path={page.slug}
-          element={<page.component />}
-        />
-      );
-    } else {
-      routes.push(
-        <Route
-          key={`${moduleSlug}-index`}
-          path=""
-          element={<page.component />}
-        />
-      );
-    }
-
-    if (page.children) {
-      page.children.forEach((child: any) => {
-        const childPath = page.slug ? `${page.slug}/${child.slug}` : child.slug;
-        routes.push(
-          <Route
-            key={`${moduleSlug}-${childPath}`}
-            path={childPath}
-            element={<child.component />}
-          />
-        );
-      });
-    }
-  });
-
-  return routes;
-};
-
-const SessionMonitor = () => {
-  useSessionMonitor();
-  return null;
-};
-
-const App = () => {
+function App() {
   return (
-    <>
-      <SessionMonitor />
-      <Routes>
-      <Route
-        path="/callback"
-        element={<MicrosoftCallback />}
-      />
-      <Route
-        path="/forgot-password"
-        element={<ForgotPassword />}
-      />
-      <Route element={<PublicRoute />}>
-        <Route
-          path="/login"
-          element={<Login />}
-        />
-      </Route>
-      <Route element={<ProtectedRoute withLayout={false} />}>
-        <Route
-          path="/"
-          element={<MainMenu />}
-        />
-      </Route>
+    <ThemeProvider defaultTheme="dark">
+      <BrowserRouter>
+        <AuthProvider>
+          <SidebarProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route element={<PublicRoute />}>
+                <Route path="login" element={<Login />} />
+                <Route path="forgot-password" element={<ForgotPassword />} />
+                <Route path="reset-password" element={<ResetPassword />} />
+                <Route path="request-access" element={<RequestAccess />} />
+                <Route path="register" element={<Register />} />
+              </Route>
 
-      <Route
-        element={
-          <ProtectedRoute
-            allowedRoles={["ADMIN"]}
-            withLayout={true}
-          />
-        }>
-        {modules
-          .filter((module) => module.slug === "admin")
-          .map((module) => (
-            <Route
-              key={module.slug}
-              path={`/${module.slug}`}>
-              {generateAllRoutes(module.pages, module.slug)}
-            </Route>
-          ))}
-      </Route>
+              {/* Protected routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                  <Route index element={<MainMenu />} />
 
-      <Route element={<ProtectedRoute withLayout={true} />}>
-        {__dev__ && (
-          <>
-            <Route
-              path="/chat"
-              element={<ChatPage />}
-            />
-            <Route
-              path="/chat/resources"
-              element={<Resources />}
-            />
-            <Route
-              path="/chat/recent"
-              element={<RecentChats />}
-            />
-            <Route
-              path="/chat/c/:id"
-              element={<ChatPage />}
-            />
+                  <Route path="forms" element={<Forms />} />
+                  <Route path="forms/:id" element={<FormDetails />} />
+                  <Route path="forms/:id/edit" element={<FormBuilder />} />
+                  <Route path="forms/:id/submissions" element={<FormSubmissions />} />
+                  <Route path="forms/:id/submissions/:submissionId" element={<FormSubmission />} />
+                  <Route path="forms/:id/submit" element={<FormSubmit />} />
 
-          </>
-        )}
-        <Route
-          path="/settings"
-          element={<Settings />}
-        />
-        <Route
-          path="/settings/change-password"
-          element={<ChangePassword />}
-        />
-        {modules
-          .filter((module) => module.slug !== "admin")
-          .map((module) => (
-            <Route
-              key={module.slug}
-              path={`/${module.slug}`}>
-              {generateAllRoutes(module.pages, module.slug)}
-            </Route>
-          ))}
-      </Route>
-
-      <Route
-        path="*"
-        element={<NotFound />}
-      />
-    </Routes>
-    </>
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="admin" element={<Admin />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Route>
+            </Routes>
+          </SidebarProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
-};
+}
 
 export default App;

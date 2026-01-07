@@ -1,120 +1,124 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap");
-
 @import "tailwindcss";
-@plugin "daisyui";
+@import "tw-animate-css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme inline {
-  --color-primary: var(--primary);
-  --color-secondary: var(--secondary);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-text: var(--text);
-  --color-text-muted: var(--text-muted);
-  --color-border: var(--border);
-  --color-error: var(--error);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-info: var(--info);
-  --color-shadow: var(--shadow);
+@layer base {
+  :root {
+    --background: 334.3 0% 96.1%;
+    --foreground: 350 0% 19.5%;
+    --card: 334.3 0% 90.1%;
+    --card-foreground: 350 0% 19.5%;
+    --popover: 334.3 0% 87.1%;
+    --popover-foreground: 350 0% 19.5%;
+    --primary: 43 100% 65%;
+    --primary-foreground: 180 0% 90%;
+    --secondary: 336 0% 88.7%;
+    --secondary-foreground: 350 0% 49.5%;
+    --muted: 340 0% 90%;
+    --muted-foreground: 350 0% 49.5%;
+    --accent: 334.3 0% 96.1%;
+    --accent-foreground: 350 0% 19.5%;
+    --destructive: 3.3 77.5% 38.3%;
+    --destructive-foreground: 350 0% 19.5%;
+    --border: 350 0% 49.5%;
+    --input: 350 0% 49.5%;
+    --ring: 36.4 100% 57.7%;
+    --radius: 0.5rem;
+    --chart-1: 36.4 100% 72.3%;
+    --chart-2: 336 0% 41.3%;
+    --chart-3: 340 0% 40%;
+    --chart-4: 340 0% 49.8%;
+    --chart-5: 36.4 100% 80%;
+    
+    --sidebar-background: 0 0% 93%;
+    --sidebar-foreground: 0 0% 38%;
+    --sidebar-primary: 43 100% 38%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 75%;
+    --sidebar-accent-foreground: 350 0% 19.5%;
+    --sidebar-border: 0 0% 47%;
+    --sidebar-ring: 36 100% 55%;
+  }
+
+  .dark {
+    --background: 334.3 0% 12.9%;
+    --foreground: 350 0% 80.5%;
+    --card: 334.3 0% 12.9%;
+    --card-foreground: 350 0% 80.5%;
+    --popover: 334.3 0% 12.9%;
+    --popover-foreground: 350 0% 80.5%;
+    --primary: 43 100% 55%;
+    --primary-foreground: 180 7.3% 8%;
+    --secondary: 336 0% 11.3%;
+    --secondary-foreground: 350 0% 50.5%;
+    --muted: 340 0% 9.8%;
+    --muted-foreground: 350 0% 50.5%;
+    --accent: 334.3 0% 12.9%;
+    --accent-foreground: 350 0% 80.5%;
+    --destructive: 3.3 87.5% 61.7%;
+    --destructive-foreground: 350 0% 80.5%;
+    --border: 350 0% 50.5%;
+    --input: 350 0% 50.5%;
+    --ring: 36.4 151.9% 42.3%;
+    --radius: 0.5rem;
+    --chart-1: 36.4 151.9% 42.3%;
+    --chart-2: 336 0% 11.3%;
+    --chart-3: 340 0% 9.8%;
+    --chart-4: 340 0% 19.8%;
+    --chart-5: 36.4 151.9% 52.3%;
+    
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 56%;
+    --sidebar-primary: 43 100% 25%;
+    --sidebar-primary-foreground: 180 7% 100%;
+    --sidebar-accent: 0 0% 25%;
+    --sidebar-accent-foreground: 350 0% 80.5%;
+    --sidebar-border: 0 0% 43%;
+    --sidebar-ring: 36 100% 34%;
+  }
 }
 
-:root {
-  --primary: #e8a80c;
-  --secondary: #c4930d;
-  --background: #f8f8f8;
-  --foreground: #ffffff;
-  --surface: #f0f0f0;
-  --text: #202020;
-  --text-muted: #707070;
-  --border: #d4d4d4;
-  --error: #d93026;
-  --success: #05843e;
-  --warning: #ffa500;
-  --info: #0284c7;
-  --shadow: rgba(0, 0, 0, 0.08);
-}
-
-.dark {
-  --primary: #e8a80c;
-  --secondary: #ffc547;
-  --background: #121212;
-  --foreground: #1c1c1c;
-  --surface: #262626;
-  --text: #efefef;
-  --text-muted: #a0a0a0;
-  --border: #404040;
-  --error: #f44336;
-  --success: #34d399;
-  --warning: #ffab00;
-  --info: #38bdf8;
-  --shadow: rgba(0, 0, 0, 0.25);
+body {
+  letter-spacing: var(--tracking-normal);
 }
 
 @layer base {
   * {
-    @apply border-border;
-    font-family: "Roboto Mono", monospace;
+    @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-text;
+    @apply bg-background text-foreground;
   }
-}
 
-/* Global scrollbar styles */
-::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
+  /* Scrollbar - Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted-foreground) transparent;
+  }
 
-::-webkit-scrollbar-track {
-  background: var(--background);
-  border-radius: 8px;
-}
+  /* Scrollbar - Chrome, Edge, Safari */
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 8px;
-  border: 3px solid var(--background);
-}
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
-}
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) var(--background);
-}
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
+  }
 
-/* For all elements with scrollable overflow */
-*:not(body)::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-*:not(body)::-webkit-scrollbar-track {
-  background: var(--background);
-  border-radius: 8px;
-}
-
-*:not(body)::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 8px;
-  border: 3px solid var(--background);
-}
-
-*:not(body)::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
-}
-
-/* Apply to specific elements that might have their own scrolling context */
-textarea,
-div[style*="overflow"],
-.scrollable-element {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) var(--background);
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
