@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { protect } from "../middleware/protect";
+import accessRouter from "./access.routes";
 import accountRouter from "./account.routes";
 import adminRouter from "./admin.routes";
 import authRouter from "./auth.routes";
@@ -10,6 +11,7 @@ import formRouter from "./form.routes";
 const router = Router();
 
 router.use("/auth", authRouter);
+router.use("/access", accessRouter); // Has both public and protected routes
 
 router.use(protect);
 router.use("/admin", adminRouter);

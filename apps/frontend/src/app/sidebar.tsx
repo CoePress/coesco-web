@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { PanelLeft, Home, Settings, ClipboardPenLine } from 'lucide-react'
+import { PanelLeft, Home, Settings, ClipboardPenLine, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useSidebar } from '@/components/sidebar-provider'
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { icon: Home, label: 'Home', href: '/' },
   { icon: ClipboardPenLine, label: 'Forms', href: '/forms' },
+  { icon: Shield, label: 'Admin', href: '/admin' },
   { icon: Settings, label: 'Settings', href: '/settings' },
 ]
 

@@ -430,6 +430,61 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ======================= ACCESS MANAGEMENT =======================
+
+enum AccessRequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+model AccessRequest {
+  id          String              @id @default(uuid())
+  email       String
+  firstName   String
+  lastName    String
+  title       String?
+  department  String?
+  reason      String?
+  status      AccessRequestStatus @default(PENDING)
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  reviewNotes String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([status])
+  @@map("access_requests")
+}
+
+model Invite {
+  id          String    @id @default(uuid())
+  email       String
+  firstName   String?
+  lastName    String?
+  role        UserRole  @default(USER)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  createdById String
+
+  @@index([email])
+  @@map("invites")
+}
+
 // ======================= FORMS =======================
 
 model Form {

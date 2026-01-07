@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,9 +52,17 @@ export default function Login() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="text-sm font-medium">
+                Password
+              </label>
+              <Link
+                to="/forgot-password"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"
@@ -107,6 +116,16 @@ export default function Login() {
           </svg>
           Sign in with Microsoft
         </Button>
+
+        <div className="text-center text-sm text-muted-foreground">
+          Don't have an account?{" "}
+          <Link
+            to="/request-access"
+            className="text-foreground hover:underline font-medium"
+          >
+            Request access
+          </Link>
+        </div>
       </div>
     </div>
   );
