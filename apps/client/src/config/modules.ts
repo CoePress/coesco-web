@@ -134,76 +134,80 @@ const salesModule: Module = {
         },
       ],
     },
-    {
-      slug: "quotes",
-      label: "Quotes",
-      icon: FileTextIcon,
-      component: Quotes,
-      children: [
-        {
-          slug: ":id",
-          label: "Quote Details",
-          component: QuoteDetails,
-        },
-      ],
-    },
-    {
-      slug: "products",
-      label: "Products",
-      icon: BoxIcon,
-      component: Products,
-      children: [
-        {
-          slug: "configuration-builder",
-          label: "Configuration Builder",
-          component: ConfigurationBuilder,
-        },
-        {
-          slug: "p/:id",
-          label: "Product Details",
-          component: ProductDetails,
-        },
-      ],
-    },
-    {
-      slug: "performance-sheets",
-      label: "Performance Sheets",
-      icon: ChartNoAxesCombined,
-      component: PerformanceSheets,
-      children: [
-        {
-          slug: ":id",
-          label: "Performance Sheet Details",
-          component: PerformanceSheet,
-        },
-      ],
-    },
-    {
-      slug: "forms",
-      label: "Forms",
-      icon: FileIcon,
-      component: Forms,
-      children: [
-        {
-          slug: ":id/submit",
-          label: "Form Submit",
-          icon: FileCheck2Icon,
-          component: FormSubmission,
-        },
-        {
-          slug: ":id/submissions",
-          label: "Form Submissions",
-          icon: FileCheck2Icon,
-          component: FormSubmissions,
-        },
-        {
-          slug: ":formId/submissions/:id",
-          label: "Submission View",
-          icon: FileTextIcon,
-          component: FormSubmissionView,
-        },
-      ],
-    },
+    ...(__dev__
+      ? [
+          {
+            slug: "quotes",
+            label: "Quotes",
+            icon: FileTextIcon,
+            component: Quotes,
+            children: [
+              {
+                slug: ":id",
+                label: "Quote Details",
+                component: QuoteDetails,
+              },
+            ],
+          },
+          {
+            slug: "products",
+            label: "Products",
+            icon: BoxIcon,
+            component: Products,
+            children: [
+              {
+                slug: "configuration-builder",
+                label: "Configuration Builder",
+                component: ConfigurationBuilder,
+              },
+              {
+                slug: "p/:id",
+                label: "Product Details",
+                component: ProductDetails,
+              },
+            ],
+          },
+          {
+            slug: "performance-sheets",
+            label: "Performance Sheets",
+            icon: ChartNoAxesCombined,
+            component: PerformanceSheets,
+            children: [
+              {
+                slug: ":id",
+                label: "Performance Sheet Details",
+                component: PerformanceSheet,
+              },
+            ],
+          },
+          {
+            slug: "forms",
+            label: "Forms",
+            icon: FileIcon,
+            component: Forms,
+            children: [
+              {
+                slug: ":id/submit",
+                label: "Form Submit",
+                icon: FileCheck2Icon,
+                component: FormSubmission,
+              },
+              {
+                slug: ":id/submissions",
+                label: "Form Submissions",
+                icon: FileCheck2Icon,
+                component: FormSubmissions,
+              },
+              {
+                slug: ":formId/submissions/:id",
+                label: "Submission View",
+                icon: FileTextIcon,
+                component: FormSubmissionView,
+              },
+            ],
+          },
+        ]
+      : []),
   ],
 };
 

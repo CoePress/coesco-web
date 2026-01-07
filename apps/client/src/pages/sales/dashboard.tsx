@@ -18,7 +18,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ExcelJS from "exceljs";
 
@@ -59,6 +59,7 @@ const SalesDashboard = () => {
   const [rsmFilterDisplay, setRsmFilterDisplay] = useState<string>("");
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
   const [rsmDisplayNames, setRsmDisplayNames] = useState<Map<string, string>>(new Map());
+  const [quoteValues, setQuoteValues] = useState<Record<string, number>>({});
 
   const getDefaultStartDate = () => {
     const date = new Date();
@@ -182,34 +183,89 @@ const SalesDashboard = () => {
     loadRsms();
   }, []);
 
-  const companiesById = new Map(companies.map(c => [c.Company_ID, c]));
+  useEffect(() => {
+    const controller = new AbortController();
 
-  const activeJourneys = journeys.filter(j =>
-    j.Journey_Status === 'open' || !j.Journey_Status
+    const fetchQuoteValues = async () => {
+      if (journeys.length === 0) {
+        setQuoteValues({});
+        return;
+      }
+
+      const wonJourneysForQuote = journeys.filter(j => j.Journey_Status === 'won');
+      const quoteKeyValues = wonJourneysForQuote
+        .map(j => j.Quote_Key_Value)
+        .filter(key => key && typeof key === 'string');
+
+      if (quoteKeyValues.length === 0) {
+        setQuoteValues({});
+        return;
+      }
+
+      try {
+        const result = await api.post('/legacy/batch-quote-values', {
+          quoteKeyValues
+        }, { signal: controller.signal });
+        if (result && typeof result === 'object') {
+          setQuoteValues(result);
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        console.error('Error fetching batch quote values:', error);
+        setQuoteValues({});
+      }
+    };
+
+    fetchQuoteValues();
+    return () => controller.abort();
+  }, [journeys, api]);
+
+  const companiesById = useMemo(() =>
+    new Map(companies.map(c => [c.Company_ID, c])),
+    [companies]
   );
 
-  const wonJourneys = journeys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
-  const lostJourneys = journeys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
-  const closedJourneys = [...wonJourneys, ...lostJourneys];
+  const activeJourneys = useMemo(() =>
+    journeys.filter(j => j.Journey_Status === 'open' || !j.Journey_Status),
+    [journeys]
+  );
+
+  const wonJourneys = useMemo(() =>
+    journeys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5),
+    [journeys]
+  );
+
+  const lostJourneys = useMemo(() =>
+    journeys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6),
+    [journeys]
+  );
+
+  const closedJourneys = useMemo(() =>
+    [...wonJourneys, ...lostJourneys],
+    [wonJourneys, lostJourneys]
+  );
 
   const totalRevenue = journeys
     .filter(j => j.Journey_Status === 'won')
-    .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+    .reduce((sum, j) => {
+      const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+      return sum + quoteValue;
+    }, 0);
   const totalQuotes = activeJourneys.length;
   const totalJourneysWithValue = activeJourneys.filter(j => (j.Journey_Value || 0) > 0).length;
   const conversionRate = closedJourneys.length > 0 ? (wonJourneys.length / (wonJourneys.length + lostJourneys.length)) * 100 : 0;
 
-  // Calculate performance data based on selected timeframe
-  const monthlyData: Array<{
-    month: string;
-    sales: number;
-    quotes: number;
-    conversion: number;
-    journeys: number;
-    year: number;
-  }> = [];
+  const monthlyData = useMemo(() => {
+    const data: Array<{
+      month: string;
+      sales: number;
+      quotes: number;
+      conversion: number;
+      journeys: number;
+      year: number;
+    }> = [];
 
-  if (timeframe === 'daily') {
+    if (timeframe === 'daily') {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const dayMap = new Map<string, any[]>();
@@ -235,7 +291,10 @@ const SalesDashboard = () => {
 
       const daySales = dayJourneys
         .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+        .reduce((sum, j) => {
+          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+          return sum + quoteValue;
+        }, 0);
 
       const dayQuotes = dayJourneys.length;
       const dayJourneysWithValue = dayJourneys.filter(j => {
@@ -253,7 +312,7 @@ const SalesDashboard = () => {
         ? (dayWonJourneys.length / dayClosedJourneys) * 100
         : 0;
 
-      monthlyData.push({
+      data.push({
         month: dayLabel,
         sales: daySales,
         quotes: dayQuotes * 1000,
@@ -283,7 +342,10 @@ const SalesDashboard = () => {
 
       const weekSales = weekJourneys
         .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+        .reduce((sum, j) => {
+          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+          return sum + quoteValue;
+        }, 0);
 
       const weekQuotes = weekJourneys.length;
       const weekJourneysWithValue = weekJourneys.filter(j => {
@@ -301,7 +363,7 @@ const SalesDashboard = () => {
         ? (weekWonJourneys.length / weekClosedJourneys) * 100
         : 0;
 
-      monthlyData.push({
+      data.push({
         month: weekLabel,
         sales: weekSales,
         quotes: weekQuotes * 1000,
@@ -334,7 +396,10 @@ const SalesDashboard = () => {
 
       const quarterSales = quarterJourneys
         .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+        .reduce((sum, j) => {
+          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+          return sum + quoteValue;
+        }, 0);
 
       const quarterQuotes = quarterJourneys.length;
       const quarterJourneysWithValue = quarterJourneys.filter(j => {
@@ -352,7 +417,7 @@ const SalesDashboard = () => {
         ? (quarterWonJourneys.length / quarterClosedJourneys) * 100
         : 0;
 
-      monthlyData.push({
+      data.push({
         month: quarterLabel,
         sales: quarterSales,
         quotes: quarterQuotes * 1000,
@@ -381,7 +446,10 @@ const SalesDashboard = () => {
 
       const yearSales = yearJourneys
         .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+        .reduce((sum, j) => {
+          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+          return sum + quoteValue;
+        }, 0);
 
       const yearQuotes = yearJourneys.length;
       const yearJourneysWithValue = yearJourneys.filter(j => {
@@ -399,7 +467,7 @@ const SalesDashboard = () => {
         ? (yearWonJourneys.length / yearClosedJourneys) * 100
         : 0;
 
-      monthlyData.push({
+      data.push({
         month: yearLabel,
         sales: yearSales,
         quotes: yearQuotes * 1000,
@@ -428,7 +496,10 @@ const SalesDashboard = () => {
 
       const monthSales = monthJourneys
         .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+        .reduce((sum, j) => {
+          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+          return sum + quoteValue;
+        }, 0);
 
       const monthQuotes = monthJourneys.length;
       const monthJourneysWithValue = monthJourneys.filter(j => {
@@ -446,7 +517,7 @@ const SalesDashboard = () => {
         ? (monthWonJourneys.length / monthClosedJourneys) * 100
         : 0;
 
-      monthlyData.push({
+      data.push({
         month: monthName,
         sales: monthSales,
         quotes: monthQuotes * 1000,
@@ -459,45 +530,49 @@ const SalesDashboard = () => {
     }
   }
 
-  // Get top journeys
-  const topJourneys = activeJourneys
-    .filter(j => (j.Journey_Value || 0) > 0)
-    .sort((a, b) => (b.Journey_Value || 0) - (a.Journey_Value || 0))
-    .slice(0, 4)
-    .map(j => {
-      const company = companiesById.get(j.Company_ID);
-      const journeyStageId = mapLegacyStageToId(j.Journey_Stage);
-      const stageInfo = STAGES.find(s => s.id === journeyStageId) || STAGES[0];
+    return data;
+  }, [journeys, timeframe, startDate, endDate, quoteValues]);
+
+  const topJourneys = useMemo(() => {
+    return activeJourneys
+      .filter(j => (j.Journey_Value || 0) > 0)
+      .sort((a, b) => (b.Journey_Value || 0) - (a.Journey_Value || 0))
+      .slice(0, 4)
+      .map(j => {
+        const company = companiesById.get(j.Company_ID);
+        const journeyStageId = mapLegacyStageToId(j.Journey_Stage);
+        const stageInfo = STAGES.find(s => s.id === journeyStageId) || STAGES[0];
+        return {
+          id: j.ID,
+          client: company?.CustDlrName || j.Target_Account || `Company ${j.Company_ID}`,
+          value: j.Journey_Value || 0,
+          status: stageInfo.label,
+          probability: Math.round((stageInfo.weight * 100))
+        };
+      });
+  }, [activeJourneys, companiesById]);
+
+
+  const stageDistribution = useMemo(() => {
+    const allStageDistribution = STAGES.map(stage => {
+      const stageJourneys = journeys.filter(j => {
+        const journeyStageId = mapLegacyStageToId(j.Journey_Stage);
+        return journeyStageId === stage.id;
+      });
+      const total = stageJourneys.length;
+      const percentage = journeys.length > 0 ? Math.round((total / journeys.length) * 100) : 0;
+
       return {
-        id: j.ID,
-        client: company?.CustDlrName || j.Target_Account || `Company ${j.Company_ID}`,
-        value: j.Journey_Value || 0,
-        status: stageInfo.label,
-        probability: Math.round((stageInfo.weight * 100))
+        state: stage.label,
+        total,
+        percentage
       };
     });
 
-
-  // Calculate stage distribution including closed journeys
-  const allStageDistribution = STAGES.map(stage => {
-    const stageJourneys = journeys.filter(j => {
-      // Map the journey stage to numeric ID for comparison
-      const journeyStageId = mapLegacyStageToId(j.Journey_Stage);
-      return journeyStageId === stage.id;
-    });
-    const total = stageJourneys.length;
-    const percentage = journeys.length > 0 ? Math.round((total / journeys.length) * 100) : 0;
-
-    return {
-      state: stage.label,
-      total,
-      percentage
-    };
-  });
-
-  const stageDistribution = allStageDistribution.filter(stage =>
-    stage.total > 0 || ["Lead", "Qualified", "Presentations", "Negotiation"].includes(stage.state)
-  );
+    return allStageDistribution.filter(stage =>
+      stage.total > 0 || ["Lead", "Qualified", "Presentations", "Negotiation"].includes(stage.state)
+    );
+  }, [journeys]);
   
   const kpis = [
     {
@@ -789,10 +864,42 @@ const SalesDashboard = () => {
           description="Track your sales performance and metrics"
           actions={<Actions />}
         />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <RefreshCcw className="animate-spin mx-auto mb-4" size={32} />
-            <p className="text-text-muted">Loading dashboard data...</p>
+        <div className="p-2 gap-2 flex flex-col flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-foreground rounded border p-4 animate-pulse">
+                <div className="h-4 bg-surface rounded w-24 mb-2" />
+                <div className="h-8 bg-surface rounded w-32 mb-2" />
+                <div className="h-3 bg-surface rounded w-full" />
+              </div>
+            ))}
+          </div>
+          <div className="w-full h-[400px] bg-foreground rounded border p-4 animate-pulse">
+            <div className="h-6 bg-surface rounded w-48 mb-4" />
+            <div className="h-full bg-surface rounded" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-foreground rounded border p-4 animate-pulse h-[250px]">
+                <div className="h-4 bg-surface rounded w-32 mb-4" />
+                <div className="space-y-3">
+                  {[1, 2, 3].map(j => (
+                    <div key={j} className="h-16 bg-surface rounded" />
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div className="bg-foreground rounded border p-4 animate-pulse h-[250px]">
+              <div className="h-4 bg-surface rounded w-32 mb-4" />
+              <div className="space-y-4">
+                {[1, 2, 3, 4].map(j => (
+                  <div key={j}>
+                    <div className="h-3 bg-surface rounded w-full mb-2" />
+                    <div className="h-2 bg-surface rounded w-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
