@@ -401,7 +401,6 @@ function CompanyDetails() {
           BalanceDate: companyEditData.balanceDate || null,
           CreditNote: companyEditData.creditNote || null,
           Notes: companyEditData.notes || null,
-          URL: companyEditData.website || null,
         };
 
         pendingCompanySaveDataRef.current = companyEditData;
@@ -419,7 +418,6 @@ function CompanyDetails() {
           balanceDate: data.balanceDate,
           creditNote: data.creditNote,
           notes: data.notes,
-          website: data.website,
         });
         setIsCustomRsmInput(false);
         pendingCompanySaveDataRef.current = null;

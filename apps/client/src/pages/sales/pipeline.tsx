@@ -198,8 +198,8 @@ const Pipeline = () => {
             sort: 'CreateDT',
             order: 'desc',
             fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
-          }, { signal: controller.signal }),
-          get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' }, { signal: controller.signal }),
+          }),
+          get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' }),
           fetchAvailableRsms({ get }),
           fetchDemographicCategory({ get }, 'Journey_status')
         ]);
@@ -608,9 +608,7 @@ const Pipeline = () => {
     if (viewMode === 'list') {
       fetchListViewJourneys(controller.signal);
     }
-
-    return () => controller.abort();
-  }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys, fetchListViewJourneys]);
+  }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -618,9 +616,7 @@ const Pipeline = () => {
     if (viewMode === 'kanban') {
       fetchKanbanViewJourneys(controller.signal);
     }
-
-    return () => controller.abort();
-  }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys, fetchKanbanViewJourneys]);
+  }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
   const handleListPageChange = (newPage: number) => {
     setListPage(newPage);
@@ -717,7 +713,8 @@ const Pipeline = () => {
 
   const handleDeleteJourney = useCallback(async (journeyId: string) => {
     try {
-      const journey = journeys.find(j => j.id.toString() === journeyId);
+      const journey = [...(legacyJourneys || []), ...journeys, ...listViewJourneys, ...kanbanViewJourneys]
+        .find(j => j.id.toString() === journeyId);
 
       if (!journey) return;
 
@@ -734,6 +731,7 @@ const Pipeline = () => {
             ? { ...j, deletedAt: newDeletedValue }
             : j;
 
+        setLegacyJourneys(prev => prev ? prev.map(updateJourney) : prev);
         setJourneys(prev => prev.map(updateJourney));
         setListViewJourneys(prev => prev.map(updateJourney));
         setKanbanViewJourneys(prev => prev.map(updateJourney));
@@ -755,7 +753,7 @@ const Pipeline = () => {
       console.error("Error toggling journey status:", error);
       alert("Failed to toggle journey status. Please try again.");
     }
-  }, [patch, journeys, listViewJourneys, kanbanViewJourneys, showDisabledJourneys, viewMode, fetchListViewJourneys, fetchKanbanViewJourneys]);
+  }, [patch, legacyJourneys, journeys, listViewJourneys, kanbanViewJourneys, showDisabledJourneys, viewMode, fetchListViewJourneys, fetchKanbanViewJourneys]);
 
   const handleTagsUpdated = useCallback(async () => {
     if (!showTags) return;
