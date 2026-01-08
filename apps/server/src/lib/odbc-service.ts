@@ -1,6 +1,7 @@
 import type { Connection } from "odbc";
 
 import type {
+  BatchResult,
   ColumnSchema,
   DatabaseName,
   DatabaseSchema,
@@ -186,6 +187,81 @@ export class LegacyService {
     }
   }
 
+  async getAllBatched(
+    database: DatabaseName,
+    table: string,
+    params: PaginationParams & { filter?: FilterParams; offset?: number; batchSize?: number },
+  ): Promise<BatchResult | null> {
+    const connection = this.getConnection(database);
+    if (!connection) {
+      logger.warn(`No connection for ${database}`);
+      return null;
+    }
+
+    const offset = params.offset ?? 0;
+    const batchSize = params.batchSize ?? 1000;
+    const fieldSelection = this.buildFieldSelection(params.fields);
+
+    let whereClause = "";
+    if (params.filter) {
+      const sql = this.buildFilterSQL(params.filter);
+      if (sql)
+        whereClause = `WHERE ${sql}`;
+    }
+
+    const query = `
+      SELECT ${fieldSelection}
+      FROM PUB.${table}
+      ${whereClause}
+      ${this.buildOrderSQL(params)}
+      OFFSET ${offset} ROWS FETCH FIRST ${batchSize} ROWS ONLY
+    `;
+
+    try {
+      const result = (await connection.query(query)) as Record<string, unknown>[];
+      const records = result ?? [];
+
+      return {
+        records,
+        hasMore: records.length === batchSize,
+        nextOffset: offset + records.length,
+      };
+    }
+    catch (err) {
+      logger.error("Error in getAllBatched:", err);
+      return null;
+    }
+  }
+
+  async *streamAll(
+    database: DatabaseName,
+    table: string,
+    params: PaginationParams & { filter?: FilterParams; batchSize?: number },
+  ): AsyncGenerator<Record<string, unknown>[], void, unknown> {
+    let offset = 0;
+    const batchSize = params.batchSize ?? 1000;
+
+    while (true) {
+      const result = await this.getAllBatched(database, table, {
+        ...params,
+        offset,
+        batchSize,
+      });
+
+      if (!result || result.records.length === 0) {
+        break;
+      }
+
+      yield result.records;
+
+      if (!result.hasMore) {
+        break;
+      }
+
+      offset = result.nextOffset;
+    }
+  }
+
   async getById(
     database: DatabaseName,
     table: string,
@@ -366,6 +442,90 @@ export class LegacyService {
     }
     catch (err) {
       logger.error("Error in delete:", err);
+      return false;
+    }
+  }
+
+  async updateByFilter(
+    database: DatabaseName,
+    table: string,
+    filters: Record<string, string>,
+    data: Record<string, unknown>,
+  ): Promise<boolean> {
+    const connection = this.getConnection(database);
+    if (!connection || !data || Object.keys(data).length === 0) {
+      return false;
+    }
+
+    if (!filters || Object.keys(filters).length === 0) {
+      logger.warn("updateByFilter called without filters - refusing to update all rows");
+      return false;
+    }
+
+    const setClause = Object.entries(data)
+      .map(([field, value]) => {
+        const safeField = this.validateFieldName(field);
+        if (value === null)
+          return `${safeField} = NULL`;
+        if (typeof value === "string")
+          return `${safeField} = '${value.replace(/'/g, "''")}'`;
+        return `${safeField} = ${value}`;
+      })
+      .join(", ");
+
+    const whereConditions = Object.entries(filters).map(([field, value]) => {
+      const safeField = field.replace(/[^\w#]/g, "");
+      const escapedValue = String(value).replace(/'/g, "''");
+      return `"${safeField}" = '${escapedValue}'`;
+    });
+
+    const query = `
+      UPDATE PUB.${table}
+      SET ${setClause}
+      WHERE ${whereConditions.join(" AND ")}
+    `;
+
+    try {
+      await connection.query(query);
+      return true;
+    }
+    catch (err) {
+      logger.error("Error in updateByFilter:", err);
+      return false;
+    }
+  }
+
+  async deleteByFilter(
+    database: DatabaseName,
+    table: string,
+    filters: Record<string, string>,
+  ): Promise<boolean> {
+    const connection = this.getConnection(database);
+    if (!connection)
+      return false;
+
+    if (!filters || Object.keys(filters).length === 0) {
+      logger.warn("deleteByFilter called without filters - refusing to delete all rows");
+      return false;
+    }
+
+    const whereConditions = Object.entries(filters).map(([field, value]) => {
+      const safeField = field.replace(/[^\w#]/g, "");
+      const escapedValue = String(value).replace(/'/g, "''");
+      return `"${safeField}" = '${escapedValue}'`;
+    });
+
+    const query = `
+      DELETE FROM PUB.${table}
+      WHERE ${whereConditions.join(" AND ")}
+    `;
+
+    try {
+      await connection.query(query);
+      return true;
+    }
+    catch (err) {
+      logger.error("Error in deleteByFilter:", err);
       return false;
     }
   }

@@ -580,8 +580,8 @@ export class LegacyService {
   async getById(database: string, table: string, id: string, fields?: string[] | null) {
     const fieldSelection = fields && fields.length > 0 ? fields.join(",") : "*";
 
-    // To help prevent bullshit temporarily
-    // TODO: This can be updated to use a mapping
+    // Legacy tables use different ID field names - map them here
+    // TODO: Move this to a configuration file for maintainability
     let idField = "ID";
     if (table.toLowerCase() === "company") {
       idField = "Company_ID";

@@ -1,5 +1,5 @@
 import { AuditController } from "./admin/audit.controller";
-import { BugReportingController } from "./admin/bug-reporting.cotroller";
+import { BugReportingController } from "./admin/bug-reporting.controller";
 import { EmployeeController } from "./admin/employee.controller";
 import { PermissionController } from "./admin/permission.controller";
 import { RoleController } from "./admin/role.controller";

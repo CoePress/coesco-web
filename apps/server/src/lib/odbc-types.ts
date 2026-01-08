@@ -54,3 +54,19 @@ export interface DatabaseSchema {
   extractedAt: string;
   tables: TableSchema[];
 }
+
+export interface BatchResult<T = Record<string, unknown>> {
+  records: T[];
+  hasMore: boolean;
+  nextOffset: number;
+  totalCount?: number;
+}
+
+export interface IdMapEntry {
+  database: DatabaseName;
+  table: string;
+  ids: Array<{
+    field: string;
+    type: "uuid" | "int";
+  }>;
+}

@@ -30,7 +30,7 @@ const CREDIT_STATUS_OPTIONS = [
   { value: "S", label: "OK to Ship" },
 ];
 
-// TODO: what the fuck do these codes mean
+// Payment terms in days (e.g., "30" = Net 30, "01" = Due on receipt)
 const TERMS_CODE_OPTIONS = ["30", "45", "01", "60", "90", "40", "50", "70"];
 
 function getContactTypeName(type: ContactType | string | null | undefined): string {

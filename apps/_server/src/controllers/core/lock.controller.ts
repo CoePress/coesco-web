@@ -1,7 +1,18 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { UserRole } from "@prisma/client";
+
 import { lockingService } from "@/services";
 import { getEmployeeContext } from "@/utils/context";
+import { prisma } from "@/utils/prisma";
+
+async function isAdmin(employeeId: string): Promise<boolean> {
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    include: { user: true },
+  });
+  return employee?.user?.role === UserRole.ADMIN;
+}
 
 export class LockController {
   async acquireLock(
@@ -106,14 +117,14 @@ export class LockController {
         return;
       }
 
-      // const isAdmin = await this.authService.isAdmin(adminUserId);
-      // if (!isAdmin) {
-      //   res.status(403).json({
-      //     success: false,
-      //     error: "Admin privileges required",
-      //   });
-      //   return;
-      // }
+      const employee = getEmployeeContext();
+      if (!await isAdmin(employee.id)) {
+        res.status(403).json({
+          success: false,
+          error: "Admin privileges required",
+        });
+        return;
+      }
 
       const result = await lockingService.forceReleaseLock(
         recordType,
@@ -220,16 +231,14 @@ export class LockController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      // TODO: Add admin role validation here
-      // const { userId } = req.user;
-      // const isAdmin = await this.authService.isAdmin(userId);
-      // if (!isAdmin) {
-      //   res.status(403).json({
-      //     success: false,
-      //     error: "Admin privileges required",
-      //   });
-      //   return;
-      // }
+      const employee = getEmployeeContext();
+      if (!await isAdmin(employee.id)) {
+        res.status(403).json({
+          success: false,
+          error: "Admin privileges required",
+        });
+        return;
+      }
 
       const locks = await lockingService.getAllLocks();
 
@@ -277,16 +286,14 @@ export class LockController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      // TODO: Add admin role validation here
-      // const { userId } = req.user;
-      // const isAdmin = await this.authService.isAdmin(userId);
-      // if (!isAdmin) {
-      //   res.status(403).json({
-      //     success: false,
-      //     error: "Admin privileges required",
-      //   });
-      //   return;
-      // }
+      const employee = getEmployeeContext();
+      if (!await isAdmin(employee.id)) {
+        res.status(403).json({
+          success: false,
+          error: "Admin privileges required",
+        });
+        return;
+      }
 
       await lockingService.clearAllLocks();
 
