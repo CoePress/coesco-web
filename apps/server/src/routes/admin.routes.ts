@@ -4,6 +4,7 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { requireRole } from "../middleware/protect";
+import { backupService } from "../lib/backup";
 import { errors } from "../lib/errors";
 import { prisma } from "../lib/prisma";
 import { ListQuerySchema, UUIDSchema } from "../validators/form";
@@ -168,6 +169,116 @@ adminRouter.get("/employees", async (req: Request, res: Response, next: NextFunc
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ======================= BACKUPS =======================
+
+// LIST BACKUPS
+adminRouter.get("/backups", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const backups = await backupService.listBackups();
+    const stats = await backupService.getStats();
+
+    res.json({
+      success: true,
+      data: backups,
+      meta: {
+        ...stats,
+        backupDirectory: backupService.backupDirectory,
+        retentionDays: backupService.retention,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// CREATE BACKUP
+adminRouter.post("/backups", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await backupService.createBackup();
+
+    if (!result.success) {
+      throw errors.internal(result.error || "Backup failed");
+    }
+
+    res.status(201).json({
+      success: true,
+      data: { filename: result.filename },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// VERIFY BACKUP
+adminRouter.post("/backups/:filename/verify", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { filename } = req.params;
+
+    if (!filename || !filename.endsWith(".sql.gz")) {
+      throw errors.badRequest("Invalid backup filename");
+    }
+
+    const isValid = await backupService.verifyBackup(filename);
+
+    res.json({
+      success: true,
+      data: { filename, valid: isValid },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE BACKUP
+adminRouter.delete("/backups/:filename", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { filename } = req.params;
+
+    if (!filename || !filename.endsWith(".sql.gz")) {
+      throw errors.badRequest("Invalid backup filename");
+    }
+
+    const result = await backupService.deleteBackup(filename);
+
+    if (!result.success) {
+      throw errors.internal(result.error || "Delete failed");
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// RESTORE BACKUP (dangerous - requires confirmation)
+adminRouter.post("/backups/:filename/restore", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { filename } = req.params;
+    const { confirm } = req.body;
+
+    if (!filename || !filename.endsWith(".sql.gz")) {
+      throw errors.badRequest("Invalid backup filename");
+    }
+
+    if (confirm !== "RESTORE") {
+      throw errors.badRequest("Must confirm restore with body: { confirm: \"RESTORE\" }");
+    }
+
+    const result = await backupService.restoreBackup(filename);
+
+    if (!result.success) {
+      throw errors.internal(result.error || "Restore failed");
+    }
+
+    res.json({
+      success: true,
+      data: { filename, restored: true },
     });
   } catch (err) {
     next(err);

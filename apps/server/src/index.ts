@@ -11,13 +11,13 @@ import http from "node:http";
 
 import { jobs } from "./jobs";
 import { startCron } from "./lib/cron";
-import env from "./lib/env";
+import env, { __dev__, __prod__ } from "./lib/env";
 import logger from "./lib/logger";
 import { syncMicrosoftUsers } from "./lib/microsoft";
 import { prisma } from "./lib/prisma";
 import { errorHandler } from "./middleware/error-handler";
 import { requestId } from "./middleware/request-id";
-import router from "./routes";
+import router, { systemRouter } from "./routes";
 import { seedUsers } from "./utils/seed-users";
 import { createSocketServer } from "./ws";
 
@@ -46,8 +46,13 @@ const morganMiddleware = morgan(
 );
 
 app.use(compression());
+
+const corsOrigins = __dev__
+  ? ["http://localhost:5173", "http://localhost:3000"]
+  : env.CORS_ORIGINS?.split(",").map(s => s.trim()) ?? [];
+
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:3000"],
+  origin: corsOrigins,
   credentials: true,
 }));
 app.use(cookieParser());
@@ -58,10 +63,7 @@ app.use(morganMiddleware);
 
 /* -------------------------------- routes ------------------------------ */
 
-app.get("/health", async (_req: Request, res: Response) => {
-  res.json({ status: "ok" });
-});
-
+app.use(systemRouter);
 app.use("/v1", router);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -98,9 +100,11 @@ function setupShutdown() {
 async function main() {
   await prisma.$queryRaw`SELECT 1`;
 
-  await seedUsers(prisma, [
-    { username: "admin", password: "admin123", isActive: true },
-  ]);
+  if (!__prod__) {
+    await seedUsers(prisma, [
+      { username: "admin", password: "admin123", isActive: true },
+    ]);
+  }
 
   await syncMicrosoftUsers();
 

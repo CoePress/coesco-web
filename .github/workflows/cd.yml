@@ -1,0 +1,202 @@
+name: CD - Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "22"
+  DEPLOY_HOST: api.portal.cpec.com
+  DEPLOY_USER: coesco
+  DEPLOY_PATH: /opt/coesco
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    outputs:
+      server-changed: ${{ steps.changes.outputs.server }}
+      client-changed: ${{ steps.changes.outputs.client }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            server:
+              - 'apps/server/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'package-lock.json'
+            client:
+              - 'apps/client/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'package-lock.json'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Create server package
+        if: steps.changes.outputs.server == 'true'
+        run: |
+          cd apps/server
+          tar -czf ../../server-deploy.tar.gz \
+            dist/ \
+            prisma/ \
+            package.json \
+            package-lock.json
+
+      - name: Create client package
+        if: steps.changes.outputs.client == 'true'
+        run: |
+          cd apps/client
+          tar -czf ../../client-deploy.tar.gz dist/
+
+      - name: Upload server artifact
+        if: steps.changes.outputs.server == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-deploy
+          path: server-deploy.tar.gz
+          retention-days: 1
+
+      - name: Upload client artifact
+        if: steps.changes.outputs.client == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-deploy
+          path: client-deploy.tar.gz
+          retention-days: 1
+
+  deploy-server:
+    name: Deploy Server
+    runs-on: ubuntu-latest
+    needs: build
+    if: needs.build.outputs.server-changed == 'true'
+    environment:
+      name: production
+      url: https://api.portal.cpec.com
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: server-deploy
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          scp server-deploy.tar.gz ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:/tmp/
+
+          ssh ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'ENDSSH'
+            set -e
+
+            cd /opt/coesco/apps/server
+
+            # Backup current version
+            if [ -d dist ]; then
+              cp -r dist dist.backup
+            fi
+
+            # Extract new version
+            tar -xzf /tmp/server-deploy.tar.gz
+
+            # Install dependencies
+            npm ci --production
+
+            # Run migrations
+            npx prisma migrate deploy
+
+            # Restart
+            pm2 reload coesco-api --update-env
+
+            # Cleanup
+            rm /tmp/server-deploy.tar.gz
+            rm -rf dist.backup
+
+            echo "Server deployment complete!"
+          ENDSSH
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f https://api.portal.cpec.com/health || exit 1
+
+  deploy-client:
+    name: Deploy Client
+    runs-on: ubuntu-latest
+    needs: build
+    if: needs.build.outputs.client-changed == 'true'
+    environment:
+      name: production
+      url: https://portal.cpec.com
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: client-deploy
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          scp client-deploy.tar.gz ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:/tmp/
+
+          ssh ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'ENDSSH'
+            set -e
+
+            cd /opt/coesco/apps/client
+
+            # Backup current version
+            if [ -d dist ]; then
+              mv dist dist.backup
+            fi
+
+            # Extract new version
+            tar -xzf /tmp/client-deploy.tar.gz
+
+            # Cleanup
+            rm /tmp/client-deploy.tar.gz
+            rm -rf dist.backup
+
+            echo "Client deployment complete!"
+          ENDSSH
+
+      - name: Verify
+        run: |
+          curl -f https://portal.cpec.com/ || exit 1

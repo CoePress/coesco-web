@@ -39,6 +39,11 @@ const envSchema = z.object({
   AZURE_CLIENT_SECRET: z.string(),
   AZURE_REDIRECT_URI: z.string(),
   GRAPH_ENCRYPTION_KEY: z.string().min(32),
+
+  CORS_ORIGINS: z.string().optional(),
+
+  BACKUP_DIR: z.string().optional(),
+  BACKUP_RETENTION_DAYS: z.coerce.number().default(14),
 });
 
 const env = envSchema.parse(process.env);
