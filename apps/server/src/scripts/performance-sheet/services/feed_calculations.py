@@ -257,8 +257,8 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
                 try:
                     table_values.append({
                         "length": feed_angle_1_values[i]["length"],
-                        "feedAngle1": data.feed_angle_1,
-                        "feedAngle2": data.feed_angle_2,
+                        # NOTE: feedAngle1 and feedAngle2 are INPUT fields set by user dropdown
+                        # They should NOT be in table results as that overwrites user's input
                         "rms_torque_fa1": feed_angle_1_values[i]["rms_torque"],
                         "rms_torque_fa2": feed_angle_2_values[i]["rms_torque"],
                         "spmAt180": feed_angle_1_values[i]["strokes_per_minute"],

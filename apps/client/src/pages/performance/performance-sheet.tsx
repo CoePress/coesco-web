@@ -4,7 +4,7 @@ import { useParams, Link as RouterLink } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
-import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox, FeedPerformanceDisplay } from "@/components";
+import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox, FeedPerformanceDisplay, ScenarioTabs } from "@/components";
 import { useToast } from "@/hooks/use-toast";
 import { ms } from "@/utils";
 import Loader from "@/components/ui/loader";
@@ -37,6 +37,13 @@ const PerformanceSheet = () => {
   const [showResults, setShowResults] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [activeScenarios, setActiveScenarios] = useState<Record<string, number>>({
+    'tddbhd': 1,
+    'str-utility': 1,
+    'roll-str-backbend': 1,
+    'feed': 1,
+    'shear': 1,
+  });
   const [, forceUpdate] = useState({});
   const { id: performanceSheetId } = useParams();
   const { emit, isLockConnected, onLockChanged, calculatePerformanceSheet, isPerformanceConnected } = useSocket();
@@ -67,6 +74,17 @@ const PerformanceSheet = () => {
     calculationTimeoutRef.current = setTimeout(() => {
       if (isPerformanceConnected && performanceSheet?.data?.version?.sections) {
         const bundledData = bundleFormDataByTabsAndSections(data);
+
+        // Log TDDBHD data being sent
+        if (bundledData.tddbhd) {
+          console.log('Sending TDDBHD data to backend:', JSON.stringify(bundledData.tddbhd, null, 2));
+        }
+
+        // Log STR Utility data being sent
+        if (bundledData.strUtility) {
+          console.log('Sending STR UTILITY data to backend:', JSON.stringify(bundledData.strUtility, null, 2));
+        }
+
         calculatePerformanceSheet(bundledData, "main.py", (response) => {
           if (response?.ok) {
             // Merge calculated values without overwriting user input
@@ -88,7 +106,144 @@ const PerformanceSheet = () => {
   const mergeCalculatedValues = useCallback((currentData: Record<string, any>, calculatedData: Record<string, any>): Record<string, any> => {
     let mergedData = { ...currentData };
 
-    // Define paths for calculated fields that should be updated
+    // Handle scenario-based calculation results
+    // Material Specs scenarios - data is already mapped by backend result_mapping.py
+    if (calculatedData.materialSpecs?.scenarios) {
+      calculatedData.materialSpecs.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          const scenarioData = {
+            minBendRadius: scenario.minBendRadius,
+            minLoopLength: scenario.minLoopLength,
+            coilODCalculated: scenario.coilODCalculated
+          };
+          Object.entries(scenarioData).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              mergedData = setNestedValue(mergedData, `materialSpecs.scenarios[${index}].${key}`, value);
+            }
+          });
+        }
+      });
+    }
+
+    // TDDBHD scenarios - data is already mapped by backend result_mapping.py
+    if (calculatedData.tddbhd?.scenarios) {
+      console.log('TDDBHD scenarios from backend:', JSON.stringify(calculatedData.tddbhd.scenarios, null, 2));
+      calculatedData.tddbhd.scenarios.forEach((scenario: any, index: number) => {
+        console.log(`Processing TDDBHD scenario ${index}:`, JSON.stringify(scenario, null, 2));
+        if (scenario && Object.keys(scenario).length > 0) {
+          // Flatten scenario data to field paths
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                const fullPath = `tddbhd.scenarios[${index}].${path}`;
+                console.log(`Setting TDDBHD value: ${fullPath} = ${value}`);
+                mergedData = setNestedValue(mergedData, fullPath, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        } else {
+          console.warn(`TDDBHD scenario ${index} is empty or has no data - calculation likely failed on backend`);
+        }
+      });
+      console.log('Merged data after TDDBHD:', mergedData.tddbhd);
+    }
+
+    // Str Utility scenarios
+    console.log('STR Utility scenarios from backend:', calculatedData.strUtility?.scenarios || []);
+    if (calculatedData.strUtility?.scenarios) {
+      calculatedData.strUtility.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          console.log(`Processing STR Utility scenario ${index}:`, JSON.stringify(scenario, null, 2));
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                console.log(`Setting STR Utility value: strUtility.scenarios[${index}].${path} = ${value}`);
+                mergedData = setNestedValue(mergedData, `strUtility.scenarios[${index}].${path}`, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        }
+      });
+    }
+
+    // Roll Str Backbend scenarios
+    console.log('Roll Str Backbend scenarios from backend:', calculatedData.rollStrBackbend?.scenarios || []);
+    if (calculatedData.rollStrBackbend?.scenarios) {
+      calculatedData.rollStrBackbend.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          console.log(`Processing Roll Str Backbend scenario ${index}:`, JSON.stringify(scenario, null, 2));
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                console.log(`Setting Roll Str Backbend value: rollStrBackbend.scenarios[${index}].${path} = ${value}`);
+                mergedData = setNestedValue(mergedData, `rollStrBackbend.scenarios[${index}].${path}`, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        } else {
+          console.warn(`Roll Str Backbend scenario ${index} is empty or has no data - calculation likely failed on backend`);
+        }
+      });
+      console.log('Merged data after Roll Str Backbend:', mergedData.rollStrBackbend);
+    }
+
+    // Feed scenarios (only 2)
+    console.log('Feed scenarios from backend:', calculatedData.feed?.scenarios || []);
+    if (calculatedData.feed?.scenarios) {
+      calculatedData.feed.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          console.log(`Processing Feed scenario ${index}:`, JSON.stringify(scenario, null, 2));
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                console.log(`Setting Feed value: feed.scenarios[${index}].${path} = ${value}`);
+                mergedData = setNestedValue(mergedData, `feed.scenarios[${index}].${path}`, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        } else {
+          console.warn(`Feed scenario ${index} is empty or has no data - calculation likely failed on backend`);
+        }
+      });
+      console.log('Merged data after Feed:', mergedData.feed);
+    }
+
+    // Shear scenarios (only 2)
+    if (calculatedData.shear?.scenarios) {
+      calculatedData.shear.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                mergedData = setNestedValue(mergedData, `shear.scenarios[${index}].${path}`, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        }
+      });
+    }
+
+    // Legacy field paths for backward compatibility and non-scenario fields
     const calculatedFieldPaths = [
       // RFQ FPM values
       'common.feedRates.average.fpm',
@@ -380,33 +535,75 @@ const PerformanceSheet = () => {
   }, []);
 
   const getNestedValue = (obj: Record<string, any>, path: string): any => {
-    const keys = path.split(".");
     let current = obj;
+    const parts = path.split(".");
 
-    for (const key of keys) {
-      if (current === null || current === undefined || typeof current !== "object") {
+    for (const part of parts) {
+      if (current === null || current === undefined) {
         return undefined;
       }
-      current = current[key];
+
+      // Handle array notation like "scenarios[0]"
+      const arrayMatch = part.match(/^(.+?)\[(\d+)\]$/);
+      if (arrayMatch) {
+        const arrayKey = arrayMatch[1];
+        const index = parseInt(arrayMatch[2], 10);
+        current = current[arrayKey]?.[index];
+      } else {
+        current = current[part];
+      }
     }
 
     return current;
   };
 
   const setNestedValue = (obj: Record<string, any>, path: string, value: any): Record<string, any> => {
-    const keys = path.split(".");
     const result = JSON.parse(JSON.stringify(obj));
     let current = result;
 
-    for (let i = 0; i < keys.length - 1; i++) {
-      const key = keys[i];
-      if (!current[key] || typeof current[key] !== "object") {
-        current[key] = {};
+    // Parse path with array notation support (e.g., "scenarios[0].field")
+    const parts = path.split('.');
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      const arrayMatch = part.match(/^(.+?)\[(\d+)\]$/);
+
+      if (arrayMatch) {
+        // Handle array access like "scenarios[0]"
+        const arrayKey = arrayMatch[1];
+        const index = parseInt(arrayMatch[2], 10);
+
+        if (!current[arrayKey]) {
+          current[arrayKey] = [];
+        }
+        if (!current[arrayKey][index]) {
+          current[arrayKey][index] = {};
+        }
+        current = current[arrayKey][index];
+      } else {
+        // Handle regular object access
+        if (!current[part] || typeof current[part] !== "object") {
+          current[part] = {};
+        }
+        current = current[part];
       }
-      current = current[key];
     }
 
-    current[keys[keys.length - 1]] = value;
+    // Set the final value
+    const lastPart = parts[parts.length - 1];
+    const arrayMatch = lastPart.match(/^(.+?)\[(\d+)\]$/);
+
+    if (arrayMatch) {
+      const arrayKey = arrayMatch[1];
+      const index = parseInt(arrayMatch[2], 10);
+      if (!current[arrayKey]) {
+        current[arrayKey] = [];
+      }
+      current[arrayKey][index] = value;
+    } else {
+      current[lastPart] = value;
+    }
+
     return result;
   };
 
@@ -694,7 +891,6 @@ const PerformanceSheet = () => {
 
       // Initialize missing feed values (let source tabs handle their defaults)
       const fullWidthRolls = getNestedValue(data, "feed.feed.fullWidthRolls");
-      const feedAngle1 = getNestedValue(data, "feed.feed.feedAngle1");
 
       if (!data.feed) data.feed = {};
       if (!data.feed.feed) data.feed.feed = {};
@@ -704,10 +900,9 @@ const PerformanceSheet = () => {
         data.feed.feed.fullWidthRolls = "Yes";
       }
 
-      if (feedAngle1 === null || feedAngle1 === undefined) {
-
-        data.feed.feed.feedAngle1 = 180;
-      }
+      // Note: feedAngle1 and feedAngle2 are scenario-based fields
+      // They should NOT be initialized here as that would override scenario-specific values
+      // The template defaults and backend preservation handle these values correctly
 
       // Initialize missing material specs values
       const reelStyle = getNestedValue(data, "materialSpecs.reel.style");
@@ -805,15 +1000,115 @@ const PerformanceSheet = () => {
         }
       }
 
+      // Initialize material scenarios array if it doesn't exist
+      const materialScenarios = getNestedValue(data, "common.materialScenarios");
+      if (!materialScenarios || !Array.isArray(materialScenarios) || materialScenarios.length === 0) {
+        // Initialize with 4 empty scenarios
+        if (!data.common) data.common = {};
+        data.common.materialScenarios = [
+          { scenarioId: 1 },
+          { scenarioId: 2 },
+          { scenarioId: 3 },
+          { scenarioId: 4 }
+        ];
+      } else {
+        // Ensure we have exactly 4 scenarios
+        while (data.common.materialScenarios.length < 4) {
+          data.common.materialScenarios.push({
+            scenarioId: data.common.materialScenarios.length + 1
+          });
+        }
+      }
+
+      // Populate each scenario with common.coil values (shared across all scenarios)
+      const commonCoilWeight = getNestedValue(data, "common.coil.maxCoilWeight");
+      const commonCoilOD = getNestedValue(data, "common.coil.maxCoilOD");
+      const commonCoilID = getNestedValue(data, "common.coil.coilID");
+      const commonReqMaxFPM = getNestedValue(data, "common.feedRates.max.fpm");
+
+      data.common.materialScenarios.forEach((scenario: any, index: number) => {
+        // Populate shared fields from common.coil if not already set
+        if (commonCoilWeight !== null && commonCoilWeight !== undefined) {
+          scenario.coilWeight = commonCoilWeight;
+        }
+        if (commonCoilOD !== null && commonCoilOD !== undefined) {
+          scenario.coilOD = commonCoilOD;
+        }
+        if (commonCoilID !== null && commonCoilID !== undefined) {
+          scenario.coilID = commonCoilID;
+        }
+        if (commonReqMaxFPM !== null && commonReqMaxFPM !== undefined) {
+          scenario.reqMaxFPM = commonReqMaxFPM;
+        }
+        // Ensure scenarioId exists
+        if (!scenario.scenarioId) {
+          scenario.scenarioId = index + 1;
+        }
+      });
+
+      // Initialize scenario-based calculated data arrays if they don't exist
+      ['tddbhd', 'strUtility', 'rollStrBackbend', 'feed', 'shear'].forEach((tabKey) => {
+        if (!data[tabKey]) data[tabKey] = {};
+        if (!data[tabKey].scenarios || !Array.isArray(data[tabKey].scenarios)) {
+          const maxScenarios = (tabKey === 'feed' || tabKey === 'shear') ? 2 : 4;
+          data[tabKey].scenarios = Array.from({ length: maxScenarios }, (_, i) => ({
+            scenarioId: i + 1
+          }));
+        }
+      });
+
+      // Initialize material specs scenarios array
+      if (!data.materialSpecs) data.materialSpecs = {};
+      if (!data.materialSpecs.scenarios || !Array.isArray(data.materialSpecs.scenarios)) {
+        data.materialSpecs.scenarios = Array.from({ length: 4 }, (_, i) => ({
+          scenarioId: i + 1
+        }));
+      }
+
+      // Initialize reel equipment scenarios array
+      if (!data.common) data.common = {};
+      if (!data.common.equipment) data.common.equipment = {};
+      if (!data.common.equipment.reel) data.common.equipment.reel = {};
+      if (!data.common.equipment.reel.scenarios || !Array.isArray(data.common.equipment.reel.scenarios)) {
+        data.common.equipment.reel.scenarios = Array.from({ length: 4 }, (_, i) => ({
+          scenarioId: i + 1
+        }));
+      }
+
       // Initialize default values for all fields that have defaultValue property
-      const initializeDefaultValues = (sections: any[]) => {
+      const initializeDefaultValues = (sections: any[], tabId?: string) => {
+        const scenarioTabs = ['tddbhd', 'str-utility', 'roll-str-backbend', 'feed', 'shear'];
+        const scenarioMap: Record<string, string> = {
+          'tddbhd': 'tddbhd',
+          'str-utility': 'strUtility',
+          'roll-str-backbend': 'rollStrBackbend',
+          'feed': 'feed',
+          'shear': 'shear'
+        };
+
         sections?.forEach((section: any) => {
           section.fields?.forEach((field: any) => {
             if (field.defaultValue !== undefined && field.defaultValue !== null) {
-              const currentValue = getNestedValue(data, field.id);
-              if (currentValue === undefined || currentValue === null || currentValue === '') {
+              // Check if this is a scenario-based field
+              const isScenarioTab = tabId && scenarioTabs.includes(tabId);
+              const scenarioPrefix = scenarioMap[tabId || ''];
 
-                data = setNestedValue(data, field.id, field.defaultValue);
+              if (isScenarioTab && scenarioPrefix && field.id.startsWith(`${scenarioPrefix}.`)) {
+                // Initialize default value for each scenario
+                const maxScenarios = (tabId === 'feed' || tabId === 'shear') ? 2 : 4;
+                for (let i = 0; i < maxScenarios; i++) {
+                  const scenarioFieldId = field.id.replace(`${scenarioPrefix}.`, `${scenarioPrefix}.scenarios[${i}].`);
+                  const currentValue = getNestedValue(data, scenarioFieldId);
+                  if (currentValue === undefined || currentValue === null || currentValue === '') {
+                    data = setNestedValue(data, scenarioFieldId, field.defaultValue);
+                  }
+                }
+              } else {
+                // Non-scenario field - use original logic
+                const currentValue = getNestedValue(data, field.id);
+                if (currentValue === undefined || currentValue === null || currentValue === '') {
+                  data = setNestedValue(data, field.id, field.defaultValue);
+                }
               }
             }
           });
@@ -822,7 +1117,7 @@ const PerformanceSheet = () => {
 
       // Apply defaults to all tabs
       performanceSheet?.data?.version?.tabs?.forEach((tab: any) => {
-        initializeDefaultValues(tab.sections);
+        initializeDefaultValues(tab.sections, tab.id);
       });
 
       setFormData(data);
@@ -845,6 +1140,51 @@ const PerformanceSheet = () => {
       }
     }
   }, [performanceSheet]);
+
+  // Auto-populate material scenarios with common.coil values whenever they change
+  useEffect(() => {
+    if (!formData || !formData.common) return;
+
+    const commonCoilWeight = getNestedValue(formData, "common.coil.maxCoilWeight");
+    const commonCoilOD = getNestedValue(formData, "common.coil.maxCoilOD");
+    const commonCoilID = getNestedValue(formData, "common.coil.coilID");
+    const commonReqMaxFPM = getNestedValue(formData, "common.feedRates.max.fpm");
+
+    const materialScenarios = getNestedValue(formData, "common.materialScenarios");
+    if (materialScenarios && Array.isArray(materialScenarios)) {
+      let updated = false;
+      const newFormData = { ...formData };
+
+      materialScenarios.forEach((scenario: any, index: number) => {
+        // Update shared fields if common values change
+        if (commonCoilWeight !== null && commonCoilWeight !== undefined && scenario.coilWeight !== commonCoilWeight) {
+          newFormData.common.materialScenarios[index].coilWeight = commonCoilWeight;
+          updated = true;
+        }
+        if (commonCoilOD !== null && commonCoilOD !== undefined && scenario.coilOD !== commonCoilOD) {
+          newFormData.common.materialScenarios[index].coilOD = commonCoilOD;
+          updated = true;
+        }
+        if (commonCoilID !== null && commonCoilID !== undefined && scenario.coilID !== commonCoilID) {
+          newFormData.common.materialScenarios[index].coilID = commonCoilID;
+          updated = true;
+        }
+        if (commonReqMaxFPM !== null && commonReqMaxFPM !== undefined && scenario.reqMaxFPM !== commonReqMaxFPM) {
+          newFormData.common.materialScenarios[index].reqMaxFPM = commonReqMaxFPM;
+          updated = true;
+        }
+      });
+
+      if (updated) {
+        setFormData(newFormData);
+      }
+    }
+  }, [
+    formData?.common?.coil?.maxCoilWeight,
+    formData?.common?.coil?.maxCoilOD,
+    formData?.common?.coil?.coilID,
+    formData?.common?.feedRates?.max?.fpm
+  ]);
 
   useEffect(() => {
     if (activeTab && visibleTabs.length > 0) {
@@ -962,7 +1302,9 @@ const PerformanceSheet = () => {
 
     // Check for dependency-based options first
     if (field.dependsOn && field.dependencyType) {
-      const dependentValue = getNestedValue(formData, field.dependsOn);
+      // Make dependency field scenario-aware
+      const scenarioAwareDependsOn = getScenarioAwareFieldId(field.dependsOn);
+      const dependentValue = getNestedValue(formData, scenarioAwareDependsOn);
 
 
       if (fieldId.includes('straightener') && (field.dependencyType === 'strWidth' || field.dependencyType === 'strHorsepower')) {
@@ -984,9 +1326,12 @@ const PerformanceSheet = () => {
             return getHoldDownAssyOptionsForModel(dependentValue);
           case "cylinder":
             // Cylinder depends on both model and hold down assembly
-            const reelModelValue = getNestedValue(formData, "common.equipment.reel.model");
-            if (reelModelValue && dependentValue) {
-              return getCylinderOptionsForHoldDownAssy(reelModelValue, dependentValue);
+            const scenarioAwareReelModel = getScenarioAwareFieldId("common.equipment.reel.model");
+            const reelModelValue = getNestedValue(formData, scenarioAwareReelModel);
+            if (dependentValue) {
+              // If hold down assy is set, use reel model or default
+              const modelToUse = reelModelValue || 'CPR-040';
+              return getCylinderOptionsForHoldDownAssy(modelToUse, dependentValue);
             }
             return [];
           case "strWidth":
@@ -999,7 +1344,8 @@ const PerformanceSheet = () => {
             return getStrHorsepowerOptionsForModel(strHpModel);
           case "strFeedRate":
             // Feed rate depends on both horsepower (primary) and model (secondary)
-            const secondaryDependentValue = field.secondaryDependsOn ? getNestedValue(formData, field.secondaryDependsOn) : null;
+            const scenarioAwareSecondaryDependsOn = field.secondaryDependsOn ? getScenarioAwareFieldId(field.secondaryDependsOn) : null;
+            const secondaryDependentValue = scenarioAwareSecondaryDependsOn ? getNestedValue(formData, scenarioAwareSecondaryDependsOn) : null;
             const modelForFeedRate = secondaryDependentValue || DEFAULT_STR_MODEL;
 
             // Use default horsepower if none provided (during initialization)
@@ -1028,6 +1374,21 @@ const PerformanceSheet = () => {
           return getStrWidthOptionsForModel(defaultModel);
         } else if (field.dependencyType === 'strHorsepower') {
           return getStrHorsepowerOptionsForModel(defaultModel);
+        }
+      }
+
+      // Handle reel-related fields when model is not set - use default reel model
+      if (!dependentValue && (field.dependencyType === 'reelWidth' || field.dependencyType === 'backplateDiameter' || field.dependencyType === 'holdDownAssy' || field.dependencyType === 'hydThreadingDrive')) {
+        const DEFAULT_REEL_MODEL = 'CPR-040';
+
+        if (field.dependencyType === 'reelWidth') {
+          return getReelWidthOptionsForModel(DEFAULT_REEL_MODEL);
+        } else if (field.dependencyType === 'backplateDiameter') {
+          return getBackplateDiameterOptionsForModel(DEFAULT_REEL_MODEL);
+        } else if (field.dependencyType === 'holdDownAssy') {
+          return getHoldDownAssyOptionsForModel(DEFAULT_REEL_MODEL);
+        } else if (field.dependencyType === 'hydThreadingDrive') {
+          return getHydThreadingDriveOptionsForModel(DEFAULT_REEL_MODEL);
         }
       }
 
@@ -1230,18 +1591,25 @@ const PerformanceSheet = () => {
     }
 
     // Handle dependent field logic when reel model changes
-    if (fieldId === "common.equipment.reel.model") {
-      const currentWidth = getNestedValue(updatedData, "common.equipment.reel.width");
-      const currentBackplate = getNestedValue(updatedData, "common.equipment.reel.backplate.diameter");
-      const currentHydDrive = getNestedValue(updatedData, "tddbhd.reel.threadingDrive.hydThreadingDrive");
-      const currentHoldDown = getNestedValue(updatedData, "tddbhd.reel.holddown.assy");
-      const currentCylinder = getNestedValue(updatedData, "tddbhd.reel.holddown.cylinder");
+    if (fieldId.includes("common.equipment.reel") && fieldId.endsWith(".model")) {
+      const scenarioAwareWidth = fieldId.replace(".model", ".width");
+      const scenarioAwareBackplate = fieldId.replace(".model", ".backplate.diameter");
+      const baseScenarioPath = fieldId.replace("common.equipment.reel", "tddbhd").replace(".model", "");
+      const scenarioAwareHydDrive = baseScenarioPath + ".reel.threadingDrive.hydThreadingDrive";
+      const scenarioAwareHoldDown = baseScenarioPath + ".reel.holddown.assy";
+      const scenarioAwareCylinder = baseScenarioPath + ".reel.holddown.cylinder";
+
+      const currentWidth = getNestedValue(updatedData, scenarioAwareWidth);
+      const currentBackplate = getNestedValue(updatedData, scenarioAwareBackplate);
+      const currentHydDrive = getNestedValue(updatedData, scenarioAwareHydDrive);
+      const currentHoldDown = getNestedValue(updatedData, scenarioAwareHoldDown);
+      const currentCylinder = getNestedValue(updatedData, scenarioAwareCylinder);
 
       // Clear width if it's not valid for the new model
       if (currentWidth && value) {
         const validWidths = getReelWidthOptionsForModel(value).map(option => option.value);
         if (!validWidths.includes(currentWidth)) {
-          updatedData = setNestedValue(updatedData, "common.equipment.reel.width", "");
+          updatedData = setNestedValue(updatedData, scenarioAwareWidth, "");
         }
       }
 
@@ -1249,7 +1617,7 @@ const PerformanceSheet = () => {
       if (currentBackplate && value) {
         const validBackplates = getBackplateDiameterOptionsForModel(value).map(option => option.value);
         if (!validBackplates.includes(currentBackplate)) {
-          updatedData = setNestedValue(updatedData, "common.equipment.reel.backplate.diameter", "");
+          updatedData = setNestedValue(updatedData, scenarioAwareBackplate, "");
         }
       }
 
@@ -1257,7 +1625,7 @@ const PerformanceSheet = () => {
       if (currentHydDrive && value) {
         const validHydDrives = getHydThreadingDriveOptionsForModel(value).map(option => option.value);
         if (!validHydDrives.includes(currentHydDrive)) {
-          updatedData = setNestedValue(updatedData, "tddbhd.reel.threadingDrive.hydThreadingDrive", "");
+          updatedData = setNestedValue(updatedData, scenarioAwareHydDrive, "");
         }
       }
 
@@ -1265,15 +1633,15 @@ const PerformanceSheet = () => {
       if (currentHoldDown && value) {
         const validHoldDowns = getHoldDownAssyOptionsForModel(value).map(option => option.value);
         if (!validHoldDowns.includes(currentHoldDown)) {
-          updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.assy", "");
+          updatedData = setNestedValue(updatedData, scenarioAwareHoldDown, "");
           // Also clear cylinder since hold down changed
-          updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", "");
+          updatedData = setNestedValue(updatedData, scenarioAwareCylinder, "");
         } else {
           // Check if current cylinder is still valid for the existing hold down
           if (currentCylinder && value) {
             const validCylinders = getCylinderOptionsForHoldDownAssy(value, currentHoldDown).map(option => option.value);
             if (!validCylinders.includes(currentCylinder)) {
-              updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", "");
+              updatedData = setNestedValue(updatedData, scenarioAwareCylinder, "");
             }
           }
         }
@@ -1281,9 +1649,12 @@ const PerformanceSheet = () => {
     }
 
     // Handle dependent field logic when hold down assembly changes
-    if (fieldId === "tddbhd.reel.holddown.assy") {
-      const currentCylinder = getNestedValue(updatedData, "tddbhd.reel.holddown.cylinder");
-      const reelModelValue = getNestedValue(updatedData, "common.equipment.reel.model");
+    if (fieldId.includes("tddbhd") && fieldId.includes("reel.holddown.assy")) {
+      const scenarioAwareCylinder = fieldId.replace("reel.holddown.assy", "reel.holddown.cylinder");
+      const scenarioAwareReelModel = fieldId.replace(/tddbhd\.scenarios\[\d+\]\.reel\.holddown\.assy/, "common.equipment.reel.scenarios[$1].model").replace(/tddbhd\.scenarios\[(\d+)\]/, (match, p1) => `common.equipment.reel.scenarios[${p1}]`);
+
+      const currentCylinder = getNestedValue(updatedData, scenarioAwareCylinder);
+      const reelModelValue = getNestedValue(updatedData, scenarioAwareReelModel);
 
       if (value && reelModelValue) {
         // Get valid cylinders for the new hold down assembly
@@ -1292,11 +1663,11 @@ const PerformanceSheet = () => {
         // If current cylinder is not valid for new assembly, auto-select the default
         if (!currentCylinder || !validCylinders.includes(currentCylinder)) {
           const defaultCylinder = getDefaultCylinderForHoldDownAssy(reelModelValue, value);
-          updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", defaultCylinder || "");
+          updatedData = setNestedValue(updatedData, scenarioAwareCylinder, defaultCylinder || "");
         }
       } else {
-        // Clear cylinder if no valid hold down assembly or reel model
-        updatedData = setNestedValue(updatedData, "tddbhd.reel.holddown.cylinder", "");
+        // Clear cylinder if hold down is cleared
+        updatedData = setNestedValue(updatedData, scenarioAwareCylinder, "");
       }
     }
 
@@ -1406,7 +1777,7 @@ const PerformanceSheet = () => {
           field.validation,
           (id: string) => getNestedValue(updatedData, id)
         );
-        
+
         setFieldErrors(prev => {
           const newErrors = { ...prev };
           if (error) {
@@ -1429,7 +1800,7 @@ const PerformanceSheet = () => {
             refField.validation,
             (id: string) => getNestedValue(updatedData, id)
           );
-          
+
           setFieldErrors(prev => {
             const newErrors = { ...prev };
             if (error) {
@@ -1463,25 +1834,170 @@ const PerformanceSheet = () => {
 
     if (!performanceSheet?.data?.version?.sections) return data;
 
+    const scenarioTabs = ['tddbhd', 'str-utility', 'roll-str-backbend', 'feed', 'shear'];
+    const scenarioMap: Record<string, string> = {
+      'tddbhd': 'tddbhd',
+      'str-utility': 'strUtility',
+      'roll-str-backbend': 'rollStrBackbend',
+      'feed': 'feed',
+      'shear': 'shear'
+    };
+
     performanceSheet.data.version.sections.forEach((tab: any) => {
+      const isScenarioTab = scenarioTabs.includes(tab.id);
+      const scenarioPrefix = scenarioMap[tab.id];
+
       tab.sections?.forEach((section: any) => {
         section.fields?.forEach((field: any) => {
-          const fieldValue = getNestedValue(data, field.id);
-          if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
-            const keys = field.id.split(".");
-            let current = bundled;
+          // Handle reel equipment fields (scenario-aware)
+          if (field.id.startsWith('common.equipment.reel.') && isScenarioTab) {
+            for (let scenarioIdx = 0; scenarioIdx < 4; scenarioIdx++) {
+              const scenarioFieldId = field.id.replace(/^common\.equipment\.reel\./, `common.equipment.reel.scenarios[${scenarioIdx}].`);
+              const fieldValue = getNestedValue(data, scenarioFieldId);
 
-            for (let i = 0; i < keys.length - 1; i++) {
-              if (!current[keys[i]]) {
-                current[keys[i]] = {};
+              if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+                const keys = scenarioFieldId.split(".");
+                let current = bundled;
+
+                for (let i = 0; i < keys.length - 1; i++) {
+                  const key = keys[i];
+                  if (key.includes('[')) {
+                    const arrayMatch = key.match(/^(.+?)\[(\d+)\]$/);
+                    if (arrayMatch) {
+                      const arrayName = arrayMatch[1];
+                      const arrayIndex = parseInt(arrayMatch[2]);
+
+                      if (!current[arrayName]) {
+                        current[arrayName] = [];
+                      }
+                      if (!current[arrayName][arrayIndex]) {
+                        current[arrayName][arrayIndex] = {};
+                      }
+                      current = current[arrayName][arrayIndex];
+                    }
+                  } else {
+                    if (!current[key]) {
+                      current[key] = {};
+                    }
+                    current = current[key];
+                  }
+                }
+
+                current[keys[keys.length - 1]] = fieldValue;
               }
-              current = current[keys[i]];
             }
+          }
+          // Handle material scenario fields (already have [0] in template, need all scenarios)
+          else if ((field.id.includes('common.materialScenarios[0]') || field.id.includes('materialSpecs.scenarios[0]')) && isScenarioTab) {
+            for (let scenarioIdx = 0; scenarioIdx < 4; scenarioIdx++) {
+              let scenarioFieldId = field.id;
+              scenarioFieldId = scenarioFieldId.replace(/common\.materialScenarios\[0\]/g, `common.materialScenarios[${scenarioIdx}]`);
+              scenarioFieldId = scenarioFieldId.replace(/materialSpecs\.scenarios\[0\]/g, `materialSpecs.scenarios[${scenarioIdx}]`);
 
-            current[keys[keys.length - 1]] = fieldValue;
+              const fieldValue = getNestedValue(data, scenarioFieldId);
+
+              if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+                const keys = scenarioFieldId.split(".");
+                let current = bundled;
+
+                for (let i = 0; i < keys.length - 1; i++) {
+                  const key = keys[i];
+                  if (key.includes('[')) {
+                    const arrayMatch = key.match(/^(.+?)\[(\d+)\]$/);
+                    if (arrayMatch) {
+                      const arrayName = arrayMatch[1];
+                      const arrayIndex = parseInt(arrayMatch[2]);
+
+                      if (!current[arrayName]) {
+                        current[arrayName] = [];
+                      }
+                      if (!current[arrayName][arrayIndex]) {
+                        current[arrayName][arrayIndex] = {};
+                      }
+                      current = current[arrayName][arrayIndex];
+                    }
+                  } else {
+                    if (!current[key]) {
+                      current[key] = {};
+                    }
+                    current = current[key];
+                  }
+                }
+
+                current[keys[keys.length - 1]] = fieldValue;
+              }
+            }
+          }
+          // Handle scenario-specific fields (tddbhd.*, strUtility.*, etc.)
+          else if (isScenarioTab && scenarioPrefix && field.id.startsWith(`${scenarioPrefix}.`)) {
+            // For scenario tabs, check all 4 scenarios
+            for (let scenarioIdx = 0; scenarioIdx < 4; scenarioIdx++) {
+              const scenarioFieldId = field.id.replace(`${scenarioPrefix}.`, `${scenarioPrefix}.scenarios[${scenarioIdx}].`);
+              const fieldValue = getNestedValue(data, scenarioFieldId);
+
+              if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+                const keys = scenarioFieldId.split(".");
+                let current = bundled;
+
+                for (let i = 0; i < keys.length - 1; i++) {
+                  const key = keys[i];
+                  // Handle array notation like "scenarios[0]"
+                  if (key.includes('[')) {
+                    const arrayMatch = key.match(/^(.+?)\[(\d+)\]$/);
+                    if (arrayMatch) {
+                      const arrayName = arrayMatch[1];
+                      const arrayIndex = parseInt(arrayMatch[2]);
+
+                      if (!current[arrayName]) {
+                        current[arrayName] = [];
+                      }
+                      if (!current[arrayName][arrayIndex]) {
+                        current[arrayName][arrayIndex] = {};
+                      }
+                      current = current[arrayName][arrayIndex];
+                    }
+                  } else {
+                    if (!current[key]) {
+                      current[key] = {};
+                    }
+                    current = current[key];
+                  }
+                }
+
+                current[keys[keys.length - 1]] = fieldValue;
+              }
+            }
+          } else {
+            // For non-scenario tabs, use original logic
+            const fieldValue = getNestedValue(data, field.id);
+            if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+              const keys = field.id.split(".");
+              let current = bundled;
+
+              for (let i = 0; i < keys.length - 1; i++) {
+                if (!current[keys[i]]) {
+                  current[keys[i]] = {};
+                }
+                current = current[keys[i]];
+              }
+
+              current[keys[keys.length - 1]] = fieldValue;
+            }
           }
         });
       });
+    });
+
+    // Also bundle any scenario-specific data that exists in formData but might not be in template
+    // This handles cases where data was filled in scenarios but template doesn't reflect it
+    Object.keys(scenarioMap).forEach((tabKey) => {
+      const scenarioPrefix = scenarioMap[tabKey];
+      if (data[scenarioPrefix]?.scenarios) {
+        if (!bundled[scenarioPrefix]) {
+          bundled[scenarioPrefix] = {};
+        }
+        bundled[scenarioPrefix].scenarios = data[scenarioPrefix].scenarios;
+      }
     });
 
     return bundled;
@@ -1616,12 +2132,106 @@ const PerformanceSheet = () => {
     }
   };
 
+  // Helper to inject scenario index into field paths for scenario-based tabs
+  const getScenarioAwareFieldId = (fieldId: string): string => {
+    const scenarioTabs = ['tddbhd', 'str-utility', 'roll-str-backbend', 'feed', 'shear'];
+    const scenarioMap: Record<string, string> = {
+      'tddbhd': 'tddbhd',
+      'str-utility': 'strUtility',
+      'roll-str-backbend': 'rollStrBackbend',
+      'feed': 'feed',
+      'shear': 'shear'
+    };
+
+    // Check if current tab uses scenarios
+    if (!scenarioTabs.includes(activeTab)) {
+      return fieldId;
+    }
+
+    // Get active scenario index (0-based)
+    const activeScenarioIndex = (activeScenarios[activeTab] || 1) - 1;
+
+    // Non-scenario fields that should never be transformed
+    const nonScenarioFields = [
+      'common.customer',
+      'rfq.dates.date'
+    ];
+
+    if (nonScenarioFields.includes(fieldId)) {
+      return fieldId;
+    }
+
+    // Handle material scenario fields - replace hardcoded [0] with active scenario index
+    if (fieldId.includes('common.materialScenarios[0]')) {
+      return fieldId.replace(/common\.materialScenarios\[0\]/g, `common.materialScenarios[${activeScenarioIndex}]`);
+    }
+
+    // Handle material specs scenario fields - replace hardcoded [0] with active scenario index
+    if (fieldId.includes('materialSpecs.scenarios[0]')) {
+      return fieldId.replace(/materialSpecs\.scenarios\[0\]/g, `materialSpecs.scenarios[${activeScenarioIndex}]`);
+    }
+
+    // Handle reel equipment fields - make them scenario-aware
+    if (fieldId.startsWith('common.equipment.reel.')) {
+      // Transform: common.equipment.reel.model -> common.equipment.reel.scenarios[X].model
+      return fieldId.replace(/^common\.equipment\.reel\./, `common.equipment.reel.scenarios[${activeScenarioIndex}].`);
+    }
+
+    // Handle common coil fields - make them scenario-aware
+    if (fieldId.startsWith('common.coil.')) {
+      // Transform: common.coil.coilID -> common.materialScenarios[X].coilID
+      return fieldId.replace(/^common\.coil\./, `common.materialScenarios[${activeScenarioIndex}].`);
+    }
+
+    // Handle common material fields - make them scenario-aware
+    if (fieldId.startsWith('common.material.')) {
+      // Special mapping for coilWidth to materialWidth
+      if (fieldId === 'common.material.coilWidth') {
+        return `common.materialScenarios[${activeScenarioIndex}].materialWidth`;
+      }
+      // Special mapping for yieldStrength to materialSpecs
+      if (fieldId === 'common.material.yieldStrength') {
+        return `materialSpecs.scenarios[${activeScenarioIndex}].yieldStrength`;
+      }
+      // Transform: common.material.materialThickness -> common.materialScenarios[X].materialThickness
+      return fieldId.replace(/^common\.material\./, `common.materialScenarios[${activeScenarioIndex}].`);
+    }
+
+    // Handle STR Utility specific field mappings
+    if (fieldId === 'strUtility.coil.maxCoilWeight') {
+      return `common.materialScenarios[${activeScenarioIndex}].coilWeight`;
+    }
+
+    // Get the prefix for this tab's scenario data
+    const scenarioPrefix = scenarioMap[activeTab];
+    if (!scenarioPrefix) {
+      return fieldId;
+    }
+
+    // Check if field ID starts with this tab's prefix
+    if (fieldId.startsWith(`${scenarioPrefix}.`) && !fieldId.includes('.scenarios[')) {
+      // Inject scenario index after the prefix
+      return fieldId.replace(`${scenarioPrefix}.`, `${scenarioPrefix}.scenarios[${activeScenarioIndex}].`);
+    }
+
+    return fieldId;
+  };
+
   const renderField = (field: any) => {
+    // Get scenario-aware field ID
+    const effectiveFieldId = getScenarioAwareFieldId(field.id);
+
+    // Debug logging for TDDBHD calculated fields
+    if (field.id.startsWith('tddbhd.') && field.readOnly) {
+      const rawValue = getNestedValue(formData, effectiveFieldId);
+      console.log(`TDDBHD ReadOnly Field: ${field.id} -> ${effectiveFieldId} = ${rawValue}`);
+    }
+
     // Handle custom field type for feed performance display
-    if (field.type === 'custom' && field.id === 'feed.feed.tableValues') {
-      const tableValues = getNestedValue(formData, field.id) || [];
+    if (field.type === 'custom' && (field.id === 'feed.feed.tableValues' || field.id === 'feed.scenarios[0].feed.tableValues')) {
+      const tableValues = getNestedValue(formData, effectiveFieldId) || [];
       return (
-        <div key={field.id} className="col-span-full">
+        <div key={effectiveFieldId} className="col-span-full">
           <FeedPerformanceDisplay
             tableValues={tableValues}
           />
@@ -1629,9 +2239,8 @@ const PerformanceSheet = () => {
       );
     }
 
-    const rawValue = getNestedValue(formData, field.id);
+    const rawValue = getNestedValue(formData, effectiveFieldId);
     const value = (rawValue !== undefined && rawValue !== null) ? rawValue : (field.defaultValue ?? "");
-
 
 
     const isFilled = isFieldFilled(value, field.type);
@@ -1658,7 +2267,7 @@ const PerformanceSheet = () => {
       ? (checkStatus === 'pass' ? '✓ ' : '✗ ')
       : '';
 
-    const fieldError = fieldErrors[field.id];
+    const fieldError = fieldErrors[effectiveFieldId];
 
     const commonProps = {
       id: field.id,
@@ -1688,7 +2297,7 @@ const PerformanceSheet = () => {
               {...commonProps}
               type="text"
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
             />
           );
         case "number":
@@ -1697,7 +2306,7 @@ const PerformanceSheet = () => {
               {...commonProps}
               type="number"
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
             />
           );
         case "date":
@@ -1705,7 +2314,7 @@ const PerformanceSheet = () => {
             <DatePicker
               {...commonProps}
               value={value}
-              onChange={(date) => handleFieldChange(field.id, date)}
+              onChange={(date) => handleFieldChange(effectiveFieldId, date)}
             />
           );
         case "textarea":
@@ -1713,7 +2322,7 @@ const PerformanceSheet = () => {
             <Textarea
               {...commonProps}
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
               rows={4}
             />
           );
@@ -1723,7 +2332,7 @@ const PerformanceSheet = () => {
             <Select
               {...commonProps}
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
               options={dynamicOptions}
             />
           );
@@ -1732,7 +2341,7 @@ const PerformanceSheet = () => {
             <Checkbox
               {...commonProps}
               checked={!!value}
-              onChange={(e) => handleFieldChange(field.id, e.target.checked)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.checked)}
             />
           );
         default:
@@ -1741,14 +2350,14 @@ const PerformanceSheet = () => {
               {...commonProps}
               type="text"
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
             />
           );
       }
     };
 
     return (
-      <div key={field.id} className={getSizeClass()}>
+      <div key={effectiveFieldId} className={getSizeClass()}>
         {renderInput()}
       </div>
     );
@@ -2150,6 +2759,22 @@ const PerformanceSheet = () => {
       <div className="flex-1 overflow-auto">
         <div className="flex justify-center w-full">
           <div className="p-8 max-w-4xl w-full">
+            {/* Scenario tabs for tabs that use scenarios */}
+            {['tddbhd', 'str-utility', 'roll-str-backbend', 'feed', 'shear'].includes(activeTab) && (
+              <div className="mb-6">
+                <ScenarioTabs
+                  activeScenario={activeScenarios[activeTab] || 1}
+                  maxScenarios={['feed', 'shear'].includes(activeTab) ? 2 : 4}
+                  onScenarioChange={(scenario) => {
+                    setActiveScenarios(prev => ({
+                      ...prev,
+                      [activeTab]: scenario
+                    }));
+                  }}
+                />
+              </div>
+            )}
+
             {activeTabData?.sections?.filter((section: any) => {
               // Handle section-level conditionals
               if (section.conditionalVisibility) {

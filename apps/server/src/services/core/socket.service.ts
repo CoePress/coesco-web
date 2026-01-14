@@ -293,8 +293,48 @@ export class SocketService {
           // Execute raw calculation
           const calculationResults = await this.executePythonScript(scriptPath, formData);
 
+          // Log TDDBHD raw results before mapping
+          if (calculationResults.tddbhd?.scenarios) {
+            console.log('RAW TDDBHD CALCULATION RESULTS:', JSON.stringify(calculationResults.tddbhd.scenarios, null, 2));
+          }
+
+          // Log STR Utility raw results before mapping
+          if (calculationResults.str_utility?.scenarios) {
+            console.log('RAW STR UTILITY CALCULATION RESULTS:', JSON.stringify(calculationResults.str_utility.scenarios, null, 2));
+          }
+
+          // Log Roll Str Backbend raw results before mapping
+          if (calculationResults.roll_str_backbend?.scenarios) {
+            console.log('RAW ROLL STR BACKBEND CALCULATION RESULTS:', JSON.stringify(calculationResults.roll_str_backbend.scenarios, null, 2));
+          }
+
+          // Log Feed raw results before mapping
+          if (calculationResults.feed?.scenarios) {
+            console.log('RAW FEED CALCULATION RESULTS:', JSON.stringify(calculationResults.feed.scenarios, null, 2));
+          }
+
           // Map results back to data structure using Python result mapping
           const mappedData = await this.mapCalculationResults(formData, calculationResults);
+
+          // Log TDDBHD mapped results
+          if (mappedData.tddbhd?.scenarios) {
+            console.log('MAPPED TDDBHD RESULTS:', JSON.stringify(mappedData.tddbhd.scenarios, null, 2));
+          }
+
+          // Log STR Utility mapped results
+          if (mappedData.strUtility?.scenarios) {
+            console.log('MAPPED STR UTILITY RESULTS:', JSON.stringify(mappedData.strUtility.scenarios, null, 2));
+          }
+
+          // Log Roll Str Backbend mapped results
+          if (mappedData.rollStrBackbend?.scenarios) {
+            console.log('MAPPED ROLL STR BACKBEND RESULTS:', JSON.stringify(mappedData.rollStrBackbend.scenarios, null, 2));
+          }
+
+          // Log Feed mapped results
+          if (mappedData.feed?.scenarios) {
+            console.log('MAPPED FEED RESULTS:', JSON.stringify(mappedData.feed.scenarios, null, 2));
+          }
 
           console.log('SOCKET MAPPED DATA FPM VALUES:', {
             averageFpm: mappedData?.common?.feedRates?.average?.fpm,

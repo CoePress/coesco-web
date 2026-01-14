@@ -4,7 +4,7 @@ import re
 import sys
 
 from utils.shared import (
-    NUM_BRAKEPADS, BRAKE_DISTANCE, CYLINDER_ROD, STATIC_FRICTION, rfq_state
+    NUM_BRAKEPADS, BRAKE_DISTANCE, BRAKE_PAD_DIAMETER, CYLINDER_ROD, STATIC_FRICTION, rfq_state
 )
 from utils.lookup_tables import (
     get_cylinder_bore, get_hold_down_matrix_label, get_material_density, get_material_modulus, get_reel_max_weight, 
@@ -352,7 +352,7 @@ def calculate_tbdbhd(data: tddbhd_input):
         
         # Reel specifications - flat keys for result mapping
         "disp_reel_mtr": round(disp_reel_mtr),
-        "brake_pad_diameter": BRAKE_DISTANCE,  # Using constant from shared.py
+        "brake_pad_diameter": BRAKE_PAD_DIAMETER,  # Using constant from shared.py
         "cylinder_bore": round(cylinder_bore, 3),
         "min_material_width": round(min_material_width, 3),
         
