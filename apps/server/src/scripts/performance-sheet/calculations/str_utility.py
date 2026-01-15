@@ -14,6 +14,9 @@ from utils.lookup_tables import (
     get_material_density, get_material_modulus, get_str_model_value, get_motor_inertia
 )
 
+# Default max coil OD when not specified (from Excel W31 cell)
+DEFAULT_MAX_COIL_OD = 72
+
 def get_horsepower_string(horsepower):
     return "7.5" if horsepower == 7.5 else str(int(horsepower))
 
@@ -56,11 +59,28 @@ def calc_required_force(yield_strength, coil_width, thickness, center_dist):
     base = 16 * yield_strength * coil_width * (thickness ** 2) / (15 * center_dist)
     return base + base * 0.19
 
-def calc_coil_od(coil_id, max_coil_weight, density, coil_width, coil_od):
+def calc_coil_od(coil_id, max_coil_weight, density, coil_width, coil_od_input):
+    """
+    Calculate coil OD using MIN(V31, W31) from Excel:
+    - V31: Calculated from weight
+    - W31: Input limit or default (72)
+    
+    Returns: min(calculated_od, max_limit)
+    """
     if density == 0 or coil_width == 0:
-        return coil_od if coil_od != 0 else coil_id  # Prevent division by zero
-    measured = sqrt((coil_id ** 2) + ((max_coil_weight * 4) / (pi * density * coil_width)))
-    return min(measured, coil_od)
+        return coil_od_input if coil_od_input != 0 else coil_id
+    
+    # V31: Calculate OD from weight formula
+    calculated_od = sqrt((coil_id ** 2) + ((max_coil_weight * 4) / (pi * density * coil_width)))
+    
+    # W31: Max limit (use input if provided, otherwise use default)
+    if coil_od_input == 0:
+        max_limit = DEFAULT_MAX_COIL_OD
+    else:
+        max_limit = coil_od_input
+    
+    # Excel: MIN(V31, W31)
+    return min(calculated_od, max_limit)
 
 def calc_roll_inertia(dia, length, qty):
     lbs = ((dia ** 2) / 4) * pi * length * qty * 0.283
@@ -106,6 +126,10 @@ def calc_str_torque(yield_strength, coil_width, thickness, center_dist, feed_rat
     return torque
 
 def calc_coil_brake_torque(coil_od, coil_width, density, feed_rate, accel_time):
+    """
+    Calculate coil brake torque (M34 in Excel).
+    This single value is used for both max and min OD brake torque calculations.
+    """
     inertia = (
         (
             (
@@ -125,9 +149,19 @@ def calc_coil_brake_torque(coil_od, coil_width, density, feed_rate, accel_time):
     return brake_torque
 
 def calc_brake_torque(coil_brake_torque, od, pinch_roll_dia, pinch_ratio, eff):
+    """
+    Excel formulas:
+    S34 = (M34 / ((coil_od / pinch_dia) × P24)) / R38
+    S35 = (M34 / ((coil_id / pinch_dia) × P24)) / R38
+    """
     return (coil_brake_torque / ((od / pinch_roll_dia) * pinch_ratio)) / eff
 
 def calc_accel_torque(total_inertia, motor_rpm, accel_time, eff, motor_inertia):
+    """
+    Excel formulas:
+    Q38 = (((M38 × N38) / (9.55 × O38)) × (1 / R38)) + ((M41 × N38) / (9.55 × O38))
+    Q39 = (((M39 × N38) / (9.55 × O38)) × (1 / R38)) + ((M41 × N38) / (9.55 × O38))
+    """
     return ((total_inertia * motor_rpm) / (9.55 * accel_time) * (1 / eff)) + ((motor_inertia * motor_rpm) / (9.55 * accel_time))
 
 def calc_pk_torque(str_torque, accel_torque, brake_torque):
@@ -236,7 +270,11 @@ def calculate_str_utility(data: str_utility_input):
     min_od_total_inertia = calc_total_inertia(pinch_roll_refl_inertia, str_roll_refl_inertia, mat_length_refl_inertia, min_od_refl_inertia)
 
     str_torque = calc_str_torque(data.yield_strength, data.coil_width, data.material_thickness, str_model["center_dist"], data.feed_rate, k_cons, motor_rpm, eff)
+    
+    # M34: Single coil brake torque using coil_od
     coil_brake_torque = calc_coil_brake_torque(coil_od, data.coil_width, material["density"], data.feed_rate, accel_time)
+    
+    # S34 and S35: Both use M34 but with different ODs in denominator
     max_od_brake_torque = calc_brake_torque(coil_brake_torque, coil_od, str_model["pinch_roll_dia"], pinch_ratio, eff)
     min_od_brake_torque = calc_brake_torque(coil_brake_torque, data.coil_id, str_model["pinch_roll_dia"], pinch_ratio, eff)
 
@@ -257,25 +295,47 @@ def calculate_str_utility(data: str_utility_input):
         safe_working_stress, lewis_factor_str, rpm_at_roller_str, str_model["str_roll_dia"]
     )
 
+    # Apply Excel formulas based on brake compensation option
     brake_option = data.auto_brake_compensation.lower()
     if brake_option == "no":
-        horsepower_required = (min_od_pk_torque * motor_rpm) / 63000
-        accel_torque = min_od_accel_torque
-        brake_torque = min_od_brake_torque
+        # When NO: use max_od values
+        horsepower_required = (max_od_pk_torque * motor_rpm) / 63000  # S39
+        accel_torque = max_od_accel_torque  # Q39
+        brake_torque = max_od_brake_torque  # S34
+        total_inertia = max_od_total_inertia  # M39
     elif brake_option == "yes":
-        horsepower_required = (max_od_pk_torque * motor_rpm) / 63000
-        accel_torque = max_od_accel_torque
-        brake_torque = max_od_brake_torque
+        # When YES: use min_od values
+        horsepower_required = (min_od_pk_torque * motor_rpm) / 63000  # S38
+        accel_torque = min_od_accel_torque  # Q38
+        brake_torque = max_od_brake_torque  # S34
+        total_inertia = min_od_total_inertia  # M38
     else:
         return "ERROR: Str Utility brake quantity invalid."
 
-    pinch_roll_req_torque = calc_req_torque(str_torque, pinch_ratio, str_model["str_gear_torque"], min_od_brake_torque, max_od_total_inertia, motor_rpm, accel_time, eff)
+    # Pinch Roll Req Torque: =(P38*P24/str_gear_torque)+S35/2*P24+(((M38*N38)/(9.55*O38))*(1/R38))*P24/2
+    if str_model["str_gear_torque"] == 0 or accel_time == 0 or eff == 0:
+        pinch_roll_req_torque = 0.0
+    else:
+        pinch_roll_req_torque = (
+            (str_torque * pinch_ratio / str_model["str_gear_torque"]) +
+            (min_od_brake_torque / 2 * pinch_ratio) +
+            (((total_inertia * motor_rpm) / (9.55 * accel_time)) * (1 / eff)) * pinch_ratio / 2
+        )
+    
     pinch_roll_rated_torque = calc_rated_torque(horsepower_rated_pinch, rpm_at_roller_pinch)
+    
+    # Str Roll Req Torque: =(P38*P25/str_gear_torque)+(((M38*N38)/(9.55*O38))*(1/R38))*P25/2*7/11
     if str_model["str_gear_torque"] == 0 or accel_time == 0 or eff == 0:
         str_roll_req_torque = 0.0
     else:
-        str_roll_req_torque = (str_torque * str_ratio / str_model["str_gear_torque"]) + (((max_od_total_inertia * motor_rpm) / (9.55 * accel_time)) * (1 / eff)) * str_ratio / 2 * 7 / 11
+        str_roll_req_torque = (
+            (str_torque * str_ratio / str_model["str_gear_torque"]) +
+            (((total_inertia * motor_rpm) / (9.55 * accel_time)) * (1 / eff)) * str_ratio / 2 * 7 / 11
+        )
+    
     str_roll_rated_torque = calc_rated_torque(horsepower_rated_str, rpm_at_roller_str)
+    
+    # Actual Coil Weight - always calculate from determined coil_od
     actual_coil_weight = calc_actual_coil_weight(coil_od, data.coil_id, data.coil_width, material["density"])
 
     required_force_check = check_value(str_model["jack_force_available"], required_force)
