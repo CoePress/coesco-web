@@ -36,7 +36,7 @@ const Companies = () => {
 
   const adaptLegacyCompany = (raw: any) => {
     const isActive = Number(raw.Active) === 1;
-    
+
     return {
       id: raw.Company_ID,
       name: raw.CustDlrName || `Company ${raw.Company_ID}`,
@@ -47,7 +47,7 @@ const Companies = () => {
 
   const fetchAllCompanies = useCallback(async () => {
     if (isLoading) return;
-    
+
     setIsLoading(true);
     try {
       const sortFieldMap: Record<string, string> = {
@@ -102,16 +102,16 @@ const Companies = () => {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const legacyCompaniesResponse = await legacyApi.get("/legacy/base/Company", params);
+      const legacyCompaniesResponse = await legacyApi.get("/legacy/std/Company", params);
 
       if (legacyCompaniesResponse) {
         const isApiResponse = legacyCompaniesResponse && typeof legacyCompaniesResponse === 'object' && 'data' in legacyCompaniesResponse;
-        
+
         if (isApiResponse) {
           const rawCompanies = Array.isArray(legacyCompaniesResponse.data) ? legacyCompaniesResponse.data : [];
           const mapped = rawCompanies.map((company: any) => adaptLegacyCompany(company));
           setLegacyCompanies(mapped);
-          
+
           if (legacyCompaniesResponse.meta) {
             setPagination({
               page: legacyCompaniesResponse.meta.page,
@@ -124,7 +124,7 @@ const Companies = () => {
           const rawCompanies = Array.isArray(legacyCompaniesResponse) ? legacyCompaniesResponse : [];
           const mapped = rawCompanies.map((company: any) => adaptLegacyCompany(company));
           setLegacyCompanies(mapped);
-          
+
           setPagination({
             page: 1,
             totalPages: Math.ceil(mapped.length / limit),
@@ -176,9 +176,8 @@ const Companies = () => {
       header: "Active",
       className: "w-[15%]",
       render: (_, row) => (
-        <span className={`px-2 py-1 rounded text-xs font-medium ${
-          row.active ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-        }`}>
+        <span className={`px-2 py-1 rounded text-xs font-medium ${row.active ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+          }`}>
           {row.active ? 'Active' : 'Inactive'}
         </span>
       ),

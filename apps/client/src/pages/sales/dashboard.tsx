@@ -141,8 +141,8 @@ const SalesDashboard = () => {
         }
 
         const [journeysResponse, companiesResponse] = await Promise.all([
-          api.get("/legacy/base/Journey", params),
-          api.get("/legacy/base/Company", {
+          api.get("/legacy/std/Journey", params),
+          api.get("/legacy/std/Company", {
             limit: 500,
             sort: "Company_ID",
             order: "desc"
@@ -266,269 +266,269 @@ const SalesDashboard = () => {
     }> = [];
 
     if (timeframe === 'daily') {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const dayMap = new Map<string, any[]>();
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const dayMap = new Map<string, any[]>();
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dateKey = d.toDateString();
-      dayMap.set(dateKey, []);
-    }
-
-    journeys.forEach(j => {
-      if (!j.Journey_Start_Date) return;
-      const jDate = new Date(j.Journey_Start_Date);
-      const dateKey = jDate.toDateString();
-      if (dayMap.has(dateKey)) {
-        dayMap.get(dateKey)?.push(j);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dateKey = d.toDateString();
+        dayMap.set(dateKey, []);
       }
-    });
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dateKey = d.toDateString();
-      const dayLabel = `${d.getMonth() + 1}/${d.getDate()}`;
-      const dayJourneys = dayMap.get(dateKey) || [];
-
-      const daySales = dayJourneys
-        .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => {
-          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
-          return sum + quoteValue;
-        }, 0);
-
-      const dayQuotes = dayJourneys.length;
-      const dayJourneysWithValue = dayJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
-      }).length;
-
-      const dayWonJourneys = dayJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
-      const dayLostJourneys = dayJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
-      const dayClosedJourneys = dayWonJourneys.length + dayLostJourneys.length;
-      const dayConversion = dayClosedJourneys > 0
-        ? (dayWonJourneys.length / dayClosedJourneys) * 100
-        : 0;
-
-      data.push({
-        month: dayLabel,
-        sales: daySales,
-        quotes: dayQuotes * 1000,
-        conversion: Math.round(dayConversion),
-        journeys: dayJourneysWithValue,
-        year: d.getFullYear()
-      });
-    }
-  } else if (timeframe === 'weekly') {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    let weekStart = new Date(start);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-
-    while (weekStart <= end) {
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-
-      const weekLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()}`;
-
-      const weekJourneys = journeys.filter(j => {
-        if (!j.Journey_Start_Date) return false;
+      journeys.forEach(j => {
+        if (!j.Journey_Start_Date) return;
         const jDate = new Date(j.Journey_Start_Date);
-        return jDate >= weekStart && jDate <= weekEnd;
+        const dateKey = jDate.toDateString();
+        if (dayMap.has(dateKey)) {
+          dayMap.get(dateKey)?.push(j);
+        }
       });
 
-      const weekSales = weekJourneys
-        .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => {
-          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
-          return sum + quoteValue;
-        }, 0);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dateKey = d.toDateString();
+        const dayLabel = `${d.getMonth() + 1}/${d.getDate()}`;
+        const dayJourneys = dayMap.get(dateKey) || [];
 
-      const weekQuotes = weekJourneys.length;
-      const weekJourneysWithValue = weekJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
-      }).length;
+        const daySales = dayJourneys
+          .filter(j => j.Journey_Status === 'won')
+          .reduce((sum, j) => {
+            const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+            return sum + quoteValue;
+          }, 0);
 
-      const weekWonJourneys = weekJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
-      const weekLostJourneys = weekJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
-      const weekClosedJourneys = weekWonJourneys.length + weekLostJourneys.length;
-      const weekConversion = weekClosedJourneys > 0
-        ? (weekWonJourneys.length / weekClosedJourneys) * 100
-        : 0;
+        const dayQuotes = dayJourneys.length;
+        const dayJourneysWithValue = dayJourneys.filter(j => {
+          const stage = String(j.Journey_Stage || '').toLowerCase();
+          return !stage.includes('closed won') &&
+            !stage.includes('job lost') &&
+            !stage.includes('closed lost') &&
+            !stage.includes('post installation');
+        }).length;
 
-      data.push({
-        month: weekLabel,
-        sales: weekSales,
-        quotes: weekQuotes * 1000,
-        conversion: Math.round(weekConversion),
-        journeys: weekJourneysWithValue,
-        year: weekStart.getFullYear()
-      });
+        const dayWonJourneys = dayJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+        const dayLostJourneys = dayJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+        const dayClosedJourneys = dayWonJourneys.length + dayLostJourneys.length;
+        const dayConversion = dayClosedJourneys > 0
+          ? (dayWonJourneys.length / dayClosedJourneys) * 100
+          : 0;
 
-      weekStart.setDate(weekStart.getDate() + 7);
+        data.push({
+          month: dayLabel,
+          sales: daySales,
+          quotes: dayQuotes * 1000,
+          conversion: Math.round(dayConversion),
+          journeys: dayJourneysWithValue,
+          year: d.getFullYear()
+        });
+      }
+    } else if (timeframe === 'weekly') {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      let weekStart = new Date(start);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+      while (weekStart <= end) {
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+
+        const weekLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()}`;
+
+        const weekJourneys = journeys.filter(j => {
+          if (!j.Journey_Start_Date) return false;
+          const jDate = new Date(j.Journey_Start_Date);
+          return jDate >= weekStart && jDate <= weekEnd;
+        });
+
+        const weekSales = weekJourneys
+          .filter(j => j.Journey_Status === 'won')
+          .reduce((sum, j) => {
+            const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+            return sum + quoteValue;
+          }, 0);
+
+        const weekQuotes = weekJourneys.length;
+        const weekJourneysWithValue = weekJourneys.filter(j => {
+          const stage = String(j.Journey_Stage || '').toLowerCase();
+          return !stage.includes('closed won') &&
+            !stage.includes('job lost') &&
+            !stage.includes('closed lost') &&
+            !stage.includes('post installation');
+        }).length;
+
+        const weekWonJourneys = weekJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+        const weekLostJourneys = weekJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+        const weekClosedJourneys = weekWonJourneys.length + weekLostJourneys.length;
+        const weekConversion = weekClosedJourneys > 0
+          ? (weekWonJourneys.length / weekClosedJourneys) * 100
+          : 0;
+
+        data.push({
+          month: weekLabel,
+          sales: weekSales,
+          quotes: weekQuotes * 1000,
+          conversion: Math.round(weekConversion),
+          journeys: weekJourneysWithValue,
+          year: weekStart.getFullYear()
+        });
+
+        weekStart.setDate(weekStart.getDate() + 7);
+      }
+    } else if (timeframe === 'quarterly') {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      let currentQuarter = new Date(start.getFullYear(), Math.floor(start.getMonth() / 3) * 3, 1);
+      const endQuarter = new Date(end.getFullYear(), Math.floor(end.getMonth() / 3) * 3, 1);
+
+      while (currentQuarter <= endQuarter) {
+        const quarterNum = Math.floor(currentQuarter.getMonth() / 3) + 1;
+        const quarterLabel = `Q${quarterNum} ${currentQuarter.getFullYear()}`;
+
+        const quarterStart = new Date(currentQuarter);
+        const quarterEnd = new Date(currentQuarter.getFullYear(), currentQuarter.getMonth() + 3, 0);
+
+        const quarterJourneys = journeys.filter(j => {
+          if (!j.Journey_Start_Date) return false;
+          const jDate = new Date(j.Journey_Start_Date);
+          return jDate >= quarterStart && jDate <= quarterEnd;
+        });
+
+        const quarterSales = quarterJourneys
+          .filter(j => j.Journey_Status === 'won')
+          .reduce((sum, j) => {
+            const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+            return sum + quoteValue;
+          }, 0);
+
+        const quarterQuotes = quarterJourneys.length;
+        const quarterJourneysWithValue = quarterJourneys.filter(j => {
+          const stage = String(j.Journey_Stage || '').toLowerCase();
+          return !stage.includes('closed won') &&
+            !stage.includes('job lost') &&
+            !stage.includes('closed lost') &&
+            !stage.includes('post installation');
+        }).length;
+
+        const quarterWonJourneys = quarterJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+        const quarterLostJourneys = quarterJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+        const quarterClosedJourneys = quarterWonJourneys.length + quarterLostJourneys.length;
+        const quarterConversion = quarterClosedJourneys > 0
+          ? (quarterWonJourneys.length / quarterClosedJourneys) * 100
+          : 0;
+
+        data.push({
+          month: quarterLabel,
+          sales: quarterSales,
+          quotes: quarterQuotes * 1000,
+          conversion: Math.round(quarterConversion),
+          journeys: quarterJourneysWithValue,
+          year: currentQuarter.getFullYear()
+        });
+
+        currentQuarter.setMonth(currentQuarter.getMonth() + 3);
+      }
+    } else if (timeframe === 'yearly') {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      let currentYear = start.getFullYear();
+      const endYear = end.getFullYear();
+
+      while (currentYear <= endYear) {
+        const yearLabel = currentYear.toString();
+
+        const yearJourneys = journeys.filter(j => {
+          if (!j.Journey_Start_Date) return false;
+          const jDate = new Date(j.Journey_Start_Date);
+          return jDate.getFullYear() === currentYear;
+        });
+
+        const yearSales = yearJourneys
+          .filter(j => j.Journey_Status === 'won')
+          .reduce((sum, j) => {
+            const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+            return sum + quoteValue;
+          }, 0);
+
+        const yearQuotes = yearJourneys.length;
+        const yearJourneysWithValue = yearJourneys.filter(j => {
+          const stage = String(j.Journey_Stage || '').toLowerCase();
+          return !stage.includes('closed won') &&
+            !stage.includes('job lost') &&
+            !stage.includes('closed lost') &&
+            !stage.includes('post installation');
+        }).length;
+
+        const yearWonJourneys = yearJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+        const yearLostJourneys = yearJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+        const yearClosedJourneys = yearWonJourneys.length + yearLostJourneys.length;
+        const yearConversion = yearClosedJourneys > 0
+          ? (yearWonJourneys.length / yearClosedJourneys) * 100
+          : 0;
+
+        data.push({
+          month: yearLabel,
+          sales: yearSales,
+          quotes: yearQuotes * 1000,
+          conversion: Math.round(yearConversion),
+          journeys: yearJourneysWithValue,
+          year: currentYear
+        });
+
+        currentYear++;
+      }
+    } else {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      let currentMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+
+      while (currentMonth <= endMonth) {
+        const monthName = currentMonth.toLocaleDateString('en-US', { month: 'short' });
+
+        const monthJourneys = journeys.filter(j => {
+          if (!j.Journey_Start_Date) return false;
+          const jDate = new Date(j.Journey_Start_Date);
+          return jDate.getMonth() === currentMonth.getMonth() && jDate.getFullYear() === currentMonth.getFullYear();
+        });
+
+        const monthSales = monthJourneys
+          .filter(j => j.Journey_Status === 'won')
+          .reduce((sum, j) => {
+            const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
+            return sum + quoteValue;
+          }, 0);
+
+        const monthQuotes = monthJourneys.length;
+        const monthJourneysWithValue = monthJourneys.filter(j => {
+          const stage = String(j.Journey_Stage || '').toLowerCase();
+          return !stage.includes('closed won') &&
+            !stage.includes('job lost') &&
+            !stage.includes('closed lost') &&
+            !stage.includes('post installation');
+        }).length;
+
+        const monthWonJourneys = monthJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+        const monthLostJourneys = monthJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+        const monthClosedJourneys = monthWonJourneys.length + monthLostJourneys.length;
+        const monthConversion = monthClosedJourneys > 0
+          ? (monthWonJourneys.length / monthClosedJourneys) * 100
+          : 0;
+
+        data.push({
+          month: monthName,
+          sales: monthSales,
+          quotes: monthQuotes * 1000,
+          conversion: Math.round(monthConversion),
+          journeys: monthJourneysWithValue,
+          year: currentMonth.getFullYear()
+        });
+
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+      }
     }
-  } else if (timeframe === 'quarterly') {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    let currentQuarter = new Date(start.getFullYear(), Math.floor(start.getMonth() / 3) * 3, 1);
-    const endQuarter = new Date(end.getFullYear(), Math.floor(end.getMonth() / 3) * 3, 1);
-
-    while (currentQuarter <= endQuarter) {
-      const quarterNum = Math.floor(currentQuarter.getMonth() / 3) + 1;
-      const quarterLabel = `Q${quarterNum} ${currentQuarter.getFullYear()}`;
-
-      const quarterStart = new Date(currentQuarter);
-      const quarterEnd = new Date(currentQuarter.getFullYear(), currentQuarter.getMonth() + 3, 0);
-
-      const quarterJourneys = journeys.filter(j => {
-        if (!j.Journey_Start_Date) return false;
-        const jDate = new Date(j.Journey_Start_Date);
-        return jDate >= quarterStart && jDate <= quarterEnd;
-      });
-
-      const quarterSales = quarterJourneys
-        .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => {
-          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
-          return sum + quoteValue;
-        }, 0);
-
-      const quarterQuotes = quarterJourneys.length;
-      const quarterJourneysWithValue = quarterJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
-      }).length;
-
-      const quarterWonJourneys = quarterJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
-      const quarterLostJourneys = quarterJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
-      const quarterClosedJourneys = quarterWonJourneys.length + quarterLostJourneys.length;
-      const quarterConversion = quarterClosedJourneys > 0
-        ? (quarterWonJourneys.length / quarterClosedJourneys) * 100
-        : 0;
-
-      data.push({
-        month: quarterLabel,
-        sales: quarterSales,
-        quotes: quarterQuotes * 1000,
-        conversion: Math.round(quarterConversion),
-        journeys: quarterJourneysWithValue,
-        year: currentQuarter.getFullYear()
-      });
-
-      currentQuarter.setMonth(currentQuarter.getMonth() + 3);
-    }
-  } else if (timeframe === 'yearly') {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    let currentYear = start.getFullYear();
-    const endYear = end.getFullYear();
-
-    while (currentYear <= endYear) {
-      const yearLabel = currentYear.toString();
-
-      const yearJourneys = journeys.filter(j => {
-        if (!j.Journey_Start_Date) return false;
-        const jDate = new Date(j.Journey_Start_Date);
-        return jDate.getFullYear() === currentYear;
-      });
-
-      const yearSales = yearJourneys
-        .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => {
-          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
-          return sum + quoteValue;
-        }, 0);
-
-      const yearQuotes = yearJourneys.length;
-      const yearJourneysWithValue = yearJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
-      }).length;
-
-      const yearWonJourneys = yearJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
-      const yearLostJourneys = yearJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
-      const yearClosedJourneys = yearWonJourneys.length + yearLostJourneys.length;
-      const yearConversion = yearClosedJourneys > 0
-        ? (yearWonJourneys.length / yearClosedJourneys) * 100
-        : 0;
-
-      data.push({
-        month: yearLabel,
-        sales: yearSales,
-        quotes: yearQuotes * 1000,
-        conversion: Math.round(yearConversion),
-        journeys: yearJourneysWithValue,
-        year: currentYear
-      });
-
-      currentYear++;
-    }
-  } else {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    let currentMonth = new Date(start.getFullYear(), start.getMonth(), 1);
-    const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
-
-    while (currentMonth <= endMonth) {
-      const monthName = currentMonth.toLocaleDateString('en-US', { month: 'short' });
-
-      const monthJourneys = journeys.filter(j => {
-        if (!j.Journey_Start_Date) return false;
-        const jDate = new Date(j.Journey_Start_Date);
-        return jDate.getMonth() === currentMonth.getMonth() && jDate.getFullYear() === currentMonth.getFullYear();
-      });
-
-      const monthSales = monthJourneys
-        .filter(j => j.Journey_Status === 'won')
-        .reduce((sum, j) => {
-          const quoteValue = j.Quote_Key_Value ? (quoteValues[j.Quote_Key_Value] || 0) : 0;
-          return sum + quoteValue;
-        }, 0);
-
-      const monthQuotes = monthJourneys.length;
-      const monthJourneysWithValue = monthJourneys.filter(j => {
-        const stage = String(j.Journey_Stage || '').toLowerCase();
-        return !stage.includes('closed won') &&
-               !stage.includes('job lost') &&
-               !stage.includes('closed lost') &&
-               !stage.includes('post installation');
-      }).length;
-
-      const monthWonJourneys = monthJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
-      const monthLostJourneys = monthJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
-      const monthClosedJourneys = monthWonJourneys.length + monthLostJourneys.length;
-      const monthConversion = monthClosedJourneys > 0
-        ? (monthWonJourneys.length / monthClosedJourneys) * 100
-        : 0;
-
-      data.push({
-        month: monthName,
-        sales: monthSales,
-        quotes: monthQuotes * 1000,
-        conversion: Math.round(monthConversion),
-        journeys: monthJourneysWithValue,
-        year: currentMonth.getFullYear()
-      });
-
-      currentMonth.setMonth(currentMonth.getMonth() + 1);
-    }
-  }
 
     return data;
   }, [journeys, timeframe, startDate, endDate, quoteValues]);
@@ -573,7 +573,7 @@ const SalesDashboard = () => {
       stage.total > 0 || ["Lead", "Qualified", "Presentations", "Negotiation"].includes(stage.state)
     );
   }, [journeys]);
-  
+
   const kpis = [
     {
       title: "Order Intake",
@@ -641,8 +641,8 @@ const SalesDashboard = () => {
       }
 
       const [journeysResponse, companiesResponse] = await Promise.all([
-        api.get("/legacy/base/Journey", params),
-        api.get("/legacy/base/Company", {
+        api.get("/legacy/std/Journey", params),
+        api.get("/legacy/std/Company", {
           limit: 500,
           sort: "Company_ID",
           order: "desc"
@@ -1150,13 +1150,13 @@ const SalesDashboard = () => {
                     .filter(j => j.CreateDT)
                     .sort((a, b) => new Date(b.CreateDT).getTime() - new Date(a.CreateDT).getTime())
                     .slice(0, 4);
-                  
+
                   return recentJourneys.map((journey) => {
                     const company = companiesById.get(journey.Company_ID);
                     const companyName = company?.CustDlrName || journey.Target_Account || `Company ${journey.Company_ID}`;
                     const journeyStageId = mapLegacyStageToId(journey.Journey_Stage);
                     const stageInfo = STAGES.find(s => s.id === journeyStageId) || STAGES[0];
-                    
+
                     return (
                       <Link
                         key={journey.ID}
@@ -1164,13 +1164,12 @@ const SalesDashboard = () => {
                         className="flex items-center justify-between p-3 bg-surface rounded hover:bg-surface/80 border border-border transition-colors">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-2 h-2 rounded ${
-                              journey.Journey_Status === "won"
+                            className={`w-2 h-2 rounded ${journey.Journey_Status === "won"
                                 ? "bg-success"
                                 : journey.Journey_Status === "lost"
-                                ? "bg-error"
-                                : "bg-primary"
-                            }`}
+                                  ? "bg-error"
+                                  : "bg-primary"
+                              }`}
                           />
                           <div className="flex-1">
                             <span className="text-sm font-medium text-text-muted hover:text-primary transition-colors">
@@ -1187,7 +1186,7 @@ const SalesDashboard = () => {
                               const date = new Date(journey.CreateDT);
                               const now = new Date();
                               const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 3600 * 24));
-                              
+
                               if (diffDays === 0) return "Today";
                               if (diffDays === 1) return "Yesterday";
                               if (diffDays < 7) return `${diffDays} days ago`;

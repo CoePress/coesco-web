@@ -234,10 +234,10 @@ const ContactDetails = () => {
       if (companyChanged && tempCompanyId) {
         try {
           const [addressResponse, companyResponse] = await Promise.all([
-            api.get('/legacy/base/Address/filter/custom', {
+            api.get('/legacy/std/Address/filter/custom', {
               Company_ID: tempCompanyId
             }),
-            !tempCompanyName ? api.get('/legacy/base/Company', {
+            !tempCompanyName ? api.get('/legacy/std/Company', {
               filter: JSON.stringify({
                 operator: "in",
                 field: "Company_ID",
@@ -354,7 +354,7 @@ const ContactDetails = () => {
         setTempCompanyId(rawContact?.legacyCompanyId || "");
         if (rawContact?.legacyCompanyId) {
           try {
-            const companyResponse = await api.get('/legacy/base/Company', {
+            const companyResponse = await api.get('/legacy/std/Company', {
               filter: JSON.stringify({
                 operator: "in",
                 field: "Company_ID",
@@ -376,7 +376,7 @@ const ContactDetails = () => {
             console.error("Could not fetch company data:", companyError);
           }
           try {
-            const addressResponse = await api.get('/legacy/base/Address/filter/custom', {
+            const addressResponse = await api.get('/legacy/std/Address/filter/custom', {
               Company_ID: rawContact.legacyCompanyId
             });
 
@@ -431,7 +431,7 @@ const ContactDetails = () => {
         return;
       }
 
-      const journeysResponse = await api.get('/legacy/base/Journey', {
+      const journeysResponse = await api.get('/legacy/std/Journey', {
         filter: JSON.stringify({
           field: 'ID',
           operator: 'in',
@@ -793,7 +793,7 @@ const ContactDetails = () => {
 
         if (isUuidFormat) {
           try {
-            const journeyResponse = await api.get(`/legacy/base/Journey/${searchTrimmed}`, {
+            const journeyResponse = await api.get(`/legacy/std/Journey/${searchTrimmed}`, {
               fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Status,Journey_Start_Date'
             });
 
@@ -804,7 +804,7 @@ const ContactDetails = () => {
             // Journey not found by ID
           }
         } else {
-          const journeysResponse = await api.get('/legacy/base/Journey', {
+          const journeysResponse = await api.get('/legacy/std/Journey', {
             fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Status,Journey_Start_Date',
             limit: 1000
           });
@@ -1122,7 +1122,7 @@ const ContactDetails = () => {
   const handleAddressAdded = async (newAddress: any) => {
     if (!contactData?.legacyCompanyId) return;
     try {
-      const addressResponse = await api.get('/legacy/base/Address/filter/custom', {
+      const addressResponse = await api.get('/legacy/std/Address/filter/custom', {
         Company_ID: contactData.legacyCompanyId
       });
 
@@ -1180,7 +1180,7 @@ const ContactDetails = () => {
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading contact details...</div>;
   }
-  
+
   if (error) {
     return <div className="flex justify-center items-center h-64 text-red-500">{error}</div>;
   }
@@ -1266,31 +1266,28 @@ const ContactDetails = () => {
         <div className="flex px-4">
           <button
             onClick={() => setActiveTab("details")}
-            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-              activeTab === "details"
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === "details"
                 ? "border-primary text-primary"
                 : "border-transparent text-text-muted hover:text-text"
-            }`}
+              }`}
           >
             Details
           </button>
           <button
             onClick={() => setActiveTab("journeys")}
-            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-              activeTab === "journeys"
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === "journeys"
                 ? "border-primary text-primary"
                 : "border-transparent text-text-muted hover:text-text"
-            }`}
+              }`}
           >
             Journeys
           </button>
           <button
             onClick={() => setActiveTab("activity")}
-            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-              activeTab === "activity"
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === "activity"
                 ? "border-primary text-primary"
                 : "border-transparent text-text-muted hover:text-text"
-            }`}
+              }`}
           >
             Activity
           </button>
@@ -1299,24 +1296,57 @@ const ContactDetails = () => {
 
       {activeTab === "details" && (
         <div className="p-4 flex flex-1 flex-col gap-6">
-        {/* Basic Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Personal Information */}
-          <div className="bg-foreground rounded shadow-sm border p-4">
-            <h3 className="text-lg font-semibold text-text mb-4">Personal Information</h3>
-            <div className="space-y-3">
-              {/* Contact Photo */}
-              <div>
-                <div className="text-sm text-text-muted mb-2">Photo</div>
-                <div className="flex items-center gap-3">
-                  {isEditing ? (
-                    <>
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Personal Information */}
+            <div className="bg-foreground rounded shadow-sm border p-4">
+              <h3 className="text-lg font-semibold text-text mb-4">Personal Information</h3>
+              <div className="space-y-3">
+                {/* Contact Photo */}
+                <div>
+                  <div className="text-sm text-text-muted mb-2">Photo</div>
+                  <div className="flex items-center gap-3">
+                    {isEditing ? (
+                      <>
+                        <div className="w-20 h-20 rounded-full overflow-hidden bg-surface border border-border flex items-center justify-center">
+                          {getSelectedImage() || (editForm.imageId && contactData?.image) ? (
+                            <img
+                              src={`${import.meta.env.VITE_API_URL.replace('/v1', '')}${getSelectedImage()?.url || contactData?.image?.path
+                                }`}
+                              alt="Contact"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User size={32} className="text-text-muted" />
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={handleImageModalOpen}
+                          >
+                            <Camera size={14} className="mr-1" />
+                            {editForm.imageId ? "Change Photo" : "Select Photo"}
+                          </Button>
+                          {editForm.imageId && (
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={handleRemoveImage}
+                              className="text-error border-error hover:bg-error/10"
+                            >
+                              <X size={14} className="mr-1" />
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                      </>
+                    ) : (
                       <div className="w-20 h-20 rounded-full overflow-hidden bg-surface border border-border flex items-center justify-center">
-                        {getSelectedImage() || (editForm.imageId && contactData?.image) ? (
+                        {getContactImage() ? (
                           <img
-                            src={`${import.meta.env.VITE_API_URL.replace('/v1', '')}${
-                              getSelectedImage()?.url || contactData?.image?.path
-                            }`}
+                            src={`${import.meta.env.VITE_API_URL.replace('/v1', '')}${getContactImage().path}`}
                             alt="Contact"
                             className="w-full h-full object-cover"
                           />
@@ -1324,740 +1354,706 @@ const ContactDetails = () => {
                           <User size={32} className="text-text-muted" />
                         )}
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          variant="secondary-outline"
-                          size="sm"
-                          onClick={handleImageModalOpen}
-                        >
-                          <Camera size={14} className="mr-1" />
-                          {editForm.imageId ? "Change Photo" : "Select Photo"}
-                        </Button>
-                        {editForm.imageId && (
-                          <Button
-                            variant="secondary-outline"
-                            size="sm"
-                            onClick={handleRemoveImage}
-                            className="text-error border-error hover:bg-error/10"
-                          >
-                            <X size={14} className="mr-1" />
-                            Remove
-                          </Button>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="w-20 h-20 rounded-full overflow-hidden bg-surface border border-border flex items-center justify-center">
-                      {getContactImage() ? (
-                        <img
-                          src={`${import.meta.env.VITE_API_URL.replace('/v1', '')}${getContactImage().path}`}
-                          alt="Contact"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User size={32} className="text-text-muted" />
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <User size={16} className="text-text-muted mt-1" />
-                <div className="flex-1">
-                  <div className="text-sm text-text-muted mb-1">Name</div>
-                  {isEditing ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={editForm.firstName}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value.length === 0 || value[0] !== ' ') {
-                            setEditForm(s => ({ ...s, firstName: value }));
-                          }
-                        }}
-                        placeholder="First Name"
-                      />
-                      <input
-                        type="text"
-                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={editForm.lastName}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value.length === 0 || value[0] !== ' ') {
-                            setEditForm(s => ({ ...s, lastName: value }));
-                          }
-                        }}
-                        placeholder="Last Name"
-                      />
-                    </div>
-                  ) : (
-                    <div className="text-text font-medium">{fullName}</div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Title</div>
-                {isEditing ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={editForm.title}
-                    onChange={(e) => setEditForm(s => ({ ...s, title: e.target.value }))}
-                  >
-                    <option value="">No Value Selected</option>
-                    {editForm.title && !availableContactPositions.includes(editForm.title) && (
-                      <option key={editForm.title} value={editForm.title}>{editForm.title}</option>
                     )}
-                    {availableContactPositions.map(position => (
-                      <option key={position} value={position}>{position}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-text">{contactData.title || "-"}</div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Type</div>
-                {isEditing ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={editForm.type}
-                    onChange={(e) => setEditForm(s => ({ ...s, type: e.target.value }))}
-                  >
-                    <option value="">Select Type</option>
-                    <option value={ContactType.Accounting}>Accounting</option>
-                    <option value={ContactType.Engineering}>Engineering</option>
-                    <option value={ContactType.Inactive}>Inactive</option>
-                    <option value={ContactType.Left_Company}>Left Company</option>
-                    <option value={ContactType.Parts_Service}>Parts/Service</option>
-                    <option value={ContactType.Sales}>Sales</option>
-                  </select>
-                ) : (
-                  <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getContactTypeColor(contactData.type)}`}>
-                    {getContactTypeName(contactData.type)}
-                  </span>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Contact Owner</div>
-                {isEditing ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={editForm.owner}
-                    onChange={(e) => setEditForm(s => ({ ...s, owner: e.target.value }))}
-                  >
-                    <option value="">No Value Selected</option>
-                    {editForm.owner && !availableRsms.find(r => r.initials === editForm.owner) && (
-                      <option key={editForm.owner} value={editForm.owner}>{editForm.owner}</option>
-                    )}
-                    {availableRsms.map(rsm => (
-                      <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-text">{getRsmDisplayName(contactData.owner)}</div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Address ID</div>
-                {isEditing && availableAddresses.length > 0 ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
-                    value={editForm.addressId}
-                    onChange={(e) => {
-                      const newAddressId = e.target.value;
-                      setEditForm(s => ({ ...s, addressId: newAddressId }));
-                      const selectedAddress = availableAddresses.find((addr: any) => addr.Address_ID == newAddressId);
-                      if (selectedAddress) {
-                        setAddressData(selectedAddress);
-                      } else {
-                        setAddressData(null);
-                      }
-                    }}
-                  >
-                    <option value="">No Address</option>
-                    {availableAddresses.map((addr: any) => (
-                      <option key={addr.Address_ID} value={addr.Address_ID}>
-                        {addr.Address_ID} - {[addr.Address1, addr.City, addr.State].filter(Boolean).join(', ')}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-text font-mono">{contactData.addressId || "-"}</div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Profile URL</div>
-                {isEditing ? (
-                  <input
-                    type="url"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={editForm.profileUrl}
-                    onChange={(e) => setEditForm(s => ({ ...s, profileUrl: e.target.value }))}
-                    placeholder="https://linkedin.com/in/..."
-                  />
-                ) : contactData.profileUrl ? (
-                  <a
-                    href={
-                      contactData.profileUrl.startsWith('http://') || contactData.profileUrl.startsWith('https://')
-                        ? contactData.profileUrl
-                        : `https://${contactData.profileUrl}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline flex items-center gap-1 text-sm break-all"
-                  >
-                    {contactData.profileUrl}
-                    <ExternalLink size={12} className="flex-shrink-0" />
-                  </a>
-                ) : (
-                  <div className="text-text">-</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Company Information */}
-          <div className="bg-foreground rounded shadow-sm border p-4">
-            <h3 className="text-lg font-semibold text-text mb-4">Company Information</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Building2 size={16} className="text-text-muted" />
-                <div className="flex-1">
-                  <div className="text-sm text-text-muted">Company</div>
-                  {isEditing ? (
-                    <div className="text-text font-medium">
-                      {tempCompanyName || companyName}
-                    </div>
-                  ) : (
-                    <Link
-                      to={`/sales/companies/${contactData.legacyCompanyId}`}
-                      className="text-primary hover:underline font-medium"
-                    >
-                      {companyName}
-                    </Link>
-                  )}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="text-sm text-text-muted">Company ID</div>
-                  {isEditing && (
-                    <div title={companySearchMode ? "Switch to direct ID entry" : "Search by company name"}>
-                      <Button
-                        variant="secondary-outline"
-                        size="sm"
-                        onClick={toggleCompanySearchMode}
-                        className="!p-1 !h-6 !w-6"
-                      >
-                        <Search size={12} />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                {isEditing ? (
-                  <div className="relative" data-company-search>
-                    {companySearchMode ? (
-                      <>
+                <div className="flex items-start gap-3">
+                  <User size={16} className="text-text-muted mt-1" />
+                  <div className="flex-1">
+                    <div className="text-sm text-text-muted mb-1">Name</div>
+                    {isEditing ? (
+                      <div className="grid grid-cols-2 gap-2">
                         <input
                           type="text"
                           className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                          value={companySearchQuery}
+                          value={editForm.firstName}
                           onChange={(e) => {
-                            justSelectedCompany.current = false;
-                            setCompanySearchQuery(e.target.value);
+                            const value = e.target.value;
+                            if (value.length === 0 || value[0] !== ' ') {
+                              setEditForm(s => ({ ...s, firstName: value }));
+                            }
                           }}
-                          placeholder="Search company by name..."
+                          placeholder="First Name"
                         />
-                        {isSearchingCompany && (
-                          <div className="absolute right-2 top-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                          </div>
-                        )}
-                        {showCompanyResults && companySearchResults.length > 0 && (
-                          <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-b shadow-lg max-h-60 overflow-y-auto">
-                            {companySearchResults.map((company, index) => (
-                              <div
-                                key={company.Company_ID || index}
-                                className="p-3 hover:bg-gray cursor-pointer border-b border-border last:border-b-0"
-                                onClick={() => handleCompanySelect(company)}
-                              >
-                                <div className="font-medium text-sm text-text">
-                                  {company.CustDlrName || "Unnamed Company"}
-                                </div>
-                                <div className="text-xs text-text-muted mt-1">
-                                  ID: <span className="font-mono">{company.Company_ID}</span>
-                                  {company.CreateDate && (
-                                    <span className="ml-3">
-                                      Created: {(() => {
-                                        try {
-                                          return formatDate(company.CreateDate);
-                                        } catch {
-                                          return company.CreateDate;
-                                        }
-                                      })()}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="text-xs text-text-muted mt-1">
-                          Selected ID: <span className="font-mono">{tempCompanyId || "None"}</span>
-                        </div>
-                      </>
+                        <input
+                          type="text"
+                          className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                          value={editForm.lastName}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value.length === 0 || value[0] !== ' ') {
+                              setEditForm(s => ({ ...s, lastName: value }));
+                            }
+                          }}
+                          placeholder="Last Name"
+                        />
+                      </div>
                     ) : (
-                      <input
-                        type="text"
-                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
-                        value={tempCompanyId}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === '' || /^\d+$/.test(value)) {
-                            setTempCompanyId(value);
-                            setTempCompanyName("");
-                          }
-                        }}
-                        placeholder="Enter company ID directly..."
-                      />
+                      <div className="text-text font-medium">{fullName}</div>
                     )}
                   </div>
-                ) : (
-                  <div className="text-text font-mono">{contactData.legacyCompanyId}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Details */}
-          <div className="bg-foreground rounded shadow-sm border p-4">
-            <h3 className="text-lg font-semibold text-text mb-4">Contact Details</h3>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <Phone size={16} className="text-text-muted mt-1" />
-                <div className="flex-1">
-                  <div className="text-sm text-text-muted">Phone</div>
-                  {isEditing ? (
-                    <div className="grid grid-cols-3 gap-2">
-                      <input
-                        type="text"
-                        className="col-span-2 rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm(s => ({ ...s, phone: e.target.value }))}
-                        placeholder="Phone number"
-                      />
-                      <input
-                        type="text"
-                        className="rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={editForm.phoneExtension}
-                        onChange={(e) => setEditForm(s => ({ ...s, phoneExtension: e.target.value }))}
-                        placeholder="Ext"
-                      />
-                    </div>
-                  ) : contactData.phone ? (
-                    <Link to={`tel:${contactData.phone}`} className="text-primary hover:underline">
-                      {contactData.phone}
-                      {contactData.phoneExtension && ` x${contactData.phoneExtension}`}
-                    </Link>
-                  ) : (
-                    <div className="text-text">-</div>
-                  )}
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <Mail size={16} className="text-text-muted mt-1" />
-                <div className="flex-1">
-                  <div className="text-sm text-text-muted">Email</div>
+                <div>
+                  <div className="text-sm text-text-muted">Title</div>
                   {isEditing ? (
-                    <input
-                      type="email"
+                    <select
                       className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                      value={editForm.email}
-                      onChange={(e) => setEditForm(s => ({ ...s, email: e.target.value }))}
-                      placeholder="Email address"
+                      value={editForm.title}
+                      onChange={(e) => setEditForm(s => ({ ...s, title: e.target.value }))}
+                    >
+                      <option value="">No Value Selected</option>
+                      {editForm.title && !availableContactPositions.includes(editForm.title) && (
+                        <option key={editForm.title} value={editForm.title}>{editForm.title}</option>
+                      )}
+                      {availableContactPositions.map(position => (
+                        <option key={position} value={position}>{position}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="text-text">{contactData.title || "-"}</div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="text-sm text-text-muted">Type</div>
+                  {isEditing ? (
+                    <select
+                      className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                      value={editForm.type}
+                      onChange={(e) => setEditForm(s => ({ ...s, type: e.target.value }))}
+                    >
+                      <option value="">Select Type</option>
+                      <option value={ContactType.Accounting}>Accounting</option>
+                      <option value={ContactType.Engineering}>Engineering</option>
+                      <option value={ContactType.Inactive}>Inactive</option>
+                      <option value={ContactType.Left_Company}>Left Company</option>
+                      <option value={ContactType.Parts_Service}>Parts/Service</option>
+                      <option value={ContactType.Sales}>Sales</option>
+                    </select>
+                  ) : (
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getContactTypeColor(contactData.type)}`}>
+                      {getContactTypeName(contactData.type)}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <div className="text-sm text-text-muted">Contact Owner</div>
+                  {isEditing ? (
+                    <select
+                      className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                      value={editForm.owner}
+                      onChange={(e) => setEditForm(s => ({ ...s, owner: e.target.value }))}
+                    >
+                      <option value="">No Value Selected</option>
+                      {editForm.owner && !availableRsms.find(r => r.initials === editForm.owner) && (
+                        <option key={editForm.owner} value={editForm.owner}>{editForm.owner}</option>
+                      )}
+                      {availableRsms.map(rsm => (
+                        <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="text-text">{getRsmDisplayName(contactData.owner)}</div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="text-sm text-text-muted">Address ID</div>
+                  {isEditing && availableAddresses.length > 0 ? (
+                    <select
+                      className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
+                      value={editForm.addressId}
+                      onChange={(e) => {
+                        const newAddressId = e.target.value;
+                        setEditForm(s => ({ ...s, addressId: newAddressId }));
+                        const selectedAddress = availableAddresses.find((addr: any) => addr.Address_ID == newAddressId);
+                        if (selectedAddress) {
+                          setAddressData(selectedAddress);
+                        } else {
+                          setAddressData(null);
+                        }
+                      }}
+                    >
+                      <option value="">No Address</option>
+                      {availableAddresses.map((addr: any) => (
+                        <option key={addr.Address_ID} value={addr.Address_ID}>
+                          {addr.Address_ID} - {[addr.Address1, addr.City, addr.State].filter(Boolean).join(', ')}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="text-text font-mono">{contactData.addressId || "-"}</div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="text-sm text-text-muted">Profile URL</div>
+                  {isEditing ? (
+                    <input
+                      type="url"
+                      className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                      value={editForm.profileUrl}
+                      onChange={(e) => setEditForm(s => ({ ...s, profileUrl: e.target.value }))}
+                      placeholder="https://linkedin.com/in/..."
                     />
-                  ) : contactData.email ? (
-                    <Link to={`mailto:${contactData.email}`} className="text-primary hover:underline">
-                      {contactData.email}
-                    </Link>
+                  ) : contactData.profileUrl ? (
+                    <a
+                      href={
+                        contactData.profileUrl.startsWith('http://') || contactData.profileUrl.startsWith('https://')
+                          ? contactData.profileUrl
+                          : `https://${contactData.profileUrl}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline flex items-center gap-1 text-sm break-all"
+                    >
+                      {contactData.profileUrl}
+                      <ExternalLink size={12} className="flex-shrink-0" />
+                    </a>
                   ) : (
                     <div className="text-text">-</div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Address Information */}
-        <div className="bg-foreground rounded shadow-sm border p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-text">Address Information</h3>
-            {!isEditing && contactData?.legacyCompanyId && (
-              <Button
-                variant="secondary-outline"
-                size="sm"
-                onClick={handleAddAddress}
-              >
-                Add Address
-              </Button>
-            )}
-          </div>
-          {addressData ? (
-            <div className="space-y-3">
-              {addressEditor.isEditing && addressEditor.editingId === addressData.Address_ID ? (
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={addressEditor.editData.AddressName || ""}
-                    onChange={e => handleAddressFieldChange("AddressName", e.target.value)}
-                    className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                    placeholder="Address name"
-                  />
-                  <input
-                    type="text"
-                    value={addressEditor.editData.Address1 || ""}
-                    onChange={e => handleAddressFieldChange("Address1", e.target.value)}
-                    className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                    placeholder="Address line 1"
-                  />
-                  <input
-                    type="text"
-                    value={addressEditor.editData.Address2 || ""}
-                    onChange={e => handleAddressFieldChange("Address2", e.target.value)}
-                    className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                    placeholder="Address line 2"
-                  />
-                  <input
-                    type="text"
-                    value={addressEditor.editData.Address3 || ""}
-                    onChange={e => handleAddressFieldChange("Address3", e.target.value)}
-                    className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                    placeholder="Address line 3"
-                  />
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={addressEditor.editData.ZipCode || ""}
-                      onChange={e => handleAddressFieldChange("ZipCode", e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary pr-8"
-                      placeholder="ZIP code"
-                    />
-                    {isEditLookingUpZip && (
-                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                        <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
+            {/* Company Information */}
+            <div className="bg-foreground rounded shadow-sm border p-4">
+              <h3 className="text-lg font-semibold text-text mb-4">Company Information</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Building2 size={16} className="text-text-muted" />
+                  <div className="flex-1">
+                    <div className="text-sm text-text-muted">Company</div>
+                    {isEditing ? (
+                      <div className="text-text font-medium">
+                        {tempCompanyName || companyName}
                       </div>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {editZipLookupResults.city.length > 1 ? (
-                      <select
-                        value={addressEditor.editData.City || ""}
-                        onChange={e => handleAddressFieldChange("City", e.target.value)}
-                        className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                      >
-                        {editZipLookupResults.city.map(city => (
-                          <option key={city} value={city}>{city}</option>
-                        ))}
-                      </select>
                     ) : (
-                      <div className="relative w-full">
-                        <input
-                          type="text"
-                          value={addressEditor.editData.City || ""}
-                          onKeyDown={handleKeyDown}
-                          className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
-                          placeholder="City"
-                          readOnly
-                          title="City is automatically populated from ZIP code"
-                        />
-                        <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
-                      </div>
-                    )}
-                    {editZipLookupResults.stateProv.length > 1 ? (
-                      <select
-                        value={addressEditor.editData.State || ""}
-                        onChange={e => handleAddressFieldChange("State", e.target.value)}
-                        className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                      <Link
+                        to={`/sales/companies/${contactData.legacyCompanyId}`}
+                        className="text-primary hover:underline font-medium"
                       >
-                        {editZipLookupResults.stateProv.map(state => (
-                          <option key={state} value={state}>{state}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="relative w-full">
-                        <input
-                          type="text"
-                          value={addressEditor.editData.State || ""}
-                          onKeyDown={handleKeyDown}
-                          className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
-                          placeholder="State"
-                          readOnly
-                          title="State is automatically populated from ZIP code"
-                        />
-                        <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
-                      </div>
+                        {companyName}
+                      </Link>
                     )}
-                  </div>
-                  <div>
-                    {editZipLookupResults.country.length > 1 ? (
-                      <select
-                        value={addressEditor.editData.Country || ""}
-                        onChange={e => handleAddressFieldChange("Country", e.target.value)}
-                        className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full"
-                      >
-                        {editZipLookupResults.country.map(country => (
-                          <option key={country} value={country}>{country}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="relative w-full">
-                        <input
-                          type="text"
-                          value={addressEditor.editData.Country || ""}
-                          onKeyDown={handleKeyDown}
-                          className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
-                          placeholder="Country"
-                          readOnly
-                          title="Country is automatically populated from ZIP code"
-                        />
-                        <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={addressEditor.save}
-                      disabled={addressEditor.isSaving}
-                    >
-                      {addressEditor.isSaving ? "Saving..." : "Save"}
-                    </Button>
-                    <Button
-                      variant="secondary-outline"
-                      size="sm"
-                      onClick={addressEditor.cancel}
-                      disabled={addressEditor.isSaving}
-                    >
-                      Cancel
-                    </Button>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1">
-                      <MapPin size={16} className="text-text-muted mt-1" />
-                      <div className="flex-1">
-                        <div className="text-sm text-text-muted mb-1">Address</div>
-                        {addressData.AddressName && (
-                          <div className="text-sm font-semibold text-text mb-1">{addressData.AddressName}</div>
-                        )}
-                        <div className="text-text">
-                          {addressData.Address1 && (
-                            <div>{addressData.Address1}</div>
-                          )}
-                          {addressData.Address2 && (
-                            <div>{addressData.Address2}</div>
-                          )}
-                          {addressData.Address3 && (
-                            <div>{addressData.Address3}</div>
-                          )}
-                          {(addressData.City || addressData.State || addressData.ZipCode) && (
-                            <div>
-                              {[addressData.City, addressData.State, addressData.ZipCode].filter(Boolean).join(', ')}
-                            </div>
-                          )}
-                          {addressData.Country && addressData.Country !== 'USA' && (
-                            <div>{addressData.Country}</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {!isEditing && (
-                      <Button
-                        variant="secondary-outline"
-                        size="sm"
-                        onClick={() => startAddressEdit(addressData)}
-                      >
-                        <Edit size={12} />
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          ) : contactData.addressId ? (
-            <div className="text-text-muted text-sm">Address data not available</div>
-          ) : (
-            <div className="text-text-muted text-sm">No address assigned</div>
-          )}
-        </div>
 
-        {/* Notes */}
-        <div className="bg-foreground rounded shadow-sm border p-4 flex flex-col" style={{ maxHeight: '500px' }}>
-          <h3 className="text-lg font-semibold text-text mb-4">Notes</h3>
-
-          <div className="flex gap-2 mb-4">
-            <textarea
-              className="flex-1 p-2 bg-background rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-              value={newNoteBody}
-              onChange={(e) => setNewNoteBody(e.target.value)}
-              placeholder="Enter a new note..."
-              rows={2}
-            />
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleCreateNote}
-              disabled={isCreatingNote || !newNoteBody.trim()}
-            >
-              {isCreatingNote ? "Adding..." : "Add Note"}
-            </Button>
-          </div>
-
-          <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
-            {isLoadingNotes ? (
-              <div className="text-sm text-text-muted text-center py-4">Loading notes...</div>
-            ) : contactNotes.length === 0 ? (
-              <div className="text-sm text-text-muted text-center py-4">No notes yet</div>
-            ) : (
-              contactNotes.map((note) => (
-                <div key={note.id} className="p-3 bg-background rounded border border-border">
-                  {editingNoteId === note.id ? (
-                    <div className="space-y-2">
-                      <textarea
-                        className="w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-                        value={editingNoteBody}
-                        onChange={(e) => setEditingNoteBody(e.target.value)}
-                        rows={3}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={handleSaveNote}
-                          disabled={isSaving || !editingNoteBody.trim()}
-                        >
-                          {isSaving ? "Saving..." : "Save"}
-                        </Button>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm text-text-muted">Company ID</div>
+                    {isEditing && (
+                      <div title={companySearchMode ? "Switch to direct ID entry" : "Search by company name"}>
                         <Button
                           variant="secondary-outline"
                           size="sm"
-                          onClick={handleCancelEditNote}
-                          disabled={isSaving}
+                          onClick={toggleCompanySearchMode}
+                          className="!p-1 !h-6 !w-6"
                         >
-                          Cancel
+                          <Search size={12} />
                         </Button>
                       </div>
+                    )}
+                  </div>
+                  {isEditing ? (
+                    <div className="relative" data-company-search>
+                      {companySearchMode ? (
+                        <>
+                          <input
+                            type="text"
+                            className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                            value={companySearchQuery}
+                            onChange={(e) => {
+                              justSelectedCompany.current = false;
+                              setCompanySearchQuery(e.target.value);
+                            }}
+                            placeholder="Search company by name..."
+                          />
+                          {isSearchingCompany && (
+                            <div className="absolute right-2 top-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                            </div>
+                          )}
+                          {showCompanyResults && companySearchResults.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-b shadow-lg max-h-60 overflow-y-auto">
+                              {companySearchResults.map((company, index) => (
+                                <div
+                                  key={company.Company_ID || index}
+                                  className="p-3 hover:bg-gray cursor-pointer border-b border-border last:border-b-0"
+                                  onClick={() => handleCompanySelect(company)}
+                                >
+                                  <div className="font-medium text-sm text-text">
+                                    {company.CustDlrName || "Unnamed Company"}
+                                  </div>
+                                  <div className="text-xs text-text-muted mt-1">
+                                    ID: <span className="font-mono">{company.Company_ID}</span>
+                                    {company.CreateDate && (
+                                      <span className="ml-3">
+                                        Created: {(() => {
+                                          try {
+                                            return formatDate(company.CreateDate);
+                                          } catch {
+                                            return company.CreateDate;
+                                          }
+                                        })()}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="text-xs text-text-muted mt-1">
+                            Selected ID: <span className="font-mono">{tempCompanyId || "None"}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <input
+                          type="text"
+                          className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
+                          value={tempCompanyId}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || /^\d+$/.test(value)) {
+                              setTempCompanyId(value);
+                              setTempCompanyName("");
+                            }
+                          }}
+                          placeholder="Enter company ID directly..."
+                        />
+                      )}
                     </div>
                   ) : (
-                    <>
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-medium text-text">
-                            {note.createdBy || "Unknown"}
-                          </span>
-                          <span className="text-xs text-text-muted">
-                            {note.createdAt ? new Date(note.createdAt).toLocaleString() : "N/A"}
-                          </span>
-                          {note.updatedAt && note.updatedAt !== note.createdAt && (
-                            <span className="text-xs text-text-muted">
-                              Updated: {new Date(note.updatedAt).toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="secondary-outline"
-                            size="sm"
-                            onClick={() => handleEditNote(note)}
-                            disabled={isSaving || editingNoteId !== null}
-                            className="!p-1 !h-6 !w-6"
-                          >
-                            <Edit size={12} />
-                          </Button>
-                          <Button
-                            variant="secondary-outline"
-                            size="sm"
-                            onClick={() => handleDeleteNote(note)}
-                            disabled={isSaving || editingNoteId !== null}
-                            className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
-                          >
-                            <Trash2 size={12} className="text-red-600" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="text-sm text-text whitespace-pre-wrap">
-                        {note.body || ""}
-                      </div>
-                    </>
+                    <div className="text-text font-mono">{contactData.legacyCompanyId}</div>
                   )}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Record Information */}
-        <div className="bg-foreground rounded shadow-sm border p-4">
-          <h3 className="text-lg font-semibold text-text mb-4">Record Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-center gap-3">
-              <Calendar size={16} className="text-text-muted" />
-              <div>
-                <div className="text-sm text-text-muted">Created</div>
-                <div className="text-text">
-                  {contactData.createdAt ? formatDate(contactData.createdAt) : "Unknown"}
                 </div>
               </div>
             </div>
 
-            {contactData.updatedAt && (
-              <div className="flex items-center gap-3">
-                <Calendar size={16} className="text-text-muted" />
-                <div>
-                  <div className="text-sm text-text-muted">Last Modified</div>
-                  <div className="text-text">
-                    {formatDate(contactData.updatedAt)}
+            {/* Contact Details */}
+            <div className="bg-foreground rounded shadow-sm border p-4">
+              <h3 className="text-lg font-semibold text-text mb-4">Contact Details</h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Phone size={16} className="text-text-muted mt-1" />
+                  <div className="flex-1">
+                    <div className="text-sm text-text-muted">Phone</div>
+                    {isEditing ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          className="col-span-2 rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                          value={editForm.phone}
+                          onChange={(e) => setEditForm(s => ({ ...s, phone: e.target.value }))}
+                          placeholder="Phone number"
+                        />
+                        <input
+                          type="text"
+                          className="rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                          value={editForm.phoneExtension}
+                          onChange={(e) => setEditForm(s => ({ ...s, phoneExtension: e.target.value }))}
+                          placeholder="Ext"
+                        />
+                      </div>
+                    ) : contactData.phone ? (
+                      <Link to={`tel:${contactData.phone}`} className="text-primary hover:underline">
+                        {contactData.phone}
+                        {contactData.phoneExtension && ` x${contactData.phoneExtension}`}
+                      </Link>
+                    ) : (
+                      <div className="text-text">-</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Mail size={16} className="text-text-muted mt-1" />
+                  <div className="flex-1">
+                    <div className="text-sm text-text-muted">Email</div>
+                    {isEditing ? (
+                      <input
+                        type="email"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm(s => ({ ...s, email: e.target.value }))}
+                        placeholder="Email address"
+                      />
+                    ) : contactData.email ? (
+                      <Link to={`mailto:${contactData.email}`} className="text-primary hover:underline">
+                        {contactData.email}
+                      </Link>
+                    ) : (
+                      <div className="text-text">-</div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <User size={16} className="text-text-muted" />
-              <div>
-                <div className="text-sm text-text-muted">
-                  {copiedContactId ? "Copied to clipboard!" : "Contact ID (click to copy)"}
-                </div>
-                <div
-                  className="text-text font-mono cursor-pointer hover:text-primary transition-colors"
-                  onClick={() => {
-                    navigator.clipboard.writeText(contactData.id);
-                    setCopiedContactId(true);
-                    setTimeout(() => setCopiedContactId(false), 2000);
-                  }}
-                  title="Click to copy"
+          {/* Address Information */}
+          <div className="bg-foreground rounded shadow-sm border p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-text">Address Information</h3>
+              {!isEditing && contactData?.legacyCompanyId && (
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  onClick={handleAddAddress}
                 >
-                  {contactData.id}
+                  Add Address
+                </Button>
+              )}
+            </div>
+            {addressData ? (
+              <div className="space-y-3">
+                {addressEditor.isEditing && addressEditor.editingId === addressData.Address_ID ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={addressEditor.editData.AddressName || ""}
+                      onChange={e => handleAddressFieldChange("AddressName", e.target.value)}
+                      className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                      placeholder="Address name"
+                    />
+                    <input
+                      type="text"
+                      value={addressEditor.editData.Address1 || ""}
+                      onChange={e => handleAddressFieldChange("Address1", e.target.value)}
+                      className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                      placeholder="Address line 1"
+                    />
+                    <input
+                      type="text"
+                      value={addressEditor.editData.Address2 || ""}
+                      onChange={e => handleAddressFieldChange("Address2", e.target.value)}
+                      className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                      placeholder="Address line 2"
+                    />
+                    <input
+                      type="text"
+                      value={addressEditor.editData.Address3 || ""}
+                      onChange={e => handleAddressFieldChange("Address3", e.target.value)}
+                      className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                      placeholder="Address line 3"
+                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={addressEditor.editData.ZipCode || ""}
+                        onChange={e => handleAddressFieldChange("ZipCode", e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary pr-8"
+                        placeholder="ZIP code"
+                      />
+                      {isEditLookingUpZip && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {editZipLookupResults.city.length > 1 ? (
+                        <select
+                          value={addressEditor.editData.City || ""}
+                          onChange={e => handleAddressFieldChange("City", e.target.value)}
+                          className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                        >
+                          {editZipLookupResults.city.map(city => (
+                            <option key={city} value={city}>{city}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="relative w-full">
+                          <input
+                            type="text"
+                            value={addressEditor.editData.City || ""}
+                            onKeyDown={handleKeyDown}
+                            className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
+                            placeholder="City"
+                            readOnly
+                            title="City is automatically populated from ZIP code"
+                          />
+                          <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
+                        </div>
+                      )}
+                      {editZipLookupResults.stateProv.length > 1 ? (
+                        <select
+                          value={addressEditor.editData.State || ""}
+                          onChange={e => handleAddressFieldChange("State", e.target.value)}
+                          className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                        >
+                          {editZipLookupResults.stateProv.map(state => (
+                            <option key={state} value={state}>{state}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="relative w-full">
+                          <input
+                            type="text"
+                            value={addressEditor.editData.State || ""}
+                            onKeyDown={handleKeyDown}
+                            className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
+                            placeholder="State"
+                            readOnly
+                            title="State is automatically populated from ZIP code"
+                          />
+                          <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      {editZipLookupResults.country.length > 1 ? (
+                        <select
+                          value={addressEditor.editData.Country || ""}
+                          onChange={e => handleAddressFieldChange("Country", e.target.value)}
+                          className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full"
+                        >
+                          {editZipLookupResults.country.map(country => (
+                            <option key={country} value={country}>{country}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="relative w-full">
+                          <input
+                            type="text"
+                            value={addressEditor.editData.Country || ""}
+                            onKeyDown={handleKeyDown}
+                            className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
+                            placeholder="Country"
+                            readOnly
+                            title="Country is automatically populated from ZIP code"
+                          />
+                          <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={addressEditor.save}
+                        disabled={addressEditor.isSaving}
+                      >
+                        {addressEditor.isSaving ? "Saving..." : "Save"}
+                      </Button>
+                      <Button
+                        variant="secondary-outline"
+                        size="sm"
+                        onClick={addressEditor.cancel}
+                        disabled={addressEditor.isSaving}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 flex-1">
+                        <MapPin size={16} className="text-text-muted mt-1" />
+                        <div className="flex-1">
+                          <div className="text-sm text-text-muted mb-1">Address</div>
+                          {addressData.AddressName && (
+                            <div className="text-sm font-semibold text-text mb-1">{addressData.AddressName}</div>
+                          )}
+                          <div className="text-text">
+                            {addressData.Address1 && (
+                              <div>{addressData.Address1}</div>
+                            )}
+                            {addressData.Address2 && (
+                              <div>{addressData.Address2}</div>
+                            )}
+                            {addressData.Address3 && (
+                              <div>{addressData.Address3}</div>
+                            )}
+                            {(addressData.City || addressData.State || addressData.ZipCode) && (
+                              <div>
+                                {[addressData.City, addressData.State, addressData.ZipCode].filter(Boolean).join(', ')}
+                              </div>
+                            )}
+                            {addressData.Country && addressData.Country !== 'USA' && (
+                              <div>{addressData.Country}</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {!isEditing && (
+                        <Button
+                          variant="secondary-outline"
+                          size="sm"
+                          onClick={() => startAddressEdit(addressData)}
+                        >
+                          <Edit size={12} />
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : contactData.addressId ? (
+              <div className="text-text-muted text-sm">Address data not available</div>
+            ) : (
+              <div className="text-text-muted text-sm">No address assigned</div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div className="bg-foreground rounded shadow-sm border p-4 flex flex-col" style={{ maxHeight: '500px' }}>
+            <h3 className="text-lg font-semibold text-text mb-4">Notes</h3>
+
+            <div className="flex gap-2 mb-4">
+              <textarea
+                className="flex-1 p-2 bg-background rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                value={newNoteBody}
+                onChange={(e) => setNewNoteBody(e.target.value)}
+                placeholder="Enter a new note..."
+                rows={2}
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleCreateNote}
+                disabled={isCreatingNote || !newNoteBody.trim()}
+              >
+                {isCreatingNote ? "Adding..." : "Add Note"}
+              </Button>
+            </div>
+
+            <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
+              {isLoadingNotes ? (
+                <div className="text-sm text-text-muted text-center py-4">Loading notes...</div>
+              ) : contactNotes.length === 0 ? (
+                <div className="text-sm text-text-muted text-center py-4">No notes yet</div>
+              ) : (
+                contactNotes.map((note) => (
+                  <div key={note.id} className="p-3 bg-background rounded border border-border">
+                    {editingNoteId === note.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          className="w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                          value={editingNoteBody}
+                          onChange={(e) => setEditingNoteBody(e.target.value)}
+                          rows={3}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleSaveNote}
+                            disabled={isSaving || !editingNoteBody.trim()}
+                          >
+                            {isSaving ? "Saving..." : "Save"}
+                          </Button>
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={handleCancelEditNote}
+                            disabled={isSaving}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-text">
+                              {note.createdBy || "Unknown"}
+                            </span>
+                            <span className="text-xs text-text-muted">
+                              {note.createdAt ? new Date(note.createdAt).toLocaleString() : "N/A"}
+                            </span>
+                            {note.updatedAt && note.updatedAt !== note.createdAt && (
+                              <span className="text-xs text-text-muted">
+                                Updated: {new Date(note.updatedAt).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => handleEditNote(note)}
+                              disabled={isSaving || editingNoteId !== null}
+                              className="!p-1 !h-6 !w-6"
+                            >
+                              <Edit size={12} />
+                            </Button>
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => handleDeleteNote(note)}
+                              disabled={isSaving || editingNoteId !== null}
+                              className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
+                            >
+                              <Trash2 size={12} className="text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-sm text-text whitespace-pre-wrap">
+                          {note.body || ""}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Record Information */}
+          <div className="bg-foreground rounded shadow-sm border p-4">
+            <h3 className="text-lg font-semibold text-text mb-4">Record Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center gap-3">
+                <Calendar size={16} className="text-text-muted" />
+                <div>
+                  <div className="text-sm text-text-muted">Created</div>
+                  <div className="text-text">
+                    {contactData.createdAt ? formatDate(contactData.createdAt) : "Unknown"}
+                  </div>
+                </div>
+              </div>
+
+              {contactData.updatedAt && (
+                <div className="flex items-center gap-3">
+                  <Calendar size={16} className="text-text-muted" />
+                  <div>
+                    <div className="text-sm text-text-muted">Last Modified</div>
+                    <div className="text-text">
+                      {formatDate(contactData.updatedAt)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <User size={16} className="text-text-muted" />
+                <div>
+                  <div className="text-sm text-text-muted">
+                    {copiedContactId ? "Copied to clipboard!" : "Contact ID (click to copy)"}
+                  </div>
+                  <div
+                    className="text-text font-mono cursor-pointer hover:text-primary transition-colors"
+                    onClick={() => {
+                      navigator.clipboard.writeText(contactData.id);
+                      setCopiedContactId(true);
+                      setTimeout(() => setCopiedContactId(false), 2000);
+                    }}
+                    title="Click to copy"
+                  >
+                    {contactData.id}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
         </div>
       )}
 
@@ -2120,14 +2116,13 @@ const ContactDetails = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <span className="text-text-muted text-sm">Status:</span>
-                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                          journeyStatus?.toLowerCase().includes('active') ? 'bg-success/20 text-success' :
-                          journeyStatus?.toLowerCase().includes('complete') ? 'bg-info/20 text-info' :
-                          journeyStatus?.toLowerCase().includes('cancel') ? 'bg-error/20 text-error' :
-                          journeyStatus?.toLowerCase().includes('lost') ? 'bg-error/20 text-error' :
-                          journeyStatus?.toLowerCase().includes('won') ? 'bg-success/20 text-success' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${journeyStatus?.toLowerCase().includes('active') ? 'bg-success/20 text-success' :
+                            journeyStatus?.toLowerCase().includes('complete') ? 'bg-info/20 text-info' :
+                              journeyStatus?.toLowerCase().includes('cancel') ? 'bg-error/20 text-error' :
+                                journeyStatus?.toLowerCase().includes('lost') ? 'bg-error/20 text-error' :
+                                  journeyStatus?.toLowerCase().includes('won') ? 'bg-success/20 text-success' :
+                                    'bg-gray-100 text-gray-800'
+                          }`}>
                           {journeyStatus}
                         </span>
                       </div>
@@ -2371,11 +2366,10 @@ const ContactDetails = () => {
                             <span className="px-2 py-1 rounded text-xs font-medium bg-primary/20 text-primary">
                               {activity.activityType}
                             </span>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              activity.sentiment === 'Positive' ? 'bg-success/20 text-success' :
-                              activity.sentiment === 'Negative' ? 'bg-error/20 text-error' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${activity.sentiment === 'Positive' ? 'bg-success/20 text-success' :
+                                activity.sentiment === 'Negative' ? 'bg-error/20 text-error' :
+                                  'bg-gray-100 text-gray-800'
+                              }`}>
                               {activity.sentiment}
                             </span>
                             <span className="text-xs text-text-muted">
@@ -2563,11 +2557,10 @@ const ContactDetails = () => {
                       <button
                         key={image.id}
                         onClick={() => handleSelectImage(image.id)}
-                        className={`group relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                          editForm.imageId === image.id
+                        className={`group relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${editForm.imageId === image.id
                             ? "border-primary ring-2 ring-primary/20"
                             : "border-border hover:border-primary/50"
-                        }`}
+                          }`}
                       >
                         <img
                           src={`${import.meta.env.VITE_API_URL.replace('/v1', '')}${image.url}`}

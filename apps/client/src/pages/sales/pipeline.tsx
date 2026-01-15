@@ -192,14 +192,14 @@ const Pipeline = () => {
     (async () => {
       try {
         const [journeysData, customersData, rsms, statuses] = await Promise.all([
-          get('/legacy/base/Journey', {
+          get('/legacy/std/Journey', {
             page: 1,
             limit: 200,
             sort: 'CreateDT',
             order: 'desc',
             fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
           }),
-          get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' }),
+          get('/legacy/std/Company', { sort: 'Company_ID', order: 'desc' }),
           fetchAvailableRsms({ get }),
           fetchDemographicCategory({ get }, 'Journey_status')
         ]);
@@ -390,37 +390,47 @@ const Pipeline = () => {
   }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter, journeyTags, showDisabledJourneys]);
   const buildStageConditions = (stageId: number) => {
     const stageMap: Record<number, any> = {
-      1: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "LEAD" },
-        { field: "Journey_Stage", operator: "contains", value: "OPEN" },
-        { field: "Journey_Stage", operator: "contains", value: "NEW" }
-      ]},
-      2: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
-        { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
-        { field: "Journey_Stage", operator: "contains", value: "PAIN" },
-        { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
-      ]},
-      3: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
-        { field: "Journey_Stage", operator: "contains", value: "DEMO" },
-        { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
-        { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
-      ]},
+      1: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "LEAD" },
+          { field: "Journey_Stage", operator: "contains", value: "OPEN" },
+          { field: "Journey_Stage", operator: "contains", value: "NEW" }
+        ]
+      },
+      2: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
+          { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
+          { field: "Journey_Stage", operator: "contains", value: "PAIN" },
+          { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
+        ]
+      },
+      3: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
+          { field: "Journey_Stage", operator: "contains", value: "DEMO" },
+          { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
+          { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
+        ]
+      },
       4: { field: "Journey_Stage", operator: "contains", value: "NEGOT" },
-      5: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "PO" },
-        { field: "Journey_Stage", operator: "contains", value: "WON" },
-        { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
-        { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
-        { field: "Journey_Stage", operator: "contains", value: "ORDER" }
-      ]},
-      6: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "LOST" },
-        { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
-        { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
-        { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
-      ]}
+      5: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "PO" },
+          { field: "Journey_Stage", operator: "contains", value: "WON" },
+          { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
+          { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
+          { field: "Journey_Stage", operator: "contains", value: "ORDER" }
+        ]
+      },
+      6: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "LOST" },
+          { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
+          { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
+          { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
+        ]
+      }
     };
     return stageMap[stageId] || null;
   };
@@ -533,7 +543,7 @@ const Pipeline = () => {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await get('/legacy/base/Journey', params, signal ? { signal } : undefined);
+      const raw = await get('/legacy/std/Journey', params, signal ? { signal } : undefined);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
@@ -587,7 +597,7 @@ const Pipeline = () => {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await get('/legacy/base/Journey', params, signal ? { signal } : undefined);
+      const raw = await get('/legacy/std/Journey', params, signal ? { signal } : undefined);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
@@ -713,7 +723,8 @@ const Pipeline = () => {
 
   const handleDeleteJourney = useCallback(async (journeyId: string) => {
     try {
-      const journey = [...(legacyJourneys || []), ...journeys, ...listViewJourneys, ...kanbanViewJourneys]
+      // const journey = [...(legacyJourneys || []), ...journeys, ...listViewJourneys, ...kanbanViewJourneys]
+      const journey = [...journeys, ...listViewJourneys, ...kanbanViewJourneys]
         .find(j => j.id.toString() === journeyId);
 
       if (!journey) return;
@@ -721,7 +732,7 @@ const Pipeline = () => {
       const isCurrentlyDeleted = journey.deletedAt === 1;
       const newDeletedValue = isCurrentlyDeleted ? 0 : 1;
 
-      const success = await patch(`/legacy/base/Journey/${journeyId}`, {
+      const success = await patch(`/legacy/std/Journey/${journeyId}`, {
         Deleted: newDeletedValue
       });
 
@@ -731,7 +742,7 @@ const Pipeline = () => {
             ? { ...j, deletedAt: newDeletedValue }
             : j;
 
-        setLegacyJourneys(prev => prev ? prev.map(updateJourney) : prev);
+        //setLegacyJourneys(prev => prev ? prev.map(updateJourney) : prev);
         setJourneys(prev => prev.map(updateJourney));
         setListViewJourneys(prev => prev.map(updateJourney));
         setKanbanViewJourneys(prev => prev.map(updateJourney));
@@ -753,7 +764,8 @@ const Pipeline = () => {
       console.error("Error toggling journey status:", error);
       alert("Failed to toggle journey status. Please try again.");
     }
-  }, [patch, legacyJourneys, journeys, listViewJourneys, kanbanViewJourneys, showDisabledJourneys, viewMode, fetchListViewJourneys, fetchKanbanViewJourneys]);
+    //  }, [patch, legacyJourneys, journeys, listViewJourneys, kanbanViewJourneys, showDisabledJourneys, viewMode, fetchListViewJourneys, fetchKanbanViewJourneys]);
+  }, [patch, journeys, listViewJourneys, kanbanViewJourneys, showDisabledJourneys, viewMode, fetchListViewJourneys, fetchKanbanViewJourneys]);
 
   const handleTagsUpdated = useCallback(async () => {
     if (!showTags) return;
@@ -793,7 +805,7 @@ const Pipeline = () => {
     updateLocalState();
 
     try {
-      await patch(`/legacy/base/Journey/${journeyId}`, { Journey_Stage: stageLabel });
+      await patch(`/legacy/std/Journey/${journeyId}`, { Journey_Stage: stageLabel });
     } catch (error) {
       console.error("Error updating journey stage:", error);
     }
@@ -900,7 +912,7 @@ const Pipeline = () => {
     await Promise.all(
       filteredJourneys.map(async (journey) => {
         try {
-          const contactData = await get('/legacy/base/Journey_Contact/filter/custom', {
+          const contactData = await get('/legacy/std/Journey_Contact/filter/custom', {
             filterField: 'Jrn_ID',
             filterValue: journey.id,
             fields: 'Contact_Name,Contact_Email,Contact_Position,IsPrimary'
@@ -1102,7 +1114,7 @@ const Pipeline = () => {
         description={pageDescription}
         actions={<HeaderActions />}
       />
-      
+
       {/* Pipeline Value Summary - Only show for kanban and list views */}
       {viewMode !== "projections" && (
         <div className="border-b px-6 py-4 bg-gray-50 dark:bg-gray-800">
@@ -1193,7 +1205,7 @@ const Pipeline = () => {
       )}
 
       {viewMode === "projections" && (
-        <ProjectionsView 
+        <ProjectionsView
           journeys={filteredJourneys}
           customersById={customersById}
         />
@@ -1233,7 +1245,7 @@ const Pipeline = () => {
 
             const fetchData = async () => {
               const [journeysData] = await Promise.all([
-                get('/legacy/base/Journey', {
+                get('/legacy/std/Journey', {
                   page: 1,
                   limit: 200,
                   sort: 'CreateDT',
@@ -1433,12 +1445,12 @@ const FilterModal = ({
 }) => {
   const [localFilters, setLocalFilters] = useState(filters);
   const [localShowDisabled, setLocalShowDisabled] = useState(showDisabled);
-  
+
   useEffect(() => {
     setLocalFilters(filters);
     setLocalShowDisabled(showDisabled);
   }, [filters, showDisabled, isOpen]);
-  
+
   const handleReset = () => {
     setLocalFilters({
       confidenceLevels: [],
@@ -1451,7 +1463,7 @@ const FilterModal = ({
     });
     setLocalShowDisabled(false);
   };
-  
+
   const hasActiveFilters =
     localFilters.confidenceLevels.length > 0 ||
     localFilters.dateRange[0] ||
@@ -1461,7 +1473,7 @@ const FilterModal = ({
     localFilters.maxValue ||
     localFilters.visibleStages.length !== STAGES.length ||
     localShowDisabled;
-  
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Filter Pipeline" size="md">
       <div className="space-y-4">
@@ -1493,7 +1505,7 @@ const FilterModal = ({
             ))}
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <Select
             label="Date Field"
@@ -1510,7 +1522,7 @@ const FilterModal = ({
             ]}
           />
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-text">Date From</label>
@@ -1537,7 +1549,7 @@ const FilterModal = ({
             />
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <Select
             label="Priority"
@@ -1552,7 +1564,7 @@ const FilterModal = ({
             ]}
           />
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Input
@@ -1573,7 +1585,7 @@ const FilterModal = ({
             />
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <label className="text-sm font-medium text-text">Visible Stages</label>
           <div className="flex items-center justify-between gap-2 mb-2">

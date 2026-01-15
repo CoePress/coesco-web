@@ -167,7 +167,7 @@ const Contacts = () => {
     if (companyIds.length === 0) return new Map<number, string>();
 
     try {
-      const companyResponse = await api.get('/legacy/base/Company', {
+      const companyResponse = await api.get('/legacy/std/Company', {
         filter: JSON.stringify({
           operator: "in",
           field: "Company_ID",
@@ -348,15 +348,14 @@ const Contacts = () => {
       header: "Type",
       className: "w-[8%]",
       render: (_, row) => (
-        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-          row.type === ContactType.Accounting ? 'bg-blue-100 text-blue-800' :
-          row.type === ContactType.Engineering ? 'bg-green-100 text-green-800' :
-          row.type === ContactType.Sales ? 'bg-orange-100 text-orange-800' :
-          row.type === ContactType.Parts_Service ? 'bg-purple-100 text-purple-800' :
-          row.type === ContactType.Inactive ? 'bg-gray-100 text-gray-800' :
-          row.type === ContactType.Left_Company ? 'bg-red-100 text-red-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
+        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${row.type === ContactType.Accounting ? 'bg-blue-100 text-blue-800' :
+            row.type === ContactType.Engineering ? 'bg-green-100 text-green-800' :
+              row.type === ContactType.Sales ? 'bg-orange-100 text-orange-800' :
+                row.type === ContactType.Parts_Service ? 'bg-purple-100 text-purple-800' :
+                  row.type === ContactType.Inactive ? 'bg-gray-100 text-gray-800' :
+                    row.type === ContactType.Left_Company ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+          }`}>
           {row.typeName}
         </span>
       ),
@@ -470,10 +469,10 @@ const Contacts = () => {
                   />
                   <span className="text-sm text-text capitalize">
                     {key === 'fullName' ? 'Name' :
-                     key === 'companyName' ? 'Company' :
-                     key === 'typeName' ? 'Type' :
-                     key === 'phoneNumber' ? 'Phone' :
-                     key === 'email' ? 'Email' : key}
+                      key === 'companyName' ? 'Company' :
+                        key === 'typeName' ? 'Type' :
+                          key === 'phoneNumber' ? 'Phone' :
+                            key === 'email' ? 'Email' : key}
                   </span>
                 </label>
               ))}
@@ -615,7 +614,7 @@ const ContactsMapView = ({
     return [39.8283, -98.5795];
   };
 
-  const batchLookupPostalCodes = async (postalCodes: Array<{country: string, postalCode: string}>) => {
+  const batchLookupPostalCodes = async (postalCodes: Array<{ country: string, postalCode: string }>) => {
     const uniqueCodes = [...new Set(postalCodes.map(p => `${p.country}_${p.postalCode}`))];
     const uncachedCodes = uniqueCodes.filter(key => !postalCodeCacheRef.current.has(key));
 
@@ -743,7 +742,7 @@ const ContactsMapView = ({
             const addressIds = [...new Set(uniqueAddressPairs.map((p: any) => p.addressId))];
             const companyIds = [...new Set(uniqueAddressPairs.map((p: any) => p.companyId))];
 
-            const rawAddresses = await api.get('/legacy/base/Address', {
+            const rawAddresses = await api.get('/legacy/std/Address', {
               filter: JSON.stringify({
                 operator: "and",
                 conditions: [
@@ -848,7 +847,7 @@ const ContactsMapView = ({
         coordinates: getCoordinatesForAddress(item.address)
       }));
 
-    const mapHTML = `
+      const mapHTML = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1088,16 +1087,16 @@ const ContactsMapView = ({
 </body>
 </html>`;
 
-    const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.srcdoc = mapHTML;
+      const iframe = document.createElement('iframe');
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      iframe.srcdoc = mapHTML;
 
-    if (mapContainerRef.current) {
-      mapContainerRef.current.appendChild(iframe);
-      setMapLoaded(true);
-    }
+      if (mapContainerRef.current) {
+        mapContainerRef.current.appendChild(iframe);
+        setMapLoaded(true);
+      }
       setIsInitialLoad(false);
     };
 

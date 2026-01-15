@@ -87,7 +87,7 @@ const saveJourneyUpdates = async (api: any, journey: any, updates: Record<string
   try {
     const journeyId = journey.ID || journey.id;
     await logJourneyChanges(api, journeyId, journey, updates, originalUpdates, employee);
-    const result = await api.patch(`/legacy/base/Journey/${journeyId}`, updates);
+    const result = await api.patch(`/legacy/std/Journey/${journeyId}`, updates);
     return result !== null;
   } catch (error) {
     console.error("Error updating journey:", error);
@@ -596,7 +596,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
           CustDlrName: `%${companySearchQuery}%`,
           limit: 5
         });
-        
+
         if (Array.isArray(searchResults)) {
           setCompanySearchResults(searchResults);
           setShowCompanyResults(true);
@@ -627,7 +627,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         if (companyData && companyData.CustDlrName) {
           setCompanyName(companyData.CustDlrName);
           lastFetchedCompanyId.current = customerForm.companyId;
-          
+
           updateJourney({ Target_Account: companyData.CustDlrName });
         } else {
           setCompanyName("");
@@ -740,15 +740,15 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const handleCompanySelect = (company: any) => {
     justSelectedCompany.current = true;
-    
+
     setCustomerForm(s => ({ ...s, companyId: company.Company_ID }));
     setCompanySearchQuery(company.CustDlrName || "");
     setCompanyName(company.CustDlrName || "");
     lastFetchedCompanyId.current = company.Company_ID;
-    
+
     setShowCompanyResults(false);
     setCompanySearchResults([]);
-    
+
     if (company.CustDlrName) {
       updateJourney({ Target_Account: company.CustDlrName });
     }
@@ -838,18 +838,18 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const handleSaveContact = async () => {
     if (!editingContactId) return;
-    
+
     setIsSaving(true);
     try {
       const result = await api.patch(
         `/legacy/std/Journey_Contact/${editingContactId}`,
         contactForm
       );
-      
+
       if (result !== null) {
-        setJourneyContacts(prevContacts => 
-          prevContacts.map(contact => 
-            contact.ID === editingContactId 
+        setJourneyContacts(prevContacts =>
+          prevContacts.map(contact =>
+            contact.ID === editingContactId
               ? { ...contact, ...contactForm }
               : contact
           )
@@ -1165,142 +1165,142 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                       .map((contact, index) => {
                         const isPrimary = Number(contact.IsPrimary) === 1;
                         return (
-                      <div
-                        key={contact.ID || `temp-${index}`}
-                        className={`rounded border p-3 ${isPrimary ? 'bg-gray border-gray' : 'bg-surface'}`}
-                      >
-                        <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-1">
-                          <div className="flex-1 w-full sm:w-auto">
-                            {editingContactId === contact.ID ? (
-                              <div className="space-y-2">
-                                <input
-                                  type="text"
-                                  className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
-                                  value={contactForm.Contact_Name}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Name: e.target.value }))}
-                                  placeholder="Contact Name"
-                                />
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={handleSaveContact}
-                                    disabled={isSaving}
-                                  >
-                                    {isSaving ? "Saving..." : "Save"}
-                                  </Button>
-                                  <Button
-                                    variant="secondary-outline"
-                                    size="sm"
-                                    onClick={handleCancelContactEdit}
-                                    disabled={isSaving}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                                <input
-                                  type="text"
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
-                                  value={contactForm.Contact_Position}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Position: e.target.value }))}
-                                  placeholder="Position"
-                                />
-                                <input
-                                  type="email"
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
-                                  value={contactForm.Contact_Email}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Email: e.target.value }))}
-                                  placeholder="Email"
-                                />
-                                <input
-                                  type="text"
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
-                                  value={contactForm.Contact_Office}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Office: e.target.value }))}
-                                  placeholder="Office Phone"
-                                />
-                                <input
-                                  type="text"
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
-                                  value={contactForm.Contact_Mobile}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Mobile: e.target.value }))}
-                                  placeholder="Mobile Phone"
-                                />
-                                <textarea
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text resize-none"
-                                  value={contactForm.Contact_Note}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Note: e.target.value }))}
-                                  placeholder="Notes"
-                                  rows={2}
-                                />
+                          <div
+                            key={contact.ID || `temp-${index}`}
+                            className={`rounded border p-3 ${isPrimary ? 'bg-gray border-gray' : 'bg-surface'}`}
+                          >
+                            <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-1">
+                              <div className="flex-1 w-full sm:w-auto">
+                                {editingContactId === contact.ID ? (
+                                  <div className="space-y-2">
+                                    <input
+                                      type="text"
+                                      className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
+                                      value={contactForm.Contact_Name}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Name: e.target.value }))}
+                                      placeholder="Contact Name"
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={handleSaveContact}
+                                        disabled={isSaving}
+                                      >
+                                        {isSaving ? "Saving..." : "Save"}
+                                      </Button>
+                                      <Button
+                                        variant="secondary-outline"
+                                        size="sm"
+                                        onClick={handleCancelContactEdit}
+                                        disabled={isSaving}
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                      value={contactForm.Contact_Position}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Position: e.target.value }))}
+                                      placeholder="Position"
+                                    />
+                                    <input
+                                      type="email"
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                      value={contactForm.Contact_Email}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Email: e.target.value }))}
+                                      placeholder="Email"
+                                    />
+                                    <input
+                                      type="text"
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                      value={contactForm.Contact_Office}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Office: e.target.value }))}
+                                      placeholder="Office Phone"
+                                    />
+                                    <input
+                                      type="text"
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                      value={contactForm.Contact_Mobile}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Mobile: e.target.value }))}
+                                      placeholder="Mobile Phone"
+                                    />
+                                    <textarea
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text resize-none"
+                                      value={contactForm.Contact_Note}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Note: e.target.value }))}
+                                      placeholder="Notes"
+                                      rows={2}
+                                    />
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="text-sm text-text font-medium mb-1">
+                                      {contact._isPrisma && contact.Contact_ID ? (
+                                        <button
+                                          onClick={() => navigate(`/sales/contacts/${contact.Contact_ID}`)}
+                                          className="text-primary hover:underline cursor-pointer"
+                                        >
+                                          {contact.Contact_Name || "Unnamed Contact"}
+                                        </button>
+                                      ) : (
+                                        <span>{contact.Contact_Name || "Unnamed Contact"}</span>
+                                      )}
+                                    </div>
+                                    {contact.Contact_Position && (
+                                      <div className="text-xs text-text-muted mb-1">
+                                        {contact.Contact_Position}
+                                      </div>
+                                    )}
+                                    {contact.Contact_Email && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Email:</span> <a href={`mailto:${contact.Contact_Email}`} className="text-primary hover:underline">{contact.Contact_Email}</a></div>}
+                                    {contact.Contact_Office && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Office:</span> {contact.Contact_Office}</div>}
+                                    {contact.Contact_Mobile && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Mobile:</span> {contact.Contact_Mobile}</div>}
+                                    {contact.Contact_Note && (
+                                      <div className="text-xs text-text-muted italic mt-2 p-2 bg-background rounded">
+                                        {contact.Contact_Note}
+                                      </div>
+                                    )}
+                                  </>
+                                )}
                               </div>
-                            ) : (
-                              <>
-                                <div className="text-sm text-text font-medium mb-1">
-                                  {contact._isPrisma && contact.Contact_ID ? (
-                                    <button
-                                      onClick={() => navigate(`/sales/contacts/${contact.Contact_ID}`)}
-                                      className="text-primary hover:underline cursor-pointer"
+                              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                {editingContactId !== contact.ID && (
+                                  <>
+                                    {isPrimary && <span className="text-xs bg-primary text-background px-2 py-1 rounded font-medium">Primary</span>}
+                                    {!contact.Contact_ID && !contact.Cont_Id && <span className="text-xs bg-primary text-background px-2 py-1 rounded font-medium" title="Some features will not function with this Contact as the legacy database needs to be updated">Legacy</span>}
+                                    <Button
+                                      variant="secondary-outline"
+                                      size="sm"
+                                      onClick={() => handleEditContact(contact)}
+                                      disabled={isSaving || editingContactId !== null}
+                                      className="!p-1 !h-6 !w-6"
                                     >
-                                      {contact.Contact_Name || "Unnamed Contact"}
-                                    </button>
-                                  ) : (
-                                    <span>{contact.Contact_Name || "Unnamed Contact"}</span>
-                                  )}
-                                </div>
-                                {contact.Contact_Position && (
-                                  <div className="text-xs text-text-muted mb-1">
-                                    {contact.Contact_Position}
-                                  </div>
+                                      <Edit size={12} />
+                                    </Button>
+                                    <Button
+                                      variant="secondary-outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteContact(contact)}
+                                      disabled={isSaving || editingContactId !== null || !contact.ID}
+                                      className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
+                                    >
+                                      <Trash2 size={12} className="text-red-600" />
+                                    </Button>
+                                    <input
+                                      type="radio"
+                                      name="primaryContact"
+                                      checked={isPrimary}
+                                      onChange={() => handleSetPrimaryContact(contact.ID, contact.Jrn_ID)}
+                                      disabled={isSaving || editingContactId !== null}
+                                      className="text-primary focus:ring-primary"
+                                      title="Make primary contact"
+                                    />
+                                  </>
                                 )}
-                                {contact.Contact_Email && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Email:</span> <a href={`mailto:${contact.Contact_Email}`} className="text-primary hover:underline">{contact.Contact_Email}</a></div>}
-                                {contact.Contact_Office && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Office:</span> {contact.Contact_Office}</div>}
-                                {contact.Contact_Mobile && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Mobile:</span> {contact.Contact_Mobile}</div>}
-                                {contact.Contact_Note && (
-                                  <div className="text-xs text-text-muted italic mt-2 p-2 bg-background rounded">
-                                    {contact.Contact_Note}
-                                  </div>
-                                )}
-                              </>
-                            )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                            {editingContactId !== contact.ID && (
-                              <>
-                                {isPrimary && <span className="text-xs bg-primary text-background px-2 py-1 rounded font-medium">Primary</span>}
-                                {!contact.Contact_ID && !contact.Cont_Id && <span className="text-xs bg-primary text-background px-2 py-1 rounded font-medium" title="Some features will not function with this Contact as the legacy database needs to be updated">Legacy</span>}
-                                <Button
-                                  variant="secondary-outline"
-                                  size="sm"
-                                  onClick={() => handleEditContact(contact)}
-                                  disabled={isSaving || editingContactId !== null}
-                                  className="!p-1 !h-6 !w-6"
-                                >
-                                  <Edit size={12} />
-                                </Button>
-                                <Button
-                                  variant="secondary-outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteContact(contact)}
-                                  disabled={isSaving || editingContactId !== null || !contact.ID}
-                                  className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
-                                >
-                                  <Trash2 size={12} className="text-red-600" />
-                                </Button>
-                                <input
-                                  type="radio"
-                                  name="primaryContact"
-                                  checked={isPrimary}
-                                  onChange={() => handleSetPrimaryContact(contact.ID, contact.Jrn_ID)}
-                                  disabled={isSaving || editingContactId !== null}
-                                  className="text-primary focus:ring-primary"
-                                  title="Make primary contact"
-                                />
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
                         );
                       })}
                   </div>
@@ -1356,8 +1356,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                             return journey?.Action_Date
                               ? formatDate(journey.Action_Date)
                               : journey?.updatedAt
-                              ? formatDate(journey.updatedAt)
-                              : "-";
+                                ? formatDate(journey.updatedAt)
+                                : "-";
                           } catch (error) {
                             return journey?.Action_Date || journey?.updatedAt || "-";
                           }
@@ -1626,9 +1626,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                     <div className="text-sm text-text-muted">Reason Won</div>
                     {isEditingDetails ? (
                       <select
-                        className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${
-                          detailsForm.reasonLost ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${detailsForm.reasonLost ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         value={detailsForm.reasonWon}
                         disabled={!!detailsForm.reasonLost}
                         onChange={(e) =>
@@ -1655,9 +1654,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                     <div className="text-sm text-text-muted">Reason Lost</div>
                     {isEditingDetails ? (
                       <select
-                        className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${
-                          detailsForm.reasonWon ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${detailsForm.reasonWon ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         value={detailsForm.reasonLost}
                         disabled={!!detailsForm.reasonWon}
                         onChange={(e) =>
@@ -2902,7 +2900,7 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
     const fetchLogRecords = async () => {
       const journeyId = journey?.ID || journey?.id;
       if (!journeyId) return;
-      
+
       setLoadingLogs(true);
       try {
         const logData = await get(`/legacy/std/Journey_Log/filter/custom`, {
@@ -2911,7 +2909,7 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
           sort: 'CreateDtTm',
           order: 'desc'
         });
-        
+
         if (Array.isArray(logData)) {
           setLogRecords(logData);
         }
@@ -2943,9 +2941,9 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
         </div>
         <Table
           columns={[
-            { 
-              key: "created", 
-              header: "Created", 
+            {
+              key: "created",
+              header: "Created",
               className: "text-xs",
               render: (value: string) => (
                 <div className="text-xs text-text">
@@ -2953,17 +2951,17 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
                 </div>
               )
             },
-            { 
-              key: "user", 
-              header: "User", 
+            {
+              key: "user",
+              header: "User",
               className: "text-xs",
               render: (value: string) => (
                 <div className="text-xs text-text">{value}</div>
               )
             },
-            { 
-              key: "action", 
-              header: "Action", 
+            {
+              key: "action",
+              header: "Action",
               className: "text-xs",
               render: (value: string) => (
                 <div className="text-xs text-text leading-tight">
@@ -2992,7 +2990,7 @@ function JourneyActionsTab({ journey, employee, handleOpenTeamsModal }: { journe
   useEffect(() => {
     const fetchTags = async () => {
       if (!journey?.ID && !journey?.id) return;
-      
+
       setIsLoading(true);
       try {
         const journeyId = journey.ID || journey.id;
@@ -3002,7 +3000,7 @@ function JourneyActionsTab({ journey, employee, handleOpenTeamsModal }: { journe
             parentId: journeyId
           })
         });
-        
+
         if (tagData?.success && Array.isArray(tagData.data)) {
           setTags(tagData.data);
         }
@@ -3019,19 +3017,19 @@ function JourneyActionsTab({ journey, employee, handleOpenTeamsModal }: { journe
 
   const handleAddTag = async () => {
     if (!newTagInput.trim() || !journey?.ID && !journey?.id) return;
-    
+
     setIsSaving(true);
     try {
       const journeyId = journey.ID || journey.id;
       const tagDescription = newTagInput.trim().toUpperCase();
-      
+
       const newTag = await api.post('/core/tags', {
         description: tagDescription,
         parentTable: 'journeys',
         parentId: journeyId,
         createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
-      
+
       if (newTag?.success && newTag.data) {
         setTags(prev => [...prev, newTag.data]);
         setNewTagInput("");
@@ -3047,7 +3045,7 @@ function JourneyActionsTab({ journey, employee, handleOpenTeamsModal }: { journe
     setIsSaving(true);
     try {
       const result = await api.delete(`/core/tags/${tagId}`);
-      
+
       if (result !== null) {
         setTags(prev => prev.filter(tag => tag.id !== tagId));
       }
@@ -3078,7 +3076,7 @@ function JourneyActionsTab({ journey, employee, handleOpenTeamsModal }: { journe
 
       <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
         <h3 className="text-base md:text-lg font-semibold text-text mb-4">Journey Tags</h3>
-        
+
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-2">
             <input
@@ -3207,13 +3205,13 @@ const JourneyDetailsPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const rawJourney = await api.get(`/legacy/base/Journey/${journeyId}`);
+      const rawJourney = await api.get(`/legacy/std/Journey/${journeyId}`);
       if (rawJourney !== null) {
         const adaptedJourney = adaptLegacyJourney(rawJourney);
         setJourneyData(adaptedJourney);
         if (rawJourney.Company_ID) {
           try {
-            const customerRaw = await api.get(`/legacy/base/Company/${rawJourney.Company_ID}`);
+            const customerRaw = await api.get(`/legacy/std/Company/${rawJourney.Company_ID}`);
             if (customerRaw !== null) {
               setCustomerData({ id: customerRaw.Company_ID, name: customerRaw.Company_Name || adaptedJourney.companyName, industry: customerRaw.Industry, contact: customerRaw.Contact_Name, email: customerRaw.Email, phone: customerRaw.Phone });
             }
