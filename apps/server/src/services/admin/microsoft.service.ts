@@ -51,22 +51,24 @@ export class MicrosoftService {
 
         const isAdmin = microsoftUser.department === "MIS";
 
-        await prisma.user.update({
-          where: { id: existingEmployee.userId },
-          data: {
-            microsoftId: microsoftUser.id,
-            role: isAdmin ? UserRole.ADMIN : UserRole.USER,
-            isActive: true,
-          },
-        });
+        await prisma.$transaction(async (tx) => {
+          await tx.user.update({
+            where: { id: existingEmployee.userId },
+            data: {
+              microsoftId: microsoftUser.id,
+              role: isAdmin ? UserRole.ADMIN : UserRole.USER,
+              isActive: true,
+            },
+          });
 
-        await prisma.employee.update({
-          where: { id: existingEmployee.id },
-          data: {
-            firstName: microsoftUser.givenName || existingEmployee.firstName,
-            lastName: microsoftUser.surname || existingEmployee.lastName,
-            title: microsoftUser.jobTitle || existingEmployee.title,
-          },
+          await tx.employee.update({
+            where: { id: existingEmployee.id },
+            data: {
+              firstName: microsoftUser.givenName || existingEmployee.firstName,
+              lastName: microsoftUser.surname || existingEmployee.lastName,
+              title: microsoftUser.jobTitle || existingEmployee.title,
+            },
+          });
         });
 
         updated++;

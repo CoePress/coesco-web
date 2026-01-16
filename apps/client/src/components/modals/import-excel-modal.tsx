@@ -78,9 +78,9 @@ export const ImportExcelModal = ({
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [step, setStep] = useState<'upload' | 'mapping' | 'preview' | 'processing' | 'complete'>('upload');
-  const [progress, setProgress] = useState({ 
-    current: 0, 
-    total: 0, 
+  const [progress, setProgress] = useState({
+    current: 0,
+    total: 0,
     stage: 'Starting...',
     stageProgress: 0,
     stageTotal: 0
@@ -106,11 +106,10 @@ export const ImportExcelModal = ({
           transform: CSS.Transform.toString(transform),
           transition,
         }}
-        className={`min-w-[200px] p-3 rounded border transition-all ${
-          isDragging 
-            ? 'opacity-50 z-50' 
-            : 'bg-surface border-border hover:shadow-md cursor-grab active:cursor-grabbing'
-        }`}
+        className={`min-w-[200px] p-3 rounded border transition-all ${isDragging
+          ? 'opacity-50 z-50'
+          : 'bg-surface border-border hover:shadow-md cursor-grab active:cursor-grabbing'
+          }`}
         {...attributes}
         {...listeners}
       >
@@ -187,17 +186,17 @@ export const ImportExcelModal = ({
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        
+
         // Use defval option to fill empty cells with empty strings
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-          header: 1, 
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
           defval: '',  // This ensures empty cells become empty strings instead of being omitted
           raw: false   // This ensures all values are strings
         }) as any[][];
 
         // Determine if first row is header
         const firstRow = jsonData[0] || [];
-        const hasHeader = firstRow.some((cell: any) => 
+        const hasHeader = firstRow.some((cell: any) =>
           typeof cell === 'string' && (
             cell.toLowerCase().includes('rsm') ||
             cell.toLowerCase().includes('dealer') ||
@@ -208,16 +207,16 @@ export const ImportExcelModal = ({
 
         // Skip header row if it exists
         const dataRows = hasHeader ? jsonData.slice(1) : jsonData;
-        
+
         // Filter out completely empty rows - rows where all cells are empty
         const filteredRows = dataRows.filter(row => row && row.some(cell => cell && String(cell).trim()));
-        
+
         // Store filtered data for mapping
         setRawData(filteredRows);
-        
+
         // Initialize column mappings with default values
         setColumnMappings(getDefaultColumnMappings());
-        
+
         setStep('mapping');
       } catch (error) {
         console.error('Error parsing Excel file:', error);
@@ -229,7 +228,7 @@ export const ImportExcelModal = ({
 
   const getLeadSource = (leadSource: string): string => {
     const normalized = leadSource.toLowerCase().trim();
-    
+
     switch (normalized) {
       case 'dealer lead':
         return 'Dealer Lead';
@@ -289,18 +288,18 @@ export const ImportExcelModal = ({
 
   const validateRsm = (rsmInput: string): string => {
     const allowedRsms = [
-      'AFK', 'ARC', 'BBS', 'GLS', 'GPI', 'JJD', 
-      'JMK', 'KLC', 'MAV', 'NJH', 'RRA', 'RWH', 
+      'AFK', 'ARC', 'BBS', 'GLS', 'GPI', 'JJD',
+      'JMK', 'KLC', 'MAV', 'NJH', 'RRA', 'RWH',
       'TAT', 'TCS', 'TLS', 'TWB'
     ];
-    
+
     const trimmed = rsmInput.trim();
-    
+
     // Check for exact match first
     if (allowedRsms.includes(trimmed.toUpperCase())) {
       return trimmed.toUpperCase();
     }
-    
+
     // Try to extract initials and match
     const words = trimmed.split(/\s+/);
     if (words.length >= 2) {
@@ -309,14 +308,14 @@ export const ImportExcelModal = ({
         return initials;
       }
     }
-    
+
     // No match found, return empty string
     return '';
   };
 
   const toggleColumnEnabled = (field: string) => {
-    setColumnMappings(prev => prev.map(mapping => 
-      mapping.field === field 
+    setColumnMappings(prev => prev.map(mapping =>
+      mapping.field === field
         ? { ...mapping, enabled: !mapping.enabled }
         : mapping
     ));
@@ -328,18 +327,18 @@ export const ImportExcelModal = ({
 
   const handleDragEnd = ({ active, over }: any) => {
     setActiveFieldId(null);
-    
+
     if (active.id !== over?.id) {
       const enabledMappings = columnMappings
         .filter(m => m.enabled)
         .sort((a, b) => a.columnIndex - b.columnIndex);
-      
+
       const oldIndex = enabledMappings.findIndex(m => m.field === active.id);
       const newIndex = enabledMappings.findIndex(m => m.field === over.id);
-      
+
       if (oldIndex !== -1 && newIndex !== -1) {
         const reorderedMappings = arrayMove(enabledMappings, oldIndex, newIndex);
-        
+
         // Update column indices based on new order
         const updatedMappings = columnMappings.map(mapping => {
           if (mapping.enabled) {
@@ -348,7 +347,7 @@ export const ImportExcelModal = ({
           }
           return mapping;
         });
-        
+
         setColumnMappings(updatedMappings);
       }
     }
@@ -368,26 +367,26 @@ export const ImportExcelModal = ({
     const mappedData: ExcelRow[] = rawData
       .map((row: any[]) => {
         const mappedRow: any = {};
-        
+
         // Map each field to its corresponding Excel column position
         // The fields are arranged in order, so field at index 0 gets Excel column 0, etc.
         enabledFields.forEach((mapping, excelColumnIndex) => {
           const value = excelColumnIndex < row.length ? String(row[excelColumnIndex] || '').trim() : '';
           mappedRow[mapping.field] = value;
-          
+
           // Debug log for first row
           if (rawData.indexOf(row) === 0) {
             console.log(`Mapping Excel column ${excelColumnIndex} (value: "${value}") to field ${mapping.field} (${mapping.label})`);
           }
         });
-        
+
         // Fill in disabled fields with empty values
         columnMappings.forEach(mapping => {
           if (!mapping.enabled) {
             mappedRow[mapping.field] = '';
           }
         });
-        
+
         return mappedRow as ExcelRow;
       })
       .filter(row => {
@@ -404,7 +403,7 @@ export const ImportExcelModal = ({
   const processImport = useCallback(async () => {
     setIsProcessing(true);
     setStep('processing');
-    
+
     const result: ImportResult = {
       success: true,
       addressesCreated: 0,
@@ -424,197 +423,197 @@ export const ImportExcelModal = ({
 
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         const batch = batches[batchIndex];
-        
+
         // Update overall progress
         const currentRow = batchIndex * BATCH_SIZE;
-        setProgress({ 
-          current: currentRow, 
+        setProgress({
+          current: currentRow,
           total: preview.length,
           stage: `Processing batch ${batchIndex + 1} of ${batches.length}`,
           stageProgress: 0,
           stageTotal: batch.length * 4 // 4 stages per row: company, address, journey, contact
         });
-        
+
         // Process batch concurrently
         await Promise.all(batch.map(async (row, rowIndex) => {
-        try {
-          let companyId: number | undefined;
-          
-          // Stage 1: Find or create company
-          const updateStageProgress = (stage: string, stageIndex: number) => {
-            setProgress(prev => ({ 
-              ...prev,
-              stage: `${stage} (${row.targetAccount})`,
-              stageProgress: (rowIndex * 4) + stageIndex,
-              stageTotal: batch.length * 4
-            }));
-          };
-
-          updateStageProgress('Finding/Creating Company', 1);
-          
-          if (row.targetAccount) {
-            try {
-              // Check if company with this CustDlrName already exists
-              // Try the filter/custom endpoint pattern used elsewhere
-              const existingCompanies = await get('/legacy/base/Company/filter/custom', {
-                filterField: 'CustDlrName',
-                filterValue: row.targetAccount,
-                limit: 1
-              });
-              
-              if (existingCompanies && Array.isArray(existingCompanies) && existingCompanies.length > 0) {
-                // Use the existing company (most recent if multiple)
-                const existingCompany = existingCompanies[0];
-                companyId = existingCompany.Company_ID;
-              } else {
-                result.errors.push(`Company not found for ${row.targetAccount} - skipping row`);
-                return;
-              }
-            } catch (companyError) {
-              result.errors.push(`Failed to find company for ${row.targetAccount}: ${companyError}`);
-              return;
-            }
-          }
-
-          // Stage 2: Find or create address
-          updateStageProgress('Finding/Creating Address', 2);
-          
-          if (companyId && (row.city || row.state || row.country)) {
-            try {
-              // Check if address already exists for this company with same city, state, country
-              const normalizedCountry = normalizeCountry(row.country) || 'USA';
-              const existingAddresses = await get('/legacy/std/Address/filter/custom', {
-                filterField: 'Company_ID',
-                filterValue: companyId,
-                limit: 100 // Get all addresses for this company to check city/state/country
-              });
-              
-              let existingAddress = null;
-              if (existingAddresses && Array.isArray(existingAddresses)) {
-                existingAddress = existingAddresses.find(addr => 
-                  addr.City?.toLowerCase() === row.city?.toLowerCase() &&
-                  addr.State?.toLowerCase() === row.state?.toLowerCase() &&
-                  addr.Country?.toLowerCase() === normalizedCountry.toLowerCase() &&
-                  (!addr.Address1 || addr.Address1.trim() === '') 
-                  // TODO: The above line should check against the address1 field (when added)
-                  // Not implemented yet as I don't know how to present the 3 separate fields
-                  // to the user in a logical way 
-                );
-              }
-              
-              if (existingAddress) {
-                // Use existing address
-              } else {
-                // Create new address
-                const addressPayload = {
-                  Company_ID: companyId,
-                  AddressName: row.targetAccount, // Use target account as address name
-                  City: row.city?.substring(0, 20) || '', // Limit to 20 chars
-                  State: row.state?.substring(0, 20) || '', // Limit to 20 chars
-                  Country: normalizedCountry.substring(0, 25), // Limit to 25 chars
-                };
-
-                const addressResponse = await post("/legacy/std/Address", addressPayload);
-                if (addressResponse) {
-                  // The server should return the created record with the auto-generated ID
-                  result.addressesCreated++;
-                }
-              }
-            } catch (addressError) {
-              console.error('Error finding/creating address:', addressError);
-              result.errors.push(`Failed to find/create address for ${row.targetAccount}: ${addressError}`);
-            }
-          }
-
-          let journeyId: string | undefined;
-
-          // Stage 3: Create journey
-          updateStageProgress('Creating Journey', 3);
-          
           try {
-            // Format date as YYYY-MM-DD for the database
-            const today = new Date().toISOString().split('T')[0];
-            
-            const validatedRsm = validateRsm(row.rsm);
-            
-            const journeyPayload = {
-              Project_Name: row.targetAccount,
-              Target_Account: row.targetAccount,
-              Company_ID: companyId || undefined, // Use undefined instead of null
-              RSM: validatedRsm,
-              City: row.city,
-              State_Province: row.state,
-              Country: normalizeCountry(row.country),
-              Lead_Source: getLeadSource(row.leadSource),
-              Journey_Stage: "Lead", // Default to Lead stage
-              Journey_Type: "stamping", // Default type
-              Industry: "Other", // Default industry
-              Next_Steps: row.journeyStep || '',
-              Notes: row.notes || '',
-              Journey_Start_Date: today,
-              Action_Date: today,
-              Journey_Status: 'Active',
-              Priority: 'C', // Default medium priority
-              Journey_Value: 0,
-              Dealer: row.dealer,
+            let companyId: number | undefined;
+
+            // Stage 1: Find or create company
+            const updateStageProgress = (stage: string, stageIndex: number) => {
+              setProgress(prev => ({
+                ...prev,
+                stage: `${stage} (${row.targetAccount})`,
+                stageProgress: (rowIndex * 4) + stageIndex,
+                stageTotal: batch.length * 4
+              }));
             };
 
-            const journeyResponse = await post("/legacy/std/Journey", journeyPayload);
-            if (journeyResponse && journeyResponse.ID) {
-              // The server should return the created record with the auto-generated ID
-              journeyId = journeyResponse.ID;
-              result.journeysCreated++;
-              
-              // Add to created journeys list for display
-              result.createdJourneys.push({
-                id: journeyId as string,
-                name: journeyPayload.Project_Name,
-                targetAccount: row.targetAccount,
-                rsm: validatedRsm,
-                stage: "Lead"
-              });
-            }
-          } catch (journeyError) {
-            console.error('Error creating journey:', journeyError);
-            result.errors.push(`Failed to create journey for ${row.targetAccount}: ${journeyError}`);
-          }
+            updateStageProgress('Finding/Creating Company', 1);
 
-          // Stage 4: Create journey contact
-          updateStageProgress('Creating Contact', 4);
-          
-          if (row.contactName && row.contactEmail && journeyId) {
+            if (row.targetAccount) {
+              try {
+                // Check if company with this CustDlrName already exists
+                // Try the filter/custom endpoint pattern used elsewhere
+                const existingCompanies = await get('/legacy/std/Company/filter/custom', {
+                  filterField: 'CustDlrName',
+                  filterValue: row.targetAccount,
+                  limit: 1
+                });
+
+                if (existingCompanies && Array.isArray(existingCompanies) && existingCompanies.length > 0) {
+                  // Use the existing company (most recent if multiple)
+                  const existingCompany = existingCompanies[0];
+                  companyId = existingCompany.Company_ID;
+                } else {
+                  result.errors.push(`Company not found for ${row.targetAccount} - skipping row`);
+                  return;
+                }
+              } catch (companyError) {
+                result.errors.push(`Failed to find company for ${row.targetAccount}: ${companyError}`);
+                return;
+              }
+            }
+
+            // Stage 2: Find or create address
+            updateStageProgress('Finding/Creating Address', 2);
+
+            if (companyId && (row.city || row.state || row.country)) {
+              try {
+                // Check if address already exists for this company with same city, state, country
+                const normalizedCountry = normalizeCountry(row.country) || 'USA';
+                const existingAddresses = await get('/legacy/std/Address/filter/custom', {
+                  filterField: 'Company_ID',
+                  filterValue: companyId,
+                  limit: 100 // Get all addresses for this company to check city/state/country
+                });
+
+                let existingAddress = null;
+                if (existingAddresses && Array.isArray(existingAddresses)) {
+                  existingAddress = existingAddresses.find(addr =>
+                    addr.City?.toLowerCase() === row.city?.toLowerCase() &&
+                    addr.State?.toLowerCase() === row.state?.toLowerCase() &&
+                    addr.Country?.toLowerCase() === normalizedCountry.toLowerCase() &&
+                    (!addr.Address1 || addr.Address1.trim() === '')
+                    // TODO: The above line should check against the address1 field (when added)
+                    // Not implemented yet as I don't know how to present the 3 separate fields
+                    // to the user in a logical way 
+                  );
+                }
+
+                if (existingAddress) {
+                  // Use existing address
+                } else {
+                  // Create new address
+                  const addressPayload = {
+                    Company_ID: companyId,
+                    AddressName: row.targetAccount, // Use target account as address name
+                    City: row.city?.substring(0, 20) || '', // Limit to 20 chars
+                    State: row.state?.substring(0, 20) || '', // Limit to 20 chars
+                    Country: normalizedCountry.substring(0, 25), // Limit to 25 chars
+                  };
+
+                  const addressResponse = await post("/legacy/std/Address", addressPayload);
+                  if (addressResponse) {
+                    // The server should return the created record with the auto-generated ID
+                    result.addressesCreated++;
+                  }
+                }
+              } catch (addressError) {
+                console.error('Error finding/creating address:', addressError);
+                result.errors.push(`Failed to find/create address for ${row.targetAccount}: ${addressError}`);
+              }
+            }
+
+            let journeyId: string | undefined;
+
+            // Stage 3: Create journey
+            updateStageProgress('Creating Journey', 3);
+
             try {
-              const journeyContactPayload = {
-                Jrn_ID: journeyId,
-                Contact_Name: row.contactName.substring(0, 50), // Limit to 50 chars
-                Contact_Email: row.contactEmail.substring(0, 50), // Limit to 50 chars
-                Contact_Office: (row.office || '').substring(0, 30), // Limit to 30 chars
-                Contact_Mobile: (row.mobile || '').substring(0, 30), // Limit to 30 chars
-                Contact_Position: '', // Could be enhanced later
-                Contact_Note: (row.notes || '').substring(0, 500), // Limit to 500 chars
-                IsPrimary: 1, // Set as primary contact - use 1 for true, 0 for false
+              // Format date as YYYY-MM-DD for the database
+              const today = new Date().toISOString().split('T')[0];
+
+              const validatedRsm = validateRsm(row.rsm);
+
+              const journeyPayload = {
+                Project_Name: row.targetAccount,
+                Target_Account: row.targetAccount,
+                Company_ID: companyId || undefined, // Use undefined instead of null
+                RSM: validatedRsm,
+                City: row.city,
+                State_Province: row.state,
+                Country: normalizeCountry(row.country),
+                Lead_Source: getLeadSource(row.leadSource),
+                Journey_Stage: "Lead", // Default to Lead stage
+                Journey_Type: "stamping", // Default type
+                Industry: "Other", // Default industry
+                Next_Steps: row.journeyStep || '',
+                Notes: row.notes || '',
+                Journey_Start_Date: today,
+                Action_Date: today,
+                Journey_Status: 'Active',
+                Priority: 'C', // Default medium priority
+                Journey_Value: 0,
+                Dealer: row.dealer,
               };
 
-              const contactResponse = await post("/legacy/std/Journey_Contact", journeyContactPayload);
-              if (contactResponse) {
-                result.contactsCreated++;
+              const journeyResponse = await post("/legacy/std/Journey", journeyPayload);
+              if (journeyResponse && journeyResponse.ID) {
+                // The server should return the created record with the auto-generated ID
+                journeyId = journeyResponse.ID;
+                result.journeysCreated++;
+
+                // Add to created journeys list for display
+                result.createdJourneys.push({
+                  id: journeyId as string,
+                  name: journeyPayload.Project_Name,
+                  targetAccount: row.targetAccount,
+                  rsm: validatedRsm,
+                  stage: "Lead"
+                });
               }
-            } catch (contactError) {
-              console.error('Error creating journey contact:', contactError);
-              result.errors.push(`Failed to create journey contact ${row.contactName}: ${contactError}`);
+            } catch (journeyError) {
+              console.error('Error creating journey:', journeyError);
+              result.errors.push(`Failed to create journey for ${row.targetAccount}: ${journeyError}`);
             }
+
+            // Stage 4: Create journey contact
+            updateStageProgress('Creating Contact', 4);
+
+            if (row.contactName && row.contactEmail && journeyId) {
+              try {
+                const journeyContactPayload = {
+                  Jrn_ID: journeyId,
+                  Contact_Name: row.contactName.substring(0, 50), // Limit to 50 chars
+                  Contact_Email: row.contactEmail.substring(0, 50), // Limit to 50 chars
+                  Contact_Office: (row.office || '').substring(0, 30), // Limit to 30 chars
+                  Contact_Mobile: (row.mobile || '').substring(0, 30), // Limit to 30 chars
+                  Contact_Position: '', // Could be enhanced later
+                  Contact_Note: (row.notes || '').substring(0, 500), // Limit to 500 chars
+                  IsPrimary: 1, // Set as primary contact - use 1 for true, 0 for false
+                };
+
+                const contactResponse = await post("/legacy/std/Journey_Contact", journeyContactPayload);
+                if (contactResponse) {
+                  result.contactsCreated++;
+                }
+              } catch (contactError) {
+                console.error('Error creating journey contact:', contactError);
+                result.errors.push(`Failed to create journey contact ${row.contactName}: ${contactError}`);
+              }
+            }
+
+
+          } catch (rowError) {
+            console.error(`Error processing row for ${row.targetAccount}:`, rowError);
+            result.errors.push(`Failed to process ${row.targetAccount}: ${rowError}`);
           }
-
-
-        } catch (rowError) {
-          console.error(`Error processing row for ${row.targetAccount}:`, rowError);
-          result.errors.push(`Failed to process ${row.targetAccount}: ${rowError}`);
-        }
         })); // Close Promise.all and map
-        
+
         // Update progress after batch completion
         const completedRows = Math.min((batchIndex + 1) * BATCH_SIZE, preview.length);
-        setProgress(prev => ({ 
+        setProgress(prev => ({
           ...prev,
           current: completedRows,
           stage: batchIndex === batches.length - 1 ? 'Import completed!' : `Batch ${batchIndex + 1} completed`,
@@ -650,9 +649,9 @@ export const ImportExcelModal = ({
     setImportResult(null);
     setStep('upload');
     setIsProcessing(false);
-    setProgress({ 
-      current: 0, 
-      total: 0, 
+    setProgress({
+      current: 0,
+      total: 0,
       stage: 'Starting...',
       stageProgress: 0,
       stageTotal: 0
@@ -686,7 +685,7 @@ export const ImportExcelModal = ({
           </div>
         </div>
       </div>
-      
+
       <div className="border-2 border-dashed border-border rounded-lg p-6">
         <input
           type="file"
@@ -725,7 +724,7 @@ export const ImportExcelModal = ({
             {rawData.length} rows detected
           </span>
         </div>
-        
+
         <p className="text-sm text-text-muted">
           Arrange the enabled fields below to match your Excel column order. Enable/disable fields as needed.
         </p>
@@ -758,9 +757,9 @@ export const ImportExcelModal = ({
             <h4 className="text-sm font-medium text-text">
               Column Order (Drag to rearrange - {enabledFields.length} fields enabled)
             </h4>
-            
+
             {/* Field Mapping Row */}
-            <DndContext 
+            <DndContext
               sensors={sensors}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
@@ -822,13 +821,13 @@ export const ImportExcelModal = ({
             </div>
           </div>
         )}
-        
+
         <div className="flex gap-2 justify-end">
           <Button variant="secondary-outline" onClick={() => setStep('upload')}>
             Back
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={generatePreviewFromMapping}
             disabled={enabledFields.filter(m => m.required).length === 0}
           >
@@ -853,7 +852,7 @@ export const ImportExcelModal = ({
             {preview.length} rows found
           </span>
         </div>
-        
+
         {preview.length > 0 ? (
           <div className="max-h-60 overflow-x-auto overflow-y-auto border rounded">
             <table className="w-full text-xs min-w-max">
@@ -872,8 +871,8 @@ export const ImportExcelModal = ({
                   <tr key={index} className="border-t">
                     {enabledFields.map((field) => (
                       <td key={field.field} className="p-2 whitespace-nowrap max-w-32 truncate">
-                        {field.field === 'city' && row.state ? 
-                          `${row.city}, ${row.state}` : 
+                        {field.field === 'city' && row.state ?
+                          `${row.city}, ${row.state}` :
                           field.field === 'mobile' && !row.mobile && row.office ?
                             row.office :
                             row[field.field as keyof ExcelRow] || ''
@@ -895,13 +894,13 @@ export const ImportExcelModal = ({
             No valid data found in the Excel file.
           </div>
         )}
-        
+
         <div className="flex gap-2 justify-end">
           <Button variant="secondary-outline" onClick={() => setStep('mapping')}>
             Back to Mapping
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={processImport}
             disabled={preview.length === 0 || isProcessing}
           >
@@ -916,7 +915,7 @@ export const ImportExcelModal = ({
     <div className="text-center py-8">
       <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
       <h3 className="text-lg font-medium text-text mb-2">Processing Import...</h3>
-      
+
       {progress.total > 0 && (
         <div className="w-full max-w-md mx-auto space-y-4">
           {/* Overall Progress */}
@@ -926,7 +925,7 @@ export const ImportExcelModal = ({
               <span>{progress.current} / {progress.total} rows</span>
             </div>
             <div className="w-full bg-border rounded-full h-2">
-              <div 
+              <div
                 className="bg-primary h-2 rounded-full transition-all duration-500"
                 style={{ width: `${(progress.current / progress.total) * 100}%` }}
               ></div>
@@ -945,7 +944,7 @@ export const ImportExcelModal = ({
                   <span>{progress.stageProgress} / {progress.stageTotal} operations</span>
                 </div>
                 <div className="w-full bg-border rounded-full h-1.5">
-                  <div 
+                  <div
                     className="bg-success h-1.5 rounded-full transition-all duration-300"
                     style={{ width: `${(progress.stageProgress / progress.stageTotal) * 100}%` }}
                   ></div>
@@ -971,7 +970,7 @@ export const ImportExcelModal = ({
           <h3 className="text-lg font-medium text-text mb-2">Import Completed with Errors</h3>
         </div>
       )}
-      
+
       {importResult && (
         <div className="bg-surface p-4 rounded space-y-2">
           <div className="grid grid-cols-3 gap-4 text-center text-sm">
@@ -988,7 +987,7 @@ export const ImportExcelModal = ({
               <div className="text-text-muted">Journeys Created</div>
             </div>
           </div>
-          
+
           {importResult.errors.length > 0 && (
             <div className="mt-4">
               <h4 className="text-sm font-medium text-error mb-2">Errors:</h4>
@@ -1035,7 +1034,7 @@ export const ImportExcelModal = ({
           </div>
         </div>
       )}
-      
+
       <div className="flex gap-2 justify-end">
         <Button variant="primary" onClick={handleComplete}>
           Done

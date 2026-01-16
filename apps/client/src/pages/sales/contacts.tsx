@@ -16,6 +16,7 @@ import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
+import { fetchAvailableRsms, Employee } from "@/pages/sales/journeys/utils";
 
 const DEBOUNCE_MS = 200;
 
@@ -79,6 +80,8 @@ const Contacts = () => {
     phoneNumber: true,
     email: true,
   });
+  const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
+  const [selectedOwner, setSelectedOwner] = useState<string>("all");
 
   const api = useApi();
   const currentSearchRef = useRef<string>("");
@@ -164,7 +167,7 @@ const Contacts = () => {
     if (companyIds.length === 0) return new Map<number, string>();
 
     try {
-      const companyResponse = await api.get('/legacy/base/Company', {
+      const companyResponse = await api.get('/legacy/std/Company', {
         filter: JSON.stringify({
           operator: "in",
           field: "Company_ID",
@@ -238,7 +241,13 @@ const Contacts = () => {
       if (debouncedSearchTerm) {
         params.search = debouncedSearchTerm;
         params.fuzzy = true;
-        params.fuzzyThreshold = 0.25;
+        params.fuzzyThreshold = 0.35;
+      }
+
+      if (selectedOwner !== "all") {
+        params.filter = JSON.stringify({
+          owner: selectedOwner
+        });
       }
 
       const rawContacts = await api.get("/sales/contacts", params, signal ? { signal } : undefined);
@@ -276,7 +285,7 @@ const Contacts = () => {
         setIsLoading(false);
       }
     }
-  }, [api, page, limit, sort, order, debouncedSearchTerm]);
+  }, [api, page, limit, sort, order, debouncedSearchTerm, selectedOwner]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -290,11 +299,22 @@ const Contacts = () => {
     const abortController = new AbortController();
     fetchAllContacts(abortController.signal);
     return () => abortController.abort();
-  }, [page, limit, sort, order, debouncedSearchTerm]);
+  }, [page, limit, sort, order, debouncedSearchTerm, selectedOwner]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, selectedOwner]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const rsms = await fetchAvailableRsms(api);
+      if (!cancelled) {
+        setAvailableRsms(rsms);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleContactAdded = () => {
     fetchAllContacts();
@@ -328,15 +348,14 @@ const Contacts = () => {
       header: "Type",
       className: "w-[8%]",
       render: (_, row) => (
-        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-          row.type === ContactType.Accounting ? 'bg-blue-100 text-blue-800' :
-          row.type === ContactType.Engineering ? 'bg-green-100 text-green-800' :
-          row.type === ContactType.Sales ? 'bg-orange-100 text-orange-800' :
-          row.type === ContactType.Parts_Service ? 'bg-purple-100 text-purple-800' :
-          row.type === ContactType.Inactive ? 'bg-gray-100 text-gray-800' :
-          row.type === ContactType.Left_Company ? 'bg-red-100 text-red-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
+        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${row.type === ContactType.Accounting ? 'bg-blue-100 text-blue-800' :
+            row.type === ContactType.Engineering ? 'bg-green-100 text-green-800' :
+              row.type === ContactType.Sales ? 'bg-orange-100 text-orange-800' :
+                row.type === ContactType.Parts_Service ? 'bg-purple-100 text-purple-800' :
+                  row.type === ContactType.Inactive ? 'bg-gray-100 text-gray-800' :
+                    row.type === ContactType.Left_Company ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+          }`}>
           {row.typeName}
         </span>
       ),
@@ -399,11 +418,12 @@ const Contacts = () => {
   );
 
   const HeaderActions = () => (
-    <div className="flex gap-2">
+    <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
       <Button
         variant={viewMode === "list" ? "secondary" : "secondary-outline"}
         size="sm"
         onClick={() => setViewMode("list")}
+        className="w-full md:w-auto"
       >
         <ListIcon size={16} />
         List
@@ -412,16 +432,18 @@ const Contacts = () => {
         variant={viewMode === "map" ? "secondary" : "secondary-outline"}
         size="sm"
         onClick={() => setViewMode("map")}
+        className="w-full md:w-auto"
       >
         <MapPin size={16} />
         Map
       </Button>
       {viewMode === "list" && (
-        <div className="relative">
+        <div className="relative w-full md:w-auto">
           <Button
             variant="secondary-outline"
             size="sm"
             onClick={() => setShowColumnMenu(!showColumnMenu)}
+            className="w-full md:w-auto"
           >
             <Settings size={16} />
             Columns
@@ -447,10 +469,10 @@ const Contacts = () => {
                   />
                   <span className="text-sm text-text capitalize">
                     {key === 'fullName' ? 'Name' :
-                     key === 'companyName' ? 'Company' :
-                     key === 'typeName' ? 'Type' :
-                     key === 'phoneNumber' ? 'Phone' :
-                     key === 'email' ? 'Email' : key}
+                      key === 'companyName' ? 'Company' :
+                        key === 'typeName' ? 'Type' :
+                          key === 'phoneNumber' ? 'Phone' :
+                            key === 'email' ? 'Email' : key}
                   </span>
                 </label>
               ))}
@@ -462,6 +484,7 @@ const Contacts = () => {
         variant="primary"
         size="sm"
         onClick={() => setShowAddContactModal(true)}
+        className="w-full md:w-auto"
       >
         <PlusCircleIcon size={16} />
         Create New
@@ -480,18 +503,33 @@ const Contacts = () => {
       {viewMode === "list" && (
         <>
           <div className="px-6 py-4 border-b flex-shrink-0">
-            <div className="relative max-w-md">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search contacts..."
-                className="w-full px-3 py-2 pr-9 text-sm text-text border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-text-muted"
-                autoComplete="no"
-              />
-              {isLoading && debouncedSearchTerm && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-text-muted" size={16} />
-              )}
+            <div className="flex gap-4 items-center">
+              <div className="relative flex-1 max-w-md">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Search contacts..."
+                  className="w-full px-3 py-2 pr-9 text-sm text-text border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-text-muted"
+                  autoComplete="no"
+                />
+                {isLoading && debouncedSearchTerm && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-text-muted" size={16} />
+                )}
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs text-text-muted mb-1">Contact Owner</label>
+                <select
+                  value={selectedOwner}
+                  onChange={(e) => setSelectedOwner(e.target.value)}
+                  className="px-3 py-2 text-sm text-text bg-foreground border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                >
+                  <option value="all">All Owners</option>
+                  {availableRsms.map(rsm => (
+                    <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -576,7 +614,7 @@ const ContactsMapView = ({
     return [39.8283, -98.5795];
   };
 
-  const batchLookupPostalCodes = async (postalCodes: Array<{country: string, postalCode: string}>) => {
+  const batchLookupPostalCodes = async (postalCodes: Array<{ country: string, postalCode: string }>) => {
     const uniqueCodes = [...new Set(postalCodes.map(p => `${p.country}_${p.postalCode}`))];
     const uncachedCodes = uniqueCodes.filter(key => !postalCodeCacheRef.current.has(key));
 
@@ -668,7 +706,7 @@ const ContactsMapView = ({
         if (debouncedMapSearch) {
           params.search = debouncedMapSearch;
           params.fuzzy = true;
-          params.fuzzyThreshold = 0.25;
+          params.fuzzyThreshold = 0.35;
         }
 
         if (selectedContactType !== 'all') {
@@ -704,7 +742,7 @@ const ContactsMapView = ({
             const addressIds = [...new Set(uniqueAddressPairs.map((p: any) => p.addressId))];
             const companyIds = [...new Set(uniqueAddressPairs.map((p: any) => p.companyId))];
 
-            const rawAddresses = await api.get('/legacy/base/Address', {
+            const rawAddresses = await api.get('/legacy/std/Address', {
               filter: JSON.stringify({
                 operator: "and",
                 conditions: [
@@ -809,7 +847,7 @@ const ContactsMapView = ({
         coordinates: getCoordinatesForAddress(item.address)
       }));
 
-    const mapHTML = `
+      const mapHTML = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1049,16 +1087,16 @@ const ContactsMapView = ({
 </body>
 </html>`;
 
-    const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.srcdoc = mapHTML;
+      const iframe = document.createElement('iframe');
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      iframe.srcdoc = mapHTML;
 
-    if (mapContainerRef.current) {
-      mapContainerRef.current.appendChild(iframe);
-      setMapLoaded(true);
-    }
+      if (mapContainerRef.current) {
+        mapContainerRef.current.appendChild(iframe);
+        setMapLoaded(true);
+      }
       setIsInitialLoad(false);
     };
 

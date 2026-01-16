@@ -16,10 +16,11 @@ const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { get: getQuotes, response: quotes, loading: quotesLoading, error: quotesError } = useApi<IApiResponse<any[]>>();
   const { post: createQuote, loading: createQuoteLoading, error: createQuoteError } = useApi<IApiResponse<any[]>>();
+  const { get: getEmployees, response: employees } = useApi<IApiResponse<any[]>>();
   // const { get: getMetrics, response: metrics, loading: metricsLoading } = useApi<IApiResponse<any>>();
 
   const [params, setParams] = useState({
-    sort: "createdAt" as "createdAt" | "updatedAt" | "year" | "quoteNumber",
+    sort: "createdAt" as "createdAt" | "updatedAt" | "year" | "quoteNumber" | "latestRevision" | "latestRevisionStatus",
     order: "desc" as "asc" | "desc",
     page: 1,
     limit: 25,
@@ -59,6 +60,10 @@ const Quotes = () => {
     await getQuotes("/sales/quotes", queryParams);
   };
 
+  const fetchEmployees = async () => {
+    await getEmployees("/admin/employees");
+  };
+
   // const fetchMetrics = async () => {
   //   await getMetrics("/quotes/metrics");
   // };
@@ -73,6 +78,10 @@ const Quotes = () => {
     // fetchMetrics();
   }, [params]);
 
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
   const columns: TableColumn<any>[] = [
     {
       key: "quoteNumber",
@@ -83,9 +92,10 @@ const Quotes = () => {
       ),
     },
     {
-      key: "revision",
+      key: "latestRevision",
       header: "Revision",
       className: "w-1 text-center",
+      render: (_, row) => row.revision,
     },
     {
       key: "journey.customer.name",
@@ -116,7 +126,7 @@ const Quotes = () => {
       ),
     },
     {
-      key: "status",
+      key: "latestRevisionStatus",
       header: "Status",
       className: "w-1",
       render: (_, row) => (
@@ -213,9 +223,18 @@ const Quotes = () => {
   const quoteStatuses = Object.keys(QuoteStatus)
   const quoteStatusOptions = quoteStatuses.map((status) =>{ return { value: status, label: status }})
 
+  const employeeOptions = useMemo(
+    () =>
+      employees?.data?.map((employee: any) => ({
+        value: employee.id,
+        label: `${employee.firstName} ${employee.lastName}`,
+      })) || [],
+    [employees]
+  );
+
   const filters: Filter[] = [
     {
-      key: 'quote-status',
+      key: 'status',
       label: 'Quote Status',
       options: [
         { value: '', label: 'All' },
@@ -224,13 +243,22 @@ const Quotes = () => {
       placeholder: 'Quote Status'
     },
     {
-      key: 'quote-revision-status',
+      key: 'latestRevisionStatus',
       label: 'Rev. Status',
       options: [
         { value: '', label: 'All' },
         ...quoteRevisionStatusOptions
       ],
       placeholder: 'Revision Status'
+    },
+    {
+      key: 'createdById',
+      label: 'Created By',
+      options: [
+        { value: '', label: 'All' },
+        ...employeeOptions
+      ],
+      placeholder: 'Created By'
     },
   ]
 

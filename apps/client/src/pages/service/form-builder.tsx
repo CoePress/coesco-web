@@ -128,7 +128,7 @@ const FormBuilder = () => {
       }
 
       toast.success('Form updated successfully!');
-      navigate(`/service/forms/${id}`);
+      navigate(`/admin/forms/${id}`);
     } catch (error) {
       console.error('Save error:', error);
       const errorMessage = 'Failed to save changes';
@@ -138,7 +138,7 @@ const FormBuilder = () => {
   };
 
   const handleCancel = () => {
-    navigate(`/service/forms/${id}`);
+    navigate(`/admin/forms/${id}`);
   };
 
   const addPage = async () => {
@@ -578,7 +578,7 @@ const FormBuilder = () => {
     return (
       <div className="w-full flex-1 flex flex-col items-center justify-center">
         <div className="text-error text-lg mb-4">Form not found</div>
-        <Button onClick={() => navigate('/service/forms')}>
+        <Button onClick={() => navigate('/admin/forms')}>
           Back to Forms
         </Button>
       </div>

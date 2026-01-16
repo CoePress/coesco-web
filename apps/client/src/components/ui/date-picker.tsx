@@ -90,6 +90,7 @@ const DatePicker = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
     setInputValue(input);
+  };
 
     const datePattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
     const match = input.match(datePattern);

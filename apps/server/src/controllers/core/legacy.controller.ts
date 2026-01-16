@@ -217,4 +217,32 @@ export class LegacyController {
       next(error);
     }
   }
+
+  async getQuoteValue(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { quoteKeyValue } = req.query;
+      if (!quoteKeyValue || typeof quoteKeyValue !== "string") {
+        return res.status(400).json({ error: "Quote key value is required" });
+      }
+      const result = await legacyService.getQuoteValue(quoteKeyValue);
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async getBatchQuoteValues(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { quoteKeyValues } = req.body;
+      if (!Array.isArray(quoteKeyValues)) {
+        return res.status(400).json({ error: "Quote key values array is required in request body" });
+      }
+      const result = await legacyService.getBatchQuoteValues(quoteKeyValues);
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
 }

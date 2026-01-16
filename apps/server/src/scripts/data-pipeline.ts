@@ -480,32 +480,6 @@ function findLongestCommonPrefix(strings: string[]): string {
   return prefix;
 }
 
-function parseContactName(fullName: string | null): { firstName: string | null; lastName: string | null } {
-  if (!fullName || fullName.trim() === "") {
-    return { firstName: null, lastName: null };
-  }
-
-  const trimmed = fullName.trim();
-
-  if (trimmed.includes(",")) {
-    const [last, first] = trimmed.split(",").map(s => s.trim());
-    return {
-      firstName: first || null,
-      lastName: last || null,
-    };
-  }
-
-  const parts = trimmed.split(/\s+/);
-  if (parts.length === 1) {
-    return { firstName: parts[0], lastName: null };
-  }
-
-  return {
-    firstName: parts[0],
-    lastName: parts.slice(1).join(" ") || null,
-  };
-}
-
 function shouldSkipContact(phone: string | null, email: string | null): boolean {
   return (
     (!phone || phone.trim() === "")
@@ -2165,6 +2139,7 @@ export async function _migrateContacts(dummyCompanyId: string, legacyServiceInst
               }
             : null,
         },
+        select: { id: true },
       });
 
       if (existingContact) {
@@ -2258,6 +2233,7 @@ export async function _migrateContacts(dummyCompanyId: string, legacyServiceInst
                 }
               : null,
           },
+          select: { id: true },
         });
 
         if (!contact) {

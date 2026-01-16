@@ -10,6 +10,7 @@ router.get("/companies", customerController.getCompanies);
 router.get("/companies/:companyId", customerController.getCompany);
 router.patch("/companies/:companyId", customerController.updateCompany);
 router.delete("/companies/:companyId", customerController.deleteCompany);
+router.get("/companies/:companyId/activities", customerController.getCompanyActivities);
 
 // Addresses
 router.post("/addresses", customerController.createAddress);
@@ -25,12 +26,26 @@ router.get("/contacts/:contactId", customerController.getContact);
 router.patch("/contacts/:contactId", customerController.updateContact);
 router.delete("/contacts/:contactId", customerController.deleteContact);
 
+// Company Relationships
+router.post("/company-relationships", customerController.createCompanyRelationship);
+router.get("/company-relationships", customerController.getCompanyRelationships);
+router.get("/company-relationships/:relationshipId", customerController.getCompanyRelationship);
+router.patch("/company-relationships/:relationshipId", customerController.updateCompanyRelationship);
+router.delete("/company-relationships/:relationshipId", customerController.deleteCompanyRelationship);
+
 // Journey Contacts
 router.post("/journey-contacts", customerController.createJourneyContact);
 router.get("/journey-contacts", customerController.getJourneyContacts);
 router.get("/journey-contacts/:journeyContactId", customerController.getJourneyContact);
 router.patch("/journey-contacts/:journeyContactId", customerController.updateJourneyContact);
 router.delete("/journey-contacts/:journeyContactId", customerController.deleteJourneyContact);
+
+// Activities
+router.post("/activities", customerController.createActivity);
+router.get("/activities", customerController.getActivities);
+router.get("/activities/:activityId", customerController.getActivity);
+router.patch("/activities/:activityId", customerController.updateActivity);
+router.delete("/activities/:activityId", customerController.deleteActivity);
 
 // Journeys
 router.post("/journeys", journeyController.createJourney);
@@ -48,6 +63,12 @@ router.get("/quotes/", quoteController.getQuotes);
 router.get("/quotes/:quoteId", quoteController.getQuote);
 router.patch("/quotes/:quoteId", quoteController.updateQuote);
 router.delete("/quotes/:quoteId", quoteController.deleteQuote);
+
+// Quote Items
+router.post("/quotes/:quoteId/items", quoteController.createQuoteItem);
+router.patch("/quotes/items/:itemId", quoteController.updateQuoteItem);
+router.patch("/quotes/items/:itemId/line-number", quoteController.updateQuoteItemLineNumber);
+router.delete("/quotes/items/:itemId", quoteController.deleteQuoteItem);
 
 // Revisions
 router.post("/quotes/:quoteId/revisions", quoteController.createRevision);

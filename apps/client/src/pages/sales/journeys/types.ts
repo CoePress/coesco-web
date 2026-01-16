@@ -24,7 +24,7 @@ export interface Journey {
   stage?: number;
   priority?: string;
   value?: number;
-  closeDate?: string;
+  expectedDecisionDate?: string;
   Journey_Stage?: number;
   Journey_Value?: number;
   Priority?: string;

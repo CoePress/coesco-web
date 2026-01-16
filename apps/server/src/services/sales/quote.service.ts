@@ -4,115 +4,129 @@ import type { Quote, QuoteItem, QuoteTerms } from "@prisma/client";
 import type { IQueryParams } from "@/types";
 
 import { quoteItemRepository, quoteRepository, quoteRevisionRepository, quoteTermsRepository } from "@/repositories";
+import { prisma } from "@/utils/prisma";
 
 export class QuoteService {
   async createQuote(data: any) {
-    const currentYear = new Date().getFullYear().toString();
-    const isDraft = data.status === "DRAFT" || !data.status;
+    return await prisma.$transaction(async (tx) => {
+      const currentYear = new Date().getFullYear().toString();
+      const isDraft = data.status === "DRAFT" || !data.status;
 
-    const quoteNumber = await this.getNextQuoteNumber(isDraft);
+      const quoteNumber = await this.getNextQuoteNumber(isDraft);
 
-    const quoteResult = await quoteRepository.create({
-      ...data,
-      year: currentYear,
-      number: quoteNumber,
-      priority: data.priority || "C",
-      confidence: data.confidence || 0,
-      legacy: data.legacy || {},
+      const quoteResult = await quoteRepository.create({
+        ...data,
+        year: currentYear,
+        number: quoteNumber,
+        priority: data.priority || "C",
+        confidence: data.confidence || 0,
+        legacy: data.legacy || {},
+        latestRevision: "A",
+        latestRevisionStatus: data.status || "DRAFT",
+        latestRevisionTotalAmount: data.totalAmount || 0,
+      }, tx);
+
+      if (!quoteResult.success) {
+        throw new Error("Failed to create quote");
+      }
+
+      const revisionResult = await quoteRevisionRepository.create({
+        ...data,
+        quoteId: quoteResult.data.id,
+        revision: "A",
+        status: data.status || "DRAFT",
+      }, tx);
+
+      if (!revisionResult.success) {
+        throw new Error("Failed to create quote revision");
+      }
+
+      if (data.items?.length) {
+        await Promise.all(
+          data.items.map((item: any) =>
+            quoteItemRepository.create({
+              ...item,
+              quoteRevisionId: revisionResult.data.id,
+            }, tx),
+          ),
+        );
+      }
+
+      if (data.terms?.length) {
+        await Promise.all(
+          data.terms.map((term: any) =>
+            quoteTermsRepository.create({
+              ...term,
+              quoteRevisionId: revisionResult.data.id,
+            }, tx),
+          ),
+        );
+      }
+
+      return {
+        success: true,
+        data: {
+          ...quoteResult.data,
+          latestRevision: revisionResult.data,
+          revision: revisionResult.data.revision,
+          status: revisionResult.data.status,
+          totalAmount: revisionResult.data.totalAmount || 0,
+        },
+      };
     });
-
-    if (!quoteResult.success) {
-      throw new Error("Failed to create quote");
-    }
-
-    const revisionResult = await quoteRevisionRepository.create({
-      ...data,
-      quoteId: quoteResult.data.id,
-      revision: "A",
-      status: data.status || "DRAFT",
-    });
-
-    if (!revisionResult.success) {
-      throw new Error("Failed to create quote revision");
-    }
-
-    if (data.items?.length) {
-      await Promise.all(
-        data.items.map((item: any) =>
-          quoteItemRepository.create({
-            ...item,
-            quoteRevisionId: revisionResult.data.id,
-          }),
-        ),
-      );
-    }
-
-    if (data.terms?.length) {
-      await Promise.all(
-        data.terms.map((term: any) =>
-          quoteTermsRepository.create({
-            ...term,
-            quoteRevisionId: revisionResult.data.id,
-          }),
-        ),
-      );
-    }
-
-    return {
-      success: true,
-      data: {
-        ...quoteResult.data,
-        latestRevision: revisionResult.data,
-        revision: revisionResult.data.revision,
-        status: revisionResult.data.status,
-        totalAmount: revisionResult.data.totalAmount || 0,
-      },
-    };
   }
 
   async createQuoteRevision(quoteId: string, data: any) {
-    const quoteResult = await quoteRepository.getById(quoteId);
+    return await prisma.$transaction(async (tx) => {
+      const quoteResult = await quoteRepository.getById(quoteId, undefined, tx);
 
-    if (!quoteResult.success || !quoteResult.data) {
-      throw new Error("Quote not found");
-    }
+      if (!quoteResult.success || !quoteResult.data) {
+        throw new Error("Quote not found");
+      }
 
-    const nextRevision = await this.getNextQuoteRevision(quoteResult.data.number, Number.parseInt(quoteResult.data.year));
+      const nextRevision = await this.getNextQuoteRevision(quoteResult.data.number, Number.parseInt(quoteResult.data.year));
 
-    const revisionResult = await quoteRevisionRepository.create({
-      ...data,
-      quoteId,
-      revision: nextRevision,
-      status: data.status || "DRAFT",
+      const revisionResult = await quoteRevisionRepository.create({
+        ...data,
+        quoteId,
+        revision: nextRevision,
+        status: data.status || "DRAFT",
+      }, tx);
+
+      if (!revisionResult.success) {
+        throw new Error("Failed to create quote revision");
+      }
+
+      if (data.items?.length) {
+        await Promise.all(
+          data.items.map((item: any) =>
+            quoteItemRepository.create({
+              ...item,
+              quoteRevisionId: revisionResult.data.id,
+            }, tx),
+          ),
+        );
+      }
+
+      if (data.terms?.length) {
+        await Promise.all(
+          data.terms.map((term: any) =>
+            quoteTermsRepository.create({
+              ...term,
+              quoteRevisionId: revisionResult.data.id,
+            }, tx),
+          ),
+        );
+      }
+
+      await quoteRepository.update(quoteId, {
+        latestRevision: nextRevision,
+        latestRevisionStatus: revisionResult.data.status,
+        latestRevisionTotalAmount: revisionResult.data.totalAmount || 0,
+      }, tx);
+
+      return revisionResult.data;
     });
-
-    if (!revisionResult.success) {
-      throw new Error("Failed to create quote revision");
-    }
-
-    if (data.items?.length) {
-      await Promise.all(
-        data.items.map((item: any) =>
-          quoteItemRepository.create({
-            ...item,
-            quoteRevisionId: revisionResult.data.id,
-          }),
-        ),
-      );
-    }
-
-    if (data.terms?.length) {
-      await Promise.all(
-        data.terms.map((term: any) =>
-          quoteTermsRepository.create({
-            ...term,
-            quoteRevisionId: revisionResult.data.id,
-          }),
-        ),
-      );
-    }
-
-    return revisionResult.data;
   }
 
   async getAllQuotesWithLatestRevision(params?: IQueryParams<Quote>) {
@@ -131,26 +145,13 @@ export class QuoteService {
       };
     }
 
-    const quotesWithRevisions = await Promise.all(
-      quotesResult.data.map(async (quote: Quote) => {
-        const latestRevisionResult = await quoteRevisionRepository.getAll({
-          filter: { quoteId: quote.id },
-          sort: "revision",
-          order: "desc",
-          limit: 1,
-        });
-
-        const latestRevision = latestRevisionResult.data?.[0] || null;
-
-        return {
-          ...quote,
-          revision: latestRevision?.revision || "A",
-          revisionStatus: latestRevision?.status || "DRAFT",
-          totalAmount: latestRevision?.totalAmount || 0,
-          latestRevision,
-        };
-      }),
-    );
+    // Map to match expected frontend format
+    const quotesWithRevisions = quotesResult.data.map((quote: any) => ({
+      ...quote,
+      revision: quote.latestRevision || "A",
+      revisionStatus: quote.latestRevisionStatus || "DRAFT",
+      totalAmount: quote.latestRevisionTotalAmount || 0,
+    }));
 
     return {
       success: true,
@@ -204,70 +205,71 @@ export class QuoteService {
   }
 
   async updateQuote(id: string, data: any) {
-    // Get the latest revision
-    const quoteResult = await this.getQuoteWithDetails(id);
-    if (!quoteResult.success || !quoteResult.data.latestRevision) {
-      throw new Error("Quote or latest revision not found");
-    }
-
-    const latestRevision = quoteResult.data.latestRevision;
-
-    // Update quote revision
-    const revisionResult = await quoteRevisionRepository.update(latestRevision.id, data);
-
-    // Update items if provided
-    if (data.items) {
-      // Delete existing items
-      const existingItems = await quoteItemRepository.getAll({
-        filter: { quoteRevisionId: latestRevision.id },
-      });
-
-      if (existingItems.success && existingItems.data) {
-        await Promise.all(
-          existingItems.data.map((item: QuoteItem) => quoteItemRepository.delete(item.id)),
-        );
+    return await prisma.$transaction(async (tx) => {
+      const quoteResult = await this.getQuoteWithDetails(id);
+      if (!quoteResult.success || !quoteResult.data.latestRevision) {
+        throw new Error("Quote or latest revision not found");
       }
 
-      // Create new items
-      if (data.items.length > 0) {
-        await Promise.all(
-          data.items.map((item: any) =>
-            quoteItemRepository.create({
-              ...item,
-              quoteRevisionId: latestRevision.id,
-            }),
-          ),
-        );
+      const latestRevision = quoteResult.data.latestRevision;
+
+      const revisionResult = await quoteRevisionRepository.update(latestRevision.id, data, tx);
+
+      if (data.items) {
+        const existingItems = await quoteItemRepository.getAll({
+          filter: { quoteRevisionId: latestRevision.id },
+        });
+
+        if (existingItems.success && existingItems.data) {
+          await Promise.all(
+            existingItems.data.map((item: QuoteItem) => quoteItemRepository.delete(item.id, tx)),
+          );
+        }
+
+        if (data.items.length > 0) {
+          await Promise.all(
+            data.items.map((item: any) =>
+              quoteItemRepository.create({
+                ...item,
+                quoteRevisionId: latestRevision.id,
+              }, tx),
+            ),
+          );
+        }
       }
-    }
 
-    // Update terms if provided
-    if (data.terms) {
-      // Delete existing terms
-      const existingTerms = await quoteTermsRepository.getAll({
-        filter: { quoteRevisionId: latestRevision.id },
-      });
+      if (data.terms) {
+        const existingTerms = await quoteTermsRepository.getAll({
+          filter: { quoteRevisionId: latestRevision.id },
+        });
 
-      if (existingTerms.success && existingTerms.data) {
-        await Promise.all(
-          existingTerms.data.map((term: QuoteTerms) => quoteTermsRepository.delete(term.id)),
-        );
+        if (existingTerms.success && existingTerms.data) {
+          await Promise.all(
+            existingTerms.data.map((term: QuoteTerms) => quoteTermsRepository.delete(term.id, tx)),
+          );
+        }
+
+        if (data.terms.length > 0) {
+          await Promise.all(
+            data.terms.map((term: any) =>
+              quoteTermsRepository.create({
+                ...term,
+                quoteRevisionId: latestRevision.id,
+              }, tx),
+            ),
+          );
+        }
       }
 
-      // Create new terms
-      if (data.terms.length > 0) {
-        await Promise.all(
-          data.terms.map((term: any) =>
-            quoteTermsRepository.create({
-              ...term,
-              quoteRevisionId: latestRevision.id,
-            }),
-          ),
-        );
+      if (revisionResult.success) {
+        await quoteRepository.update(id, {
+          latestRevisionStatus: revisionResult.data.status,
+          latestRevisionTotalAmount: revisionResult.data.totalAmount,
+        }, tx);
       }
-    }
 
-    return revisionResult;
+      return revisionResult;
+    });
   }
 
   async deleteQuote(id: string) {
@@ -326,161 +328,196 @@ export class QuoteService {
   }
 
   async updateQuoteRevision(quoteId: string, revisionId: string, data: any) {
-    const revisionResult = await quoteRevisionRepository.getById(revisionId);
+    return await prisma.$transaction(async (tx) => {
+      const revisionResult = await quoteRevisionRepository.getById(revisionId, undefined, tx);
 
-    if (!revisionResult.success || !revisionResult.data) {
-      throw new Error("Quote revision not found");
-    }
-
-    // Verify the revision belongs to the quote
-    if (revisionResult.data.quoteId !== quoteId) {
-      throw new Error("Quote revision not found");
-    }
-
-    // Update revision
-    const updatedRevisionResult = await quoteRevisionRepository.update(revisionId, data);
-
-    // Update items if provided
-    if (data.items) {
-      // Delete existing items
-      const existingItems = await quoteItemRepository.getAll({
-        filter: { quoteRevisionId: revisionId },
-      });
-
-      if (existingItems.success && existingItems.data) {
-        await Promise.all(
-          existingItems.data.map((item: QuoteItem) => quoteItemRepository.delete(item.id)),
-        );
+      if (!revisionResult.success || !revisionResult.data) {
+        throw new Error("Quote revision not found");
       }
 
-      // Create new items
-      if (data.items.length > 0) {
-        await Promise.all(
-          data.items.map((item: any) =>
-            quoteItemRepository.create({
-              ...item,
-              quoteRevisionId: revisionId,
-            }),
-          ),
-        );
-      }
-    }
-
-    // Update terms if provided
-    if (data.terms) {
-      // Delete existing terms
-      const existingTerms = await quoteTermsRepository.getAll({
-        filter: { quoteRevisionId: revisionId },
-      });
-
-      if (existingTerms.success && existingTerms.data) {
-        await Promise.all(
-          existingTerms.data.map((term: QuoteTerms) => quoteTermsRepository.delete(term.id)),
-        );
+      if (revisionResult.data.quoteId !== quoteId) {
+        throw new Error("Quote revision not found");
       }
 
-      // Create new terms
-      if (data.terms.length > 0) {
-        await Promise.all(
-          data.terms.map((term: any) =>
-            quoteTermsRepository.create({
-              ...term,
-              quoteRevisionId: revisionId,
-            }),
-          ),
-        );
-      }
-    }
+      const quoteResult = await quoteRepository.getById(quoteId, undefined, tx);
+      const isLatestRevision = quoteResult.data?.latestRevision === revisionResult.data.revision;
 
-    return updatedRevisionResult;
+      const updatedRevisionResult = await quoteRevisionRepository.update(revisionId, data, tx);
+
+      if (data.items) {
+        const existingItems = await quoteItemRepository.getAll({
+          filter: { quoteRevisionId: revisionId },
+        });
+
+        if (existingItems.success && existingItems.data) {
+          await Promise.all(
+            existingItems.data.map((item: QuoteItem) => quoteItemRepository.delete(item.id, tx)),
+          );
+        }
+
+        if (data.items.length > 0) {
+          await Promise.all(
+            data.items.map((item: any) =>
+              quoteItemRepository.create({
+                ...item,
+                quoteRevisionId: revisionId,
+              }, tx),
+            ),
+          );
+        }
+      }
+
+      if (data.terms) {
+        const existingTerms = await quoteTermsRepository.getAll({
+          filter: { quoteRevisionId: revisionId },
+        });
+
+        if (existingTerms.success && existingTerms.data) {
+          await Promise.all(
+            existingTerms.data.map((term: QuoteTerms) => quoteTermsRepository.delete(term.id, tx)),
+          );
+        }
+
+        if (data.terms.length > 0) {
+          await Promise.all(
+            data.terms.map((term: any) =>
+              quoteTermsRepository.create({
+                ...term,
+                quoteRevisionId: revisionId,
+              }, tx),
+            ),
+          );
+        }
+      }
+
+      if (isLatestRevision && updatedRevisionResult.success) {
+        await quoteRepository.update(quoteId, {
+          latestRevisionStatus: updatedRevisionResult.data.status,
+          latestRevisionTotalAmount: updatedRevisionResult.data.totalAmount,
+        }, tx);
+      }
+
+      return updatedRevisionResult;
+    });
   }
 
   async deleteQuoteRevision(quoteId: string, revisionId: string) {
-    const revisionResult = await quoteRevisionRepository.getById(revisionId);
+    return await prisma.$transaction(async (tx) => {
+      const revisionResult = await quoteRevisionRepository.getById(revisionId, undefined, tx);
 
-    if (!revisionResult.success || !revisionResult.data) {
-      throw new Error("Quote revision not found");
-    }
+      if (!revisionResult.success || !revisionResult.data) {
+        throw new Error("Quote revision not found");
+      }
 
-    // Verify the revision belongs to the quote
-    if (revisionResult.data.quoteId !== quoteId) {
-      throw new Error("Quote revision not found");
-    }
+      if (revisionResult.data.quoteId !== quoteId) {
+        throw new Error("Quote revision not found");
+      }
 
-    // Delete associated items and terms first
-    const [itemsResult, termsResult] = await Promise.all([
-      quoteItemRepository.getAll({ filter: { quoteRevisionId: revisionId } }),
-      quoteTermsRepository.getAll({ filter: { quoteRevisionId: revisionId } }),
-    ]);
+      const [itemsResult, termsResult] = await Promise.all([
+        quoteItemRepository.getAll({ filter: { quoteRevisionId: revisionId } }),
+        quoteTermsRepository.getAll({ filter: { quoteRevisionId: revisionId } }),
+      ]);
 
-    if (itemsResult.success && itemsResult.data) {
-      await Promise.all(
-        itemsResult.data.map((item: QuoteItem) => quoteItemRepository.delete(item.id)),
-      );
-    }
+      if (itemsResult.success && itemsResult.data) {
+        await Promise.all(
+          itemsResult.data.map((item: QuoteItem) => quoteItemRepository.delete(item.id, tx)),
+        );
+      }
 
-    if (termsResult.success && termsResult.data) {
-      await Promise.all(
-        termsResult.data.map((term: QuoteTerms) => quoteTermsRepository.delete(term.id)),
-      );
-    }
+      if (termsResult.success && termsResult.data) {
+        await Promise.all(
+          termsResult.data.map((term: QuoteTerms) => quoteTermsRepository.delete(term.id, tx)),
+        );
+      }
 
-    // Delete the revision
-    const result = await quoteRevisionRepository.delete(revisionId);
-    return result;
+      const result = await quoteRevisionRepository.delete(revisionId, tx);
+      return result;
+    });
   }
 
   async approveQuote(id: string) {
-    const quoteResult = await this.getQuoteWithDetails(id);
-    if (!quoteResult.success || !quoteResult.data.latestRevision) {
-      throw new Error("Quote or latest revision not found");
-    }
+    return await prisma.$transaction(async (tx) => {
+      const quoteResult = await this.getQuoteWithDetails(id);
+      if (!quoteResult.success || !quoteResult.data.latestRevision) {
+        throw new Error("Quote or latest revision not found");
+      }
 
-    const result = await quoteRevisionRepository.update(quoteResult.data.latestRevision.id, {
-      status: "APPROVED",
+      const result = await quoteRevisionRepository.update(quoteResult.data.latestRevision.id, {
+        status: "APPROVED",
+      }, tx);
+
+      if (result.success) {
+        await quoteRepository.update(id, {
+          latestRevisionStatus: "APPROVED",
+        }, tx);
+      }
+
+      return result;
     });
-
-    return result;
   }
 
   async acceptQuote(id: string) {
-    const quoteResult = await this.getQuoteWithDetails(id);
-    if (!quoteResult.success || !quoteResult.data.latestRevision) {
-      throw new Error("Quote or latest revision not found");
-    }
+    return await prisma.$transaction(async (tx) => {
+      const quoteResult = await this.getQuoteWithDetails(id);
+      if (!quoteResult.success || !quoteResult.data.latestRevision) {
+        throw new Error("Quote or latest revision not found");
+      }
 
-    const result = await quoteRevisionRepository.update(quoteResult.data.latestRevision.id, {
-      status: "ACCEPTED",
+      const result = await quoteRevisionRepository.update(quoteResult.data.latestRevision.id, {
+        status: "ACCEPTED",
+      }, tx);
+
+      if (result.success) {
+        await quoteRepository.update(id, {
+          latestRevisionStatus: "ACCEPTED",
+        }, tx);
+      }
+
+      return result;
     });
-
-    return result;
   }
 
   async rejectQuote(id: string) {
-    const quoteResult = await this.getQuoteWithDetails(id);
-    if (!quoteResult.success || !quoteResult.data.latestRevision) {
-      throw new Error("Quote or latest revision not found");
-    }
+    return await prisma.$transaction(async (tx) => {
+      const quoteResult = await this.getQuoteWithDetails(id);
+      if (!quoteResult.success || !quoteResult.data.latestRevision) {
+        throw new Error("Quote or latest revision not found");
+      }
 
-    const result = await quoteRevisionRepository.update(quoteResult.data.latestRevision.id, {
-      status: "REJECTED",
+      const result = await quoteRevisionRepository.update(quoteResult.data.latestRevision.id, {
+        status: "REJECTED",
+      }, tx);
+
+      if (result.success) {
+        await quoteRepository.update(id, {
+          latestRevisionStatus: "REJECTED",
+        }, tx);
+      }
+
+      return result;
     });
-
-    return result;
   }
 
   async sendQuote(id: string, data: any) {
-    const quoteResult = await this.getQuoteWithDetails(id);
-    if (!quoteResult.success || !quoteResult.data.latestRevision) {
-      throw new Error("Quote or latest revision not found");
-    }
+    return await prisma.$transaction(async (tx) => {
+      const quoteResult = await this.getQuoteWithDetails(id);
+      if (!quoteResult.success || !quoteResult.data.latestRevision) {
+        throw new Error("Quote or latest revision not found");
+      }
 
-    const result = await quoteRevisionRepository.update(quoteResult.data.latestRevision.id, {
-      status: "SENT",
-      sentById: data.sentById,
+      const result = await quoteRevisionRepository.update(quoteResult.data.latestRevision.id, {
+        status: "SENT",
+        sentById: data.sentById,
+      }, tx);
+
+      if (result.success) {
+        await quoteRepository.update(id, {
+          latestRevisionStatus: "SENT",
+        }, tx);
+      }
+
+      return result;
     });
-
-    return result;
   }
 
   async exportQuotePDF(id: string): Promise<Buffer> {
@@ -678,5 +715,107 @@ export class QuoteService {
         quotesByStatus: statusCounts,
       },
     };
+  }
+
+  async createQuoteItem(quoteId: string, data: any) {
+    return await prisma.$transaction(async (tx) => {
+      const quoteResult = await quoteRepository.getById(quoteId, undefined, tx);
+
+      if (!quoteResult.success || !quoteResult.data) {
+        throw new Error("Quote not found");
+      }
+
+      const latestRevisionResult = await quoteRevisionRepository.getAll({
+        filter: { quoteId },
+        sort: "revision",
+        order: "desc",
+        limit: 1,
+      });
+
+      const latestRevision = latestRevisionResult.data?.[0];
+      if (!latestRevision) {
+        throw new Error("No revisions found for quote");
+      }
+
+      const existingItemsResult = await quoteItemRepository.getAll({
+        filter: { quoteRevisionId: latestRevision.id },
+      });
+
+      const maxLineNumber = existingItemsResult.data?.reduce(
+        (max: number, item: QuoteItem) => Math.max(max, item.lineNumber),
+        0,
+      ) || 0;
+
+      const itemResult = await quoteItemRepository.create({
+        ...data,
+        quoteRevisionId: latestRevision.id,
+        lineNumber: maxLineNumber + 1,
+      }, tx);
+
+      return itemResult;
+    });
+  }
+
+  async updateQuoteItem(itemId: string, data: any) {
+    return await quoteItemRepository.update(itemId, data);
+  }
+
+  async updateQuoteItemLineNumber(itemId: string, newLineNumber: number) {
+    return await prisma.$transaction(async (tx) => {
+      const itemResult = await quoteItemRepository.getById(itemId, undefined, tx);
+      if (!itemResult.success || !itemResult.data) {
+        throw new Error("Quote item not found");
+      }
+
+      const item = itemResult.data;
+      const oldLineNumber = item.lineNumber;
+
+      const allItemsResult = await quoteItemRepository.getAll({
+        filter: { quoteRevisionId: item.quoteRevisionId },
+      });
+
+      if (!allItemsResult.success || !allItemsResult.data) {
+        throw new Error("Failed to fetch items");
+      }
+
+      const sortedItems = allItemsResult.data
+        .filter((i: QuoteItem) => i.id !== itemId)
+        .sort((a: QuoteItem, b: QuoteItem) => a.lineNumber - b.lineNumber);
+
+      const updatedItems: Array<{ id: string; lineNumber: number }> = [];
+
+      if (newLineNumber > oldLineNumber) {
+        for (const otherItem of sortedItems) {
+          if (otherItem.lineNumber > oldLineNumber && otherItem.lineNumber <= newLineNumber) {
+            updatedItems.push({
+              id: otherItem.id,
+              lineNumber: otherItem.lineNumber - 1,
+            });
+          }
+        }
+      }
+      else if (newLineNumber < oldLineNumber) {
+        for (const otherItem of sortedItems) {
+          if (otherItem.lineNumber >= newLineNumber && otherItem.lineNumber < oldLineNumber) {
+            updatedItems.push({
+              id: otherItem.id,
+              lineNumber: otherItem.lineNumber + 1,
+            });
+          }
+        }
+      }
+
+      for (const update of updatedItems) {
+        await quoteItemRepository.update(update.id, { lineNumber: update.lineNumber }, tx);
+      }
+
+      const result = await quoteItemRepository.update(itemId, { lineNumber: newLineNumber }, tx);
+
+      return result;
+    });
+  }
+
+  async deleteQuoteItem(itemId: string) {
+    return await quoteItemRepository.delete(itemId);
   }
 }

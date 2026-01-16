@@ -44,6 +44,28 @@ const SendQuoteSchema = z.object({
   bcc: z.array(z.string().email()).optional(),
 });
 
+const CreateQuoteItemSchema = z.object({
+  itemId: z.string().uuid("Invalid item ID").optional(),
+  configurationId: z.string().uuid("Invalid configuration ID").optional(),
+  itemType: z.enum(["item", "configuration"]),
+  quantity: z.number().int().min(1).default(1),
+  unitPrice: z.number().optional(),
+  discount: z.number().optional(),
+  tax: z.number().optional(),
+});
+
+const UpdateQuoteItemSchema = z.object({
+  quantity: z.number().int().min(1).optional(),
+  unitPrice: z.number().optional(),
+  discount: z.number().optional(),
+  tax: z.number().optional(),
+  lineNumber: z.number().int().min(1).optional(),
+});
+
+const UpdateLineNumberSchema = z.object({
+  lineNumber: z.number().int().min(1, "Line number must be at least 1"),
+});
+
 export class QuoteController {
   createQuote = asyncWrapper(async (req: Request, res: Response) => {
     const validData = CreateQuoteSchema.parse(req.body);
@@ -138,5 +160,29 @@ export class QuoteController {
   getMetrics = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quoteService.getQuoteMetrics();
     res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  // Quote Items
+  createQuoteItem = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateQuoteItemSchema.parse(req.body);
+    const result = await quoteService.createQuoteItem(req.params.quoteId, validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
+
+  updateQuoteItem = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateQuoteItemSchema.parse(req.body);
+    const result = await quoteService.updateQuoteItem(req.params.itemId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  updateQuoteItemLineNumber = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateLineNumberSchema.parse(req.body);
+    const result = await quoteService.updateQuoteItemLineNumber(req.params.itemId, validData.lineNumber);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  deleteQuoteItem = asyncWrapper(async (req: Request, res: Response) => {
+    await quoteService.deleteQuoteItem(req.params.itemId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
   });
 }

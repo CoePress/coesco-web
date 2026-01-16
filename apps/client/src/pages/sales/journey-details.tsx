@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Edit, Plus, User, Trash2, Search } from "lucide-react";
-import { PageHeader, Tabs, Table, Button, Modal, AddContactModal } from "@/components";
-import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
+import { Edit, Plus, Trash2, Search, XIcon, MessageSquare, ArrowLeft, Loader2 } from "lucide-react";
+import { PageHeader, Tabs, Table, Button, Modal, AddContactModal, StatusBadge } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
+import { useToast } from "@/hooks/use-toast";
 import { STAGES, VALID_CONFIDENCE_LEVELS, VALID_REASON_WON, VALID_REASON_LOST, VALID_PRESENTATION_METHODS, VALID_JOURNEY_TYPES, VALID_LEAD_SOURCES, VALID_EQUIPMENT_TYPES, VALID_DEALERS, VALID_DEALER_CONTACTS, VALID_INDUSTRIES, VALID_QUOTE_TYPES } from "./journeys/constants";
-import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
+import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry, fetchAvailableRsms, fetchAvailableRsmsWithTerritories, fetchDemographicCategory, Employee } from "./journeys/utils";
 import { COMPETITION_OPTIONS } from "./journeys/types";
 
 type StageId = (typeof STAGES)[number]["id"];
@@ -87,7 +87,7 @@ const saveJourneyUpdates = async (api: any, journey: any, updates: Record<string
   try {
     const journeyId = journey.ID || journey.id;
     await logJourneyChanges(api, journeyId, journey, updates, originalUpdates, employee);
-    const result = await api.patch(`/legacy/base/Journey/${journeyId}`, updates);
+    const result = await api.patch(`/legacy/std/Journey/${journeyId}`, updates);
     return result !== null;
   } catch (error) {
     console.error("Error updating journey:", error);
@@ -113,11 +113,11 @@ const extractDateOnly = (dateStr: any) => {
   return match ? match[0] : "";
 };
 
-const EditButtons = ({ isEditing, onSave, onCancel, onEdit, isSaving }: any) => (
+const EditButtons = ({ isEditing, onSave, onCancel, onEdit, isSaving, disabled }: any) => (
   <div className="flex gap-2">
     {isEditing ? (
       <>
-        <Button variant="primary" size="sm" onClick={onSave} disabled={isSaving}>
+        <Button variant="primary" size="sm" onClick={onSave} disabled={isSaving || disabled}>
           {isSaving ? "Saving..." : "Save"}
         </Button>
         <Button variant="secondary-outline" size="sm" onClick={onCancel} disabled={isSaving}>
@@ -141,6 +141,9 @@ const FormField = ({ label, children, className = "" }: any) => (
 
 function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts, employee, validJourneyStatuses }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>>; employee: any; validJourneyStatuses: string[] }) {
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
+  const [availableRsmsWithTerritories, setAvailableRsmsWithTerritories] = useState<Employee[]>([]);
+  const [availableOems, setAvailableOems] = useState<string[]>([]);
+  const [availableServiceTechs, setAvailableServiceTechs] = useState<string[]>([]);
   const api = useApi();
 
   const getValidRSM = (value: string) => {
@@ -159,13 +162,22 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     return rsm ? `${rsm.name} (${rsm.initials})` : value;
   };
 
+  const getRsmTerritoryDisplayName = (value: string) => {
+    if (!value) return "-";
+    const rsm = availableRsmsWithTerritories.find(r =>
+      r.initials.toLowerCase() === value.toLowerCase()
+    );
+    return rsm ? `${rsm.name} (${rsm.initials})` : value;
+  };
+
   const createDetailsFormData = (journey: any) => ({
     type: getValidJourneyType(journey?.Journey_Type ?? journey?.type),
     source: getValidLeadSource(journey?.Lead_Source ?? journey?.source),
+    coeServiceReferral: journey?.Service_Tech ?? "",
     equipmentType: getValidEquipmentType(journey?.Equipment_Type),
     rsm: getValidRSM(journey?.RSM),
     rsmTerritory: journey?.RSM_Territory ?? "",
-    qtyItems: journey?.Qty_of_Items ?? "",
+    rsmAssist: getValidRSM(journey?.RSM_Helped),
     value: journey?.Journey_Value ?? journey?.value ?? "",
     dealer: getValidDealer(journey?.Dealer ?? journey?.Dealer_Name ?? ""),
     dealerContact: getValidDealerContact(journey?.Dealer_Contact ?? ""),
@@ -181,9 +193,11 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     reasonLost: journey?.Reason_Lost ?? "",
     reasonWonLost: journey?.Reason_Won_Lost ?? "",
     competition: journey?.Competition ?? "",
+    oem: journey?.OEM ?? "",
     visitOutcome: journey?.Visit_Outcome ?? "",
     visitDate: extractDateOnly(journey?.Visit_Date),
     anticipatedVisitDate: extractDateOnly(journey?.Anticipated_Visit_Date),
+    disabled: journey?.Deleted === 1 || journey?.Deleted === '1' || journey?.Deleted === true,
   });
 
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -225,6 +239,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const [lastActivityDate, setLastActivityDate] = useState<string | null>(null);
   const [newNoteBody, setNewNoteBody] = useState("");
   const [newNextStepBody, setNewNextStepBody] = useState("");
+  const [newNextStepDate, setNewNextStepDate] = useState("");
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [isCreatingNextStep, setIsCreatingNextStep] = useState(false);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
@@ -235,6 +250,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const [editingNextStepBody, setEditingNextStepBody] = useState("");
   const [noteToDelete, setNoteToDelete] = useState<any>(null);
   const [nextStepToDelete, setNextStepToDelete] = useState<any>(null);
+  const [quoteValue, setQuoteValue] = useState<number>(0);
+  const [isLoadingQuoteValue, setIsLoadingQuoteValue] = useState(false);
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -317,6 +334,31 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     fetchLastActivity();
   }, [journey?.ID, journey?.id]);
 
+  useEffect(() => {
+    const fetchQuoteValue = async () => {
+      if (!journey?.Quote_Key_Value) {
+        setQuoteValue(0);
+        return;
+      }
+      setIsLoadingQuoteValue(true);
+      try {
+        const result = await api.get('/legacy/quote-value', {
+          quoteKeyValue: journey.Quote_Key_Value
+        });
+        if (result && typeof result.quoteValue === 'number') {
+          setQuoteValue(result.quoteValue);
+        } else {
+          setQuoteValue(0);
+        }
+      } catch (error) {
+        setQuoteValue(0);
+      } finally {
+        setIsLoadingQuoteValue(false);
+      }
+    };
+    fetchQuoteValue();
+  }, [journey?.Quote_Key_Value]);
+
   const handleCreateNote = async () => {
     if (!newNoteBody.trim() || !journey?.ID && !journey?.id) return;
     setIsCreatingNote(true);
@@ -327,7 +369,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         entityId: journeyId,
         entityType: "journey",
         type: "note",
-        createdBy: employee?.initials
+        createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
       if (newNote?.success && newNote.data) {
         setJourneyNotes(prev => [newNote.data, ...prev]);
@@ -342,20 +384,24 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   };
 
   const handleCreateNextStep = async () => {
-    if (!newNextStepBody.trim() || !journey?.ID && !journey?.id) return;
+    if (!newNextStepBody.trim() || !newNextStepDate || !journey?.ID && !journey?.id) return;
     setIsCreatingNextStep(true);
     try {
       const journeyId = journey.ID || journey.id;
+      const [year, month, day] = newNextStepDate.split('-');
+      const formattedDate = `${month}/${day}/${year}`;
+      const bodyWithDate = `${formattedDate}: ${newNextStepBody.trim()}`;
       const newNextStep = await api.post('/core/notes', {
-        body: newNextStepBody.trim(),
+        body: bodyWithDate,
         entityId: journeyId,
         entityType: "journey",
         type: "next_step",
-        createdBy: employee?.initials
+        createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
       if (newNextStep?.success && newNextStep.data) {
         setJourneyNextSteps(prev => [newNextStep.data, ...prev]);
         setNewNextStepBody("");
+        setNewNextStepDate("");
       }
     } catch (error) {
       console.error('Error creating next step:', error);
@@ -501,6 +547,39 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const rsmsWithTerritories = await fetchAvailableRsmsWithTerritories(api);
+      if (!cancelled) {
+        setAvailableRsmsWithTerritories(rsmsWithTerritories);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const oems = await fetchDemographicCategory(api, 'oem');
+      if (!cancelled) {
+        setAvailableOems(oems);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const serviceTechs = await fetchDemographicCategory(api, 'service_tech');
+      if (!cancelled) {
+        setAvailableServiceTechs(serviceTechs);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
     if (!companySearchQuery.trim() || !companySearchMode || justSelectedCompany.current) {
       setCompanySearchResults([]);
       setShowCompanyResults(false);
@@ -517,7 +596,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
           CustDlrName: `%${companySearchQuery}%`,
           limit: 5
         });
-        
+
         if (Array.isArray(searchResults)) {
           setCompanySearchResults(searchResults);
           setShowCompanyResults(true);
@@ -548,7 +627,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         if (companyData && companyData.CustDlrName) {
           setCompanyName(companyData.CustDlrName);
           lastFetchedCompanyId.current = customerForm.companyId;
-          
+
           updateJourney({ Target_Account: companyData.CustDlrName });
         } else {
           setCompanyName("");
@@ -590,7 +669,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         entityId: journeyId,
         entityType: "journey",
         type: "LastActivity",
-        createdBy: employee?.initials
+        createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
       setLastActivityDate(now);
     } catch (error) {
@@ -600,16 +679,16 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const handleSaveDetails = async () => {
     const baseUpdates = {
-      Journey_Type: detailsForm.type, Lead_Source: detailsForm.source, Equipment_Type: detailsForm.equipmentType,
-      RSM: detailsForm.rsm, RSM_Territory: detailsForm.rsmTerritory, Qty_of_Items: detailsForm.qtyItems,
+      Journey_Type: detailsForm.type, Lead_Source: detailsForm.source, Service_Tech: detailsForm.coeServiceReferral, Equipment_Type: detailsForm.equipmentType,
+      RSM: detailsForm.rsm, RSM_Territory: detailsForm.rsmTerritory, RSM_Helped: detailsForm.rsmAssist,
       Journey_Value: detailsForm.value, Dealer: detailsForm.dealer, Dealer_Contact: detailsForm.dealerContact,
       Journey_Stage: detailsForm.stage, Priority: detailsForm.priority, Journey_Status: detailsForm.status,
       Chance_To_Secure_order: detailsForm.confidence, Reason_Won: detailsForm.reasonWon, Reason_Lost: detailsForm.reasonLost,
-      Competition: detailsForm.competition, Visit_Outcome: detailsForm.visitOutcome
+      Competition: detailsForm.competition, OEM: detailsForm.oem, Visit_Outcome: detailsForm.visitOutcome, Deleted: detailsForm.disabled ? 1 : 0
     };
     const originalUpdates = { ...baseUpdates, Journey_Start_Date: detailsForm.journeyStartDate, Quote_Presentation_Date: detailsForm.presentationDate, Expected_Decision_Date: detailsForm.expectedPoDate, Action_Date: detailsForm.lastActionDate, Visit_Date: detailsForm.visitDate, Anticipated_Visit_Date: detailsForm.anticipatedVisitDate, Reason_Won_Lost: detailsForm.reasonWon || detailsForm.reasonLost };
     const rawUpdates = { ...baseUpdates, Journey_Start_Date: formatDateForDatabase(detailsForm.journeyStartDate), Quote_Presentation_Date: formatDateForDatabase(detailsForm.presentationDate), Expected_Decision_Date: formatDateForDatabase(detailsForm.expectedPoDate), Action_Date: formatDateForDatabase(detailsForm.lastActionDate), Visit_Date: formatDateForDatabase(detailsForm.visitDate), Anticipated_Visit_Date: formatDateForDatabase(detailsForm.anticipatedVisitDate), Reason_Won_Lost: detailsForm.reasonWon || detailsForm.reasonLost };
-    const updates = Object.fromEntries(Object.entries(rawUpdates).filter(([key, value]) => ['Reason_Won', 'Reason_Lost', 'Reason_Won_Lost', 'Competition'].includes(key) || value !== ""));
+    const updates = Object.fromEntries(Object.entries(rawUpdates).filter(([key, value]) => ['Reason_Won', 'Reason_Lost', 'Reason_Won_Lost', 'Competition', 'OEM', 'Service_Tech', 'Deleted'].includes(key) || value !== ""));
     const success = await saveJourneyUpdates(api, journey, updates, originalUpdates, employee, setIsSaving);
     if (success) {
       setIsEditingDetails(false);
@@ -661,15 +740,15 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const handleCompanySelect = (company: any) => {
     justSelectedCompany.current = true;
-    
+
     setCustomerForm(s => ({ ...s, companyId: company.Company_ID }));
     setCompanySearchQuery(company.CustDlrName || "");
     setCompanyName(company.CustDlrName || "");
     lastFetchedCompanyId.current = company.Company_ID;
-    
+
     setShowCompanyResults(false);
     setCompanySearchResults([]);
-    
+
     if (company.CustDlrName) {
       updateJourney({ Target_Account: company.CustDlrName });
     }
@@ -759,18 +838,18 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const handleSaveContact = async () => {
     if (!editingContactId) return;
-    
+
     setIsSaving(true);
     try {
       const result = await api.patch(
         `/legacy/std/Journey_Contact/${editingContactId}`,
         contactForm
       );
-      
+
       if (result !== null) {
-        setJourneyContacts(prevContacts => 
-          prevContacts.map(contact => 
-            contact.ID === editingContactId 
+        setJourneyContacts(prevContacts =>
+          prevContacts.map(contact =>
+            contact.ID === editingContactId
               ? { ...contact, ...contactForm }
               : contact
           )
@@ -857,21 +936,18 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     try {
       const journeyId = journey.ID || journey.id;
 
-      console.log('[DEBUG] Refreshing journey contacts for journey:', journeyId);
-
       const [legacyContacts, prismaContacts] = await Promise.all([
         api.get('/legacy/std/Journey_Contact/filter/custom', {
           filterField: 'Jrn_ID',
           filterValue: journeyId
         }).catch(err => {
-          console.error('[DEBUG] Error fetching legacy contacts:', err);
+          console.error('Error fetching legacy contacts:', err);
           return [];
         }),
         api.get('/sales/journey-contacts', {
           filter: JSON.stringify({ journeyId }),
           include: JSON.stringify({ contact: true })
         }).then(result => {
-          console.log('[DEBUG] Prisma journey-contacts result:', result);
           const contacts = result?.success && Array.isArray(result.data) ? result.data : [];
           return contacts.map((jc: any) => ({
             ID: jc.id,
@@ -887,22 +963,17 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
             _isPrisma: true
           }));
         }).catch(err => {
-          console.error('[DEBUG] Error fetching prisma contacts:', err);
+          console.error('Error fetching prisma contacts:', err);
           return [];
         })
       ]);
 
       const legacyArray = Array.isArray(legacyContacts) ? legacyContacts : [];
-
-      console.log('[DEBUG] Legacy contacts count:', legacyArray.length);
-      console.log('[DEBUG] Prisma contacts count:', prismaContacts.length);
-
       const mergedContacts = [...legacyArray, ...prismaContacts];
-      console.log('[DEBUG] Total merged contacts:', mergedContacts.length);
 
       setJourneyContacts(mergedContacts);
     } catch (error) {
-      console.error("[DEBUG] Error refreshing journey contacts:", error);
+      console.error("Error refreshing journey contacts:", error);
     }
   };
 
@@ -913,20 +984,26 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   return (
     <div className="p-2 flex flex-1 flex-col">
       <div className="flex flex-col gap-2 flex-1">
-        <div className="grid grid-cols-[1fr_2fr] gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-2">
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted text-sm">Customer Details</h2>
-              <div className="flex gap-2">
-                <EditButtons isEditing={isEditingCustomer} onSave={handleSaveCustomer} onCancel={handleCancelCustomer} onEdit={() => { setCustomerForm({ companyId: journey?.Company_ID || "", industry: getValidIndustry(journey?.Industry || ""), addressId: journey?.Address_ID || "" }); setIsEditingCustomer(true); }} isSaving={isSaving} />
-                {!isEditingCustomer && <div title={customer?.id ? "Go to customer page" : "No associated customer"}><Button variant="secondary-outline" size="sm" onClick={customer?.id ? () => navigate(`/sales/companies/${customer?.id}`) : undefined} disabled={!customer?.id}><User size={16} /></Button></div>}
-              </div>
+              <EditButtons isEditing={isEditingCustomer} onSave={handleSaveCustomer} onCancel={handleCancelCustomer} onEdit={() => { setCustomerForm({ companyId: journey?.Company_ID || "", industry: getValidIndustry(journey?.Industry || ""), addressId: journey?.Address_ID || "" }); setIsEditingCustomer(true); }} isSaving={isSaving} />
             </div>
             <div className="grid grid-cols-1 gap-x-8 gap-y-2">
               <div>
                 <div className="text-sm text-text-muted">Company</div>
                 <div className="text-sm text-text">
-                  {companyName || journey?.Target_Account || journey?.companyName || "-"}
+                  {customer?.id ? (
+                    <a
+                      href={`/sales/companies/${customer.id}`}
+                      className="text-primary hover:underline cursor-pointer"
+                    >
+                      {companyName || journey?.Target_Account || journey?.companyName || "-"}
+                    </a>
+                  ) : (
+                    companyName || journey?.Target_Account || journey?.companyName || "-"
+                  )}
                 </div>
               </div>
               <div>
@@ -1014,7 +1091,16 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                   </div>
                 ) : (
                   <div className="text-sm text-text font-mono">
-                    {journey?.Company_ID || "-"}
+                    {customer?.id && journey?.Company_ID ? (
+                      <a
+                        href={`/sales/companies/${customer.id}`}
+                        className="text-primary hover:underline cursor-pointer"
+                      >
+                        {journey.Company_ID}
+                      </a>
+                    ) : (
+                      journey?.Company_ID || "-"
+                    )}
                   </div>
                 )}
               </div>
@@ -1066,8 +1152,10 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                     size="sm"
                     onClick={() => setShowAddContactModal(true)}
                     disabled={isSaving}
+                    className="flex items-center gap-1"
                   >
                     <Plus size={14} />
+                    <span className="hidden sm:inline">Add</span>
                   </Button>
                 </div>
                 {journeyContacts.length > 0 ? (
@@ -1077,142 +1165,142 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                       .map((contact, index) => {
                         const isPrimary = Number(contact.IsPrimary) === 1;
                         return (
-                      <div 
-                        key={contact.ID || `temp-${index}`} 
-                        className={`rounded border p-3 ${isPrimary ? 'bg-gray border-gray' : 'bg-surface'}`}
-                      >
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="flex-1">
-                            {editingContactId === contact.ID ? (
-                              <div className="space-y-2">
-                                <input
-                                  type="text"
-                                  className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
-                                  value={contactForm.Contact_Name}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Name: e.target.value }))}
-                                  placeholder="Contact Name"
-                                />
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={handleSaveContact}
-                                    disabled={isSaving}
-                                  >
-                                    {isSaving ? "Saving..." : "Save"}
-                                  </Button>
-                                  <Button
-                                    variant="secondary-outline"
-                                    size="sm"
-                                    onClick={handleCancelContactEdit}
-                                    disabled={isSaving}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                                <input
-                                  type="text"
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
-                                  value={contactForm.Contact_Position}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Position: e.target.value }))}
-                                  placeholder="Position"
-                                />
-                                <input
-                                  type="email"
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
-                                  value={contactForm.Contact_Email}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Email: e.target.value }))}
-                                  placeholder="Email"
-                                />
-                                <input
-                                  type="text"
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
-                                  value={contactForm.Contact_Office}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Office: e.target.value }))}
-                                  placeholder="Office Phone"
-                                />
-                                <input
-                                  type="text"
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
-                                  value={contactForm.Contact_Mobile}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Mobile: e.target.value }))}
-                                  placeholder="Mobile Phone"
-                                />
-                                <textarea
-                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text resize-none"
-                                  value={contactForm.Contact_Note}
-                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Note: e.target.value }))}
-                                  placeholder="Notes"
-                                  rows={2}
-                                />
+                          <div
+                            key={contact.ID || `temp-${index}`}
+                            className={`rounded border p-3 ${isPrimary ? 'bg-gray border-gray' : 'bg-surface'}`}
+                          >
+                            <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-1">
+                              <div className="flex-1 w-full sm:w-auto">
+                                {editingContactId === contact.ID ? (
+                                  <div className="space-y-2">
+                                    <input
+                                      type="text"
+                                      className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
+                                      value={contactForm.Contact_Name}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Name: e.target.value }))}
+                                      placeholder="Contact Name"
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={handleSaveContact}
+                                        disabled={isSaving}
+                                      >
+                                        {isSaving ? "Saving..." : "Save"}
+                                      </Button>
+                                      <Button
+                                        variant="secondary-outline"
+                                        size="sm"
+                                        onClick={handleCancelContactEdit}
+                                        disabled={isSaving}
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                      value={contactForm.Contact_Position}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Position: e.target.value }))}
+                                      placeholder="Position"
+                                    />
+                                    <input
+                                      type="email"
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                      value={contactForm.Contact_Email}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Email: e.target.value }))}
+                                      placeholder="Email"
+                                    />
+                                    <input
+                                      type="text"
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                      value={contactForm.Contact_Office}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Office: e.target.value }))}
+                                      placeholder="Office Phone"
+                                    />
+                                    <input
+                                      type="text"
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                      value={contactForm.Contact_Mobile}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Mobile: e.target.value }))}
+                                      placeholder="Mobile Phone"
+                                    />
+                                    <textarea
+                                      className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text resize-none"
+                                      value={contactForm.Contact_Note}
+                                      onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Note: e.target.value }))}
+                                      placeholder="Notes"
+                                      rows={2}
+                                    />
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="text-sm text-text font-medium mb-1">
+                                      {contact._isPrisma && contact.Contact_ID ? (
+                                        <button
+                                          onClick={() => navigate(`/sales/contacts/${contact.Contact_ID}`)}
+                                          className="text-primary hover:underline cursor-pointer"
+                                        >
+                                          {contact.Contact_Name || "Unnamed Contact"}
+                                        </button>
+                                      ) : (
+                                        <span>{contact.Contact_Name || "Unnamed Contact"}</span>
+                                      )}
+                                    </div>
+                                    {contact.Contact_Position && (
+                                      <div className="text-xs text-text-muted mb-1">
+                                        {contact.Contact_Position}
+                                      </div>
+                                    )}
+                                    {contact.Contact_Email && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Email:</span> <a href={`mailto:${contact.Contact_Email}`} className="text-primary hover:underline">{contact.Contact_Email}</a></div>}
+                                    {contact.Contact_Office && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Office:</span> {contact.Contact_Office}</div>}
+                                    {contact.Contact_Mobile && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Mobile:</span> {contact.Contact_Mobile}</div>}
+                                    {contact.Contact_Note && (
+                                      <div className="text-xs text-text-muted italic mt-2 p-2 bg-background rounded">
+                                        {contact.Contact_Note}
+                                      </div>
+                                    )}
+                                  </>
+                                )}
                               </div>
-                            ) : (
-                              <>
-                                <div className="text-sm text-text font-medium mb-1">
-                                  {contact._isPrisma && contact.Contact_ID ? (
-                                    <button
-                                      onClick={() => navigate(`/sales/contacts/${contact.Contact_ID}`)}
-                                      className="text-primary hover:underline cursor-pointer"
+                              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                {editingContactId !== contact.ID && (
+                                  <>
+                                    {isPrimary && <span className="text-xs bg-primary text-background px-2 py-1 rounded font-medium">Primary</span>}
+                                    {!contact.Contact_ID && !contact.Cont_Id && <span className="text-xs bg-primary text-background px-2 py-1 rounded font-medium" title="Some features will not function with this Contact as the legacy database needs to be updated">Legacy</span>}
+                                    <Button
+                                      variant="secondary-outline"
+                                      size="sm"
+                                      onClick={() => handleEditContact(contact)}
+                                      disabled={isSaving || editingContactId !== null}
+                                      className="!p-1 !h-6 !w-6"
                                     >
-                                      {contact.Contact_Name || "Unnamed Contact"}
-                                    </button>
-                                  ) : (
-                                    <span>{contact.Contact_Name || "Unnamed Contact"}</span>
-                                  )}
-                                </div>
-                                {contact.Contact_Position && (
-                                  <div className="text-xs text-text-muted mb-1">
-                                    {contact.Contact_Position}
-                                  </div>
+                                      <Edit size={12} />
+                                    </Button>
+                                    <Button
+                                      variant="secondary-outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteContact(contact)}
+                                      disabled={isSaving || editingContactId !== null || !contact.ID}
+                                      className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
+                                    >
+                                      <Trash2 size={12} className="text-red-600" />
+                                    </Button>
+                                    <input
+                                      type="radio"
+                                      name="primaryContact"
+                                      checked={isPrimary}
+                                      onChange={() => handleSetPrimaryContact(contact.ID, contact.Jrn_ID)}
+                                      disabled={isSaving || editingContactId !== null}
+                                      className="text-primary focus:ring-primary"
+                                      title="Make primary contact"
+                                    />
+                                  </>
                                 )}
-                                {contact.Contact_Email && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Email:</span> <a href={`mailto:${contact.Contact_Email}`} className="text-primary hover:underline">{contact.Contact_Email}</a></div>}
-                                {contact.Contact_Office && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Office:</span> {contact.Contact_Office}</div>}
-                                {contact.Contact_Mobile && <div className="text-xs text-text-muted mb-1"><span className="font-bold">Mobile:</span> {contact.Contact_Mobile}</div>}
-                                {contact.Contact_Note && (
-                                  <div className="text-xs text-text-muted italic mt-2 p-2 bg-background rounded">
-                                    {contact.Contact_Note}
-                                  </div>
-                                )}
-                              </>
-                            )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {editingContactId !== contact.ID && (
-                              <>
-                                {isPrimary && <span className="text-xs bg-gray text-white px-2 py-1 rounded">Primary</span>}
-                                {!contact.Contact_ID && !contact.Cont_Id && <span className="text-xs bg-gray text-white px-2 py-1 rounded" title="Some features will not function with this Contact as the legacy database needs to be updated">Legacy</span>}
-                                <Button
-                                  variant="secondary-outline"
-                                  size="sm"
-                                  onClick={() => handleEditContact(contact)}
-                                  disabled={isSaving || editingContactId !== null}
-                                  className="!p-1 !h-6 !w-6"
-                                >
-                                  <Edit size={12} />
-                                </Button>
-                                <Button
-                                  variant="secondary-outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteContact(contact)}
-                                  disabled={isSaving || editingContactId !== null || !contact.ID}
-                                  className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
-                                >
-                                  <Trash2 size={12} className="text-red-600" />
-                                </Button>
-                                <input
-                                  type="radio"
-                                  name="primaryContact"
-                                  checked={isPrimary}
-                                  onChange={() => handleSetPrimaryContact(contact.ID, contact.Jrn_ID)}
-                                  disabled={isSaving || editingContactId !== null}
-                                  className="text-primary focus:ring-primary"
-                                  title="Make primary contact"
-                                />
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
                         );
                       })}
                   </div>
@@ -1225,489 +1313,596 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-text-muted text-sm">Journey Details</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-text-muted text-sm">Journey Details</h2>
+                {(journey?.Deleted === 1 || journey?.Deleted === '1' || journey?.Deleted === true) && (
+                  <StatusBadge label="Disabled" variant="error" />
+                )}
+              </div>
               <EditButtons isEditing={isEditingDetails} onSave={handleSaveDetails} onCancel={handleCancelDetails} onEdit={() => { setDetailsForm(createDetailsFormData(journey)); setIsEditingDetails(true); }} isSaving={isSaving} />
             </div>
-            <div className="grid grid-cols-4 gap-x-6 gap-y-4">
-              <FormField label="Created"><div className="text-sm text-text">{formatDateSafe(journey?.CreateDT)}</div></FormField>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-4">
+              <fieldset className="col-span-full xl:col-span-3 xl:row-span-2 border border-border rounded-lg p-4 bg-background">
+                <legend className="text-sm font-semibold text-text-muted px-2">Dates</legend>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
+                  <FormField label="Created">
+                    <div className="text-sm text-text">{formatDateSafe(journey?.CreateDT)}</div>
+                  </FormField>
 
-              <FormField label="Last Activity Date">
-                <div className="text-sm text-text">
-                  {lastActivityDate ? formatDateSafe(lastActivityDate) : "-"}
-                </div>
-              </FormField>
-
-              <div>
-                <div className="text-sm text-text-muted">Next Action Date</div>
-                {isEditingDetails ? (
-                  <input
-                    type="date"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.lastActionDate || ""}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({
-                        ...s,
-                        lastActionDate: e.target.value,
-                      }))
-                    }
-                  />
-                ) : (
-                  <div className="text-sm text-text">
-                    {(() => {
-                      try {
-                        return journey?.Action_Date
-                          ? formatDate(journey.Action_Date)
-                          : journey?.updatedAt
-                          ? formatDate(journey.updatedAt)
-                          : "-";
-                      } catch (error) {
-                        return journey?.Action_Date || journey?.updatedAt || "-";
-                      }
-                    })()}
-                  </div>
-                )}
-              </div>
-
-              <FormField label="Journey Start Date">
-                {isEditingDetails ? <input type="date" className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text" value={detailsForm.journeyStartDate} onChange={(e) => setDetailsForm((s) => ({ ...s, journeyStartDate: e.target.value }))} /> : <div className="text-sm text-text">{formatDateSafe(journey?.Journey_Start_Date)}</div>}
-              </FormField>
-
-              <div>
-                <div className="text-sm text-text-muted">Journey Type</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.type}
-                    onChange={(e) => setDetailsForm((s) => ({ ...s, type: e.target.value }))}
-                  >
-                    {VALID_JOURNEY_TYPES.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                    <option value="Feature Upgrade">Feature Upgrade</option>
-                    <option value="Retrofit">Retrofit</option>
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {getValidJourneyType(journey?.Journey_Type || journey?.type)}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Lead Source</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.source}
-                    onChange={(e) => setDetailsForm((s) => ({ ...s, source: e.target.value }))}
-                  >
-                    {VALID_LEAD_SOURCES.map(source => (
-                      <option key={source} value={source}>{source}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {getValidLeadSource(journey?.Lead_Source || journey?.source)}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Equipment Type</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.equipmentType}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, equipmentType: e.target.value }))
-                    }
-                  >
-                    {VALID_EQUIPMENT_TYPES.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {getValidEquipmentType(journey?.Equipment_Type)}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Qty of Items</div>
-                {isEditingDetails ? (
-                  <input
-                    type="number"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.qtyItems}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, qtyItems: e.target.value }))
-                    }
-                    min={0}
-                  />
-                ) : (
-                  <div className="text-sm text-text">
-                    {journey?.Qty_of_Items != null && journey?.Qty_of_Items !== "" ? journey.Qty_of_Items : "-"}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Journey Value</div>
-                {isEditingDetails ? (
-                  <input
-                    type="number"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.value}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, value: e.target.value }))
-                    }
-                    min={0}
-                  />
-                ) : (
-                  <div className="text-sm text-text">
-                    {formatCurrency(
-                      Number(journey?.Journey_Value ?? journey?.value ?? 0)
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">RSM</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.rsm}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, rsm: e.target.value }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    {detailsForm.rsm && !availableRsms.find(r => r.initials === detailsForm.rsm) && (
-                      <option key={detailsForm.rsm} value={detailsForm.rsm}>{detailsForm.rsm}</option>
-                    )}
-                    {availableRsms.map(rsm => (
-                      <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">{getRsmDisplayName(journey?.RSM)}</div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">RSM Territory</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.rsmTerritory}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, rsmTerritory: e.target.value }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    {/* Show current RSM Territory if it's not in the available list */}
-                    {detailsForm.rsmTerritory && !availableRsms.find(r => r.initials === detailsForm.rsmTerritory) && (
-                      <option key={detailsForm.rsmTerritory} value={detailsForm.rsmTerritory}>{detailsForm.rsmTerritory}</option>
-                    )}
-                    {availableRsms.map(rsm => (
-                      <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">{getRsmDisplayName(journey?.RSM_Territory)}</div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Journey Stage</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.stage}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, stage: e.target.value }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    {STAGES.map(stage => (
-                      <option key={stage.id} value={stage.label}>{stage.label}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {getStageLabel(journey)}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Priority</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.priority}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, priority: e.target.value }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    <option value="A">A - Highest</option>
-                    <option value="B">B - High</option>
-                    <option value="C">C - Medium</option>
-                    <option value="D">D - Lowest</option>
-                  </select>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className={`w-3 h-3 rounded-full ${getPriorityColor(journey?.Priority || journey?.priority)} relative group cursor-help`}
-                      title={`Priority: ${journey?.Priority || journey?.priority || 'None'} (${getPriorityLabel(journey?.Priority || journey?.priority)})`}
-                    >
-                      <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                        Priority: {journey?.Priority || journey?.priority || 'None'} ({getPriorityLabel(journey?.Priority || journey?.priority)})
-                      </div>
-                    </div>
+                  <FormField label="Last Activity Date">
                     <div className="text-sm text-text">
-                      {journey?.Priority || journey?.priority || "-"} ({getPriorityLabel(journey?.Priority || journey?.priority)})
+                      {lastActivityDate ? formatDateSafe(lastActivityDate) : "-"}
                     </div>
-                  </div>
-                )}
-              </div>
+                  </FormField>
 
-              <div>
-                <div className="text-sm text-text-muted">Status</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.status}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, status: e.target.value }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    {validJourneyStatuses.map(status => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {journey?.Journey_Status || journey?.status || "-"}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Presentation Date</div>
-                {isEditingDetails ? (
-                  <input
-                    type="date"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.presentationDate || ""}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({
-                        ...s,
-                        presentationDate: e.target.value,
-                      }))
-                    }
-                  />
-                ) : (
-                  <div className="text-sm text-text">
-                    {(() => {
-                      try {
-                        return detailsForm.presentationDate
-                          ? formatDate(detailsForm.presentationDate)
-                          : "-";
-                      } catch (error) {
-                        return detailsForm.presentationDate || "-";
-                      }
-                    })()}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Expected Decision Date</div>
-                {isEditingDetails ? (
-                  <input
-                    type="date"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.expectedPoDate || ""}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({
-                        ...s,
-                        expectedPoDate: e.target.value,
-                      }))
-                    }
-                  />
-                ) : (
-                  <div className="text-sm text-text">
-                    {(() => {
-                      try {
-                        return detailsForm.expectedPoDate
-                          ? formatDate(detailsForm.expectedPoDate)
-                          : "-";
-                      } catch (error) {
-                        return detailsForm.expectedPoDate || "-";
-                      }
-                    })()}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Dealer</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.dealer}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, dealer: e.target.value }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    {detailsForm.dealer && !VALID_DEALERS.includes(detailsForm.dealer) && (
-                      <option key={detailsForm.dealer} value={detailsForm.dealer}>{detailsForm.dealer}</option>
+                  <div>
+                    <div className="text-sm text-text-muted">Next Action Date</div>
+                    {isEditingDetails ? (
+                      <input
+                        type="date"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.lastActionDate || ""}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({
+                            ...s,
+                            lastActionDate: e.target.value,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <div className="text-sm text-text">
+                        {(() => {
+                          try {
+                            return journey?.Action_Date
+                              ? formatDate(journey.Action_Date)
+                              : journey?.updatedAt
+                                ? formatDate(journey.updatedAt)
+                                : "-";
+                          } catch (error) {
+                            return journey?.Action_Date || journey?.updatedAt || "-";
+                          }
+                        })()}
+                      </div>
                     )}
-                    {VALID_DEALERS.map(dealer => (
-                      <option key={dealer} value={dealer}>{dealer}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {getValidDealer(journey?.Dealer ?? journey?.Dealer_Name ?? "") || "-"}
                   </div>
-                )}
-              </div>
 
-              <div>
-                <div className="text-sm text-text-muted">Dealer Contact</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.dealerContact}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, dealerContact: e.target.value }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    {detailsForm.dealerContact && !VALID_DEALER_CONTACTS.includes(detailsForm.dealerContact) && (
-                      <option key={detailsForm.dealerContact} value={detailsForm.dealerContact}>{detailsForm.dealerContact}</option>
+                  <FormField label="Journey Start Date">
+                    {isEditingDetails ? (
+                      <input
+                        type="date"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.journeyStartDate}
+                        onChange={(e) => setDetailsForm((s) => ({ ...s, journeyStartDate: e.target.value }))}
+                      />
+                    ) : (
+                      <div className="text-sm text-text">{formatDateSafe(journey?.Journey_Start_Date)}</div>
                     )}
-                    {VALID_DEALER_CONTACTS.map(contact => (
-                      <option key={contact} value={contact}>{contact}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {getValidDealerContact(journey?.Dealer_Contact ?? "") || "-"}
-                  </div>
-                )}
-              </div>
+                  </FormField>
 
-              <div>
-                <div className="text-sm text-text-muted">Confidence</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.confidence}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, confidence: e.target.value }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    {VALID_CONFIDENCE_LEVELS.map(level => (
-                      <option key={level} value={level}>{level}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {journey?.Chance_To_Secure_order || "-"}
+                  <div>
+                    <div className="text-sm text-text-muted">Presentation Date</div>
+                    {isEditingDetails ? (
+                      <input
+                        type="date"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.presentationDate || ""}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({
+                            ...s,
+                            presentationDate: e.target.value,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <div className="text-sm text-text">
+                        {(() => {
+                          try {
+                            return detailsForm.presentationDate
+                              ? formatDate(detailsForm.presentationDate)
+                              : "-";
+                          } catch (error) {
+                            return detailsForm.presentationDate || "-";
+                          }
+                        })()}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div>
-                <div className="text-sm text-text-muted">Reason Won</div>
-                {isEditingDetails ? (
-                  <select
-                    className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${
-                      detailsForm.reasonLost ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                    value={detailsForm.reasonWon}
-                    disabled={!!detailsForm.reasonLost}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ 
-                        ...s, 
-                        reasonWon: e.target.value,
-                        reasonLost: e.target.value ? "" : s.reasonLost
-                      }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    {VALID_REASON_WON.map(reason => (
-                      <option key={reason} value={reason}>{reason}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {journey?.Reason_Won || "-"}
+                  <div>
+                    <div className="text-sm text-text-muted">Expected Decision Date</div>
+                    {isEditingDetails ? (
+                      <input
+                        type="date"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.expectedPoDate || ""}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({
+                            ...s,
+                            expectedPoDate: e.target.value,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <div className="text-sm text-text">
+                        {(() => {
+                          try {
+                            return detailsForm.expectedPoDate
+                              ? formatDate(detailsForm.expectedPoDate)
+                              : "-";
+                          } catch (error) {
+                            return detailsForm.expectedPoDate || "-";
+                          }
+                        })()}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              </fieldset>
 
-              <div>
-                <div className="text-sm text-text-muted">Reason Lost</div>
-                {isEditingDetails ? (
-                  <select
-                    className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${
-                      detailsForm.reasonWon ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                    value={detailsForm.reasonLost}
-                    disabled={!!detailsForm.reasonWon}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ 
-                        ...s, 
-                        reasonLost: e.target.value,
-                        reasonWon: e.target.value ? "" : s.reasonWon
-                      }))
-                    }
-                  >
-                    <option value="">No Value Selected</option>
-                    {VALID_REASON_LOST.map(reason => (
-                      <option key={reason} value={reason}>{reason}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {journey?.Reason_Lost || "-"}
+              <fieldset className="col-span-full xl:col-span-2 xl:row-span-5 border border-border rounded-lg p-4 bg-background">
+                <legend className="text-sm font-semibold text-text-muted px-2">General Info</legend>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                  <div>
+                    <div className="text-sm text-text-muted">Confidence</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.confidence}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, confidence: e.target.value }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {VALID_CONFIDENCE_LEVELS.map(level => (
+                          <option key={level} value={level}>{level}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {journey?.Chance_To_Secure_order || "-"}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div>
-                <div className="text-sm text-text-muted">Competition</div>
-                {isEditingDetails ? (
-                  <select
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.competition || ""}
-                    onChange={(e) => {
-                      setDetailsForm((s) => ({ ...s, competition: e.target.value }));
-                    }}
-                  >
-                    <option value="">No Value Selected</option>
-                    {COMPETITION_OPTIONS.filter(option => option !== "No Value Selected").map(option => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-text">
-                    {journey?.Competition || "-"}
+                  <div>
+                    <div className="text-sm text-text-muted">Priority</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.priority}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, priority: e.target.value }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        <option value="A">A - Highest</option>
+                        <option value="B">B - High</option>
+                        <option value="C">C - Medium</option>
+                        <option value="D">D - Lowest</option>
+                      </select>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-3 h-3 rounded-full ${getPriorityColor(journey?.Priority || journey?.priority)} relative group cursor-help`}
+                          title={`Priority: ${journey?.Priority || journey?.priority || 'None'} (${getPriorityLabel(journey?.Priority || journey?.priority)})`}
+                        >
+                          <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Priority: {journey?.Priority || journey?.priority || 'None'} ({getPriorityLabel(journey?.Priority || journey?.priority)})
+                          </div>
+                        </div>
+                        <div className="text-sm text-text">
+                          {journey?.Priority || journey?.priority || "-"} ({getPriorityLabel(journey?.Priority || journey?.priority)})
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Journey Type</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.type}
+                        onChange={(e) => setDetailsForm((s) => ({ ...s, type: e.target.value }))}
+                      >
+                        {VALID_JOURNEY_TYPES.map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                        <option value="Feature Upgrade">Feature Upgrade</option>
+                        <option value="Retrofit">Retrofit</option>
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {getValidJourneyType(journey?.Journey_Type || journey?.type)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Project Source</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.source}
+                        onChange={(e) => setDetailsForm((s) => ({ ...s, source: e.target.value }))}
+                      >
+                        {VALID_LEAD_SOURCES.map(source => (
+                          <option key={source} value={source}>{source}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {getValidLeadSource(journey?.Lead_Source || journey?.source)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Coe Service Referral</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.coeServiceReferral || ""}
+                        onChange={(e) => setDetailsForm((s) => ({ ...s, coeServiceReferral: e.target.value }))}
+                      >
+                        <option value="">No Value Selected</option>
+                        {detailsForm.coeServiceReferral && !availableServiceTechs.includes(detailsForm.coeServiceReferral) && (
+                          <option key={detailsForm.coeServiceReferral} value={detailsForm.coeServiceReferral}>{detailsForm.coeServiceReferral}</option>
+                        )}
+                        {availableServiceTechs.map(tech => (
+                          <option key={tech} value={tech}>{tech}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {journey?.Service_Tech || "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Journey Stage</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.stage}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, stage: e.target.value }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {STAGES.map(stage => (
+                          <option key={stage.id} value={stage.label}>{stage.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {getStageLabel(journey)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Disabled</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.disabled ? "true" : "false"}
+                        onChange={(e) => setDetailsForm((s) => ({ ...s, disabled: e.target.value === "true" }))}
+                      >
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {detailsForm.disabled ? "Yes" : "No"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Status</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.status}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, status: e.target.value }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {validJourneyStatuses.map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {journey?.Journey_Status || journey?.status || "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Reason Won</div>
+                    {isEditingDetails ? (
+                      <select
+                        className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${detailsForm.reasonLost ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        value={detailsForm.reasonWon}
+                        disabled={!!detailsForm.reasonLost}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({
+                            ...s,
+                            reasonWon: e.target.value,
+                            reasonLost: e.target.value ? "" : s.reasonLost
+                          }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {VALID_REASON_WON.map(reason => (
+                          <option key={reason} value={reason}>{reason}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {journey?.Reason_Won || "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Reason Lost</div>
+                    {isEditingDetails ? (
+                      <select
+                        className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${detailsForm.reasonWon ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        value={detailsForm.reasonLost}
+                        disabled={!!detailsForm.reasonWon}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({
+                            ...s,
+                            reasonLost: e.target.value,
+                            reasonWon: e.target.value ? "" : s.reasonWon
+                          }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {VALID_REASON_LOST.map(reason => (
+                          <option key={reason} value={reason}>{reason}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {journey?.Reason_Lost || "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Equipment Type</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.equipmentType}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, equipmentType: e.target.value }))
+                        }
+                      >
+                        {VALID_EQUIPMENT_TYPES.map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {getValidEquipmentType(journey?.Equipment_Type)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset className="col-span-full xl:col-span-3 border border-border rounded-lg p-4 bg-background">
+                <legend className="text-sm font-semibold text-text-muted px-2">RSM Info</legend>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
+                  <div>
+                    <div className="text-sm text-text-muted">RSM</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.rsm}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, rsm: e.target.value }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {detailsForm.rsm && !availableRsms.find(r => r.initials === detailsForm.rsm) && (
+                          <option key={detailsForm.rsm} value={detailsForm.rsm}>{detailsForm.rsm}</option>
+                        )}
+                        {availableRsms.map(rsm => (
+                          <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">{getRsmDisplayName(journey?.RSM)}</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">RSM Assist</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.rsmAssist}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, rsmAssist: e.target.value }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {detailsForm.rsmAssist && !availableRsms.find(r => r.initials === detailsForm.rsmAssist) && (
+                          <option key={detailsForm.rsmAssist} value={detailsForm.rsmAssist}>{detailsForm.rsmAssist}</option>
+                        )}
+                        {availableRsms.map(rsm => (
+                          <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">{getRsmDisplayName(journey?.RSM_Helped)}</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">RSM Territory</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.rsmTerritory}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, rsmTerritory: e.target.value }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {detailsForm.rsmTerritory && !availableRsmsWithTerritories.find(r => r.initials === detailsForm.rsmTerritory) && (
+                          <option key={detailsForm.rsmTerritory} value={detailsForm.rsmTerritory}>{detailsForm.rsmTerritory}</option>
+                        )}
+                        {availableRsmsWithTerritories.map(rsm => (
+                          <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">{getRsmTerritoryDisplayName(journey?.RSM_Territory)}</div>
+                    )}
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset className="col-span-full xl:col-span-3 xl:row-span-2 border border-border rounded-lg p-4 bg-background">
+                <legend className="text-sm font-semibold text-text-muted px-2">Sales Info</legend>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
+                  <FormField label="Quote Value">
+                    <div className="text-sm text-text">
+                      {isLoadingQuoteValue ? "Loading..." : formatCurrency(quoteValue)}
+                    </div>
+                  </FormField>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Journey Value</div>
+                    {isEditingDetails ? (
+                      <input
+                        type="number"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.value}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, value: e.target.value }))
+                        }
+                        min={0}
+                      />
+                    ) : (
+                      <div className="text-sm text-text">
+                        {formatCurrency(
+                          Number(journey?.Journey_Value ?? journey?.value ?? 0)
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Competition</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.competition || ""}
+                        onChange={(e) => {
+                          setDetailsForm((s) => ({ ...s, competition: e.target.value }));
+                        }}
+                      >
+                        <option value="">No Value Selected</option>
+                        {COMPETITION_OPTIONS.filter(option => option !== "No Value Selected").map(option => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {journey?.Competition || "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Dealer</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.dealer}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, dealer: e.target.value }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {detailsForm.dealer && !VALID_DEALERS.includes(detailsForm.dealer) && (
+                          <option key={detailsForm.dealer} value={detailsForm.dealer}>{detailsForm.dealer}</option>
+                        )}
+                        {VALID_DEALERS.map(dealer => (
+                          <option key={dealer} value={dealer}>{dealer}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {getValidDealer(journey?.Dealer ?? journey?.Dealer_Name ?? "") || "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">Dealer Contact</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.dealerContact}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, dealerContact: e.target.value }))
+                        }
+                      >
+                        <option value="">No Value Selected</option>
+                        {detailsForm.dealerContact && !VALID_DEALER_CONTACTS.includes(detailsForm.dealerContact) && (
+                          <option key={detailsForm.dealerContact} value={detailsForm.dealerContact}>{detailsForm.dealerContact}</option>
+                        )}
+                        {VALID_DEALER_CONTACTS.map(contact => (
+                          <option key={contact} value={contact}>{contact}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {getValidDealerContact(journey?.Dealer_Contact ?? "") || "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-text-muted">OEM</div>
+                    {isEditingDetails ? (
+                      <select
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.oem || ""}
+                        onChange={(e) => setDetailsForm((s) => ({ ...s, oem: e.target.value }))}
+                      >
+                        <option value="">No Value Selected</option>
+                        {detailsForm.oem && !availableOems.includes(detailsForm.oem) && (
+                          <option key={detailsForm.oem} value={detailsForm.oem}>{detailsForm.oem}</option>
+                        )}
+                        {availableOems.map(oem => (
+                          <option key={oem} value={oem}>{oem}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-text">
+                        {journey?.OEM || "-"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </fieldset>
 
             </div>
           </div>
@@ -1715,10 +1910,10 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         </div>
 
         <div className="flex flex-col gap-2 flex-1">
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ maxHeight: '400px' }}>
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col max-h-[400px] md:max-h-[500px]">
             <h2 className="font-semibold text-text-muted text-sm mb-2">Notes</h2>
 
-            <div className="flex gap-2 mb-3">
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
               <textarea
                 className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                 value={newNoteBody}
@@ -1819,25 +2014,39 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
             </div>
           </div>
 
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ maxHeight: '400px' }}>
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col max-h-[400px] md:max-h-[500px]">
             <h2 className="font-semibold text-text-muted text-sm mb-2">Next Steps</h2>
 
-            <div className="flex gap-2 mb-3">
-              <textarea
-                className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-                value={newNextStepBody}
-                onChange={(e) => setNewNextStepBody(e.target.value)}
-                placeholder="Enter a new next step..."
-                rows={2}
-              />
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleCreateNextStep}
-                disabled={isCreatingNextStep || !newNextStepBody.trim()}
-              >
-                {isCreatingNextStep ? "Adding..." : "Add Next Step"}
-              </Button>
+            <div className="flex flex-col gap-2 mb-3">
+              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-text-muted">Next Action Date *</label>
+                  <input
+                    type="date"
+                    className="rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={newNextStepDate}
+                    onChange={(e) => setNewNextStepDate(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <textarea
+                  className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary w-full"
+                  value={newNextStepBody}
+                  onChange={(e) => setNewNextStepBody(e.target.value)}
+                  placeholder="Enter a new next step..."
+                  rows={2}
+                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCreateNextStep}
+                  disabled={isCreatingNextStep || !newNextStepBody.trim() || !newNextStepDate}
+                  className="w-full sm:w-auto"
+                >
+                  {isCreatingNextStep ? "Adding..." : "Add Next Step"}
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
@@ -1960,7 +2169,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <div className="text-sm text-text-muted mb-2">Visit Date</div>
                 {isEditingVisitLogging ? (
@@ -2115,7 +2324,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               size="sm"
               onClick={confirmDeleteNote}
               disabled={isSaving}
-              className="!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700"
+              className="!bg-red-400 !border-red-400 hover:!bg-red-500 hover:!border-red-500"
             >
               {isSaving ? "Deleting..." : "Delete Note"}
             </Button>
@@ -2150,7 +2359,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               size="sm"
               onClick={confirmDeleteNextStep}
               disabled={isSaving}
-              className="!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700"
+              className="!bg-red-400 !border-red-400 hover:!bg-red-500 hover:!border-red-500"
             >
               {isSaving ? "Deleting..." : "Delete Next Step"}
             </Button>
@@ -2164,6 +2373,14 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any | null; updateJourney: (updates: Record<string, any>) => void; employee: any }) {
   const [isEditingQuotes, setIsEditingQuotes] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [quoteValue, setQuoteValue] = useState<number>(0);
+  const [quoteLineItems, setQuoteLineItems] = useState<Array<{ lineItem: string; description: string; price: number }>>([]);
+  const [isLoadingQuoteValue, setIsLoadingQuoteValue] = useState(false);
+  const [quoteSearchQuery, setQuoteSearchQuery] = useState("");
+  const [quoteSearchResults, setQuoteSearchResults] = useState<any[]>([]);
+  const [isSearchingQuotes, setIsSearchingQuotes] = useState(false);
+  const [showQuoteResults, setShowQuoteResults] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const api = useApi();
 
   const createQuoteFormData = (journey: any) => ({
@@ -2182,41 +2399,292 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
     }
   }, [journey, isEditingQuotes]);
 
+  useEffect(() => {
+    const fetchQuoteValue = async () => {
+      if (!journey?.Quote_Key_Value) {
+        setQuoteValue(0);
+        setQuoteLineItems([]);
+        return;
+      }
+      setIsLoadingQuoteValue(true);
+      try {
+        const result = await api.get('/legacy/quote-value', {
+          quoteKeyValue: journey.Quote_Key_Value
+        });
+        if (result && typeof result.quoteValue === 'number') {
+          setQuoteValue(result.quoteValue);
+          setQuoteLineItems(result.lineItems || []);
+        } else {
+          setQuoteValue(0);
+          setQuoteLineItems([]);
+        }
+      } catch (error) {
+        setQuoteValue(0);
+        setQuoteLineItems([]);
+      } finally {
+        setIsLoadingQuoteValue(false);
+      }
+    };
+    fetchQuoteValue();
+  }, [journey?.Quote_Key_Value]);
+
+  useEffect(() => {
+    if (!quoteSearchQuery.trim() || !isEditingQuotes) {
+      setQuoteSearchResults([]);
+      setShowQuoteResults(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsSearchingQuotes(true);
+      try {
+        const trimmed = quoteSearchQuery.trim();
+        if (!trimmed) {
+          setQuoteSearchResults([]);
+          setShowQuoteResults(false);
+          setIsSearchingQuotes(false);
+          return;
+        }
+
+        const parts = trimmed.split('-');
+        const year = parts[0] ? parseInt(parts[0], 10) : null;
+        const num = parts[1] ? parseInt(parts[1], 10) : null;
+        const rev = parts[2] ? parts[2].trim().toUpperCase() : null;
+
+        let filterConditions: any[] = [];
+
+        if (year !== null && !isNaN(year)) {
+          const year2Digit = year < 100 ? year : year % 100;
+          const year4Digit = year < 100 ? 2000 + year : year;
+
+          if (num !== null && !isNaN(num)) {
+            const baseConditions: any[] = [
+              {
+                operator: 'or',
+                conditions: [
+                  { field: 'QYear', operator: 'equals', value: year2Digit },
+                  { field: 'QYear', operator: 'equals', value: year4Digit }
+                ]
+              },
+              { field: 'QNum', operator: 'equals', value: num }
+            ];
+
+            if (rev) {
+              baseConditions.push({ field: 'QRev', operator: 'equals', value: rev });
+            }
+
+            filterConditions.push({
+              operator: 'and',
+              conditions: baseConditions
+            });
+          } else {
+            filterConditions.push({
+              operator: 'or',
+              conditions: [
+                { field: 'QYear', operator: 'equals', value: year2Digit },
+                { field: 'QYear', operator: 'equals', value: year4Digit }
+              ]
+            });
+          }
+        } else {
+          const numOnly = parseInt(trimmed.replace(/[^\d]/g, ''), 10);
+          if (!isNaN(numOnly)) {
+            filterConditions.push({
+              operator: 'or',
+              conditions: [
+                { field: 'QYear', operator: 'equals', value: numOnly },
+                { field: 'QNum', operator: 'equals', value: numOnly }
+              ]
+            });
+          }
+        }
+
+        if (filterConditions.length === 0) {
+          setQuoteSearchResults([]);
+          setShowQuoteResults(false);
+          setIsSearchingQuotes(false);
+          return;
+        }
+
+        const searchResults = await api.get('/legacy/quote/qrevcostsheet', {
+          filter: JSON.stringify({
+            filters: filterConditions
+          }),
+          fields: 'QYear,QNum,QRev',
+          limit: 50
+        });
+
+        const rawResults = Array.isArray(searchResults) ? searchResults : (searchResults?.data || []);
+
+        const uniqueQuotes = new Map();
+        rawResults.forEach((row: any) => {
+          const qyear = String(row.QYear ?? '').trim();
+          const qnum = String(row.QNum ?? '').trim();
+          const qrev = String(row.QRev ?? '').trim().toUpperCase() || 'A';
+
+          if (qyear && qnum) {
+            const key = `${qyear}-${qnum}-${qrev}`;
+            if (!uniqueQuotes.has(key)) {
+              const qyear2Digit = qyear.length > 2 ? qyear.slice(-2) : qyear;
+              const formattedQuote = `${qyear2Digit}-${qnum}-${qrev}`;
+
+              uniqueQuotes.set(key, {
+                qyear: qyear2Digit,
+                qnum,
+                qrev,
+                formattedQuote
+              });
+            }
+          }
+        });
+
+        const results = Array.from(uniqueQuotes.values())
+          .sort((a, b) => {
+            if (b.qyear !== a.qyear) return b.qyear.localeCompare(a.qyear);
+            if (b.qnum !== a.qnum) return Number(b.qnum) - Number(a.qnum);
+            return b.qrev.localeCompare(a.qrev);
+          })
+          .slice(0, 5);
+
+        setQuoteSearchResults(results);
+        setShowQuoteResults(results.length > 0);
+      } catch (error) {
+        console.error("Error searching quotes:", error);
+        setQuoteSearchResults([]);
+      } finally {
+        setIsSearchingQuotes(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [quoteSearchQuery, isEditingQuotes]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-quote-search]')) {
+        setShowQuoteResults(false);
+      }
+    };
+
+    if (showQuoteResults) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showQuoteResults]);
+
+
+  const handleQuoteSelect = (quote: any) => {
+    setSelectedQuote(quote);
+    setQuoteForm(s => ({ ...s, quoteNumber: quote.formattedQuote }));
+    setQuoteSearchQuery(quote.formattedQuote);
+    setShowQuoteResults(false);
+  };
 
   const handleSaveQuotes = async () => {
-    const originalUpdates = { Quote_Number: quoteForm.quoteNumber, Quote_Type: quoteForm.quoteType, Presentation_Method: quoteForm.presentationMethod, Quote_Presentation_Date: quoteForm.presentationDate, Expected_Decision_Date: quoteForm.expectedDecisionDate };
-    const rawUpdates = { Quote_Number: quoteForm.quoteNumber, Quote_Type: quoteForm.quoteType, Presentation_Method: quoteForm.presentationMethod, Quote_Presentation_Date: formatDateForDatabase(quoteForm.presentationDate), Expected_Decision_Date: formatDateForDatabase(quoteForm.expectedDecisionDate) };
+    if (!selectedQuote && isEditingQuotes) {
+      alert("Please select a quote from the search results");
+      return;
+    }
+    const originalUpdates = { Quote_Number: quoteForm.quoteNumber, Quote_Key_Value: quoteForm.quoteNumber, Quote_Type: quoteForm.quoteType, Presentation_Method: quoteForm.presentationMethod, Quote_Presentation_Date: quoteForm.presentationDate, Expected_Decision_Date: quoteForm.expectedDecisionDate };
+    const rawUpdates = { Quote_Number: quoteForm.quoteNumber, Quote_Key_Value: quoteForm.quoteNumber, Quote_Type: quoteForm.quoteType, Presentation_Method: quoteForm.presentationMethod, Quote_Presentation_Date: formatDateForDatabase(quoteForm.presentationDate), Expected_Decision_Date: formatDateForDatabase(quoteForm.expectedDecisionDate) };
     const updates = Object.fromEntries(Object.entries(rawUpdates).filter(([_, value]) => value !== ""));
     const success = await saveJourneyUpdates(api, journey, updates, originalUpdates, employee, setIsSaving);
-    if (success) { setIsEditingQuotes(false); updateJourney(rawUpdates); }
+    if (success) {
+      setIsEditingQuotes(false);
+      updateJourney(rawUpdates);
+      setSelectedQuote(null);
+    }
   };
 
   const handleCancelQuotes = () => {
     setQuoteForm(createQuoteFormData(journey));
+    setQuoteSearchQuery("");
+    setQuoteSearchResults([]);
+    setShowQuoteResults(false);
+    setSelectedQuote(null);
     setIsEditingQuotes(false);
   };
 
   if (!journey) return null;
 
   return (
-    <div className="flex flex-1 flex-col p-4 gap-6">
+    <div className="flex flex-1 flex-col p-2 md:p-4 gap-4 md:gap-6">
       {/* Quote Overview */}
-      <div className="bg-foreground rounded shadow-sm border p-4">
+      <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-text">Quote Overview</h3>
-          <EditButtons isEditing={isEditingQuotes} onSave={handleSaveQuotes} onCancel={handleCancelQuotes} onEdit={() => { setQuoteForm(createQuoteFormData(journey)); setIsEditingQuotes(true); }} isSaving={isSaving} />
+          <EditButtons
+            isEditing={isEditingQuotes}
+            onSave={handleSaveQuotes}
+            onCancel={handleCancelQuotes}
+            onEdit={() => {
+              setQuoteForm(createQuoteFormData(journey));
+              const existingQuoteNumber = journey?.Quote_Number?.trim() || "";
+              setQuoteSearchQuery(existingQuoteNumber);
+              if (existingQuoteNumber) {
+                const parts = existingQuoteNumber.split('-');
+                if (parts.length >= 2) {
+                  setSelectedQuote({
+                    qyear: parts[0],
+                    qnum: parts[1],
+                    qrev: parts[2] || 'a',
+                    formattedQuote: existingQuoteNumber
+                  });
+                }
+              }
+              setIsEditingQuotes(true);
+            }}
+            isSaving={isSaving}
+            disabled={!selectedQuote}
+          />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-background rounded border p-3">
             <div className="text-sm text-text-muted mb-1">Quote Number</div>
             {isEditingQuotes ? (
-              <input
-                type="text"
-                className="w-full rounded border border-border px-2 py-1 text-lg font-semibold text-text font-mono bg-background"
-                value={quoteForm.quoteNumber}
-                onChange={(e) => setQuoteForm(s => ({ ...s, quoteNumber: e.target.value }))}
-                placeholder="Enter quote number"
-              />
+              <div className="relative" data-quote-search>
+                <input
+                  type="text"
+                  className="w-full rounded border border-border px-2 py-1 text-lg font-semibold text-text font-mono bg-background pr-8"
+                  value={quoteSearchQuery}
+                  onChange={(e) => {
+                    setQuoteSearchQuery(e.target.value);
+                    setSelectedQuote(null);
+                  }}
+                  placeholder="Type to search quotes..."
+                />
+                {isSearchingQuotes && (
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  </div>
+                )}
+                {showQuoteResults && quoteSearchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-b shadow-lg max-h-60 overflow-y-auto mt-1">
+                    {quoteSearchResults.map((quote, index) => (
+                      <div
+                        key={`${quote.qyear}-${quote.qnum}-${quote.qrev}-${index}`}
+                        className="p-3 hover:bg-gray cursor-pointer border-b border-border last:border-b-0"
+                        onClick={() => handleQuoteSelect(quote)}
+                      >
+                        <div className="font-medium text-sm text-text font-mono">
+                          {quote.formattedQuote}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedQuote && (
+                  <div className="text-xs text-success mt-1">
+                    ✓ Selected: {selectedQuote.formattedQuote}
+                  </div>
+                )}
+                {quoteSearchQuery && !selectedQuote && !isSearchingQuotes && quoteSearchResults.length === 0 && (
+                  <div className="text-xs text-warning mt-1">
+                    No quotes found. Please select from search results.
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="text-lg font-semibold text-text font-mono">
                 {journey?.Quote_Number?.trim() || "No Quote Number"}
@@ -2226,9 +2694,9 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
           <div className="bg-background rounded border p-3">
             <div className="text-sm text-text-muted mb-1">Quote Value</div>
             <div className="text-lg font-semibold text-primary">
-              {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
+              {isLoadingQuoteValue ? "Loading..." : formatCurrency(quoteValue)}
             </div>
-            <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
+            <div className="text-xs text-text-muted mt-1">From quote system</div>
           </div>
           <div className="bg-background rounded border p-3">
             <div className="text-sm text-text-muted mb-1">Success Probability</div>
@@ -2238,12 +2706,42 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
             <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
           </div>
         </div>
+
+        {quoteLineItems.length > 0 && (
+          <div className="mt-6">
+            <h4 className="text-sm md:text-md font-semibold text-text mb-3">Line Items</h4>
+            <div className="bg-background rounded border overflow-x-auto">
+              <table className="w-full min-w-[500px]">
+                <thead className="bg-surface border-b border-border">
+                  <tr>
+                    <th className="text-left px-4 py-2 text-sm font-semibold text-text">Line Item</th>
+                    <th className="text-left px-4 py-2 text-sm font-semibold text-text">Description</th>
+                    <th className="text-right px-4 py-2 text-sm font-semibold text-text">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quoteLineItems.map((item, index) => (
+                    <tr key={index} className="border-b border-border last:border-b-0">
+                      <td className="px-4 py-2 text-sm text-text">{item.lineItem}</td>
+                      <td className="px-4 py-2 text-sm text-text">{item.description}</td>
+                      <td className="px-4 py-2 text-sm text-text text-right font-mono">{formatCurrency(item.price)}</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-surface font-semibold">
+                    <td className="px-4 py-3 text-sm text-text" colSpan={2}>Total</td>
+                    <td className="px-4 py-3 text-sm text-primary text-right font-mono">{formatCurrency(quoteValue)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Quote Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-foreground rounded shadow-sm border p-4">
-          <h3 className="text-lg font-semibold text-text mb-4">Quote Details</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
+          <h3 className="text-base md:text-lg font-semibold text-text mb-4">Quote Details</h3>
           <div className="space-y-4">
             <div>
               <div className="text-sm text-text-muted mb-1">Quote Type</div>
@@ -2307,8 +2805,8 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
           </div>
         </div>
 
-        <div className="bg-foreground rounded shadow-sm border p-4">
-          <h3 className="text-lg font-semibold text-text mb-4">Timeline & Dates</h3>
+        <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
+          <h3 className="text-base md:text-lg font-semibold text-text mb-4">Timeline & Dates</h3>
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -2359,48 +2857,16 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
         </div>
       </div>
 
-      {/* Quote Status Card */}
-      {journey?.Quote_Number && (
-        <div className="bg-foreground rounded shadow-sm border p-4">
-          <h3 className="text-lg font-semibold text-text mb-4">Quote Status</h3>
-          <div className="bg-background rounded border p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold text-text">Quote #{journey.Quote_Number}</div>
-                <div className="text-sm text-text-muted mt-1">
-                  {journey?.Equipment_Type?.trim() || "Standard"} • {journey?.Quote_Type || "Standard more than 6 months"}
-                </div>
-                {journey?.Qty_of_Items && journey.Qty_of_Items !== "" && (
-                  <div className="text-sm text-text-muted">
-                    Quantity: {journey.Qty_of_Items} items
-                  </div>
-                )}
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-primary">
-                  {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
-                </div>
-                {journey?.Chance_To_Secure_order && (
-                  <div className="text-sm text-text-muted">
-                    {journey.Chance_To_Secure_order}% probability
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Additional Quote Information */}
-      <div className="bg-foreground rounded shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-text mb-4">Additional Information</h3>
+      <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
+        <h3 className="text-base md:text-lg font-semibold text-text mb-4">Additional Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <div className="text-sm text-text-muted mb-2">Industry</div>
             <div className="text-text">{journey?.Industry || "Not specified"}</div>
           </div>
           <div>
-            <div className="text-sm text-text-muted mb-2">Lead Source</div>
+            <div className="text-sm text-text-muted mb-2">Project Source</div>
             <div className="text-text">{journey?.Lead_Source || "Not specified"}</div>
           </div>
           <div>
@@ -2434,7 +2900,7 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
     const fetchLogRecords = async () => {
       const journeyId = journey?.ID || journey?.id;
       if (!journeyId) return;
-      
+
       setLoadingLogs(true);
       try {
         const logData = await get(`/legacy/std/Journey_Log/filter/custom`, {
@@ -2443,7 +2909,7 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
           sort: 'CreateDtTm',
           order: 'desc'
         });
-        
+
         if (Array.isArray(logData)) {
           setLogRecords(logData);
         }
@@ -2468,16 +2934,16 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
   };
 
   return (
-    <div className="flex flex-1 flex-col p-2">
-      <div className="bg-foreground rounded shadow-sm border p-2 flex-1">
+    <div className="flex flex-1 flex-col p-2 md:p-4">
+      <div className="bg-foreground rounded shadow-sm border p-2 flex-1 overflow-x-auto">
         <div className="text-xs font-bold text-text-muted mb-1">
           Log Records {loadingLogs && <span className="text-text-muted">(Loading...)</span>}
         </div>
         <Table
           columns={[
-            { 
-              key: "created", 
-              header: "Created", 
+            {
+              key: "created",
+              header: "Created",
               className: "text-xs",
               render: (value: string) => (
                 <div className="text-xs text-text">
@@ -2485,17 +2951,17 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
                 </div>
               )
             },
-            { 
-              key: "user", 
-              header: "User", 
+            {
+              key: "user",
+              header: "User",
               className: "text-xs",
               render: (value: string) => (
                 <div className="text-xs text-text">{value}</div>
               )
             },
-            { 
-              key: "action", 
-              header: "Action", 
+            {
+              key: "action",
+              header: "Action",
               className: "text-xs",
               render: (value: string) => (
                 <div className="text-xs text-text leading-tight">
@@ -2513,17 +2979,18 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
   );
 }
 
-function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: any }) {
+function JourneyActionsTab({ journey, employee, handleOpenTeamsModal }: { journey: any | null; employee: any; handleOpenTeamsModal: () => void }) {
   const [tags, setTags] = useState<any[]>([]);
   const [newTagInput, setNewTagInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
   const api = useApi();
 
   useEffect(() => {
     const fetchTags = async () => {
       if (!journey?.ID && !journey?.id) return;
-      
+
       setIsLoading(true);
       try {
         const journeyId = journey.ID || journey.id;
@@ -2533,7 +3000,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
             parentId: journeyId
           })
         });
-        
+
         if (tagData?.success && Array.isArray(tagData.data)) {
           setTags(tagData.data);
         }
@@ -2550,19 +3017,19 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
 
   const handleAddTag = async () => {
     if (!newTagInput.trim() || !journey?.ID && !journey?.id) return;
-    
+
     setIsSaving(true);
     try {
       const journeyId = journey.ID || journey.id;
       const tagDescription = newTagInput.trim().toUpperCase();
-      
+
       const newTag = await api.post('/core/tags', {
         description: tagDescription,
         parentTable: 'journeys',
         parentId: journeyId,
-        createdBy: employee?.initials || 'unknown'
+        createdBy: `${employee?.firstName} ${employee?.lastName}`
       });
-      
+
       if (newTag?.success && newTag.data) {
         setTags(prev => [...prev, newTag.data]);
         setNewTagInput("");
@@ -2578,7 +3045,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
     setIsSaving(true);
     try {
       const result = await api.delete(`/core/tags/${tagId}`);
-      
+
       if (result !== null) {
         setTags(prev => prev.filter(tag => tag.id !== tagId));
       }
@@ -2598,15 +3065,23 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
   if (!journey) return null;
 
   return (
-    <div className="flex flex-1 flex-col p-4">
-      <div className="bg-foreground rounded shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-text mb-4">Journey Tags</h3>
-        
+    <div className="flex flex-1 flex-col p-2 md:p-4 gap-4">
+      <button
+        onClick={handleOpenTeamsModal}
+        className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded hover:bg-secondary transition-colors font-medium self-start"
+      >
+        <MessageSquare size={18} />
+        <span>Send Teams Message</span>
+      </button>
+
+      <div className="bg-foreground rounded shadow-sm border p-2 md:p-4">
+        <h3 className="text-base md:text-lg font-semibold text-text mb-4">Journey Tags</h3>
+
         <div className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
-              className="flex-1 rounded border border-border px-3 py-2 text-sm bg-background text-text"
+              className="flex-1 rounded border border-border px-3 py-2 text-sm bg-background text-text w-full"
               placeholder="Enter tag name..."
               value={newTagInput}
               onChange={(e) => setNewTagInput(e.target.value)}
@@ -2618,6 +3093,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
               size="sm"
               onClick={handleAddTag}
               disabled={!newTagInput.trim() || isSaving}
+              className="w-full sm:w-auto"
             >
               {isSaving ? "Adding..." : "Add Tag"}
             </Button>
@@ -2659,208 +3135,6 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
   );
 }
 
-function JourneyLegacyTab({ journey, updateJourney, employee }: { journey: any | null; updateJourney: (updates: Record<string, any>) => void; employee: any }) {
-  const [notes, setNotes] = useState(journey?.Notes ?? journey?.notes ?? "");
-  const [nextSteps, setNextSteps] = useState(journey?.Next_Steps ?? "");
-  const [showSavePrompt, setShowSavePrompt] = useState(false);
-  const [showNextStepsSavePrompt, setShowNextStepsSavePrompt] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const api = useApi();
-
-  useEffect(() => {
-    if (journey) {
-      if (!showSavePrompt) {
-        setNotes(journey?.Notes ?? journey?.notes ?? "");
-      }
-      if (!showNextStepsSavePrompt) {
-        setNextSteps(journey?.Next_Steps ?? "");
-      }
-    }
-  }, [journey, showSavePrompt, showNextStepsSavePrompt]);
-
-  const handleSaveNotes = async () => {
-    const updates = { Notes: notes };
-    const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
-    if (success) { setShowSavePrompt(false); updateJourney(updates); }
-    else { setNotes(journey?.Notes ?? journey?.notes ?? ""); setShowSavePrompt(false); }
-  };
-
-  const handleCancelNotes = () => {
-    setNotes(journey?.Notes ?? journey?.notes ?? "");
-    setShowSavePrompt(false);
-  };
-
-  const handleSaveNextSteps = async () => {
-    const updates = { Next_Steps: nextSteps };
-    const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
-    setShowNextStepsSavePrompt(false);
-    if (success) updateJourney(updates); else setNextSteps(journey?.Next_Steps ?? "");
-  };
-
-  const handleCancelNextSteps = () => {
-    setNextSteps(journey?.Next_Steps ?? "");
-    setShowNextStepsSavePrompt(false);
-  };
-
-  if (!journey) return null;
-
-  return (
-    <div className="flex flex-1 flex-col p-4 gap-4">
-      <div className="bg-foreground rounded shadow-sm border p-4 flex flex-col" style={{ height: '400px' }}>
-        <h3 className="text-lg font-semibold text-text mb-4">Legacy Notes</h3>
-        <textarea
-          className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={() => {
-            if (notes !== (journey?.Notes ?? journey?.notes ?? "")) {
-              setShowSavePrompt(true);
-            }
-          }}
-        />
-      </div>
-
-      <div className="bg-foreground rounded shadow-sm border p-4 flex flex-col" style={{ height: '400px' }}>
-        <h3 className="text-lg font-semibold text-text mb-4">Legacy Next Steps</h3>
-        <textarea
-          className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-          value={nextSteps}
-          onChange={(e) => setNextSteps(e.target.value)}
-          onBlur={() => {
-            if (nextSteps !== (journey?.Next_Steps ?? "")) {
-              setShowNextStepsSavePrompt(true);
-            }
-          }}
-          placeholder="Enter next steps..."
-        />
-      </div>
-
-      <Modal
-        isOpen={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
-        title="Save Changes?"
-        size="sm"
-      >
-        <p className="mb-4">Do you want to save your changes to Legacy Notes?</p>
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSaveNotes}
-            disabled={isSaving}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-          <Button
-            variant="secondary-outline"
-            size="sm"
-            onClick={handleCancelNotes}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={showNextStepsSavePrompt}
-        onClose={() => setShowNextStepsSavePrompt(false)}
-        title="Save Changes?"
-        size="sm"
-      >
-        <p className="mb-4">Do you want to save your changes to Legacy Next Steps?</p>
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSaveNextSteps}
-            disabled={isSaving}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-          <Button
-            variant="secondary-outline"
-            size="sm"
-            onClick={handleCancelNextSteps}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-        </div>
-      </Modal>
-    </div>
-  );
-}
-
-function JourneyActionsTab({ journey }: { journey: any | null }) {
-  const navigate = useNavigate();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { delete: deleteApi } = useApi();
-
-  const handleDeleteJourney = async () => {
-    if (!journey?.ID && !journey?.id) return;
-
-    setIsDeleting(true);
-    try {
-      const journeyId = journey.ID || journey.id;
-      const result = await deleteApi(`/legacy/std/Journey/${journeyId}`);
-
-      if (result !== null) {
-        navigate('/sales/pipeline');
-      } else {
-        console.error('Failed to delete journey');
-      }
-    } catch (error) {
-      console.error('Error deleting journey:', error);
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-    }
-  };
-
-  if (!journey) return null;
-
-  return (
-    <div className="flex flex-1 flex-col p-4">
-      <div className="bg-foreground rounded shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-text mb-4">Journey Actions</h3>
-
-        <div className="space-y-4">
-          <div className="border border-red-200 bg-red-50 rounded p-4">
-            <div className="flex items-start gap-3">
-              <Trash2 className="text-red-600 mt-1" size={20} />
-              <div className="flex-1">
-                <h4 className="font-medium text-red-900 mb-2">Delete Journey</h4>
-                <p className="text-sm text-red-700 mb-3">
-                  Permanently delete this journey and all associated data. This action cannot be undone.
-                </p>
-                <Button
-                  variant="secondary-outline"
-                  size="sm"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="border-red-500 !text-gray-900 hover:bg-red-100 hover:!text-black"
-                >
-                  <Trash2 size={16} className="mr-2" />
-                  Delete Journey
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <DeleteJourneyModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => handleDeleteJourney()}
-        journey={journey}
-        isDeleting={isDeleting}
-      />
-    </div>
-  );
-}
-
 const JourneyDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("details");
   const { id: journeyId } = useParams<{ id: string }>();
@@ -2871,14 +3145,39 @@ const JourneyDetailsPage = () => {
   const [validJourneyStatuses, setValidJourneyStatuses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copiedJourneyId, setCopiedJourneyId] = useState(false);
+  const [showTeamsModal, setShowTeamsModal] = useState(false);
+  const [teamsMode, setTeamsMode] = useState<'select' | 'channel' | 'direct' | null>(null);
+  const [teamsMessage, setTeamsMessage] = useState("");
+  const [teamsEmail, setTeamsEmail] = useState("");
+  const [teamsMentions, setTeamsMentions] = useState<string[]>([]);
+  const [teamsMentionInput, setTeamsMentionInput] = useState("");
+  const [includeUrl, setIncludeUrl] = useState(true);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isTeamsConnected, setIsTeamsConnected] = useState(false);
+  const [checkingConnection, setCheckingConnection] = useState(false);
   const api = useApi();
   const { employee } = useAuth();
+  const toast = useToast();
 
   const adaptLegacyJourney = (raw: any) => {
     const normalizeDate = (d: any) => {
       if (!d) return undefined;
       const s = String(d);
-      return /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s}T00:00:00` : s.includes(" ") ? s.replace(" ", "T") : s;
+
+      if (s.startsWith("0000-00-00") || s === "0000-00-00") return undefined;
+
+      let normalized = s;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        normalized = `${s}T00:00:00`;
+      } else if (s.includes(" ")) {
+        normalized = s.replace(" ", "T");
+      }
+
+      const testDate = new Date(normalized);
+      if (isNaN(testDate.getTime())) return undefined;
+
+      return normalized;
     };
     const normalizePriority = (v: any): string => {
       const s = String(v ?? "").toUpperCase().trim();
@@ -2893,8 +3192,8 @@ const JourneyDetailsPage = () => {
       stage: mapLegacyStageToId(raw.Journey_Stage),
       value: Number(raw.Journey_Value ?? 0),
       priority: normalizePriority(raw.Priority),
-      closeDate: normalizeDate(raw.Expected_Decision_Date) ?? normalizeDate(raw.Quote_Presentation_Date) ?? normalizeDate(raw.Date_PO_Received) ?? normalizeDate(raw.Journey_Start_Date) ?? normalizeDate(raw.CreateDT) ?? new Date().toISOString(),
-      updatedAt: normalizeDate(raw.Action_Date) ?? normalizeDate(raw.CreateDT) ?? new Date().toISOString(),
+      expectedDecisionDate: normalizeDate(raw.Expected_Decision_Date) ?? normalizeDate(raw.Quote_Presentation_Date) ?? normalizeDate(raw.Date_PO_Received) ?? normalizeDate(raw.Journey_Start_Date) ?? normalizeDate(raw.CreateDT) ?? new Date().toISOString(),
+      updatedAt: normalizeDate(raw.Action_Date) ?? normalizeDate(raw.CreateDT) ?? undefined,
       customerId: String(raw.Company_ID ?? ""),
       companyName: raw.Target_Account,
       ...raw
@@ -2906,13 +3205,13 @@ const JourneyDetailsPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const rawJourney = await api.get(`/legacy/base/Journey/${journeyId}`);
+      const rawJourney = await api.get(`/legacy/std/Journey/${journeyId}`);
       if (rawJourney !== null) {
         const adaptedJourney = adaptLegacyJourney(rawJourney);
         setJourneyData(adaptedJourney);
         if (rawJourney.Company_ID) {
           try {
-            const customerRaw = await api.get(`/legacy/base/Company/${rawJourney.Company_ID}`);
+            const customerRaw = await api.get(`/legacy/std/Company/${rawJourney.Company_ID}`);
             if (customerRaw !== null) {
               setCustomerData({ id: customerRaw.Company_ID, name: customerRaw.Company_Name || adaptedJourney.companyName, industry: customerRaw.Industry, contact: customerRaw.Contact_Name, email: customerRaw.Email, phone: customerRaw.Phone });
             }
@@ -2922,21 +3221,18 @@ const JourneyDetailsPage = () => {
           }
         }
         try {
-          console.log('[DEBUG] Initial fetch of journey contacts for:', journeyId);
-
           const [legacyContacts, prismaContacts] = await Promise.all([
             api.get('/legacy/std/Journey_Contact/filter/custom', {
               filterField: 'Jrn_ID',
               filterValue: journeyId
             }).catch(err => {
-              console.error('[DEBUG] Error fetching legacy contacts:', err);
+              console.error('Error fetching legacy contacts:', err);
               return [];
             }),
             api.get('/sales/journey-contacts', {
               filter: JSON.stringify({ journeyId }),
               include: JSON.stringify({ contact: true })
             }).then(result => {
-              console.log('[DEBUG] Initial Prisma journey-contacts result:', result);
               const contacts = result?.success && Array.isArray(result.data) ? result.data : [];
               return contacts.map((jc: any) => ({
                 ID: jc.id,
@@ -2952,17 +3248,13 @@ const JourneyDetailsPage = () => {
                 _isPrisma: true
               }));
             }).catch(err => {
-              console.error('[DEBUG] Error fetching prisma contacts:', err);
+              console.error('Error fetching prisma contacts:', err);
               return [];
             })
           ]);
 
           const legacyArray = Array.isArray(legacyContacts) ? legacyContacts : [];
           const mergedContacts = [...legacyArray, ...prismaContacts];
-
-          console.log('[DEBUG] Initial legacy contacts:', legacyArray.length);
-          console.log('[DEBUG] Initial prisma contacts:', prismaContacts.length);
-          console.log('[DEBUG] Initial total contacts:', mergedContacts.length);
 
           setJourneyContacts(mergedContacts);
         } catch (contactError) {
@@ -2982,6 +3274,15 @@ const JourneyDetailsPage = () => {
 
   const updateJourney = (updates: Record<string, any>) => setJourneyData((prev: any) => ({ ...prev, ...updates }));
 
+  const handleCopyJourneyId = () => {
+    const id = journeyData?.ID || journeyData?.id;
+    if (id) {
+      navigator.clipboard.writeText(String(id));
+      setCopiedJourneyId(true);
+      setTimeout(() => setCopiedJourneyId(false), 2000);
+    }
+  };
+
   useEffect(() => {
     fetchJourneyData();
   }, [journeyId]);
@@ -2995,6 +3296,162 @@ const JourneyDetailsPage = () => {
     })();
   }, []);
 
+  const checkTeamsConnection = async () => {
+    setCheckingConnection(true);
+    const result = await api.get("/system/teams/connection-status");
+    setCheckingConnection(false);
+
+    if (result?.data?.isConnected) {
+      setIsTeamsConnected(true);
+    } else {
+      setIsTeamsConnected(false);
+    }
+
+    return result?.data?.isConnected || false;
+  };
+
+  const handleConnectTeams = async () => {
+    const result = await api.get("/system/teams/auth");
+    if (result?.data?.authUrl) {
+      const popup = window.open(result.data.authUrl, "teams-auth", "width=600,height=700");
+
+      const handleMessage = async (event: MessageEvent) => {
+        if (event.data.type === "teams-connected") {
+          setIsTeamsConnected(true);
+          await checkTeamsConnection();
+          toast.success("Teams connected successfully!");
+          cleanup();
+          popup?.close();
+        } else if (event.data.type === "teams-auth-error") {
+          toast.error("Failed to connect to Teams");
+          cleanup();
+          popup?.close();
+        }
+      };
+
+      const cleanup = () => {
+        window.removeEventListener("message", handleMessage);
+        if (popupCheckInterval) clearInterval(popupCheckInterval);
+      };
+
+      const popupCheckInterval = setInterval(() => {
+        if (popup?.closed) {
+          cleanup();
+        }
+      }, 500);
+
+      window.addEventListener("message", handleMessage);
+    }
+  };
+
+  const handleOpenTeamsModal = () => {
+    setTeamsMode('select');
+    setShowTeamsModal(true);
+  };
+
+  const handleSelectChannelMessage = () => {
+    setTeamsMode('channel');
+    setTeamsMessage("");
+    setTeamsMentions([]);
+    setTeamsMentionInput("");
+    setIncludeUrl(true);
+  };
+
+  const handleSelectDirectMessage = async () => {
+    await checkTeamsConnection();
+    setTeamsMode('direct');
+    setTeamsMessage("");
+    setTeamsEmail("");
+    setIncludeUrl(true);
+  };
+
+  const handleBackToSelect = () => {
+    setTeamsMode('select');
+    setTeamsMessage("");
+    setTeamsEmail("");
+    setTeamsMentions([]);
+    setTeamsMentionInput("");
+    setIncludeUrl(true);
+  };
+
+  const handleAddMention = () => {
+    const email = teamsMentionInput.trim();
+    if (email && !teamsMentions.includes(email)) {
+      setTeamsMentions([...teamsMentions, email]);
+      setTeamsMentionInput("");
+    }
+  };
+
+  const handleRemoveMention = (emailToRemove: string) => {
+    setTeamsMentions(teamsMentions.filter(email => email !== emailToRemove));
+  };
+
+  const handleSendChannelMessage = async () => {
+    if (!teamsMessage.trim()) return;
+    setIsSendingMessage(true);
+
+    let messageWithUrl = teamsMessage.trim();
+    if (includeUrl) {
+      messageWithUrl += `   View journey: ${window.location.href}`;
+    }
+
+    const result = await api.post("/system/teams/channel-message", {
+      message: messageWithUrl,
+      mentionEmails: teamsMentions.length > 0 ? teamsMentions : undefined,
+    });
+
+    setIsSendingMessage(false);
+
+    if (result === null || result === undefined) {
+      toast.error("Failed to send message");
+      return;
+    }
+
+    toast.success("Message sent to Teams channel!");
+    setShowTeamsModal(false);
+    setTeamsMode(null);
+    setTeamsMessage("");
+    setTeamsMentions([]);
+    setTeamsMentionInput("");
+    setIncludeUrl(true);
+  };
+
+  const handleSendDirectMessage = async () => {
+    if (!teamsEmail.trim() || !teamsMessage.trim()) return;
+    setIsSendingMessage(true);
+
+    let messageWithUrl = teamsMessage.trim();
+    if (includeUrl) {
+      messageWithUrl += `   View journey: ${window.location.href}`;
+    }
+
+    const result = await api.post("/system/teams/direct-message", {
+      recipientEmail: teamsEmail.trim(),
+      message: messageWithUrl,
+    });
+
+    setIsSendingMessage(false);
+
+    if (result === null) {
+      const errorMessage = api.error || "Failed to send message";
+
+      if (errorMessage.includes("Account not found") || errorMessage.includes("Please reconnect")) {
+        setIsTeamsConnected(false);
+        toast.error("Teams connection expired. Please reconnect your account.");
+      } else {
+        toast.error(errorMessage);
+      }
+      return;
+    }
+
+    toast.success(`Message sent to ${teamsEmail}!`);
+    setShowTeamsModal(false);
+    setTeamsMode(null);
+    setTeamsMessage("");
+    setTeamsEmail("");
+    setIncludeUrl(true);
+  };
+
   if (loading) return <div className="flex justify-center items-center h-64">Loading journey details...</div>;
   if (error) return <div className="flex justify-center items-center h-64 text-red-500">{error}</div>;
   if (!journeyId) return <div className="w-full flex flex-1 flex-col"><PageHeader title="Invalid Journey" description="No journey ID provided in the URL." goBack /></div>;
@@ -3004,7 +3461,7 @@ const JourneyDetailsPage = () => {
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={journeyData?.name || journeyData?.Project_Name || journeyData?.Target_Account || "Coe Press Equipment"}
-        description={`Started ${formatDateSafe(journeyData?.CreateDT) !== "-" ? formatDateSafe(journeyData?.CreateDT) : "Unknown Date"} • ${journeyData?.Journey_Type || "Standard"} • ${formatCurrency(Number(journeyData?.Journey_Value ?? journeyData?.value ?? 0))}`}
+        description="View and manage journey details"
         goBack
       />
       <Tabs
@@ -3012,19 +3469,278 @@ const JourneyDetailsPage = () => {
         setActiveTab={setActiveTab}
         tabs={[
           { label: "Details", value: "details" },
-          { label: "Quote Info", value: "quotes" },
+          { label: "Quote", value: "quotes" },
           { label: "History", value: "history" },
-          { label: "Tags", value: "tags" },
-          { label: "Legacy", value: "legacy" },
-          { label: "Journey Actions", value: "actions" },
+          { label: "Actions", value: "tags" },
         ]}
       />
       {activeTab === "details" && <JourneyDetailsTab journey={journeyData ? { ...journeyData, customer: customerData } : null} journeyContacts={journeyContacts} updateJourney={updateJourney} setJourneyContacts={setJourneyContacts} employee={employee} validJourneyStatuses={validJourneyStatuses} />}
       {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
       {activeTab === "history" && <JourneyHistoryTab journey={journeyData} />}
-      {activeTab === "tags" && <JourneyTagsTab journey={journeyData} employee={employee} />}
-      {activeTab === "legacy" && <JourneyLegacyTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
-      {activeTab === "actions" && <JourneyActionsTab journey={journeyData} />}
+      {activeTab === "tags" && <JourneyActionsTab journey={journeyData} employee={employee} handleOpenTeamsModal={handleOpenTeamsModal} />}
+
+      <div className="px-2 md:px-4 py-2 border-t border-border bg-foreground">
+        <div className="text-xs text-text-muted flex flex-wrap items-center gap-1">
+          <span>Journey ID:</span>
+          <span
+            onClick={handleCopyJourneyId}
+            className="font-mono text-text bg-surface px-2 py-1 rounded border border-border cursor-pointer hover:bg-gray transition-colors"
+            title="Click to copy"
+          >
+            {journeyData?.ID || journeyData?.id}
+          </span>
+          <span className="text-text-muted italic">
+            {copiedJourneyId ? "Copied!" : "(click to copy)"}
+          </span>
+        </div>
+      </div>
+
+      {showTeamsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-foreground rounded-lg shadow-lg w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-text">
+                {teamsMode === 'select' && 'Send Teams Message'}
+                {teamsMode === 'channel' && 'Send to Channel'}
+                {teamsMode === 'direct' && 'Send Direct Message'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowTeamsModal(false);
+                  setTeamsMode(null);
+                  setTeamsMessage("");
+                  setTeamsEmail("");
+                  setTeamsMentions([]);
+                  setTeamsMentionInput("");
+                  setIncludeUrl(true);
+                }}
+                className="text-text-muted hover:text-text"
+              >
+                <XIcon size={20} />
+              </button>
+            </div>
+
+            <div className="p-4">
+              {teamsMode === 'select' && (
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={handleSelectChannelMessage}
+                    className="flex items-center gap-3 p-4 border border-border rounded hover:bg-surface transition-colors text-left"
+                  >
+                    <MessageSquare size={24} className="text-primary" />
+                    <div>
+                      <div className="font-semibold text-text">Send to Channel</div>
+                      <div className="text-sm text-text-muted">Post a message to the Teams channel</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={handleSelectDirectMessage}
+                    className="flex items-center gap-3 p-4 border border-border rounded hover:bg-surface transition-colors text-left"
+                  >
+                    <MessageSquare size={24} className="text-primary" />
+                    <div>
+                      <div className="font-semibold text-text">Send Direct Message</div>
+                      <div className="text-sm text-text-muted">Send a DM from your Teams account</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {teamsMode === 'channel' && (
+                <div className="flex flex-col gap-4">
+                  <button
+                    onClick={handleBackToSelect}
+                    className="flex items-center gap-2 text-text-muted hover:text-text text-sm"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back</span>
+                  </button>
+                  <div>
+                    <label className="block text-sm font-medium text-text mb-2">
+                      Mention Users (optional)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={teamsMentionInput}
+                        onChange={(e) => setTeamsMentionInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddMention();
+                          }
+                        }}
+                        placeholder="user@example.com"
+                        className="flex-1 px-3 py-2 border border-border rounded bg-surface text-text placeholder-text-muted"
+                      />
+                      <button
+                        onClick={handleAddMention}
+                        disabled={!teamsMentionInput.trim()}
+                        className="px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-surface disabled:border disabled:border-border disabled:text-text bg-primary hover:bg-secondary text-black font-medium"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {teamsMentions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {teamsMentions.map((email) => (
+                          <div
+                            key={email}
+                            className="flex items-center gap-1 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-sm text-primary"
+                          >
+                            {email}
+                            <button
+                              onClick={() => handleRemoveMention(email)}
+                              className="ml-1 hover:bg-primary/20 rounded-full p-0.5"
+                            >
+                              <XIcon className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-text-muted mt-1">
+                      These users will be @mentioned in Teams
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text mb-2">
+                      Message
+                    </label>
+                    <textarea
+                      value={teamsMessage}
+                      onChange={(e) => setTeamsMessage(e.target.value)}
+                      placeholder="Enter your message..."
+                      className="w-full px-3 py-2 border border-border rounded bg-surface text-text placeholder-text-muted resize-none"
+                      rows={4}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="includeUrlChannel"
+                      checked={includeUrl}
+                      onChange={(e) => setIncludeUrl(e.target.checked)}
+                      className="w-4 h-4 rounded border-border"
+                    />
+                    <label htmlFor="includeUrlChannel" className="text-sm text-text cursor-pointer">
+                      Include current page URL
+                    </label>
+                  </div>
+                  <button
+                    onClick={handleSendChannelMessage}
+                    disabled={isSendingMessage || !teamsMessage.trim()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-black rounded hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    {isSendingMessage ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare size={18} />
+                        <span>Send Message</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {teamsMode === 'direct' && (
+                <div className="flex flex-col gap-4">
+                  <button
+                    onClick={handleBackToSelect}
+                    className="flex items-center gap-2 text-text-muted hover:text-text text-sm"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back</span>
+                  </button>
+
+                  {!isTeamsConnected && !checkingConnection && (
+                    <div className="bg-warning/10 border border-warning/30 rounded p-4 text-sm">
+                      <p className="text-text mb-3">
+                        You need to connect your Teams account to send direct messages.
+                      </p>
+                      <button
+                        onClick={handleConnectTeams}
+                        className="px-4 py-2 bg-primary text-black rounded hover:bg-secondary transition-colors font-medium"
+                      >
+                        Connect Teams Account
+                      </button>
+                    </div>
+                  )}
+
+                  {checkingConnection && (
+                    <div className="text-center text-text-muted">
+                      <Loader2 className="animate-spin inline-block" size={20} />
+                      <span className="ml-2">Checking connection...</span>
+                    </div>
+                  )}
+
+                  {isTeamsConnected && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-text mb-2">
+                          Recipient Email
+                        </label>
+                        <input
+                          type="email"
+                          value={teamsEmail}
+                          onChange={(e) => setTeamsEmail(e.target.value)}
+                          placeholder="user@example.com"
+                          className="w-full px-3 py-2 border border-border rounded bg-surface text-text placeholder-text-muted"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-text mb-2">
+                          Message
+                        </label>
+                        <textarea
+                          value={teamsMessage}
+                          onChange={(e) => setTeamsMessage(e.target.value)}
+                          placeholder="Enter your message..."
+                          className="w-full px-3 py-2 border border-border rounded bg-surface text-text placeholder-text-muted resize-none"
+                          rows={4}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="includeUrlDirect"
+                          checked={includeUrl}
+                          onChange={(e) => setIncludeUrl(e.target.checked)}
+                          className="w-4 h-4 rounded border-border"
+                        />
+                        <label htmlFor="includeUrlDirect" className="text-sm text-text cursor-pointer">
+                          Include current page URL
+                        </label>
+                      </div>
+                      <button
+                        onClick={handleSendDirectMessage}
+                        disabled={isSendingMessage || !teamsMessage.trim() || !teamsEmail.trim()}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-black rounded hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      >
+                        {isSendingMessage ? (
+                          <>
+                            <Loader2 size={18} className="animate-spin" />
+                            <span>Sending...</span>
+                          </>
+                        ) : (
+                          <>
+                            <MessageSquare size={18} />
+                            <span>Send Message</span>
+                          </>
+                        )}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -4,9 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
-    <!-- <PlatformTarget>x86</PlatformTarget> -->
-    <PlatformTarget>ARM</PlatformTarget>
+    <RuntimeIdentifiers>win-x64;linux-x64;linux-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-import { Download, Plus, Layout, List as ListIcon, BarChart3, Upload } from "lucide-react";
+import { Download, Plus, Layout, List as ListIcon, BarChart3, Upload, Save, Bookmark, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ExcelJS from 'exceljs';
@@ -7,9 +7,9 @@ import { PageHeader, Modal, Button, Select, Input } from "@/components";
 import { CreateJourneyModal } from "@/components/modals/create-journey-modal";
 import { ImportExcelModal } from "@/components/modals/import-excel-modal";
 import { ExportExcelModal } from "@/components/modals/export-excel-modal";
-import { KanbanView } from "./journeys/KanbanView";
-import { ListView } from "./journeys/ListView";
-import { ProjectionsView } from "./journeys/ProjectionsView";
+import { KanbanView } from "./journeys/journey-kanban";
+import { ListView } from "./journeys/journey-list";
+import { ProjectionsView } from "./journeys/journey-projections";
 import { PipelineHeader } from "./journeys/pipeline-header";
 import { STAGES } from "./journeys/constants";
 import { fuzzyMatch, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
@@ -35,36 +35,42 @@ const Pipeline = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { employee } = useAuth();
-  const { get, delete: del, patch } = useApi();
+  const { get, patch } = useApi();
   const [journeys, setJourneys] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [journeyTags, setJourneyTags] = useState<Map<string, any[]>>(new Map());
 
-  const [legacyJourneys, setLegacyJourneys] = useState<any[] | null>(null);
   const fetchJourneyTags = async (journeyIds: string[]) => {
     const tagsMap = new Map<string, any[]>();
+    if (journeyIds.length === 0) return tagsMap;
 
-    if (journeyIds.length === 0) {
-      return tagsMap;
+    const BATCH_SIZE = 50;
+    const batches = [];
+    for (let i = 0; i < journeyIds.length; i += BATCH_SIZE) {
+      batches.push(journeyIds.slice(i, i + BATCH_SIZE));
     }
 
     try {
-      const response = await get('/core/tags', {
-        filter: JSON.stringify({
-          parentTable: 'journeys',
-          parentIds: journeyIds
-        })
-      });
+      await Promise.all(
+        batches.map(async (batch) => {
+          const response = await get('/core/tags', {
+            filter: JSON.stringify({
+              parentTable: 'journeys',
+              parentId: { in: batch }
+            })
+          });
 
-      if (response?.success && Array.isArray(response.data)) {
-        response.data.forEach((tag: any) => {
-          const journeyId = tag.parentId;
-          if (!tagsMap.has(journeyId)) {
-            tagsMap.set(journeyId, []);
+          if (response?.success && Array.isArray(response.data)) {
+            response.data.forEach((tag: any) => {
+              const journeyId = tag.parentId;
+              if (!tagsMap.has(journeyId)) {
+                tagsMap.set(journeyId, []);
+              }
+              tagsMap.get(journeyId)?.push(tag);
+            });
           }
-          tagsMap.get(journeyId)?.push(tag);
-        });
-      }
+        })
+      );
 
       journeyIds.forEach(id => {
         if (!tagsMap.has(id)) {
@@ -77,33 +83,6 @@ const Pipeline = () => {
 
     return tagsMap;
   };
-  useEffect(() => {
-    const fetchData = async () => {
-      const [journeysData, customersData] = await Promise.all([
-        get('/legacy/base/Journey', {
-          page: 1,
-          limit: 200,
-          sort: 'CreateDT',
-          order: 'desc',
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
-        }),
-        get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
-      ]);
-
-      if (journeysData) {
-        const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
-        const mappedJourneys = journeysArray.map(adaptLegacyJourney);
-        setJourneys(mappedJourneys);
-      }
-
-      if (customersData) {
-        const customersArray = customersData.data ? customersData.data : (Array.isArray(customersData) ? customersData : []);
-        setCustomers(customersArray);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   const mapLegacyStageToId = (stage: any): StageId => {
     const s = String(stage ?? "").toLowerCase();
@@ -120,8 +99,20 @@ const Pipeline = () => {
   const normalizeDate = (d: any) => {
     if (!d) return undefined;
     const s = String(d);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00`;
-    return s.includes(" ") ? s.replace(" ", "T") : s;
+
+    if (s.startsWith("0000-00-00") || s === "0000-00-00") return undefined;
+
+    let normalized = s;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      normalized = `${s}T00:00:00`;
+    } else if (s.includes(" ")) {
+      normalized = s.replace(" ", "T");
+    }
+
+    const testDate = new Date(normalized);
+    if (isNaN(testDate.getTime())) return undefined;
+
+    return normalized;
   };
 
   const parseConfidence = (v: any) => {
@@ -152,18 +143,9 @@ const Pipeline = () => {
     const value = Number(raw.Journey_Value ?? 0);
     const priority = normalizePriority(raw.Priority);
 
-    const closeDate =
+    const expectedDecisionDate =
       normalizeDate(raw.Expected_Decision_Date) ??
-      normalizeDate(raw.Quote_Presentation_Date) ??
-      normalizeDate(raw.Date_PO_Received) ??
-      normalizeDate(raw.Journey_Start_Date) ??
-      normalizeDate(raw.CreateDT) ??
-      new Date().toISOString();
-
-    const updatedAt =
-      normalizeDate(raw.Action_Date) ??
-      normalizeDate(raw.CreateDT) ??
-      new Date().toISOString();
+      null
 
     const customerId = String(raw.Company_ID ?? "");
     const companyName = raw.Target_Account || undefined;
@@ -175,8 +157,7 @@ const Pipeline = () => {
       stage,
       value,
       priority,
-      closeDate,
-      updatedAt,
+      expectedDecisionDate,
       customerId,
       companyName,
       confidence,
@@ -188,8 +169,10 @@ const Pipeline = () => {
       Project_Name: raw.Project_Name,
       Target_Account: raw.Target_Account,
       Company_ID: raw.Company_ID,
-      CreateDT: raw.CreateDT,
+      CreateDT: normalizeDate(raw.CreateDT),
+      Journey_Start_Date: normalizeDate(raw.Journey_Start_Date),
       Action_Date: raw.Action_Date,
+      updatedAt: normalizeDate(raw.Action_Date) ?? normalizeDate(raw.CreateDT),
       Expected_Decision_Date: raw.Expected_Decision_Date,
       Chance_To_Secure_order: raw.Chance_To_Secure_order,
       Industry: raw.Industry,
@@ -199,54 +182,63 @@ const Pipeline = () => {
       Lead_Source: raw.Lead_Source,
       Next_Steps: raw.Next_Steps,
       Address_ID: raw.Address_ID,
+      deletedAt: raw.Deleted === 1 || raw.Deleted === '1' || raw.Deleted === true ? 1 : 0,
     };
   };
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+
     (async () => {
       try {
-        const raw = await get('/legacy/base/Journey', {
-          page: 1,
-          limit: 200,
-          sort: 'CreateDT',
-          order: 'desc',
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
-        });
+        const [journeysData, customersData, rsms, statuses] = await Promise.all([
+          get('/legacy/std/Journey', {
+            page: 1,
+            limit: 200,
+            sort: 'CreateDT',
+            order: 'desc',
+            fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
+          }),
+          get('/legacy/std/Company', { sort: 'Company_ID', order: 'desc' }),
+          fetchAvailableRsms({ get }),
+          fetchDemographicCategory({ get }, 'Journey_status')
+        ]);
 
-        if (!cancelled && raw !== null) {
-          const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
+        if (journeysData) {
+          const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
           const mapped = journeysArray.map(adaptLegacyJourney);
-          setLegacyJourneys(mapped);
+          setJourneys(mapped);
+        }
+
+        if (customersData) {
+          const customersArray = customersData.data ? customersData.data : (Array.isArray(customersData) ? customersData : []);
+          setCustomers(customersArray);
+        }
+
+        if (rsms.length > 0) {
+          setAvailableRsms(rsms);
+          const displayNamesMap = new Map<string, string>();
+          rsms.forEach(rsm => {
+            displayNamesMap.set(rsm.initials, `${rsm.name} (${rsm.initials})`);
+          });
+          setRsmDisplayNames(displayNamesMap);
+        }
+
+        if (statuses.length > 0) {
+          setValidJourneyStatuses(statuses);
         }
       } catch (error) {
-        console.error("Error fetching Journeys:", error);
-      }
-
-      const [rsms, statuses] = await Promise.all([
-        fetchAvailableRsms({ get }),
-        fetchDemographicCategory({ get }, 'Journey_status')
-      ]);
-
-      if (!cancelled && rsms.length > 0) {
-        setAvailableRsms(rsms);
-
-        const displayNamesMap = new Map<string, string>();
-        rsms.forEach(rsm => {
-          displayNamesMap.set(rsm.initials, `${rsm.name} (${rsm.initials})`);
-        });
-        setRsmDisplayNames(displayNamesMap);
-      }
-
-      if (!cancelled && statuses.length > 0) {
-        setValidJourneyStatuses(statuses);
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error("Error fetching data:", error);
+        }
       }
     })();
-    return () => { cancelled = true; };
+
+    return () => controller.abort();
   }, []);
 
-  const baseJourneys = legacyJourneys?.length ? legacyJourneys : (journeys ?? []);
-  const isLegacyData = !!legacyJourneys?.length;
+  const baseJourneys = journeys ?? [];
+  const isLegacyData = true;
 
   const customersById = useMemo(() => {
     const map = new Map<string, any>((customers ?? []).map(c => [String(c.id), c]));
@@ -281,7 +273,7 @@ const Pipeline = () => {
   const [filters, setFilters] = useState(() => getFromLocalStorage('filters', {
     confidenceLevels: [] as number[],
     dateRange: ["", ""] as [string, string],
-    dateField: "closeDate" as string,
+    dateField: "expectedDecisionDate" as string,
     priority: "" as string,
     minValue: "" as string,
     maxValue: "" as string,
@@ -294,7 +286,8 @@ const Pipeline = () => {
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
   const [rsmDisplayNames, setRsmDisplayNames] = useState<Map<string, string>>(new Map());
   const [validJourneyStatuses, setValidJourneyStatuses] = useState<string[]>([]);
-  const [journeyStatusFilter, setJourneyStatusFilter] = useState<string>(() => getFromLocalStorage('journeyStatusFilter', ''));
+  const [journeyStatusFilter, setJourneyStatusFilter] = useState<string[]>(() => getFromLocalStorage('journeyStatusFilter', []));
+  const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
   const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => getFromLocalStorage('sortDirection', 'asc'));
   const [showTags, setShowTags] = useState<boolean>(() => getFromLocalStorage('showTags', false));
@@ -302,157 +295,142 @@ const Pipeline = () => {
   const [listPage, setListPage] = useState(1);
   const [listPageSize] = useState(25);
   const [listViewJourneys, setListViewJourneys] = useState<any[]>([]);
-  const [listViewPagination, setListViewPagination] = useState({
-    page: 1,
-    totalPages: 0,
-    total: 0,
-    limit: 25
-  });
+  const [listViewPagination, setListViewPagination] = useState({ page: 1, totalPages: 0, total: 0, limit: 25 });
   const [isLoadingListView, setIsLoadingListView] = useState(false);
+  const [showDisabledJourneys, setShowDisabledJourneys] = useState(() => getFromLocalStorage('showDisabledJourneys', false));
   const [kanbanViewJourneys, setKanbanViewJourneys] = useState<any[]>([]);
   const [isLoadingKanbanView, setIsLoadingKanbanView] = useState(false);
-
+  const [savedPresets, setSavedPresets] = useState<any[]>(() => getFromLocalStorage('savedPresets', []));
+  const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
 
   const filteredJourneys = useMemo(() => {
     let results = baseJourneys ?? [];
     const q = searchTerm.trim();
     if (q) {
       if (q.toLowerCase() === 'tag:') {
-        results = results.filter(j => {
-          const tags = journeyTags.get(j.id.toString()) || [];
-          return tags.length > 0;
-        });
+        results = results.filter(j => (journeyTags.get(j.id.toString()) || []).length > 0);
       } else {
         const tagMatch = q.match(/tag:(\S+)/i);
-
         if (tagMatch) {
           const tagSearch = tagMatch[1].toUpperCase();
           const remainingSearch = q.replace(tagMatch[0], '').trim();
+
           if (tagSearch) {
             results = results.filter(j => {
               const tags = journeyTags.get(j.id.toString()) || [];
-              return tags.some(tag =>
-                tag.description &&
-                tag.description.toUpperCase().includes(tagSearch)
-              );
+              return tags.some(tag => tag.description?.toUpperCase().includes(tagSearch));
             });
           }
+
           if (remainingSearch) {
             results = results.filter(j => {
-              const searchableText = [
-                j.name ?? '',
-                j.companyName ?? '',
-                customersById?.get(String(j.customerId))?.name ?? ''
-              ].join(' ');
-
+              const searchableText = [j.companyName ?? '', customersById?.get(String(j.customerId))?.name ?? ''].join(' ');
               return fuzzyMatch(searchableText, remainingSearch);
             });
           }
         } else {
           results = results.filter(j => {
-            const searchableText = [
-              j.name ?? '',
-              j.companyName ?? '',
-              customersById?.get(String(j.customerId))?.name ?? ''
-            ].join(' ');
-
+            const searchableText = [j.companyName ?? '', customersById?.get(String(j.customerId))?.name ?? ''].join(' ');
             return fuzzyMatch(searchableText, q);
           });
         }
       }
     }
+
     if (filters.confidenceLevels.length > 0) {
-      results = results.filter(j => {
-        const confidence = j.confidence ?? 0;
-        return filters.confidenceLevels.includes(confidence);
-      });
+      results = results.filter(j => filters.confidenceLevels.includes(j.confidence ?? 0));
     }
+
     if (filters.dateRange[0] || filters.dateRange[1]) {
       results = results.filter(j => {
-        const getDateValue = (field: string, journey: any): Date | null => {
-          const dateStr = journey[field];
-          return dateStr ? new Date(dateStr) : null;
-        };
-        
-        const dateValue = getDateValue(filters.dateField === 'closeDate' ? 'closeDate' : filters.dateField, j);
-        
+        const dateValue = j[filters.dateField] ? new Date(j[filters.dateField]) : null;
         if (!dateValue) return false;
-        
+
         const startDate = filters.dateRange[0] ? new Date(filters.dateRange[0]) : null;
         const endDate = filters.dateRange[1] ? new Date(filters.dateRange[1]) : null;
-        
+
         if (startDate && dateValue < startDate) return false;
         if (endDate && dateValue > endDate) return false;
-        
         return true;
       });
     }
+
     if (filters.priority) {
       results = results.filter(j => j.priority === filters.priority);
     }
+
     if (filters.minValue) {
       const minVal = parseFloat(filters.minValue);
-      if (!isNaN(minVal)) {
-        results = results.filter(j => (j.value ?? 0) >= minVal);
-      }
+      if (!isNaN(minVal)) results = results.filter(j => (j.value ?? 0) >= minVal);
     }
-    
+
     if (filters.maxValue) {
       const maxVal = parseFloat(filters.maxValue);
-      if (!isNaN(maxVal)) {
-        results = results.filter(j => (j.value ?? 0) <= maxVal);
-      }
+      if (!isNaN(maxVal)) results = results.filter(j => (j.value ?? 0) <= maxVal);
     }
-    results = results.filter(j => filters.visibleStages.includes(j.stage ?? 1));
-    if (rsmFilter) {
-      const filterValue = rsmFilter.toLowerCase();
-      results = results.filter(j => 
-        (j.RSM ?? "").toLowerCase().includes(filterValue)
-      );
-    }
-    if (journeyStatusFilter) {
-      results = results.filter(j => 
-        (j.Journey_Status ?? "").toLowerCase() === journeyStatusFilter.toLowerCase()
-      );
-    }
-    
-    return results;
-  }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter, journeyTags]);
-  const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
 
+    results = results.filter(j => filters.visibleStages.includes(j.stage ?? 1));
+
+    if (rsmFilter) {
+      results = results.filter(j => (j.RSM ?? "").toLowerCase().includes(rsmFilter.toLowerCase()));
+    }
+
+    if (journeyStatusFilter.length > 0) {
+      results = results.filter(j =>
+        journeyStatusFilter.some(status => (j.Journey_Status ?? "").toLowerCase() === status.toLowerCase())
+      );
+    }
+
+    if (!showDisabledJourneys) {
+      results = results.filter(j => j.deletedAt !== 1);
+    }
+
+    return results;
+  }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter, journeyTags, showDisabledJourneys]);
   const buildStageConditions = (stageId: number) => {
     const stageMap: Record<number, any> = {
-      1: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "LEAD" },
-        { field: "Journey_Stage", operator: "contains", value: "OPEN" },
-        { field: "Journey_Stage", operator: "contains", value: "NEW" }
-      ]},
-      2: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
-        { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
-        { field: "Journey_Stage", operator: "contains", value: "PAIN" },
-        { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
-      ]},
-      3: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
-        { field: "Journey_Stage", operator: "contains", value: "DEMO" },
-        { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
-        { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
-      ]},
+      1: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "LEAD" },
+          { field: "Journey_Stage", operator: "contains", value: "OPEN" },
+          { field: "Journey_Stage", operator: "contains", value: "NEW" }
+        ]
+      },
+      2: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
+          { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
+          { field: "Journey_Stage", operator: "contains", value: "PAIN" },
+          { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
+        ]
+      },
+      3: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
+          { field: "Journey_Stage", operator: "contains", value: "DEMO" },
+          { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
+          { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
+        ]
+      },
       4: { field: "Journey_Stage", operator: "contains", value: "NEGOT" },
-      5: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "PO" },
-        { field: "Journey_Stage", operator: "contains", value: "WON" },
-        { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
-        { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
-        { field: "Journey_Stage", operator: "contains", value: "ORDER" }
-      ]},
-      6: { operator: "or", conditions: [
-        { field: "Journey_Stage", operator: "contains", value: "LOST" },
-        { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
-        { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
-        { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
-      ]}
+      5: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "PO" },
+          { field: "Journey_Stage", operator: "contains", value: "WON" },
+          { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
+          { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
+          { field: "Journey_Stage", operator: "contains", value: "ORDER" }
+        ]
+      },
+      6: {
+        operator: "or", conditions: [
+          { field: "Journey_Stage", operator: "contains", value: "LOST" },
+          { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
+          { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
+          { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
+        ]
+      }
     };
     return stageMap[stageId] || null;
   };
@@ -463,11 +441,9 @@ const Pipeline = () => {
 
     if (includeSearch && searchTerm && trimmedSearch.toLowerCase() !== 'tag:') {
       filterConditions.push({
-        operator: "or",
-        conditions: [
-          { field: "Project_Name", operator: "contains", value: trimmedSearch },
-          { field: "Target_Account", operator: "contains", value: trimmedSearch }
-        ]
+        field: "Target_Account",
+        operator: "contains",
+        value: trimmedSearch
       });
     }
 
@@ -475,8 +451,8 @@ const Pipeline = () => {
       filterConditions.push({ field: "RSM", operator: "contains", value: rsmFilter });
     }
 
-    if (journeyStatusFilter) {
-      filterConditions.push({ field: "Journey_Status", operator: "equals", value: journeyStatusFilter });
+    if (journeyStatusFilter.length > 0) {
+      filterConditions.push({ field: "Journey_Status", operator: "in", values: journeyStatusFilter });
     }
 
     if (filters.priority) {
@@ -494,7 +470,7 @@ const Pipeline = () => {
 
     if (filters.dateRange[0] || filters.dateRange[1]) {
       const fieldMap: Record<string, string> = {
-        'closeDate': 'Expected_Decision_Date',
+        'expectedDecisionDate': 'Expected_Decision_Date',
         'Action_Date': 'Action_Date',
         'Journey_Start_Date': 'Journey_Start_Date',
         'Quote_Presentation_Date': 'Quote_Presentation_Date',
@@ -530,14 +506,13 @@ const Pipeline = () => {
     return filterConditions;
   };
 
-  const fetchListViewJourneys = useCallback(async () => {
+  const fetchListViewJourneys = useCallback(async (signal?: AbortSignal) => {
     if (isLoadingListView) return;
 
     setIsLoadingListView(true);
     try {
       const sortFieldMap: Record<string, string> = {
-        'name': 'Project_Name',
-        'customerId': 'Company_ID',
+        'customerId': 'Target_Account',
         'stage': 'Journey_Stage',
         'value': 'Journey_Value',
         'confidence': `CASE
@@ -557,15 +532,18 @@ const Pipeline = () => {
         limit: listPageSize,
         sort: dbSortField,
         order: sortDirection,
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
       };
 
       const filterConditions = buildFilterConditions();
+      if (!showDisabledJourneys) {
+        filterConditions.push({ field: "Deleted", operator: "notEquals", value: 1 });
+      }
       if (filterConditions.length > 0) {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await get('/legacy/base/Journey', params);
+      const raw = await get('/legacy/std/Journey', params, signal ? { signal } : undefined);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
@@ -583,13 +561,14 @@ const Pipeline = () => {
         }
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error("Error fetching list view journeys:", error);
     } finally {
       setIsLoadingListView(false);
     }
-  }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, get, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+  }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, get, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
-  const fetchKanbanViewJourneys = useCallback(async () => {
+  const fetchKanbanViewJourneys = useCallback(async (signal?: AbortSignal) => {
     if (isLoadingKanbanView) return;
 
     const trimmedSearch = searchTerm.trim();
@@ -605,17 +584,20 @@ const Pipeline = () => {
       const params: any = {
         page: 1,
         limit: kanbanBatchSize,
-        sort: 'Action_Date',
+        sort: 'CreateDT',
         order: 'desc',
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
       };
 
       const filterConditions = buildFilterConditions();
+      if (!showDisabledJourneys) {
+        filterConditions.push({ field: "Deleted", operator: "notEquals", value: 1 });
+      }
       if (filterConditions.length > 0) {
         params.filter = JSON.stringify({ filters: filterConditions });
       }
 
-      const raw = await get('/legacy/base/Journey', params);
+      const raw = await get('/legacy/std/Journey', params, signal ? { signal } : undefined);
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
@@ -623,23 +605,28 @@ const Pipeline = () => {
         setKanbanViewJourneys(mapped);
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error("Error fetching kanban view journeys:", error);
     } finally {
       setIsLoadingKanbanView(false);
     }
-  }, [isLoadingKanbanView, kanbanBatchSize, get, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys]);
+  }, [isLoadingKanbanView, kanbanBatchSize, get, searchTerm, rsmFilter, journeyStatusFilter, filters, filteredJourneys, showDisabledJourneys]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     if (viewMode === 'list') {
-      fetchListViewJourneys();
+      fetchListViewJourneys(controller.signal);
     }
-  }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+  }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     if (viewMode === 'kanban') {
-      fetchKanbanViewJourneys();
+      fetchKanbanViewJourneys(controller.signal);
     }
-  }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+  }, [viewMode, kanbanBatchSize, searchTerm, rsmFilter, journeyStatusFilter, filters, showDisabledJourneys]);
 
   const handleListPageChange = (newPage: number) => {
     setListPage(newPage);
@@ -659,7 +646,8 @@ const Pipeline = () => {
     saveToLocalStorage('sortDirection', sortDirection);
     saveToLocalStorage('showTags', showTags);
     saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
-  }, [searchTerm, filters, rsmFilter, rsmFilterDisplay, journeyStatusFilter, viewMode, sortField, sortDirection, showTags, kanbanBatchSize]);
+    saveToLocalStorage('showDisabledJourneys', showDisabledJourneys);
+  }, [searchTerm, filters, rsmFilter, rsmFilterDisplay, journeyStatusFilter, viewMode, sortField, sortDirection, showTags, kanbanBatchSize, showDisabledJourneys]);
 
   useEffect(() => {
     if (showTags && viewMode === 'kanban' && kanbanViewJourneys.length > 0) {
@@ -735,33 +723,60 @@ const Pipeline = () => {
 
   const handleDeleteJourney = useCallback(async (journeyId: string) => {
     try {
-      const success = await del(`/legacy/std/Journey/${journeyId}`);
+      // const journey = [...(legacyJourneys || []), ...journeys, ...listViewJourneys, ...kanbanViewJourneys]
+      const journey = [...journeys, ...listViewJourneys, ...kanbanViewJourneys]
+        .find(j => j.id.toString() === journeyId);
+
+      if (!journey) return;
+
+      const isCurrentlyDeleted = journey.deletedAt === 1;
+      const newDeletedValue = isCurrentlyDeleted ? 0 : 1;
+
+      const success = await patch(`/legacy/std/Journey/${journeyId}`, {
+        Deleted: newDeletedValue
+      });
 
       if (success) {
-        setLegacyJourneys(prev =>
-          prev ? prev.filter(j => j.id.toString() !== journeyId) : prev
-        );
-        setJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
-        setKanbanViewJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
+        const updateJourney = (j: any) =>
+          j.id.toString() === journeyId
+            ? { ...j, deletedAt: newDeletedValue }
+            : j;
+
+        //setLegacyJourneys(prev => prev ? prev.map(updateJourney) : prev);
+        setJourneys(prev => prev.map(updateJourney));
+        setListViewJourneys(prev => prev.map(updateJourney));
+        setKanbanViewJourneys(prev => prev.map(updateJourney));
+
+        if (!showDisabledJourneys && !isCurrentlyDeleted) {
+          setListViewJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
+          setKanbanViewJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
+        }
+
+        if (viewMode === 'list') {
+          fetchListViewJourneys();
+        } else if (viewMode === 'kanban') {
+          fetchKanbanViewJourneys();
+        }
       } else {
-        alert("Failed to delete journey. Please try again.");
+        alert("Failed to toggle journey status. Please try again.");
       }
     } catch (error) {
-      console.error("Error deleting journey:", error);
-      alert("Failed to delete journey. Please try again.");
+      console.error("Error toggling journey status:", error);
+      alert("Failed to toggle journey status. Please try again.");
     }
-  }, [del]);
+    //  }, [patch, legacyJourneys, journeys, listViewJourneys, kanbanViewJourneys, showDisabledJourneys, viewMode, fetchListViewJourneys, fetchKanbanViewJourneys]);
+  }, [patch, journeys, listViewJourneys, kanbanViewJourneys, showDisabledJourneys, viewMode, fetchListViewJourneys, fetchKanbanViewJourneys]);
 
   const handleTagsUpdated = useCallback(async () => {
     if (!showTags) return;
 
-    const journeysToUpdate = viewMode === 'kanban' ? kanbanViewJourneys : (legacyJourneys || journeys);
+    const journeysToUpdate = viewMode === 'kanban' ? kanbanViewJourneys : journeys;
     if (journeysToUpdate && journeysToUpdate.length > 0) {
       const journeyIds = journeysToUpdate.map((j: any) => j.id.toString());
       const tagsMap = await fetchJourneyTags(journeyIds);
       setJourneyTags(tagsMap);
     }
-  }, [showTags, viewMode, kanbanViewJourneys, legacyJourneys, journeys]);
+  }, [showTags, viewMode, kanbanViewJourneys, journeys]);
 
   const handleStageUpdate = useCallback(async (journeyId: string, newStage: number) => {
     const stageLabel = STAGES.find(s => s.id === newStage)?.label;
@@ -771,8 +786,8 @@ const Pipeline = () => {
     }
 
     const updateLocalState = () => {
-      setLegacyJourneys((prev) =>
-        (prev ?? []).map((j) =>
+      setJourneys((prev) =>
+        prev.map((j) =>
           j.id.toString() === journeyId
             ? { ...j, stage: newStage, updatedAt: new Date().toISOString() }
             : j
@@ -790,7 +805,7 @@ const Pipeline = () => {
     updateLocalState();
 
     try {
-      await patch(`/legacy/base/Journey/${journeyId}`, { Journey_Stage: stageLabel });
+      await patch(`/legacy/std/Journey/${journeyId}`, { Journey_Stage: stageLabel });
     } catch (error) {
       console.error("Error updating journey stage:", error);
     }
@@ -807,6 +822,59 @@ const Pipeline = () => {
       setSortDirection('asc');
     }
   }, [sortField, sortDirection]);
+
+  const getCurrentFilterState = () => ({
+    searchTerm,
+    filters,
+    rsmFilter,
+    rsmFilterDisplay,
+    journeyStatusFilter,
+    sortField,
+    sortDirection,
+    viewMode
+  });
+
+  const handleSavePreset = () => {
+    if (!newPresetName.trim()) return;
+
+    const newPreset = {
+      id: Date.now().toString(),
+      name: newPresetName.trim(),
+      createdAt: new Date().toISOString(),
+      ...getCurrentFilterState()
+    };
+
+    const updatedPresets = [...savedPresets, newPreset];
+    setSavedPresets(updatedPresets);
+    saveToLocalStorage('savedPresets', updatedPresets);
+    setNewPresetName('');
+  };
+
+  const handleLoadPreset = (preset: any) => {
+    setSearchTerm(preset.searchTerm || '');
+    setFilters(preset.filters || {
+      confidenceLevels: [],
+      dateRange: ["", ""],
+      dateField: "expectedDecisionDate",
+      priority: "",
+      minValue: "",
+      maxValue: "",
+      visibleStages: STAGES.map(s => s.id),
+    });
+    setRsmFilter(preset.rsmFilter || '');
+    setRsmFilterDisplay(preset.rsmFilterDisplay || '');
+    setJourneyStatusFilter(preset.journeyStatusFilter || []);
+    setSortField(preset.sortField || '');
+    setSortDirection(preset.sortDirection || 'asc');
+    setViewMode(preset.viewMode || 'kanban');
+    setIsPresetModalOpen(false);
+  };
+
+  const handleDeletePreset = (presetId: string) => {
+    const updatedPresets = savedPresets.filter(p => p.id !== presetId);
+    setSavedPresets(updatedPresets);
+    saveToLocalStorage('savedPresets', updatedPresets);
+  };
 
   const totalPipelineValue = filteredJourneys.reduce((sum, j) => sum + Number(j.value ?? 0), 0);
 
@@ -844,7 +912,7 @@ const Pipeline = () => {
     await Promise.all(
       filteredJourneys.map(async (journey) => {
         try {
-          const contactData = await get('/legacy/base/Journey_Contact/filter/custom', {
+          const contactData = await get('/legacy/std/Journey_Contact/filter/custom', {
             filterField: 'Jrn_ID',
             filterValue: journey.id,
             fields: 'Contact_Name,Contact_Email,Contact_Position,IsPrimary'
@@ -1007,6 +1075,14 @@ const Pipeline = () => {
       <Button
         variant="secondary-outline"
         size="sm"
+        onClick={() => setIsPresetModalOpen(true)}
+      >
+        <Bookmark size={16} />
+        Presets
+      </Button>
+      <Button
+        variant="secondary-outline"
+        size="sm"
         onClick={toggleExportModal}
       >
         <Download size={16} />
@@ -1038,7 +1114,7 @@ const Pipeline = () => {
         description={pageDescription}
         actions={<HeaderActions />}
       />
-      
+
       {/* Pipeline Value Summary - Only show for kanban and list views */}
       {viewMode !== "projections" && (
         <div className="border-b px-6 py-4 bg-gray-50 dark:bg-gray-800">
@@ -1122,12 +1198,14 @@ const Pipeline = () => {
             sortField={sortField}
             sortDirection={sortDirection}
             isLoading={isLoadingListView}
+            showDisabled={showDisabledJourneys}
+            onToggleShowDisabled={setShowDisabledJourneys}
           />
         </div>
       )}
 
       {viewMode === "projections" && (
-        <ProjectionsView 
+        <ProjectionsView
           journeys={filteredJourneys}
           customersById={customersById}
         />
@@ -1139,14 +1217,8 @@ const Pipeline = () => {
           onSuccess={(newJourney) => {
             if (newJourney) {
               const adaptedJourney = adaptLegacyJourney(newJourney);
-              setLegacyJourneys(prev => {
-                const updated = prev ? [adaptedJourney, ...prev] : [adaptedJourney];
-                return updated;
-              });
-              setJourneys(prev => {
-                const updated = [adaptedJourney, ...prev];
-                return updated;
-              });
+              setJourneys(prev => [adaptedJourney, ...prev]);
+
               if (viewMode === 'kanban') {
                 fetchKanbanViewJourneys();
               }
@@ -1173,12 +1245,12 @@ const Pipeline = () => {
 
             const fetchData = async () => {
               const [journeysData] = await Promise.all([
-                get('/legacy/base/Journey', {
+                get('/legacy/std/Journey', {
                   page: 1,
                   limit: 200,
                   sort: 'CreateDT',
                   order: 'desc',
-                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status,Deleted'
                 })
               ]);
 
@@ -1186,7 +1258,6 @@ const Pipeline = () => {
                 const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
                 const mappedJourneys = journeysArray.map(adaptLegacyJourney);
                 setJourneys(mappedJourneys);
-                setLegacyJourneys(mappedJourneys);
 
                 if (showTags) {
                   const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
@@ -1241,7 +1312,12 @@ const Pipeline = () => {
         <FilterModal
           isOpen={isFilterModalOpen}
           filters={filters}
-          onApply={(newFilters) => { setFilters(newFilters); setIsFilterModalOpen(false); }}
+          showDisabled={showDisabledJourneys}
+          onApply={(newFilters, newShowDisabled) => {
+            setFilters(newFilters);
+            setShowDisabledJourneys(newShowDisabled);
+            setIsFilterModalOpen(false);
+          }}
           onClose={() => setIsFilterModalOpen(false)}
         />
       )}
@@ -1252,6 +1328,96 @@ const Pipeline = () => {
           onExport={exportToExcel}
         />
       )}
+      {isPresetModalOpen && (
+        <Modal
+          isOpen={isPresetModalOpen}
+          onClose={() => {
+            setIsPresetModalOpen(false);
+            setNewPresetName('');
+          }}
+          title="Search Presets"
+          size="md"
+        >
+          <div className="space-y-6">
+            <div className="pb-4 border-b border-border">
+              <h3 className="text-sm font-semibold text-text mb-3">Save Current Search</h3>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g., High Priority Open Journeys"
+                  value={newPresetName}
+                  onChange={(e) => setNewPresetName(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  variant="primary"
+                  onClick={handleSavePreset}
+                  disabled={!newPresetName.trim()}
+                >
+                  <Save size={16} />
+                  Save
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-text mb-3">Saved Presets</h3>
+              {savedPresets.length > 0 ? (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {savedPresets.map((preset) => (
+                    <div
+                      key={preset.id}
+                      className="flex items-center justify-between p-3 bg-surface rounded border border-border hover:bg-background transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-text">{preset.name}</div>
+                        <div className="text-xs text-text-muted">
+                          Saved on {new Date(preset.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleLoadPreset(preset)}
+                        >
+                          Load
+                        </Button>
+                        <Button
+                          variant="secondary-outline"
+                          size="sm"
+                          onClick={() => {
+                            if (confirm(`Delete preset "${preset.name}"?`)) {
+                              handleDeletePreset(preset.id);
+                            }
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-text-muted">
+                  No saved presets yet. Save your current search configuration above.
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-border">
+              <Button
+                variant="secondary-outline"
+                onClick={() => {
+                  setIsPresetModalOpen(false);
+                  setNewPresetName('');
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
@@ -1259,6 +1425,7 @@ const Pipeline = () => {
 const FilterModal = ({
   isOpen,
   filters,
+  showDisabled,
   onApply,
   onClose,
 }: {
@@ -1272,42 +1439,47 @@ const FilterModal = ({
     maxValue: string;
     visibleStages: number[];
   };
-  onApply: (filters: any) => void;
+  showDisabled: boolean;
+  onApply: (filters: any, showDisabled: boolean) => void;
   onClose: () => void;
 }) => {
   const [localFilters, setLocalFilters] = useState(filters);
-  
+  const [localShowDisabled, setLocalShowDisabled] = useState(showDisabled);
+
   useEffect(() => {
     setLocalFilters(filters);
-  }, [filters, isOpen]);
-  
+    setLocalShowDisabled(showDisabled);
+  }, [filters, showDisabled, isOpen]);
+
   const handleReset = () => {
     setLocalFilters({
       confidenceLevels: [],
       dateRange: ["", ""],
-      dateField: "closeDate",
+      dateField: "expectedDecisionDate",
       priority: "",
       minValue: "",
       maxValue: "",
       visibleStages: STAGES.map(s => s.id),
     });
+    setLocalShowDisabled(false);
   };
-  
-  const hasActiveFilters = 
+
+  const hasActiveFilters =
     localFilters.confidenceLevels.length > 0 ||
     localFilters.dateRange[0] ||
     localFilters.dateRange[1] ||
     localFilters.priority ||
     localFilters.minValue ||
     localFilters.maxValue ||
-    localFilters.visibleStages.length !== STAGES.length;
-  
+    localFilters.visibleStages.length !== STAGES.length ||
+    localShowDisabled;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Filter Pipeline" size="md">
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-text">Confidence Level</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[0, 25, 50, 75, 90, 100].map(level => (
               <label key={level} className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -1333,25 +1505,25 @@ const FilterModal = ({
             ))}
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <Select
             label="Date Field"
             value={localFilters.dateField}
             onChange={(e) => setLocalFilters(prev => ({ ...prev, dateField: e.target.value }))}
             options={[
-              { value: "closeDate", label: "Close Date" },
+              { value: "expectedDecisionDate", label: "Expected Decision Date" },
               { value: "Action_Date", label: "Action Date" },
               { value: "Journey_Start_Date", label: "Journey Start Date" },
               { value: "Quote_Presentation_Date", label: "Quote Presentation Date" },
-              { value: "Expected_Decision_Date", label: "Expected Decision Date" },
+              { value: "Expected_Decision_Date", label: "Expected Decision Date (Raw)" },
               { value: "Date_PO_Received", label: "PO Received Date" },
               { value: "Date_Lost", label: "Date Lost" }
             ]}
           />
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-text">Date From</label>
             <input
@@ -1377,7 +1549,7 @@ const FilterModal = ({
             />
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <Select
             label="Priority"
@@ -1392,8 +1564,8 @@ const FilterModal = ({
             ]}
           />
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Input
               label="Min Value ($)"
@@ -1413,29 +1585,29 @@ const FilterModal = ({
             />
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <label className="text-sm font-medium text-text">Visible Stages</label>
           <div className="flex items-center justify-between gap-2 mb-2">
-            <Button 
-              variant="secondary-outline" 
+            <Button
+              variant="secondary-outline"
               size="sm"
               onClick={() => setLocalFilters(prev => ({ ...prev, visibleStages: [] }))}
             >
               Clear
             </Button>
-            <Button 
-              variant="secondary-outline" 
+            <Button
+              variant="secondary-outline"
               size="sm"
               onClick={() => setLocalFilters(prev => ({ ...prev, visibleStages: STAGES.map(s => s.id) }))}
             >
               Select All
             </Button>
           </div>
-          <div className="overflow-x-auto border rounded p-2">
-            <div className="grid grid-rows-2 grid-flow-col gap-x-4 gap-y-2 min-w-fit">
+          <div className="border rounded p-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-rows-2 md:grid-flow-col gap-2">
               {STAGES.map(stage => (
-                <label key={stage.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded whitespace-nowrap">
+                <label key={stage.id} className="flex items-center gap-2 cursor-pointer hover:bg-surface p-1 rounded">
                   <input
                     type="checkbox"
                     checked={localFilters.visibleStages.includes(stage.id)}
@@ -1460,20 +1632,33 @@ const FilterModal = ({
             </div>
           </div>
         </div>
-        
-        <div className="flex justify-between pt-4 border-t">
+
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={localShowDisabled}
+              onChange={(e) => setLocalShowDisabled(e.target.checked)}
+              className="rounded"
+            />
+            <span className="text-sm text-text">Show disabled journeys</span>
+          </label>
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between gap-2 pt-4 border-t">
           <Button
             variant="secondary-outline"
             onClick={handleReset}
             disabled={!hasActiveFilters}
+            className="w-full sm:w-auto"
           >
             Clear All
           </Button>
           <div className="flex gap-2">
-            <Button variant="secondary-outline" onClick={onClose}>
+            <Button variant="secondary-outline" onClick={onClose} className="flex-1 sm:flex-initial">
               Cancel
             </Button>
-            <Button variant="primary" onClick={() => onApply(localFilters)}>
+            <Button variant="primary" onClick={() => onApply(localFilters, localShowDisabled)} className="flex-1 sm:flex-initial">
               Apply Filters
             </Button>
           </div>

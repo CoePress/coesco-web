@@ -5,6 +5,7 @@ import { z } from "zod";
 import { bugReportingService } from "@/services";
 import { asyncWrapper } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
+import { getEmployeeContext } from "@/utils/context";
 
 const CreateBugReportSchema = z.object({
   description: z.string().min(1, "Description is required"),
@@ -20,5 +21,14 @@ export class BugReportingController {
     const validData = CreateBugReportSchema.parse(req.body);
     const result = await bugReportingService.createBugReport(validData);
     res.status(HTTP_STATUS.CREATED).json(result);
+  });
+
+  getMyBugReports = asyncWrapper(async (req: Request, res: Response) => {
+    const ctx = getEmployeeContext();
+    if (!ctx.id) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "User not authenticated" });
+    }
+    const result = await bugReportingService.getUserBugReports(ctx.id);
+    res.status(HTTP_STATUS.OK).json(result);
   });
 }

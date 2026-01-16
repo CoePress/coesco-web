@@ -1,8 +1,16 @@
 import { Router } from "express";
+import multer from "multer";
 
-import { chatController, lockController, noteController, searchController, settingsController, tagController } from "@/controllers";
+import { chatController, imageController, lockController, noteController, searchController, settingsController, tagController } from "@/controllers";
 
 const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 20 * 1024 * 1024,
+  },
+});
 
 // Chats
 router.post("/chats", chatController.createChat);
@@ -53,5 +61,10 @@ router.get("/notes", noteController.getNotes);
 router.get("/notes/:noteId", noteController.getNote);
 router.patch("/notes/:noteId", noteController.updateNote);
 router.delete("/notes/:noteId", noteController.deleteNote);
+
+// Images
+router.post("/images", upload.any(), imageController.uploadImages);
+router.get("/images", imageController.getAllImages);
+router.delete("/images/:id", imageController.deleteImage);
 
 export default router;

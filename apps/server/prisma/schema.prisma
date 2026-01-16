@@ -106,14 +106,15 @@ model Employee {
   createdById     String
   updatedById     String
 
-  user             User            @relation(fields: [userId], references: [id])
-  department       Department?     @relation(fields: [departmentId], references: [id])
-  manager          Employee?       @relation("ManagerSubordinates", fields: [managerId], references: [id])
-  subordinates     Employee[]      @relation("ManagerSubordinates")
-  journeys         Journey[]       @relation("RsmJourneys")
-  createdCompanies Company[]       @relation("CustomerCreatedBy")
-  createdJourneys  Journey[]       @relation("JourneyCreatedBy")
+  user             User                   @relation(fields: [userId], references: [id])
+  department       Department?            @relation(fields: [departmentId], references: [id])
+  manager          Employee?              @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates     Employee[]             @relation("ManagerSubordinates")
+  journeys         Journey[]              @relation("RsmJourneys")
+  createdCompanies Company[]              @relation("CustomerCreatedBy")
+  createdJourneys  Journey[]              @relation("JourneyCreatedBy")
   chats            Chat[]
+  graphToken       MicrosoftGraphToken?
   employeeHours    EmployeeHours[]
   shiftNotes       ShiftNote[]
 
@@ -259,6 +260,21 @@ enum CompanyStatus {
   ARCHIVE
 }
 
+model CompanyRelationship {
+  id               String   @id @default(uuid())
+  parentId         String
+  childId          String
+  relationshipType String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdById      String
+  updatedById      String
+
+  @@unique([parentId, childId])
+  @@index([createdById])
+  @@map("company_relationships")
+}
+
 model Contact {
   id              String      @id @default(uuid())
   addressId       String?
@@ -266,12 +282,15 @@ model Contact {
   legacyCompanyId String?
   firstName       String
   lastName        String?
+  owner           String?
   email           String?
   phone           String?
   phoneExtension  String?
   title           String?
   type            ContactType @default(Sales)
   isPrimary       Boolean     @default(false)
+  imageId         Int?
+  profileUrl      String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   deletedAt       DateTime?
@@ -279,11 +298,12 @@ model Contact {
   updatedById     String
 
   company          Company          @relation(fields: [companyId], references: [id])
+  image            Image?           @relation(fields: [imageId], references: [id])
   customerJourneys Journey[]        @relation("JourneyCustomerContact")
   dealerJourneys   Journey[]        @relation("JourneyDealerContact")
   journeyContacts  JourneyContact[]
 
-  /// @searchFields(firstName: 4, lastName: 3, email: 2, title: 1)
+  /// @searchFields(firstName: 2, lastName: 2)
 
   @@index([createdById])
   @@index([companyId])
@@ -298,6 +318,46 @@ enum ContactType {
   Left_Company
   Parts_Service
   Sales
+}
+
+enum ActivityType {
+  Call
+  Email
+  Meeting
+  TextChat
+  QuoteSent
+  QuotePresentation
+  Event
+  FormSubmission
+  WebsiteActivity
+  ContentDownloaded
+}
+
+enum ActivitySentiment {
+  Negative
+  Neutral
+  Positive
+}
+
+model Activity {
+  id           String            @id @default(uuid())
+  activityType ActivityType
+  sentiment    ActivitySentiment
+  timestamp    DateTime
+  description  String?           @db.Text
+  notes        String?           @db.Text
+  entityType   String?
+  entityId     String?
+  createdBy    String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+
+  @@index([entityType, entityId])
+  @@index([timestamp])
+  @@index([activityType])
+  @@index([createdBy])
+  @@map("activities")
 }
 
 model JourneyContact {
@@ -466,26 +526,29 @@ enum JourneyInteractionType {
 
 // Quoting
 model Quote {
-  id                String      @id @default(uuid())
-  journeyId         String?
-  year              String
-  number            String
-  rsmId             String?
-  customerId        String?
-  customerContactId String?
-  customerAddressId String?
-  dealerId          String?
-  dealerContactId   String?
-  dealerAddressId   String?
-  priority          String      @default("C")
-  confidence        Int         @default(0)
-  status            QuoteStatus @default(OPEN)
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  deletedAt         DateTime?
-  createdById       String
-  updatedById       String
-  legacy            Json        @default("{}")
+  id                        String               @id @default(uuid())
+  journeyId                 String?
+  year                      String
+  number                    String
+  rsmId                     String?
+  customerId                String?
+  customerContactId         String?
+  customerAddressId         String?
+  dealerId                  String?
+  dealerContactId           String?
+  dealerAddressId           String?
+  priority                  String               @default("C")
+  confidence                Int                  @default(0)
+  status                    QuoteStatus          @default(OPEN)
+  latestRevision            String?
+  latestRevisionStatus      QuoteRevisionStatus?
+  latestRevisionTotalAmount Decimal?
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+  deletedAt                 DateTime?
+  createdById               String
+  updatedById               String
+  legacy                    Json                 @default("{}")
 
   revisions QuoteRevision[]
   /// @transform(quoteNumber: CONCAT(RIGHT(year, 2), '-', LPAD(number, 5, '0')))
@@ -1205,6 +1268,16 @@ model Message {
   @@map("messages")
 }
 
+model Image {
+  id         Int      @id @default(autoincrement())
+  path       String   @unique
+  uploadedAt DateTime @default(now())
+
+  contacts Contact[]
+
+  @@map("images")
+}
+
 model Draft {
   id          String   @id @default(uuid())
   entityType  String
@@ -1370,6 +1443,36 @@ model LoginHistory {
   @@map("login_history")
 }
 
+model MicrosoftGraphToken {
+  id              String   @id @default(uuid())
+  employeeId      String   @unique
+  accessToken     String
+  refreshToken    String
+  tokenType       String   @default("Bearer")
+  scope           String
+  expiresAt       DateTime
+  lastRefreshedAt DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([expiresAt])
+  @@map("microsoft_graph_tokens")
+}
+
+model TeamsChatCache {
+  id              String   @id @default(uuid())
+  employeeId      String
+  recipientUserId String
+  chatId          String
+  createdAt       DateTime @default(now())
+  lastUsedAt      DateTime @default(now())
+
+  @@unique([employeeId, recipientUserId])
+  @@index([employeeId])
+  @@map("teams_chat_cache")
 model CostCode {
   id          String   @id @default(uuid())
   jobSfx      String   @unique

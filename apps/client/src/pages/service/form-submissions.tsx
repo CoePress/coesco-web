@@ -1,6 +1,6 @@
 import { CalendarIcon, UserIcon, ClockIcon } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 
 import { PageHeader, StatusBadge, Table, Toolbar } from "@/components";
 import { TableColumn } from "@/components/ui/table";
@@ -14,6 +14,8 @@ import { useAuth } from "@/contexts/auth.context";
 const FormSubmissions = () => {
   const { id: formId } = useParams<{ id: string }>();
   const { employee } = useAuth();
+  const location = useLocation();
+  const isAdminContext = location.pathname.startsWith("/admin");
 
   const [sort, setSort] = useState<string>("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
@@ -39,6 +41,8 @@ const FormSubmissions = () => {
 
   const { get } = useApi<IApiResponse<any[]>>();
   const toast = useToast();
+
+  const basePath = isAdminContext ? "/admin/forms" : "/service/forms";
 
   const include = useMemo(
     () => ["form"],
@@ -100,7 +104,7 @@ const FormSubmissions = () => {
       header: "Submission ID",
       className: "text-primary hover:underline font-mono text-sm",
       render: (_, row) => (
-        <Link to={`/service/forms/${formId}/submissions/${row.id}`}>#{row.id.slice(-8).toUpperCase()}</Link>
+        <Link to={`${basePath}/${formId}/submissions/${row.id}`}>#{row.id.slice(-8).toUpperCase()}</Link>
       ),
     },
     {
@@ -109,7 +113,7 @@ const FormSubmissions = () => {
       render: (_, row) =>
         row.form ? (
           <Link
-            to={`/service/forms/${row.form.id}`}
+            to={`${basePath}/${row.form.id}`}
             className="hover:underline text-primary">
             {row.form.name}
           </Link>
@@ -230,7 +234,7 @@ const FormSubmissions = () => {
         title="Form Submissions"
         description={`${pagination.total} total submissions`}
         goBack
-        goBackTo={`/service/forms/${formId}`}
+        goBackTo={`${basePath}/${formId}`}
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">

@@ -21,7 +21,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "`n[3/4] Installing dependencies, running migrations, and building..." -ForegroundColor Yellow
-ssh $PRODUCTION_HOST "cd ${PRODUCTION_PATH} && npm install && cd apps/server && npm run db:migrate:deploy && npx prisma generate && cd ../.. && turbo run build --filter=@coesco/server"
+ssh $PRODUCTION_HOST "cd ${PRODUCTION_PATH} && npm install && cd apps/server && npm run db:migrate:deploy && npm run db:migrate:scripts && npx prisma generate && cd ../.. && turbo run build --filter=@coesco/server"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Failed to build application" -ForegroundColor Red
     exit 1

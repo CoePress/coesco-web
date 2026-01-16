@@ -1,5 +1,6 @@
 export { default as Bugs } from "./admin/bugs";
 export { default as AdminDashboard } from "./admin/dashboard";
+export { default as DataPipeline } from "./admin/data-pipeline";
 export { default as Devices } from "./admin/devices";
 export { default as EmployeeDetails } from "./admin/employee-details";
 export { default as Employees } from "./admin/employees";

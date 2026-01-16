@@ -358,7 +358,7 @@
     },
     "style": "Standard",
     "threadingDrive": {
-      "airClutch": "No",
+      "airClutch": "Yes",
       "hydThreadingDrive": "No"
     },
     "holddown": {
