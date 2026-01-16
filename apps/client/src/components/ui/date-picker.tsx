@@ -9,10 +9,14 @@ interface DatePickerProps {
   maxDate?: string;
   className?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   label?: string;
   id?: string;
   name?: string;
   required?: boolean;
+  requiredBgClassName?: string;
+  checkBorderClassName?: string;
+  checkIconPrefix?: string;
 }
 
 const DatePicker = ({
@@ -23,10 +27,14 @@ const DatePicker = ({
   maxDate,
   className = '',
   disabled = false,
+  readOnly = false,
   label,
   id,
   name,
-  required = false
+  required = false,
+  requiredBgClassName = '',
+  checkBorderClassName = '',
+  checkIconPrefix = ''
 }: DatePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -82,45 +90,26 @@ const DatePicker = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
     setInputValue(input);
-  };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      const input = inputValue;
-      const datePattern = /^(\d{1,2})\D?(\d{1,2})\D?(\d{2,4})$/;
-      const match = input.match(datePattern);
+    const datePattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+    const match = input.match(datePattern);
 
-      if (match) {
-        const month = parseInt(match[1], 10) - 1;
-        const day = parseInt(match[2], 10);
-        const yearInput = parseInt(match[3], 10);
-        const year = yearInput < 100 ? 2000 + yearInput : yearInput;
+    if (match) {
+      const month = parseInt(match[1], 10) - 1;
+      const day = parseInt(match[2], 10);
+      const year = parseInt(match[3], 10);
 
-        const date = new Date(year, month, day);
+      const date = new Date(year, month, day);
 
-        if (!isNaN(date.getTime()) &&
-          date.getMonth() === month &&
-          date.getDate() === day &&
-          date.getFullYear() === year) {
+      if (!isNaN(date.getTime()) &&
+        date.getMonth() === month &&
+        date.getDate() === day &&
+        date.getFullYear() === year) {
 
-          if (isDateInRange(date)) {
-            setSelectedDate(date);
-            setViewMonth(date);
-            setInputValue(formatDateForDisplay(date));
-            onChange(formatDateForValue(date));
-          } else {
-            if (selectedDate) {
-              setInputValue(formatDateForDisplay(selectedDate));
-            } else {
-              setInputValue('');
-            }
-          }
-        } else {
-          if (selectedDate) {
-            setInputValue(formatDateForDisplay(selectedDate));
-          } else {
-            setInputValue('');
-          }
+        if (isDateInRange(date)) {
+          setSelectedDate(date);
+          setViewMonth(date);
+          onChange(formatDateForValue(date));
         }
       }
     }
@@ -247,24 +236,28 @@ const DatePicker = ({
           name={name}
           value={inputValue}
           onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder || "MM/DD/YY or MM/DD/YYYY"}
+          onFocus={() => !readOnly && setIsOpen(true)}
+          placeholder={placeholder}
           disabled={disabled}
+          readOnly={readOnly}
           className={`
             w-full text-sm px-3 py-1.5 pr-10 rounded
             bg-foreground border border-border
             text-text placeholder:text-text-muted
             focus:outline-none focus:border-primary
             disabled:bg-surface disabled:text-text-muted
-            transition-all duration-150
+            transition-colors duration-200
+            ${requiredBgClassName}
+            ${checkBorderClassName}
+            ${readOnly ? "cursor-not-allowed" : ""}
             ${className}
           `}
         />
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          disabled={disabled}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors cursor-pointer"
+          onClick={() => !readOnly && setIsOpen(!isOpen)}
+          disabled={disabled || readOnly}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
           <Calendar size={18} />
         </button>
