@@ -1,13 +1,16 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Save, Lock, Link, ChevronDown } from "lucide-react";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
-import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox } from "@/components";
+import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox, FeedPerformanceDisplay, ScenarioTabs } from "@/components";
 import { useToast } from "@/hooks/use-toast";
 import { ms } from "@/utils";
 import Loader from "@/components/ui/loader";
+import { getVisibleTabs } from "@/utils/tab-visibility";
+import { getReelWidthOptionsForModel, getBackplateDiameterOptionsForModel, getStrWidthOptionsForModel, getStrHorsepowerOptionsForModel, getStrFeedRateOptionsForModelAndHorsepower, getFeedMachineWidthOptionsForModel, getHydThreadingDriveOptionsForModel, getHoldDownAssyOptionsForModel, getCylinderOptionsForHoldDownAssy, getDefaultCylinderForHoldDownAssy, DEFAULT_STR_MODEL, getDefaultStrWidthForModel, getDefaultStrHorsepowerForModel } from "@/utils/performance-sheet";
+import { validateFieldValue, findFieldsReferencingField } from "@/utils/field-validation";
 
 type PerformanceTabValue = string;
 type ModalType = 'links' | 'save-confirmation' | 'cancel-confirmation' | 'continue' | 'delete-link' | 'create-link' | null;
@@ -22,6 +25,7 @@ const PerformanceSheet = () => {
   const [addMode, setAddMode] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [originalData, setOriginalData] = useState<Record<string, any>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const [newLink, setNewLink] = useState<{
     entityType: string;
@@ -33,6 +37,14 @@ const PerformanceSheet = () => {
   const [showResults, setShowResults] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [activeScenarios, setActiveScenarios] = useState<Record<string, number>>({
+    'tddbhd': 1,
+    'str-utility': 1,
+    'roll-str-backbend': 1,
+    'feed': 1,
+    'shear': 1,
+  });
+  const [, forceUpdate] = useState({});
   const { id: performanceSheetId } = useParams();
   const { emit, isLockConnected, onLockChanged, calculatePerformanceSheet, isPerformanceConnected } = useSocket();
   const { user } = useAuth();
@@ -45,6 +57,7 @@ const PerformanceSheet = () => {
   const toast = useToast();
   const lockExtendIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const calculationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const queryParams = useMemo(() => {
     return {
@@ -52,35 +65,615 @@ const PerformanceSheet = () => {
     };
   }, []);
 
-  const getNestedValue = (obj: Record<string, any>, path: string): any => {
-    const keys = path.split(".");
-    let current = obj;
+  // Debounced calculation function
+  const debouncedCalculate = useCallback((data: Record<string, any>) => {
+    if (calculationTimeoutRef.current) {
+      clearTimeout(calculationTimeoutRef.current);
+    }
 
-    for (const key of keys) {
-      if (current === null || current === undefined || typeof current !== "object") {
+    calculationTimeoutRef.current = setTimeout(() => {
+      if (isPerformanceConnected && performanceSheet?.data?.version?.sections) {
+        const bundledData = bundleFormDataByTabsAndSections(data);
+
+        // Log TDDBHD data being sent
+        if (bundledData.tddbhd) {
+          console.log('Sending TDDBHD data to backend:', JSON.stringify(bundledData.tddbhd, null, 2));
+        }
+
+        // Log STR Utility data being sent
+        if (bundledData.strUtility) {
+          console.log('Sending STR UTILITY data to backend:', JSON.stringify(bundledData.strUtility, null, 2));
+        }
+
+        calculatePerformanceSheet(bundledData, "main.py", (response) => {
+          if (response?.ok) {
+            // Merge calculated values without overwriting user input
+            if (response.result) {
+              setFormData(currentFormData => {
+                const newData = mergeCalculatedValues(currentFormData, response.result);
+                // Force re-render to update check field visual indicators
+                forceUpdate({});
+                return newData;
+              });
+            }
+          }
+        });
+      }
+    }, 1000); // Wait 1 second after user stops typing
+  }, [isPerformanceConnected, performanceSheet, calculatePerformanceSheet]);
+
+  // Helper function to merge calculated values without overwriting user input
+  const mergeCalculatedValues = useCallback((currentData: Record<string, any>, calculatedData: Record<string, any>): Record<string, any> => {
+    let mergedData = { ...currentData };
+
+    // Handle scenario-based calculation results
+    // Material Specs scenarios - data is already mapped by backend result_mapping.py
+    if (calculatedData.materialSpecs?.scenarios) {
+      calculatedData.materialSpecs.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          const scenarioData = {
+            minBendRadius: scenario.minBendRadius,
+            minLoopLength: scenario.minLoopLength,
+            coilODCalculated: scenario.coilODCalculated
+          };
+          Object.entries(scenarioData).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              mergedData = setNestedValue(mergedData, `materialSpecs.scenarios[${index}].${key}`, value);
+            }
+          });
+        }
+      });
+    }
+
+    // TDDBHD scenarios - data is already mapped by backend result_mapping.py
+    if (calculatedData.tddbhd?.scenarios) {
+      console.log('TDDBHD scenarios from backend:', JSON.stringify(calculatedData.tddbhd.scenarios, null, 2));
+      calculatedData.tddbhd.scenarios.forEach((scenario: any, index: number) => {
+        console.log(`Processing TDDBHD scenario ${index}:`, JSON.stringify(scenario, null, 2));
+        if (scenario && Object.keys(scenario).length > 0) {
+          // Flatten scenario data to field paths
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                const fullPath = `tddbhd.scenarios[${index}].${path}`;
+                console.log(`Setting TDDBHD value: ${fullPath} = ${value}`);
+                mergedData = setNestedValue(mergedData, fullPath, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        } else {
+          console.warn(`TDDBHD scenario ${index} is empty or has no data - calculation likely failed on backend`);
+        }
+      });
+      console.log('Merged data after TDDBHD:', mergedData.tddbhd);
+    }
+
+    // Str Utility scenarios
+    console.log('STR Utility scenarios from backend:', calculatedData.strUtility?.scenarios || []);
+    if (calculatedData.strUtility?.scenarios) {
+      calculatedData.strUtility.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          console.log(`Processing STR Utility scenario ${index}:`, JSON.stringify(scenario, null, 2));
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                console.log(`Setting STR Utility value: strUtility.scenarios[${index}].${path} = ${value}`);
+                mergedData = setNestedValue(mergedData, `strUtility.scenarios[${index}].${path}`, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        }
+      });
+    }
+
+    // Roll Str Backbend scenarios
+    console.log('Roll Str Backbend scenarios from backend:', calculatedData.rollStrBackbend?.scenarios || []);
+    if (calculatedData.rollStrBackbend?.scenarios) {
+      calculatedData.rollStrBackbend.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          console.log(`Processing Roll Str Backbend scenario ${index}:`, JSON.stringify(scenario, null, 2));
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                console.log(`Setting Roll Str Backbend value: rollStrBackbend.scenarios[${index}].${path} = ${value}`);
+                mergedData = setNestedValue(mergedData, `rollStrBackbend.scenarios[${index}].${path}`, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        } else {
+          console.warn(`Roll Str Backbend scenario ${index} is empty or has no data - calculation likely failed on backend`);
+        }
+      });
+      console.log('Merged data after Roll Str Backbend:', mergedData.rollStrBackbend);
+    }
+
+    // Feed scenarios (only 2)
+    console.log('Feed scenarios from backend:', calculatedData.feed?.scenarios || []);
+    if (calculatedData.feed?.scenarios) {
+      calculatedData.feed.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          console.log(`Processing Feed scenario ${index}:`, JSON.stringify(scenario, null, 2));
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                console.log(`Setting Feed value: feed.scenarios[${index}].${path} = ${value}`);
+                mergedData = setNestedValue(mergedData, `feed.scenarios[${index}].${path}`, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        } else {
+          console.warn(`Feed scenario ${index} is empty or has no data - calculation likely failed on backend`);
+        }
+      });
+      console.log('Merged data after Feed:', mergedData.feed);
+    }
+
+    // Shear scenarios (only 2)
+    if (calculatedData.shear?.scenarios) {
+      calculatedData.shear.scenarios.forEach((scenario: any, index: number) => {
+        if (scenario) {
+          const flattenScenario = (obj: any, prefix: string = '') => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const path = prefix ? `${prefix}.${key}` : key;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                flattenScenario(value, path);
+              } else if (value !== undefined && value !== null) {
+                mergedData = setNestedValue(mergedData, `shear.scenarios[${index}].${path}`, value);
+              }
+            });
+          };
+          flattenScenario(scenario);
+        }
+      });
+    }
+
+    // Legacy field paths for backward compatibility and non-scenario fields
+    const calculatedFieldPaths = [
+      // RFQ FPM values
+      'common.feedRates.average.fpm',
+      'common.feedRates.max.fpm',
+      'common.feedRates.min.fpm',
+      // Material specs
+      'materialSpecs.material.minBendRadius',
+      'materialSpecs.material.minLoopLength',
+      'materialSpecs.material.calculatedCoilOD',
+      // TDDBHD calculated fields
+      'tddbhd.coil.coilWeight',
+      'tddbhd.coil.coilOD',
+      'tddbhd.reel.dispReelMtr',
+      'tddbhd.reel.brakePadDiameter',
+      'tddbhd.reel.cylinderBore',
+      'tddbhd.reel.webTension.psi',
+      'tddbhd.reel.webTension.lbs',
+      'tddbhd.reel.torque.atMandrel',
+      'tddbhd.reel.torque.rewindRequired',
+      'tddbhd.reel.torque.required',
+      'tddbhd.reel.holddown.force.required',
+      'tddbhd.reel.holddown.force.available',
+      'tddbhd.reel.holddown.cylinderPressure',
+      'tddbhd.reel.minMaterialWidth',
+      'tddbhd.reel.dragBrake.psiAirRequired',
+      'tddbhd.reel.dragBrake.holdingForce',
+      // Reel Drive calculated fields (key ones)
+      'reelDrive.reel.maxWidth',
+      'reelDrive.reel.mandrel.diameter',
+      'reelDrive.reel.mandrel.length',
+      'reelDrive.reel.mandrel.maxRPM',
+      'reelDrive.reel.backplate.thickness',
+      'reelDrive.reel.backplate.weight',
+      'reelDrive.coil.weight',
+      'reelDrive.reel.ratio',
+      'reelDrive.reel.speed',
+      'reelDrive.reel.accelerationRate',
+      'reelDrive.reel.torque.empty.torque',
+      'reelDrive.reel.torque.full.torque',
+
+      // Feed calculated fields
+      'feed.feed.motor',
+      'feed.feed.amp',
+      'feed.feed.ratio',
+      'feed.feed.maxMotorRPM',
+      'feed.feed.motorInertia',
+      'feed.feed.settleTime',
+      'feed.feed.regen',
+      'feed.feed.reflInertia',
+      'feed.feed.match',
+      'feed.feed.materialInLoop',
+      'feed.feed.torque.motorPeak',
+      'feed.feed.torque.peak',
+      'feed.feed.torque.frictional',
+      'feed.feed.torque.loop',
+      'feed.feed.torque.settle',
+      'feed.feed.torque.acceleration',
+      'feed.feed.torque.rms.motor',
+      'feed.feed.torque.rms.feedAngle1',
+      'feed.feed.torque.rms.feedAngle2',
+      'feed.feed.pullThru.centerDistance',
+      'feed.feed.pullThru.yieldStrength',
+      'feed.feed.pullThru.kConst',
+      'feed.feed.pullThru.straightenerRolls',
+      'feed.feed.pullThru.straightenerTorque',
+      'feed.feed.tableValues',
+
+      // Str Utility calculated fields
+      'strUtility.straightener.centerDistance',
+      'strUtility.straightener.jackForceAvailable',
+      'strUtility.straightener.modulus',
+      'strUtility.straightener.maxRollDepth',
+      'strUtility.straightener.rolls.straightener.diameter',
+      'strUtility.straightener.rolls.pinch.diameter',
+      'strUtility.straightener.rolls.straightener.requiredGearTorque',
+      'strUtility.straightener.rolls.straightener.ratedTorque',
+      'strUtility.straightener.rolls.pinch.requiredGearTorque',
+      'strUtility.straightener.rolls.pinch.ratedTorque',
+      'strUtility.straightener.gear.faceWidth',
+      'strUtility.straightener.gear.contAngle',
+      'strUtility.straightener.gear.straightenerRoll.numberOfTeeth',
+      'strUtility.straightener.gear.straightenerRoll.dp',
+      'strUtility.straightener.gear.pinchRoll.numberOfTeeth',
+      'strUtility.straightener.gear.pinchRoll.dp',
+      'strUtility.straightener.required.force',
+      'strUtility.straightener.required.horsepower',
+      'strUtility.straightener.actualCoilWeight',
+      'strUtility.straightener.coilOD',
+      'strUtility.straightener.torque.straightener',
+      'strUtility.straightener.torque.acceleration',
+      'strUtility.straightener.torque.brake',
+      'strUtility.straightener.required.horsepowerCheck',
+      'strUtility.straightener.required.jackForceCheck',
+      'strUtility.straightener.required.backupRollsCheck',
+      'strUtility.straightener.required.feedRateCheck',
+      'strUtility.straightener.required.pinchRollCheck',
+      'strUtility.straightener.required.strRollCheck',
+      'strUtility.straightener.required.fpmCheck',
+
+      // Roll Str Backbend calculated fields  
+      'rollStrBackbend.rollConfiguration',
+      'common.equipment.straightener.rollDiameter',
+      'rollStrBackbend.straightener.centerDistance',
+      'rollStrBackbend.straightener.jackForceAvailable',
+      'rollStrBackbend.straightener.rolls.depth.withMaterial',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.depthRequired',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequired',
+      'rollStrBackbend.straightener.rolls.backbend.yieldMet',
+      'rollStrBackbend.straightener.rolls.backbend.radius.comingOffCoil',
+      'rollStrBackbend.straightener.rolls.backbend.radius.offCoilAfterSpringback',
+      'rollStrBackbend.straightener.rolls.backbend.radius.bendingMomentToYield',
+      'rollStrBackbend.straightener.rolls.backbend.radius.oneOffCoil',
+      'rollStrBackbend.straightener.rolls.backbend.radius.curveAtYield',
+      'rollStrBackbend.straightener.rolls.backbend.radius.radiusAtYield',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.height',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.forceRequired',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.numberOfYieldStrainsAtSurface',
+      // First roller up/down fields
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.radiusAfterSpringback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.first.down.radiusAfterSpringback',
+      // Middle roller fields
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.height',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.forceRequired',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.numberOfYieldStrainsAtSurface',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.radiusAfterSpringback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.radiusAfterSpringback',
+      // Last roller fields
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.height',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.forceRequired',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.numberOfYieldStrainsAtSurface',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.resultingRadius',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.curvatureDifference',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.bendingMoment',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.bendingMomentRatio',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.springback',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.percentOfThicknessYielded',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.radiusAfterSpringback',
+
+      // Shear calculated fields
+      'shear.shear.blade.angleOfBlade',
+      'shear.shear.blade.initialCut.length',
+      'shear.shear.blade.initialCut.area',
+
+      // CHECK FIELDS - These need to update in real-time without page refresh
+      // TDDBHD Check Fields
+      'tddbhd.reel.checks.tddbhdCheck',
+      'tddbhd.reel.checks.minMaterialWidthCheck',
+      'tddbhd.reel.checks.airPressureCheck',
+      'tddbhd.reel.checks.rewindTorqueCheck',
+      'tddbhd.reel.checks.holdDownForceCheck',
+      'tddbhd.reel.checks.brakePressCheck',
+      'tddbhd.reel.checks.torqueRequiredCheck',
+
+      // Reel Drive Check Fields
+      'reelDrive.reel.torque.empty.horsepowerCheck',
+      'reelDrive.reel.torque.full.horsepowerCheck',
+      'reelDrive.reel.torque.empty.regenCheck',
+      'reelDrive.reel.torque.full.regenCheck',
+
+      // STR Utility Check Fields
+      'strUtility.straightener.required.horsepowerCheck',
+      'strUtility.straightener.required.jackForceCheck',
+      'strUtility.straightener.required.backupRollsCheck',
+      'strUtility.straightener.required.feedRateCheck',
+      'strUtility.straightener.required.pinchRollCheck',
+      'strUtility.straightener.required.strRollCheck',
+      'strUtility.straightener.required.fpmCheck',
+
+      // Roll STR Backbend Check Fields
+      'rollStrBackbend.straightener.rolls.backbend.rollers.depthRequiredCheck',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequiredCheck',
+      'rollStrBackbend.straightener.rolls.backbend.rollers.percentYieldCheck',
+
+      // Feed Check Fields
+      'feed.feed.feedCheck',
+      'feed.feed.matchCheck',
+      'feed.feed.torque.peakCheck',
+      'feed.feed.torque.accelerationCheck',
+      'feed.feed.torque.rms.motorCheck',
+      'feed.feed.torque.rms.feedAngle1Check',
+      'feed.feed.torque.rms.feedAngle2Check',
+
+      // Additional feed fields
+      'common.material.materialDensity',
+      'common.equipment.feed.maxVelocity',
+      'feed.feed.strMaxSpeed',
+      'feed.feed.pullThru.pinchRolls',
+      'feed.feed.machineWidth',
+      'feed.feed.fullWidthRolls',
+      'feed.feed.feedAngle1',
+      'feed.feed.accelerationRate',
+
+      // Motorization fields
+      'reelDrive.reel.motorization.driveHorsepower',
+      'reelDrive.reel.motorization.speed',
+      'reelDrive.reel.motorization.accelRate',
+      'reelDrive.reel.motorization.regenRequired',
+      'reelDrive.reel.motorization.isMotorized',
+
+      // Summary report fields - these are readonly and get their values from other tabs
+      'common.customer',
+      'rfq.dates.date',
+      'common.equipment.reel.model',
+      'common.equipment.reel.width',
+      'common.equipment.reel.backplate.diameter',
+      'materialSpecs.reel.style',
+      'reelDrive.reel.motorization.isMotorized',
+      'tddbhd.reel.threadingDrive.airClutch',
+      'tddbhd.reel.threadingDrive.hydThreadingDrive',
+      'tddbhd.reel.holddown.assy',
+      'tddbhd.reel.holddown.cylinderPressure',
+      'tddbhd.reel.dragBrake.model',
+      'tddbhd.reel.dragBrake.quantity',
+      'reelDrive.reel.motorization.driveHorsepower',
+      'reelDrive.reel.motorization.speed',
+      'reelDrive.reel.motorization.accelRate',
+      'reelDrive.reel.motorization.regenRequired',
+      'common.equipment.straightener.model',
+      'common.equipment.straightener.numberOfRolls',
+      'common.equipment.straightener.width',
+      'strUtility.straightener.feedRate',
+      'strUtility.straightener.acceleration',
+      'strUtility.straightener.horsepower',
+      'strUtility.straightener.payoff',
+      'strUtility.straightener.payoff',
+      'feed.feed.application',
+      'common.equipment.feed.model',
+      'feed.feed.machineWidth',
+      'common.equipment.feed.loopPit',
+      'feed.feed.fullWidthRolls',
+      'feed.feed.feedAngle1',
+      'feed.feed.feedAngle2',
+      'common.press.bedLength',
+      'common.equipment.feed.maximumVelocity',
+      'feed.feed.accelerationRate',
+      'feed.feed.ratio',
+      'feed.feed.pullThru.straightenerRolls',
+      'feed.feed.pullThru.pinchRolls',
+      'common.equipment.feed.direction',
+      'common.equipment.feed.controlsLevel',
+      'common.equipment.feed.typeOfLine',
+      'common.equipment.feed.passline',
+      'common.equipment.feed.lightGuageNonMarking',
+      'common.equipment.feed.nonMarking',
+
+      // Shear Check Fields
+      'shear.shear.conclusions.force.requiredToShearCheck'
+    ];
+
+    // Update calculated fields and ensure input fields are preserved/copied
+    calculatedFieldPaths.forEach(path => {
+      const calculatedValue = getNestedValue(calculatedData, path);
+      const inputValue = getNestedValue(formData, path);
+
+      // Priority: calculated value > existing input value
+      if (calculatedValue !== undefined && calculatedValue !== null) {
+        mergedData = setNestedValue(mergedData, path, calculatedValue);
+      } else if (inputValue !== undefined && inputValue !== null) {
+        // Ensure input field values are available in merged data
+        mergedData = setNestedValue(mergedData, path, inputValue);
+      }
+    });
+
+    return mergedData;
+  }, []);
+
+  const getNestedValue = (obj: Record<string, any>, path: string): any => {
+    let current = obj;
+    const parts = path.split(".");
+
+    for (const part of parts) {
+      if (current === null || current === undefined) {
         return undefined;
       }
-      current = current[key];
+
+      // Handle array notation like "scenarios[0]"
+      const arrayMatch = part.match(/^(.+?)\[(\d+)\]$/);
+      if (arrayMatch) {
+        const arrayKey = arrayMatch[1];
+        const index = parseInt(arrayMatch[2], 10);
+        current = current[arrayKey]?.[index];
+      } else {
+        current = current[part];
+      }
     }
 
     return current;
   };
 
   const setNestedValue = (obj: Record<string, any>, path: string, value: any): Record<string, any> => {
-    const keys = path.split(".");
     const result = JSON.parse(JSON.stringify(obj));
     let current = result;
 
-    for (let i = 0; i < keys.length - 1; i++) {
-      const key = keys[i];
-      if (!current[key] || typeof current[key] !== "object") {
-        current[key] = {};
+    // Parse path with array notation support (e.g., "scenarios[0].field")
+    const parts = path.split('.');
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      const arrayMatch = part.match(/^(.+?)\[(\d+)\]$/);
+
+      if (arrayMatch) {
+        // Handle array access like "scenarios[0]"
+        const arrayKey = arrayMatch[1];
+        const index = parseInt(arrayMatch[2], 10);
+
+        if (!current[arrayKey]) {
+          current[arrayKey] = [];
+        }
+        if (!current[arrayKey][index]) {
+          current[arrayKey][index] = {};
+        }
+        current = current[arrayKey][index];
+      } else {
+        // Handle regular object access
+        if (!current[part] || typeof current[part] !== "object") {
+          current[part] = {};
+        }
+        current = current[part];
       }
-      current = current[key];
     }
 
-    current[keys[keys.length - 1]] = value;
+    // Set the final value
+    const lastPart = parts[parts.length - 1];
+    const arrayMatch = lastPart.match(/^(.+?)\[(\d+)\]$/);
+
+    if (arrayMatch) {
+      const arrayKey = arrayMatch[1];
+      const index = parseInt(arrayMatch[2], 10);
+      if (!current[arrayKey]) {
+        current[arrayKey] = [];
+      }
+      current[arrayKey][index] = value;
+    } else {
+      current[lastPart] = value;
+    }
+
     return result;
+  };
+
+  const isFieldFilled = (value: any, fieldType: string): boolean => {
+    if (value === null || value === undefined) return false;
+    if (fieldType === 'checkbox') return true;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (typeof value === 'number') return !isNaN(value); // Accept 0 as valid
+    return Boolean(value);
+  };
+
+  const isCheckField = (fieldId: string): boolean => {
+    const lowerFieldId = fieldId.toLowerCase();
+    return lowerFieldId.includes('check') || lowerFieldId.endsWith('ok');
+  };
+
+  const getCheckStatus = (value: any): 'pass' | 'fail' | 'pending' => {
+    if (!value || value === '') return 'pending';
+    const strValue = String(value).trim().toLowerCase();
+
+    if (strValue === 'ok' || strValue === 'pass' || strValue === 'yes' ||
+      strValue === 'true' || strValue === '✓' || strValue === 'valid') {
+      return 'pass';
+    }
+
+    if (strValue === 'fail' || strValue === 'no' || strValue === 'false' ||
+      strValue === '✗' || strValue === 'error' || strValue === 'not ok' ||
+      strValue === 'too small' || strValue === 'too large' || strValue === 'invalid') {
+      return 'fail';
+    }
+
+    return 'pending';
+  };
+
+  const getSectionCheckStats = (section: any) => {
+    const checkFields = section.fields?.filter((f: any) => isCheckField(f.id)) || [];
+    if (checkFields.length === 0) return null;
+
+    let passed = 0, failed = 0, pending = 0;
+
+    checkFields.forEach((field: any) => {
+      const value = getNestedValue(formData, field.id);
+      const status = getCheckStatus(value);
+      if (status === 'pass') passed++;
+      else if (status === 'fail') failed++;
+      else pending++;
+    });
+
+    return { total: checkFields.length, passed, failed, pending };
+  };
+
+  const getTabCheckStats = (tabValue: string) => {
+    const tab = performanceSheet?.data?.version?.sections?.find((t: any) => t.value === tabValue);
+    if (!tab) return null;
+
+    let totalPassed = 0, totalFailed = 0, totalPending = 0;
+
+    tab.sections?.forEach((section: any) => {
+      const stats = getSectionCheckStats(section);
+      if (stats) {
+        totalPassed += stats.passed;
+        totalFailed += stats.failed;
+        totalPending += stats.pending;
+      }
+    });
+
+    const total = totalPassed + totalFailed + totalPending;
+    if (total === 0) return null;
+
+    return { total, passed: totalPassed, failed: totalFailed, pending: totalPending };
   };
 
   const storageKey = useMemo(() => `performance-sheet-${performanceSheetId}`, [performanceSheetId]);
@@ -102,7 +695,7 @@ const PerformanceSheet = () => {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error('Failed to parse saved performance sheet data:', e);
+
         return null;
       }
     }
@@ -116,13 +709,52 @@ const PerformanceSheet = () => {
 
   const visibleTabs = useMemo(() => {
     if (!performanceSheet?.data?.version?.sections) return [];
+
+    // Use performanceSheet.data.data as fallback when formData is empty/incomplete
+    // This ensures that tab visibility works correctly when the sheet is first loaded
+    const dataForVisibility = formData && Object.keys(formData).length > 0
+      ? formData
+      : performanceSheet.data.data || {};
+
+    const allowedTabs = getVisibleTabs(dataForVisibility);
+    const allowedTabValues = new Set(allowedTabs.map(t => t.value));
+
     return performanceSheet.data.version.sections
+      .filter((tab: any) => allowedTabValues.has(tab.value))
       .sort((a: any, b: any) => a.sequence - b.sequence)
-      .map((tab: any) => ({
-        label: tab.label,
-        value: tab.value,
-      }));
-  }, [performanceSheet]);
+      .map((tab: any) => {
+        const stats = getTabCheckStats(tab.value);
+        let badge = undefined;
+
+        if (stats && stats.total > 0) {
+          if (stats.failed > 0) {
+            badge = { type: 'fail' as const, text: `${stats.failed} ✗` };
+          } else if (stats.pending > 0) {
+            badge = { type: 'partial' as const, text: `${stats.passed}/${stats.total}` };
+          } else {
+            badge = { type: 'pass' as const, text: '✓' };
+          }
+        }
+
+        const allowedTab = allowedTabs.find(t => t.value === tab.value);
+        const displayLabel = allowedTab?.dynamicLabel || tab.label;
+
+        return {
+          label: displayLabel,
+          value: tab.value,
+          badge,
+        };
+      });
+  }, [
+    performanceSheet,
+    formData,
+    formData?.feed?.feed?.application,
+    formData?.common?.equipment?.feed?.lineType,
+    formData?.feed?.feed?.pullThru?.isPullThru,
+    formData?.common?.equipment?.feed?.typeOfLine,
+    formData?.materialSpecs?.straightener?.selectRoll,
+    formData?.rollStrBackbend?.straightener?.rolls?.typeOfRoll
+  ]);
 
   const activeTabData = useMemo(() => {
     if (!performanceSheet?.data?.version?.sections || !activeTab) return null;
@@ -164,7 +796,7 @@ const PerformanceSheet = () => {
         setLockInfo((response as any)?.lockInfo || null);
       }
     } catch (err) {
-      console.error("Failed to fetch lock status:", err);
+
     }
   };
 
@@ -193,9 +825,306 @@ const PerformanceSheet = () => {
 
   useEffect(() => {
     if (performanceSheet?.data) {
-      const data = performanceSheet.data.data || {};
+      let data = performanceSheet.data.data || {};
+
+
+      // Initialize STR fields with defaults if they don't have values
+      const originalStrModel = getNestedValue(data, "common.equipment.straightener.model");
+      const strModelValue = originalStrModel || DEFAULT_STR_MODEL;
+      const strWidthValue = getNestedValue(data, "common.equipment.straightener.width");
+      const strHorsepowerValue = getNestedValue(data, "strUtility.straightener.horsepower");
+
+      // Set default STR model if not already set
+      if (!originalStrModel) {
+
+
+        // Ensure the nested structure exists
+        if (!data.common) data.common = {};
+        if (!data.common.equipment) data.common.equipment = {};
+        if (!data.common.equipment.straightener) data.common.equipment.straightener = {};
+
+        // Set the model directly
+        data.common.equipment.straightener.model = DEFAULT_STR_MODEL;
+
+      }      // Set default STR width if not already set
+      if (!strWidthValue) {
+        const defaultWidth = getDefaultStrWidthForModel(strModelValue);
+        if (defaultWidth) {
+          data.common.equipment.straightener.width = defaultWidth;
+        }
+      }
+
+      // Set default STR horsepower if not already set
+      if (!strHorsepowerValue) {
+        const defaultHorsepower = getDefaultStrHorsepowerForModel(strModelValue);
+        if (defaultHorsepower) {
+          // Ensure strUtility structure exists
+          if (!data.strUtility) data.strUtility = {};
+          if (!data.strUtility.straightener) data.strUtility.straightener = {};
+          data.strUtility.straightener.horsepower = defaultHorsepower;
+        }
+      }
+
+      // Initialize basic reel values if missing
+      const reelWidth = getNestedValue(data, "common.equipment.reel.width");
+      const reelHorsepower = getNestedValue(data, "common.equipment.reel.horsepower");
+      const backplateDiameter = getNestedValue(data, "common.equipment.reel.backplate.diameter");
+
+      if (reelWidth === null || reelWidth === undefined) {
+
+        if (!data.common) data.common = {};
+        if (!data.common.equipment) data.common.equipment = {};
+        if (!data.common.equipment.reel) data.common.equipment.reel = {};
+        data.common.equipment.reel.width = 24;
+      }
+
+      if (reelHorsepower === null || reelHorsepower === undefined) {
+
+        data.common.equipment.reel.horsepower = 5;
+      }
+
+      if (backplateDiameter === null || backplateDiameter === undefined) {
+
+        if (!data.common.equipment.reel.backplate) data.common.equipment.reel.backplate = {};
+        data.common.equipment.reel.backplate.diameter = 27;
+      }
+
+      // Initialize missing feed values (let source tabs handle their defaults)
+      const fullWidthRolls = getNestedValue(data, "feed.feed.fullWidthRolls");
+
+      if (!data.feed) data.feed = {};
+      if (!data.feed.feed) data.feed.feed = {};
+
+      if (fullWidthRolls === null || fullWidthRolls === undefined) {
+
+        data.feed.feed.fullWidthRolls = "Yes";
+      }
+
+      // Note: feedAngle1 and feedAngle2 are scenario-based fields
+      // They should NOT be initialized here as that would override scenario-specific values
+      // The template defaults and backend preservation handle these values correctly
+
+      // Initialize missing material specs values
+      const reelStyle = getNestedValue(data, "materialSpecs.reel.style");
+      if (reelStyle === null || reelStyle === undefined) {
+
+        if (!data.materialSpecs) data.materialSpecs = {};
+        if (!data.materialSpecs.reel) data.materialSpecs.reel = {};
+        data.materialSpecs.reel.style = "Single Ended";
+      }
+
+      // Initialize missing TDDBHD values
+      const hydThreadingDrive = getNestedValue(data, "tddbhd.reel.threadingDrive.hydThreadingDrive");
+      const brakeQuantity = getNestedValue(data, "tddbhd.reel.dragBrake.quantity");
+
+      if (hydThreadingDrive === null || hydThreadingDrive === undefined) {
+
+        if (!data.tddbhd) data.tddbhd = {};
+        if (!data.tddbhd.reel) data.tddbhd.reel = {};
+        if (!data.tddbhd.reel.threadingDrive) data.tddbhd.reel.threadingDrive = {};
+        data.tddbhd.reel.threadingDrive.hydThreadingDrive = "22 cu in (D-12689)";
+      }
+
+      if (brakeQuantity === null || brakeQuantity === undefined) {
+
+        if (!data.tddbhd.reel.dragBrake) data.tddbhd.reel.dragBrake = {};
+        data.tddbhd.reel.dragBrake.quantity = 1;
+      }
+
+      // Initialize missing motorization values 
+      const isMotorized = getNestedValue(data, "reelDrive.reel.motorization.isMotorized");
+      const driveHorsepower = getNestedValue(data, "reelDrive.reel.motorization.driveHorsepower");
+      const motorSpeed = getNestedValue(data, "reelDrive.reel.motorization.speed");
+      const accelRate = getNestedValue(data, "reelDrive.reel.motorization.accelRate");
+      const regenRequired = getNestedValue(data, "reelDrive.reel.motorization.regenRequired");
+
+      if (!data.reelDrive) data.reelDrive = {};
+      if (!data.reelDrive.reel) data.reelDrive.reel = {};
+      if (!data.reelDrive.reel.motorization) data.reelDrive.reel.motorization = {};
+
+      if (isMotorized === null || isMotorized === undefined) {
+
+        data.reelDrive.reel.motorization.isMotorized = "No";
+      }
+
+      if (driveHorsepower === null || driveHorsepower === undefined) {
+
+        data.reelDrive.reel.motorization.driveHorsepower = 0;
+      }
+
+      if (motorSpeed === null || motorSpeed === undefined) {
+
+        data.reelDrive.reel.motorization.speed = 0;
+      }
+
+      if (accelRate === null || accelRate === undefined) {
+
+        data.reelDrive.reel.motorization.accelRate = 0;
+      }
+
+      if (regenRequired === null || regenRequired === undefined) {
+
+        data.reelDrive.reel.motorization.regenRequired = 0;
+      }
+
+      // Payoff should come from STR utility tab - let source tab handle defaults
+
+      // Initialize missing pull-through pinch rolls
+      const pinchRolls = getNestedValue(data, "feed.feed.pullThru.pinchRolls");
+      if (pinchRolls === null || pinchRolls === undefined) {
+
+        if (!data.feed.feed.pullThru) data.feed.feed.pullThru = {};
+        data.feed.feed.pullThru.pinchRolls = 0;
+      }
+
+      // Initialize number of rolls from type of roll default value
+      let typeOfRoll = getNestedValue(data, "materialSpecs.straightener.rolls.typeOfRoll");
+      const existingNumberOfRolls = getNestedValue(data, "common.equipment.straightener.numberOfRolls");
+
+      // If no type of roll is set, use the first option as default
+      if (!typeOfRoll) {
+        // Ensure materialSpecs structure exists
+        if (!data.materialSpecs) data.materialSpecs = {};
+        if (!data.materialSpecs.straightener) data.materialSpecs.straightener = {};
+        if (!data.materialSpecs.straightener.rolls) data.materialSpecs.straightener.rolls = {};
+
+        // Set default to first roll type option
+        typeOfRoll = "7 Roll Str. Backbend";
+        data.materialSpecs.straightener.rolls.typeOfRoll = typeOfRoll;
+      }
+      if (typeOfRoll && !existingNumberOfRolls) {
+        const rollMatch = typeOfRoll.match(/(\d+)\s*Roll/i);
+        if (rollMatch) {
+          const numberOfRolls = rollMatch[1];
+          data.common.equipment.straightener.numberOfRolls = parseFloat(numberOfRolls);
+        }
+      }
+
+      // Initialize material scenarios array if it doesn't exist
+      const materialScenarios = getNestedValue(data, "common.materialScenarios");
+      if (!materialScenarios || !Array.isArray(materialScenarios) || materialScenarios.length === 0) {
+        // Initialize with 4 empty scenarios
+        if (!data.common) data.common = {};
+        data.common.materialScenarios = [
+          { scenarioId: 1 },
+          { scenarioId: 2 },
+          { scenarioId: 3 },
+          { scenarioId: 4 }
+        ];
+      } else {
+        // Ensure we have exactly 4 scenarios
+        while (data.common.materialScenarios.length < 4) {
+          data.common.materialScenarios.push({
+            scenarioId: data.common.materialScenarios.length + 1
+          });
+        }
+      }
+
+      // Populate each scenario with common.coil values (shared across all scenarios)
+      const commonCoilWeight = getNestedValue(data, "common.coil.maxCoilWeight");
+      const commonCoilOD = getNestedValue(data, "common.coil.maxCoilOD");
+      const commonCoilID = getNestedValue(data, "common.coil.coilID");
+      const commonReqMaxFPM = getNestedValue(data, "common.feedRates.max.fpm");
+
+      data.common.materialScenarios.forEach((scenario: any, index: number) => {
+        // Populate shared fields from common.coil if not already set
+        if (commonCoilWeight !== null && commonCoilWeight !== undefined) {
+          scenario.coilWeight = commonCoilWeight;
+        }
+        if (commonCoilOD !== null && commonCoilOD !== undefined) {
+          scenario.coilOD = commonCoilOD;
+        }
+        if (commonCoilID !== null && commonCoilID !== undefined) {
+          scenario.coilID = commonCoilID;
+        }
+        if (commonReqMaxFPM !== null && commonReqMaxFPM !== undefined) {
+          scenario.reqMaxFPM = commonReqMaxFPM;
+        }
+        // Ensure scenarioId exists
+        if (!scenario.scenarioId) {
+          scenario.scenarioId = index + 1;
+        }
+      });
+
+      // Initialize scenario-based calculated data arrays if they don't exist
+      ['tddbhd', 'strUtility', 'rollStrBackbend', 'feed', 'shear'].forEach((tabKey) => {
+        if (!data[tabKey]) data[tabKey] = {};
+        if (!data[tabKey].scenarios || !Array.isArray(data[tabKey].scenarios)) {
+          const maxScenarios = (tabKey === 'feed' || tabKey === 'shear') ? 2 : 4;
+          data[tabKey].scenarios = Array.from({ length: maxScenarios }, (_, i) => ({
+            scenarioId: i + 1
+          }));
+        }
+      });
+
+      // Initialize material specs scenarios array
+      if (!data.materialSpecs) data.materialSpecs = {};
+      if (!data.materialSpecs.scenarios || !Array.isArray(data.materialSpecs.scenarios)) {
+        data.materialSpecs.scenarios = Array.from({ length: 4 }, (_, i) => ({
+          scenarioId: i + 1
+        }));
+      }
+
+      // Initialize reel equipment scenarios array
+      if (!data.common) data.common = {};
+      if (!data.common.equipment) data.common.equipment = {};
+      if (!data.common.equipment.reel) data.common.equipment.reel = {};
+      if (!data.common.equipment.reel.scenarios || !Array.isArray(data.common.equipment.reel.scenarios)) {
+        data.common.equipment.reel.scenarios = Array.from({ length: 4 }, (_, i) => ({
+          scenarioId: i + 1
+        }));
+      }
+
+      // Initialize default values for all fields that have defaultValue property
+      const initializeDefaultValues = (sections: any[], tabId?: string) => {
+        const scenarioTabs = ['tddbhd', 'str-utility', 'roll-str-backbend', 'feed', 'shear'];
+        const scenarioMap: Record<string, string> = {
+          'tddbhd': 'tddbhd',
+          'str-utility': 'strUtility',
+          'roll-str-backbend': 'rollStrBackbend',
+          'feed': 'feed',
+          'shear': 'shear'
+        };
+
+        sections?.forEach((section: any) => {
+          section.fields?.forEach((field: any) => {
+            if (field.defaultValue !== undefined && field.defaultValue !== null) {
+              // Check if this is a scenario-based field
+              const isScenarioTab = tabId && scenarioTabs.includes(tabId);
+              const scenarioPrefix = scenarioMap[tabId || ''];
+
+              if (isScenarioTab && scenarioPrefix && field.id.startsWith(`${scenarioPrefix}.`)) {
+                // Initialize default value for each scenario
+                const maxScenarios = (tabId === 'feed' || tabId === 'shear') ? 2 : 4;
+                for (let i = 0; i < maxScenarios; i++) {
+                  const scenarioFieldId = field.id.replace(`${scenarioPrefix}.`, `${scenarioPrefix}.scenarios[${i}].`);
+                  const currentValue = getNestedValue(data, scenarioFieldId);
+                  if (currentValue === undefined || currentValue === null || currentValue === '') {
+                    data = setNestedValue(data, scenarioFieldId, field.defaultValue);
+                  }
+                }
+              } else {
+                // Non-scenario field - use original logic
+                const currentValue = getNestedValue(data, field.id);
+                if (currentValue === undefined || currentValue === null || currentValue === '') {
+                  data = setNestedValue(data, field.id, field.defaultValue);
+                }
+              }
+            }
+          });
+        });
+      };
+
+      // Apply defaults to all tabs
+      performanceSheet?.data?.version?.tabs?.forEach((tab: any) => {
+        initializeDefaultValues(tab.sections, tab.id);
+      });
+
       setFormData(data);
       setOriginalData(data);
+
+      // Force re-render to refresh dynamic options after initialization
+      forceUpdate({});
 
       if (!activeTab && visibleTabs.length > 0) {
         setActiveTab(visibleTabs[0].value);
@@ -211,6 +1140,73 @@ const PerformanceSheet = () => {
       }
     }
   }, [performanceSheet]);
+
+  // Auto-populate material scenarios with common.coil values whenever they change
+  useEffect(() => {
+    if (!formData || !formData.common) return;
+
+    const commonCoilWeight = getNestedValue(formData, "common.coil.maxCoilWeight");
+    const commonCoilOD = getNestedValue(formData, "common.coil.maxCoilOD");
+    const commonCoilID = getNestedValue(formData, "common.coil.coilID");
+    const commonReqMaxFPM = getNestedValue(formData, "common.feedRates.max.fpm");
+
+    const materialScenarios = getNestedValue(formData, "common.materialScenarios");
+    if (materialScenarios && Array.isArray(materialScenarios)) {
+      let updated = false;
+      const newFormData = { ...formData };
+
+      materialScenarios.forEach((scenario: any, index: number) => {
+        // Update shared fields if common values change
+        if (commonCoilWeight !== null && commonCoilWeight !== undefined && scenario.coilWeight !== commonCoilWeight) {
+          newFormData.common.materialScenarios[index].coilWeight = commonCoilWeight;
+          updated = true;
+        }
+        if (commonCoilOD !== null && commonCoilOD !== undefined && scenario.coilOD !== commonCoilOD) {
+          newFormData.common.materialScenarios[index].coilOD = commonCoilOD;
+          updated = true;
+        }
+        if (commonCoilID !== null && commonCoilID !== undefined && scenario.coilID !== commonCoilID) {
+          newFormData.common.materialScenarios[index].coilID = commonCoilID;
+          updated = true;
+        }
+        if (commonReqMaxFPM !== null && commonReqMaxFPM !== undefined && scenario.reqMaxFPM !== commonReqMaxFPM) {
+          newFormData.common.materialScenarios[index].reqMaxFPM = commonReqMaxFPM;
+          updated = true;
+        }
+      });
+
+      if (updated) {
+        setFormData(newFormData);
+      }
+    }
+  }, [
+    formData?.common?.coil?.maxCoilWeight,
+    formData?.common?.coil?.maxCoilOD,
+    formData?.common?.coil?.coilID,
+    formData?.common?.feedRates?.max?.fpm
+  ]);
+
+  useEffect(() => {
+    if (activeTab && visibleTabs.length > 0) {
+      const isActiveTabVisible = visibleTabs.some((tab: any) => tab.value === activeTab);
+      if (!isActiveTabVisible) {
+        setActiveTab(visibleTabs[0].value);
+      }
+    }
+
+
+    if (activeTab === 'summary-report') {
+
+    }
+  }, [activeTab, visibleTabs, formData]);
+
+  // Sync form data to summary report fields whenever data changes
+  useEffect(() => {
+    if (formData && Object.keys(formData).length > 0) {
+      // Summary report fields should automatically show current formData since they use the same paths
+      // This effect just ensures the component re-renders when data changes
+    }
+  }, [formData]);
 
   const hasChanges = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(originalData);
@@ -251,6 +1247,22 @@ const PerformanceSheet = () => {
     }
   }, [isEditing, performanceSheetId, isLockConnected]);
 
+  // Cleanup calculation timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (calculationTimeoutRef.current) {
+        clearTimeout(calculationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Force template refresh when formData changes (to update dependent options)
+  useEffect(() => {
+    if (Object.keys(formData).length > 0) {
+
+    }
+  }, [formData]);
+
   useEffect(() => {
     const unsubscribe = onLockChanged((data: any) => {
       const { recordType, recordId, lockInfo } = data;
@@ -285,18 +1297,536 @@ const PerformanceSheet = () => {
     return unsubscribe;
   }, [onLockChanged, performanceSheetId, user?.id, isEditing]);
 
+  const getDynamicOptions = (fieldId: string, field: any) => {
+
+
+    // Check for dependency-based options first
+    if (field.dependsOn && field.dependencyType) {
+      // Make dependency field scenario-aware
+      const scenarioAwareDependsOn = getScenarioAwareFieldId(field.dependsOn);
+      const dependentValue = getNestedValue(formData, scenarioAwareDependsOn);
+
+
+      if (fieldId.includes('straightener') && (field.dependencyType === 'strWidth' || field.dependencyType === 'strHorsepower')) {
+
+      }
+
+      // Special handling for STR dependencies - use defaults when formData is uninitialized
+      const shouldUseDefaults = !dependentValue && (field.dependencyType === 'strWidth' || field.dependencyType === 'strHorsepower' || field.dependencyType === 'strFeedRate');
+
+      if (dependentValue || shouldUseDefaults) {
+        switch (field.dependencyType) {
+          case "reelWidth":
+            return getReelWidthOptionsForModel(dependentValue);
+          case "backplateDiameter":
+            return getBackplateDiameterOptionsForModel(dependentValue);
+          case "hydThreadingDrive":
+            return getHydThreadingDriveOptionsForModel(dependentValue);
+          case "holdDownAssy":
+            return getHoldDownAssyOptionsForModel(dependentValue);
+          case "cylinder":
+            // Cylinder depends on both model and hold down assembly
+            const scenarioAwareReelModel = getScenarioAwareFieldId("common.equipment.reel.model");
+            const reelModelValue = getNestedValue(formData, scenarioAwareReelModel);
+            if (dependentValue) {
+              // If hold down assy is set, use reel model or default
+              const modelToUse = reelModelValue || 'CPR-040';
+              return getCylinderOptionsForHoldDownAssy(modelToUse, dependentValue);
+            }
+            return [];
+          case "strWidth":
+            const strWidthModel = dependentValue || DEFAULT_STR_MODEL;
+
+            return getStrWidthOptionsForModel(strWidthModel);
+          case "strHorsepower":
+            const strHpModel = dependentValue || DEFAULT_STR_MODEL;
+
+            return getStrHorsepowerOptionsForModel(strHpModel);
+          case "strFeedRate":
+            // Feed rate depends on both horsepower (primary) and model (secondary)
+            const scenarioAwareSecondaryDependsOn = field.secondaryDependsOn ? getScenarioAwareFieldId(field.secondaryDependsOn) : null;
+            const secondaryDependentValue = scenarioAwareSecondaryDependsOn ? getNestedValue(formData, scenarioAwareSecondaryDependsOn) : null;
+            const modelForFeedRate = secondaryDependentValue || DEFAULT_STR_MODEL;
+
+            // Use default horsepower if none provided (during initialization)
+            const horsepowerValue = dependentValue || getDefaultStrHorsepowerForModel(DEFAULT_STR_MODEL);
+
+
+
+
+            if (horsepowerValue) {
+              const options = getStrFeedRateOptionsForModelAndHorsepower(modelForFeedRate, horsepowerValue);
+
+              return options;
+            }
+
+            return [];
+          case "feedMachineWidth":
+            return getFeedMachineWidthOptionsForModel(dependentValue);
+        }
+      }
+
+      // If dependency field has no value, handle STR fields specially
+      if (field.dependencyType === 'strWidth' || field.dependencyType === 'strHorsepower') {
+        const defaultModel = DEFAULT_STR_MODEL;
+
+        if (field.dependencyType === 'strWidth') {
+          return getStrWidthOptionsForModel(defaultModel);
+        } else if (field.dependencyType === 'strHorsepower') {
+          return getStrHorsepowerOptionsForModel(defaultModel);
+        }
+      }
+
+      // Handle reel-related fields when model is not set - use default reel model
+      if (!dependentValue && (field.dependencyType === 'reelWidth' || field.dependencyType === 'backplateDiameter' || field.dependencyType === 'holdDownAssy' || field.dependencyType === 'hydThreadingDrive')) {
+        const DEFAULT_REEL_MODEL = 'CPR-040';
+
+        if (field.dependencyType === 'reelWidth') {
+          return getReelWidthOptionsForModel(DEFAULT_REEL_MODEL);
+        } else if (field.dependencyType === 'backplateDiameter') {
+          return getBackplateDiameterOptionsForModel(DEFAULT_REEL_MODEL);
+        } else if (field.dependencyType === 'holdDownAssy') {
+          return getHoldDownAssyOptionsForModel(DEFAULT_REEL_MODEL);
+        } else if (field.dependencyType === 'hydThreadingDrive') {
+          return getHydThreadingDriveOptionsForModel(DEFAULT_REEL_MODEL);
+        }
+      }
+
+      // If dependency field has no value, return empty array instead of all options for other fields
+      return [];
+    }
+
+    // Legacy handling for fields not yet migrated to dependency system
+    if (fieldId !== "common.equipment.feed.lineType" &&
+      fieldId !== "feed.feed.pullThru.isPullThru" &&
+      fieldId !== "common.equipment.reel.width" &&
+      fieldId !== "common.equipment.reel.backplate.diameter" &&
+      fieldId !== "common.equipment.straightener.width" &&
+      fieldId !== "strUtility.straightener.horsepower" &&
+      fieldId !== "strUtility.straightener.feedRate" &&
+      fieldId !== "feed.feed.machineWidth") {
+      return field.options || [];
+    }
+
+    const applicationValue = getNestedValue(formData, "feed.feed.application");
+    const lineTypeValue = getNestedValue(formData, "common.equipment.feed.lineType");
+    const reelModelValue = getNestedValue(formData, "common.equipment.reel.model");
+    const strModelValue = getNestedValue(formData, "common.equipment.straightener.model");
+    const strHorsepowerValue = getNestedValue(formData, "strUtility.straightener.horsepower");
+    const feedModelValue = getNestedValue(formData, "common.equipment.feed.model");
+
+    // Dynamic Reel Width Options based on selected model
+    if (fieldId === "common.equipment.reel.width") {
+      if (reelModelValue) {
+        return getReelWidthOptionsForModel(reelModelValue);
+      }
+      return field.options || [];
+    }
+
+    // Dynamic Backplate Diameter Options based on selected model
+    if (fieldId === "common.equipment.reel.backplate.diameter") {
+      if (reelModelValue) {
+        return getBackplateDiameterOptionsForModel(reelModelValue);
+      }
+      return field.options || [];
+    }
+
+    // Dynamic STR Width Options based on selected model
+    if (fieldId === "common.equipment.straightener.width") {
+      const currentStrModel = getNestedValue(formData, "common.equipment.straightener.model");
+      const modelToUse = currentStrModel || DEFAULT_STR_MODEL;
+      const options = getStrWidthOptionsForModel(modelToUse);
+      return options;
+    }
+
+    // Dynamic STR Horsepower Options based on selected model
+    if (fieldId === "strUtility.straightener.horsepower") {
+
+      const currentStrModel = getNestedValue(formData, "common.equipment.straightener.model");
+      const modelToUse = currentStrModel || DEFAULT_STR_MODEL;
+      const options = getStrHorsepowerOptionsForModel(modelToUse);
+      return options;
+    }
+
+    // Dynamic STR Feed Rate Options based on selected model and horsepower
+    if (fieldId === "strUtility.straightener.feedRate") {
+      const modelToUse = strModelValue || DEFAULT_STR_MODEL;
+      if (strHorsepowerValue) {
+        return getStrFeedRateOptionsForModelAndHorsepower(modelToUse, strHorsepowerValue);
+      }
+      // If horsepower is missing, show no options
+      return [];
+    }
+
+    // Dynamic Feed Machine Width Options based on selected model
+    if (fieldId === "feed.feed.machineWidth") {
+      if (feedModelValue) {
+        return getFeedMachineWidthOptionsForModel(feedModelValue);
+      }
+      return field.options || [];
+    }
+
+    // Dynamic Line Type Options
+    if (fieldId === "common.equipment.feed.lineType") {
+      if (applicationValue === "Standalone") {
+        // Use standalone options when application is Standalone
+        return [
+          { value: "Feed", label: "Feed" },
+          { value: "Straightener", label: "Straightener" },
+          { value: "Reel-Motorized", label: "Reel-Motorized" },
+          { value: "Reel-Pull Off", label: "Reel-Pull Off" },
+          { value: "Straightener-Reel Combination", label: "Straightener-Reel Combination" },
+          { value: "Other", label: "Other" },
+          { value: "Feed-Shear", label: "Feed-Shear" },
+          { value: "Threading Table", label: "Threading Table" },
+        ];
+      } else if (applicationValue === "Press Feed" || applicationValue === "Cut to Length") {
+        // Use conventional/compact options for Press Feed and Cut to Length
+        return [
+          { value: "Conventional", label: "Conventional" },
+          { value: "Compact", label: "Compact" },
+        ];
+      }
+      return field.options || [];
+    }
+
+    // Dynamic Pull Through Options
+    if (fieldId === "feed.feed.pullThru.isPullThru") {
+      if (applicationValue === "Press Feed" || applicationValue === "Cut to Length") {
+        // For Press Feed and Cut to Length
+        if (lineTypeValue === "Compact") {
+          return [
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+          ];
+        } else if (lineTypeValue === "Conventional") {
+          return [
+            { value: "no", label: "No" },
+          ];
+        }
+      } else if (applicationValue === "Standalone") {
+        // For Standalone, only show Yes/No for specific line types
+        if (lineTypeValue === "Feed" || lineTypeValue === "Feed-Shear" || lineTypeValue === "Other") {
+          return [
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+          ];
+        } else {
+          // For other standalone line types, no pull through options
+          return [];
+        }
+      }
+      return field.options || [];
+    }
+
+    return field.options || [];
+  };
+
   const handleFieldChange = (fieldId: string, value: any) => {
-    const updatedData = setNestedValue(formData, fieldId, value);
+    let updatedData = setNestedValue(formData, fieldId, value);
+
+    // Handle dependent field logic when application changes
+    if (fieldId === "feed.feed.application") {
+      const currentLineType = getNestedValue(updatedData, "common.equipment.feed.lineType");
+      const currentPullThru = getNestedValue(updatedData, "feed.feed.pullThru.isPullThru");
+
+      // Clear line type if it's not valid for the new application
+      if (value === "Standalone") {
+        // For Standalone, check if current line type is valid
+        const validStandaloneTypes = ["Feed", "Straightener", "Reel-Motorized", "Reel-Pull Off", "Straightener-Reel Combination", "Other", "Feed-Shear", "Threading Table"];
+        if (currentLineType && !validStandaloneTypes.includes(currentLineType)) {
+          updatedData = setNestedValue(updatedData, "common.equipment.feed.lineType", "");
+        }
+      } else if (value === "Press Feed" || value === "Cut to Length") {
+        // For Press Feed/Cut to Length, check if current line type is valid
+        const validConventionalTypes = ["Conventional", "Compact"];
+        if (currentLineType && !validConventionalTypes.includes(currentLineType)) {
+          updatedData = setNestedValue(updatedData, "common.equipment.feed.lineType", "");
+        }
+      }
+
+      // Clear pull through if it's not valid for the new application/line type combination
+      if (currentPullThru) {
+        // This will be validated in the next field change when line type is processed
+        updatedData = setNestedValue(updatedData, "feed.feed.pullThru.isPullThru", "no");
+      }
+    }
+
+    // Handle dependent field logic when line type changes
+    if (fieldId === "common.equipment.feed.lineType") {
+      const applicationValue = getNestedValue(updatedData, "feed.feed.application");
+      const currentPullThru = getNestedValue(updatedData, "feed.feed.pullThru.isPullThru");
+
+      if (currentPullThru) {
+        let shouldClearPullThru = false;
+
+        if (applicationValue === "Press Feed" || applicationValue === "Cut to Length") {
+          // For Press Feed/Cut to Length with Conventional, only "no" is allowed
+          if (value === "Conventional" && currentPullThru === "yes") {
+            shouldClearPullThru = true;
+          }
+        } else if (applicationValue === "Standalone") {
+          // For Standalone, only specific line types allow pull through
+          const allowedPullThruTypes = ["Feed", "Feed-Shear", "Other"];
+          if (!allowedPullThruTypes.includes(value)) {
+            shouldClearPullThru = true;
+          }
+        }
+
+        if (shouldClearPullThru) {
+          // For standalone types that don't support pull through, clear the field
+          if (applicationValue === "Standalone") {
+            const allowedPullThruTypes = ["Feed", "Feed-Shear", "Other"];
+            if (!allowedPullThruTypes.includes(value)) {
+              updatedData = setNestedValue(updatedData, "feed.feed.pullThru.isPullThru", "");
+            } else {
+              updatedData = setNestedValue(updatedData, "feed.feed.pullThru.isPullThru", "no");
+            }
+          } else {
+            // For Press Feed/Cut to Length with Conventional, set to "no"
+            updatedData = setNestedValue(updatedData, "feed.feed.pullThru.isPullThru", "no");
+          }
+        }
+      }
+    }
+
+    // Handle dependent field logic when reel model changes
+    if (fieldId.includes("common.equipment.reel") && fieldId.endsWith(".model")) {
+      const scenarioAwareWidth = fieldId.replace(".model", ".width");
+      const scenarioAwareBackplate = fieldId.replace(".model", ".backplate.diameter");
+      const baseScenarioPath = fieldId.replace("common.equipment.reel", "tddbhd").replace(".model", "");
+      const scenarioAwareHydDrive = baseScenarioPath + ".reel.threadingDrive.hydThreadingDrive";
+      const scenarioAwareHoldDown = baseScenarioPath + ".reel.holddown.assy";
+      const scenarioAwareCylinder = baseScenarioPath + ".reel.holddown.cylinder";
+
+      const currentWidth = getNestedValue(updatedData, scenarioAwareWidth);
+      const currentBackplate = getNestedValue(updatedData, scenarioAwareBackplate);
+      const currentHydDrive = getNestedValue(updatedData, scenarioAwareHydDrive);
+      const currentHoldDown = getNestedValue(updatedData, scenarioAwareHoldDown);
+      const currentCylinder = getNestedValue(updatedData, scenarioAwareCylinder);
+
+      // Clear width if it's not valid for the new model
+      if (currentWidth && value) {
+        const validWidths = getReelWidthOptionsForModel(value).map(option => option.value);
+        if (!validWidths.includes(currentWidth)) {
+          updatedData = setNestedValue(updatedData, scenarioAwareWidth, "");
+        }
+      }
+
+      // Clear backplate diameter if it's not valid for the new model
+      if (currentBackplate && value) {
+        const validBackplates = getBackplateDiameterOptionsForModel(value).map(option => option.value);
+        if (!validBackplates.includes(currentBackplate)) {
+          updatedData = setNestedValue(updatedData, scenarioAwareBackplate, "");
+        }
+      }
+
+      // Clear hydraulic threading drive if it's not valid for the new model
+      if (currentHydDrive && value) {
+        const validHydDrives = getHydThreadingDriveOptionsForModel(value).map(option => option.value);
+        if (!validHydDrives.includes(currentHydDrive)) {
+          updatedData = setNestedValue(updatedData, scenarioAwareHydDrive, "");
+        }
+      }
+
+      // Clear hold down assembly if it's not valid for the new model
+      if (currentHoldDown && value) {
+        const validHoldDowns = getHoldDownAssyOptionsForModel(value).map(option => option.value);
+        if (!validHoldDowns.includes(currentHoldDown)) {
+          updatedData = setNestedValue(updatedData, scenarioAwareHoldDown, "");
+          // Also clear cylinder since hold down changed
+          updatedData = setNestedValue(updatedData, scenarioAwareCylinder, "");
+        } else {
+          // Check if current cylinder is still valid for the existing hold down
+          if (currentCylinder && value) {
+            const validCylinders = getCylinderOptionsForHoldDownAssy(value, currentHoldDown).map(option => option.value);
+            if (!validCylinders.includes(currentCylinder)) {
+              updatedData = setNestedValue(updatedData, scenarioAwareCylinder, "");
+            }
+          }
+        }
+      }
+    }
+
+    // Handle dependent field logic when hold down assembly changes
+    if (fieldId.includes("tddbhd") && fieldId.includes("reel.holddown.assy")) {
+      const scenarioAwareCylinder = fieldId.replace("reel.holddown.assy", "reel.holddown.cylinder");
+      const scenarioAwareReelModel = fieldId.replace(/tddbhd\.scenarios\[\d+\]\.reel\.holddown\.assy/, "common.equipment.reel.scenarios[$1].model").replace(/tddbhd\.scenarios\[(\d+)\]/, (match, p1) => `common.equipment.reel.scenarios[${p1}]`);
+
+      const currentCylinder = getNestedValue(updatedData, scenarioAwareCylinder);
+      const reelModelValue = getNestedValue(updatedData, scenarioAwareReelModel);
+
+      if (value && reelModelValue) {
+        // Get valid cylinders for the new hold down assembly
+        const validCylinders = getCylinderOptionsForHoldDownAssy(reelModelValue, value).map(option => option.value);
+
+        // If current cylinder is not valid for new assembly, auto-select the default
+        if (!currentCylinder || !validCylinders.includes(currentCylinder)) {
+          const defaultCylinder = getDefaultCylinderForHoldDownAssy(reelModelValue, value);
+          updatedData = setNestedValue(updatedData, scenarioAwareCylinder, defaultCylinder || "");
+        }
+      } else {
+        // Clear cylinder if hold down is cleared
+        updatedData = setNestedValue(updatedData, scenarioAwareCylinder, "");
+      }
+    }
+
+    // Handle dependent field logic when STR model changes
+    if (fieldId === "common.equipment.straightener.model") {
+      const currentStrWidth = getNestedValue(updatedData, "common.equipment.straightener.width");
+      const currentStrHorsepower = getNestedValue(updatedData, "strUtility.straightener.horsepower");
+      const currentStrFeedRate = getNestedValue(updatedData, "strUtility.straightener.feedRate");
+
+      // Clear width if it's not valid for the new model
+      if (currentStrWidth && value) {
+        const validWidths = getStrWidthOptionsForModel(value).map(option => option.value);
+        if (!validWidths.includes(currentStrWidth)) {
+          updatedData = setNestedValue(updatedData, "common.equipment.straightener.width", "");
+        }
+      }
+
+      // Clear horsepower if it's not valid for the new model
+      if (currentStrHorsepower && value) {
+        const validHorsepowers = getStrHorsepowerOptionsForModel(value).map(option => option.value);
+        if (!validHorsepowers.includes(currentStrHorsepower)) {
+          updatedData = setNestedValue(updatedData, "strUtility.straightener.horsepower", "");
+          // Also clear feed rate since horsepower changed
+          updatedData = setNestedValue(updatedData, "strUtility.straightener.feedRate", "");
+        } else {
+          // Check if current feed rate is still valid for the new model and existing horsepower
+          if (currentStrFeedRate) {
+            const validFeedRates = getStrFeedRateOptionsForModelAndHorsepower(value, currentStrHorsepower).map(option => option.value);
+            if (!validFeedRates.includes(currentStrFeedRate)) {
+              updatedData = setNestedValue(updatedData, "strUtility.straightener.feedRate", "");
+            }
+          }
+        }
+      } else if (currentStrFeedRate) {
+        // Clear feed rate if no horsepower is selected
+        updatedData = setNestedValue(updatedData, "strUtility.straightener.feedRate", "");
+      }
+    }
+
+    // Handle type of roll changes - auto-set number of rolls
+    if (fieldId === "materialSpecs.straightener.rolls.typeOfRoll") {
+
+      let numberOfRolls = "";
+
+      // Use regex to extract number from any format like "7 Roll Str Backbend" or "7 Roll Str. Backbend"
+      if (value && typeof value === 'string') {
+        const rollMatch = value.match(/(\d+)\s*Roll/i);
+        if (rollMatch) {
+          numberOfRolls = rollMatch[1];
+
+        } else {
+
+        }
+      }
+
+
+
+      if (numberOfRolls) {
+        updatedData = setNestedValue(updatedData, "common.equipment.straightener.numberOfRolls", parseFloat(numberOfRolls));
+      }
+
+
+    }
+
+    // Handle max coil weight changes - auto-populate STR utility coil weight capacity
+    if (fieldId === "common.coil.maxCoilWeight") {
+      if (value) {
+        updatedData = setNestedValue(updatedData, "strUtility.coil.maxCoilWeight", value);
+      }
+    }
+
+    // Handle dependent field logic when STR horsepower changes
+    if (fieldId === "strUtility.straightener.horsepower") {
+      const currentStrFeedRate = getNestedValue(updatedData, "strUtility.straightener.feedRate");
+      const strModel = getNestedValue(updatedData, "common.equipment.straightener.model");
+
+      // Clear feed rate if it's not valid for the new horsepower
+      if (currentStrFeedRate && value && strModel) {
+        const validFeedRates = getStrFeedRateOptionsForModelAndHorsepower(strModel, value).map(option => option.value);
+        if (!validFeedRates.includes(currentStrFeedRate)) {
+          updatedData = setNestedValue(updatedData, "strUtility.straightener.feedRate", "");
+        }
+      }
+    }
+
+    // Handle dependent field logic when Feed model changes
+    if (fieldId === "common.equipment.feed.model") {
+      const currentMachineWidth = getNestedValue(updatedData, "feed.feed.machineWidth");
+
+      // Clear machine width if it's not valid for the new model
+      if (currentMachineWidth && value) {
+        const validWidths = getFeedMachineWidthOptionsForModel(value).map(option => option.value);
+        if (!validWidths.includes(currentMachineWidth)) {
+          updatedData = setNestedValue(updatedData, "feed.feed.machineWidth", "");
+        }
+      }
+    }
+
     setFormData(updatedData);
 
-    if (isPerformanceConnected && performanceSheet?.data?.version?.sections) {
-      const bundledData = bundleFormDataByTabsAndSections(updatedData);
-      calculatePerformanceSheet(bundledData, "main.py", (response) => {
-        if (response?.ok) {
-          console.log("Calculation result:", response.result);
+    // Validate the changed field
+    if (performanceSheet?.data?.version?.sections) {
+      const field = findFieldById(performanceSheet.data.version.sections, fieldId);
+      if (field?.validation) {
+        const error = validateFieldValue(
+          value,
+          field.validation,
+          (id: string) => getNestedValue(updatedData, id)
+        );
+
+        setFieldErrors(prev => {
+          const newErrors = { ...prev };
+          if (error) {
+            newErrors[fieldId] = error;
+          } else {
+            delete newErrors[fieldId];
+          }
+          return newErrors;
+        });
+      }
+
+      // Re-validate fields that reference this field as min/max
+      const referencingFields = findFieldsReferencingField(performanceSheet.data.version.sections, fieldId);
+      referencingFields.forEach(refFieldId => {
+        const refField = findFieldById(performanceSheet.data.version.sections, refFieldId);
+        if (refField?.validation) {
+          const refValue = getNestedValue(updatedData, refFieldId);
+          const error = validateFieldValue(
+            refValue,
+            refField.validation,
+            (id: string) => getNestedValue(updatedData, id)
+          );
+
+          setFieldErrors(prev => {
+            const newErrors = { ...prev };
+            if (error) {
+              newErrors[refFieldId] = error;
+            } else {
+              delete newErrors[refFieldId];
+            }
+            return newErrors;
+          });
         }
       });
     }
+
+    // Trigger debounced calculation
+    debouncedCalculate(updatedData);
+  };
+
+  // Helper function to find a field by ID in the template
+  const findFieldById = (sections: any[], fieldId: string): any => {
+    for (const tab of sections) {
+      for (const section of tab.sections || []) {
+        const field = section.fields?.find((f: any) => f.id === fieldId);
+        if (field) return field;
+      }
+    }
+    return null;
   };
 
   const bundleFormDataByTabsAndSections = (data: Record<string, any>) => {
@@ -304,25 +1834,170 @@ const PerformanceSheet = () => {
 
     if (!performanceSheet?.data?.version?.sections) return data;
 
+    const scenarioTabs = ['tddbhd', 'str-utility', 'roll-str-backbend', 'feed', 'shear'];
+    const scenarioMap: Record<string, string> = {
+      'tddbhd': 'tddbhd',
+      'str-utility': 'strUtility',
+      'roll-str-backbend': 'rollStrBackbend',
+      'feed': 'feed',
+      'shear': 'shear'
+    };
+
     performanceSheet.data.version.sections.forEach((tab: any) => {
+      const isScenarioTab = scenarioTabs.includes(tab.id);
+      const scenarioPrefix = scenarioMap[tab.id];
+
       tab.sections?.forEach((section: any) => {
         section.fields?.forEach((field: any) => {
-          const fieldValue = getNestedValue(data, field.id);
-          if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
-            const keys = field.id.split(".");
-            let current = bundled;
+          // Handle reel equipment fields (scenario-aware)
+          if (field.id.startsWith('common.equipment.reel.') && isScenarioTab) {
+            for (let scenarioIdx = 0; scenarioIdx < 4; scenarioIdx++) {
+              const scenarioFieldId = field.id.replace(/^common\.equipment\.reel\./, `common.equipment.reel.scenarios[${scenarioIdx}].`);
+              const fieldValue = getNestedValue(data, scenarioFieldId);
 
-            for (let i = 0; i < keys.length - 1; i++) {
-              if (!current[keys[i]]) {
-                current[keys[i]] = {};
+              if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+                const keys = scenarioFieldId.split(".");
+                let current = bundled;
+
+                for (let i = 0; i < keys.length - 1; i++) {
+                  const key = keys[i];
+                  if (key.includes('[')) {
+                    const arrayMatch = key.match(/^(.+?)\[(\d+)\]$/);
+                    if (arrayMatch) {
+                      const arrayName = arrayMatch[1];
+                      const arrayIndex = parseInt(arrayMatch[2]);
+
+                      if (!current[arrayName]) {
+                        current[arrayName] = [];
+                      }
+                      if (!current[arrayName][arrayIndex]) {
+                        current[arrayName][arrayIndex] = {};
+                      }
+                      current = current[arrayName][arrayIndex];
+                    }
+                  } else {
+                    if (!current[key]) {
+                      current[key] = {};
+                    }
+                    current = current[key];
+                  }
+                }
+
+                current[keys[keys.length - 1]] = fieldValue;
               }
-              current = current[keys[i]];
             }
+          }
+          // Handle material scenario fields (already have [0] in template, need all scenarios)
+          else if ((field.id.includes('common.materialScenarios[0]') || field.id.includes('materialSpecs.scenarios[0]')) && isScenarioTab) {
+            for (let scenarioIdx = 0; scenarioIdx < 4; scenarioIdx++) {
+              let scenarioFieldId = field.id;
+              scenarioFieldId = scenarioFieldId.replace(/common\.materialScenarios\[0\]/g, `common.materialScenarios[${scenarioIdx}]`);
+              scenarioFieldId = scenarioFieldId.replace(/materialSpecs\.scenarios\[0\]/g, `materialSpecs.scenarios[${scenarioIdx}]`);
 
-            current[keys[keys.length - 1]] = fieldValue;
+              const fieldValue = getNestedValue(data, scenarioFieldId);
+
+              if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+                const keys = scenarioFieldId.split(".");
+                let current = bundled;
+
+                for (let i = 0; i < keys.length - 1; i++) {
+                  const key = keys[i];
+                  if (key.includes('[')) {
+                    const arrayMatch = key.match(/^(.+?)\[(\d+)\]$/);
+                    if (arrayMatch) {
+                      const arrayName = arrayMatch[1];
+                      const arrayIndex = parseInt(arrayMatch[2]);
+
+                      if (!current[arrayName]) {
+                        current[arrayName] = [];
+                      }
+                      if (!current[arrayName][arrayIndex]) {
+                        current[arrayName][arrayIndex] = {};
+                      }
+                      current = current[arrayName][arrayIndex];
+                    }
+                  } else {
+                    if (!current[key]) {
+                      current[key] = {};
+                    }
+                    current = current[key];
+                  }
+                }
+
+                current[keys[keys.length - 1]] = fieldValue;
+              }
+            }
+          }
+          // Handle scenario-specific fields (tddbhd.*, strUtility.*, etc.)
+          else if (isScenarioTab && scenarioPrefix && field.id.startsWith(`${scenarioPrefix}.`)) {
+            // For scenario tabs, check all 4 scenarios
+            for (let scenarioIdx = 0; scenarioIdx < 4; scenarioIdx++) {
+              const scenarioFieldId = field.id.replace(`${scenarioPrefix}.`, `${scenarioPrefix}.scenarios[${scenarioIdx}].`);
+              const fieldValue = getNestedValue(data, scenarioFieldId);
+
+              if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+                const keys = scenarioFieldId.split(".");
+                let current = bundled;
+
+                for (let i = 0; i < keys.length - 1; i++) {
+                  const key = keys[i];
+                  // Handle array notation like "scenarios[0]"
+                  if (key.includes('[')) {
+                    const arrayMatch = key.match(/^(.+?)\[(\d+)\]$/);
+                    if (arrayMatch) {
+                      const arrayName = arrayMatch[1];
+                      const arrayIndex = parseInt(arrayMatch[2]);
+
+                      if (!current[arrayName]) {
+                        current[arrayName] = [];
+                      }
+                      if (!current[arrayName][arrayIndex]) {
+                        current[arrayName][arrayIndex] = {};
+                      }
+                      current = current[arrayName][arrayIndex];
+                    }
+                  } else {
+                    if (!current[key]) {
+                      current[key] = {};
+                    }
+                    current = current[key];
+                  }
+                }
+
+                current[keys[keys.length - 1]] = fieldValue;
+              }
+            }
+          } else {
+            // For non-scenario tabs, use original logic
+            const fieldValue = getNestedValue(data, field.id);
+            if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+              const keys = field.id.split(".");
+              let current = bundled;
+
+              for (let i = 0; i < keys.length - 1; i++) {
+                if (!current[keys[i]]) {
+                  current[keys[i]] = {};
+                }
+                current = current[keys[i]];
+              }
+
+              current[keys[keys.length - 1]] = fieldValue;
+            }
           }
         });
       });
+    });
+
+    // Also bundle any scenario-specific data that exists in formData but might not be in template
+    // This handles cases where data was filled in scenarios but template doesn't reflect it
+    Object.keys(scenarioMap).forEach((tabKey) => {
+      const scenarioPrefix = scenarioMap[tabKey];
+      if (data[scenarioPrefix]?.scenarios) {
+        if (!bundled[scenarioPrefix]) {
+          bundled[scenarioPrefix] = {};
+        }
+        bundled[scenarioPrefix].scenarios = data[scenarioPrefix].scenarios;
+      }
     });
 
     return bundled;
@@ -367,7 +2042,7 @@ const PerformanceSheet = () => {
         setSearchResults(response?.data || []);
         setShowResults(true);
       } catch (error) {
-        console.error("Search failed:", error);
+
         setSearchResults([]);
       } finally {
         setIsSearching(false);
@@ -395,31 +2070,11 @@ const PerformanceSheet = () => {
   };
 
   const handleEdit = () => {
-    if (!performanceSheetId || !isLockConnected) {
-      toast.error("Cannot acquire lock. Connection not available.");
-      return;
-    }
-
-    emit(
-      "lock:acquire",
-      {
-        recordType: "performance-sheets",
-        recordId: performanceSheetId,
-        userId: user?.id,
-      },
-      (result: any) => {
-        if (result?.success) {
-          setIsEditing(true);
-          setIsLocked(true);
-          setLockInfo(result.lockInfo);
-          toast.success("Lock acquired. You can now edit.");
-        } else {
-          setIsLocked(true);
-          setIsEditing(false);
-          toast.error(result?.message || "Failed to acquire lock. Sheet may be locked by another user.");
-        }
-      }
-    );
+    // Simply enable editing mode without complex socket-based locking
+    setIsEditing(true);
+    setIsLocked(true);
+    setLockInfo({ userId: user?.id, userName: user?.name || user?.email });
+    toast.success("Edit mode enabled.");
   };
 
   const handleCancel = () => {
@@ -433,39 +2088,17 @@ const PerformanceSheet = () => {
 
   const performCancel = () => {
     setFormData(originalData);
+    setIsEditing(false);
+    setIsLocked(false);
+    setLockInfo(null);
+    setModalType(null);
+    clearLocalStorage();
+    toast.info("Edit cancelled.");
 
-    if (!performanceSheetId || !isLockConnected) {
-      toast.error("Cannot release lock. Connection not available.");
-      setModalType(null);
-      return;
+    if (lockExtendIntervalRef.current) {
+      clearInterval(lockExtendIntervalRef.current);
+      lockExtendIntervalRef.current = null;
     }
-
-    emit(
-      "lock:release",
-      {
-        recordType: "performance-sheets",
-        recordId: performanceSheetId,
-        userId: user?.id,
-      },
-      (result: any) => {
-        if (result?.success) {
-          setIsEditing(false);
-          setIsLocked(false);
-          setLockInfo(null);
-          setModalType(null);
-          clearLocalStorage();
-          toast.info("Edit cancelled and lock released.");
-
-          if (lockExtendIntervalRef.current) {
-            clearInterval(lockExtendIntervalRef.current);
-            lockExtendIntervalRef.current = null;
-          }
-        } else {
-          toast.error("Failed to release lock.");
-          setModalType(null);
-        }
-      }
-    );
   };
 
   const handleSave = () => {
@@ -480,55 +2113,174 @@ const PerformanceSheet = () => {
         data: formData,
       });
 
-      if (!isLockConnected) {
-        toast.error("Cannot release lock. Connection not available.");
-        setModalType(null);
-        return;
+      setIsEditing(false);
+      setIsLocked(false);
+      setLockInfo(null);
+      setModalType(null);
+      setOriginalData(formData);
+      clearLocalStorage();
+      toast.success("Changes saved successfully.");
+
+      if (lockExtendIntervalRef.current) {
+        clearInterval(lockExtendIntervalRef.current);
+        lockExtendIntervalRef.current = null;
       }
-
-      emit(
-        "lock:release",
-        {
-          recordType: "performance-sheets",
-          recordId: performanceSheetId,
-          userId: user?.id,
-        },
-        (result: any) => {
-          if (result?.success) {
-            setIsEditing(false);
-            setIsLocked(false);
-            setLockInfo(null);
-            setModalType(null);
-            setOriginalData(formData);
-            clearLocalStorage();
-            toast.success("Changes saved and lock released.");
-
-            if (lockExtendIntervalRef.current) {
-              clearInterval(lockExtendIntervalRef.current);
-              lockExtendIntervalRef.current = null;
-            }
-          } else {
-            toast.error("Failed to release lock.");
-            setModalType(null);
-          }
-        }
-      );
     } catch (error) {
-      console.error("Failed to save performance sheet:", error);
+
       toast.error("Failed to save performance sheet.");
       setModalType(null);
     }
   };
 
+  // Helper to inject scenario index into field paths for scenario-based tabs
+  const getScenarioAwareFieldId = (fieldId: string): string => {
+    const scenarioTabs = ['tddbhd', 'str-utility', 'roll-str-backbend', 'feed', 'shear'];
+    const scenarioMap: Record<string, string> = {
+      'tddbhd': 'tddbhd',
+      'str-utility': 'strUtility',
+      'roll-str-backbend': 'rollStrBackbend',
+      'feed': 'feed',
+      'shear': 'shear'
+    };
+
+    // Check if current tab uses scenarios
+    if (!scenarioTabs.includes(activeTab)) {
+      return fieldId;
+    }
+
+    // Get active scenario index (0-based)
+    const activeScenarioIndex = (activeScenarios[activeTab] || 1) - 1;
+
+    // Non-scenario fields that should never be transformed
+    const nonScenarioFields = [
+      'common.customer',
+      'rfq.dates.date'
+    ];
+
+    if (nonScenarioFields.includes(fieldId)) {
+      return fieldId;
+    }
+
+    // Handle material scenario fields - replace hardcoded [0] with active scenario index
+    if (fieldId.includes('common.materialScenarios[0]')) {
+      return fieldId.replace(/common\.materialScenarios\[0\]/g, `common.materialScenarios[${activeScenarioIndex}]`);
+    }
+
+    // Handle material specs scenario fields - replace hardcoded [0] with active scenario index
+    if (fieldId.includes('materialSpecs.scenarios[0]')) {
+      return fieldId.replace(/materialSpecs\.scenarios\[0\]/g, `materialSpecs.scenarios[${activeScenarioIndex}]`);
+    }
+
+    // Handle reel equipment fields - make them scenario-aware
+    if (fieldId.startsWith('common.equipment.reel.')) {
+      // Transform: common.equipment.reel.model -> common.equipment.reel.scenarios[X].model
+      return fieldId.replace(/^common\.equipment\.reel\./, `common.equipment.reel.scenarios[${activeScenarioIndex}].`);
+    }
+
+    // Handle common coil fields - make them scenario-aware
+    if (fieldId.startsWith('common.coil.')) {
+      // Transform: common.coil.coilID -> common.materialScenarios[X].coilID
+      return fieldId.replace(/^common\.coil\./, `common.materialScenarios[${activeScenarioIndex}].`);
+    }
+
+    // Handle common material fields - make them scenario-aware
+    if (fieldId.startsWith('common.material.')) {
+      // Special mapping for coilWidth to materialWidth
+      if (fieldId === 'common.material.coilWidth') {
+        return `common.materialScenarios[${activeScenarioIndex}].materialWidth`;
+      }
+      // Special mapping for yieldStrength to materialSpecs
+      if (fieldId === 'common.material.yieldStrength') {
+        return `materialSpecs.scenarios[${activeScenarioIndex}].yieldStrength`;
+      }
+      // Transform: common.material.materialThickness -> common.materialScenarios[X].materialThickness
+      return fieldId.replace(/^common\.material\./, `common.materialScenarios[${activeScenarioIndex}].`);
+    }
+
+    // Handle STR Utility specific field mappings
+    if (fieldId === 'strUtility.coil.maxCoilWeight') {
+      return `common.materialScenarios[${activeScenarioIndex}].coilWeight`;
+    }
+
+    // Get the prefix for this tab's scenario data
+    const scenarioPrefix = scenarioMap[activeTab];
+    if (!scenarioPrefix) {
+      return fieldId;
+    }
+
+    // Check if field ID starts with this tab's prefix
+    if (fieldId.startsWith(`${scenarioPrefix}.`) && !fieldId.includes('.scenarios[')) {
+      // Inject scenario index after the prefix
+      return fieldId.replace(`${scenarioPrefix}.`, `${scenarioPrefix}.scenarios[${activeScenarioIndex}].`);
+    }
+
+    return fieldId;
+  };
+
   const renderField = (field: any) => {
-    const value = getNestedValue(formData, field.id) ?? "";
+    // Get scenario-aware field ID
+    const effectiveFieldId = getScenarioAwareFieldId(field.id);
+
+    // Debug logging for TDDBHD calculated fields
+    if (field.id.startsWith('tddbhd.') && field.readOnly) {
+      const rawValue = getNestedValue(formData, effectiveFieldId);
+      console.log(`TDDBHD ReadOnly Field: ${field.id} -> ${effectiveFieldId} = ${rawValue}`);
+    }
+
+    // Handle custom field type for feed performance display
+    if (field.type === 'custom' && (field.id === 'feed.feed.tableValues' || field.id === 'feed.scenarios[0].feed.tableValues')) {
+      const tableValues = getNestedValue(formData, effectiveFieldId) || [];
+      return (
+        <div key={effectiveFieldId} className="col-span-full">
+          <FeedPerformanceDisplay
+            tableValues={tableValues}
+          />
+        </div>
+      );
+    }
+
+    const rawValue = getNestedValue(formData, effectiveFieldId);
+    const value = (rawValue !== undefined && rawValue !== null) ? rawValue : (field.defaultValue ?? "");
+
+
+    const isFilled = isFieldFilled(value, field.type);
+    const isCheck = isCheckField(field.id);
+    const checkStatus = isCheck ? getCheckStatus(value) : null;
+
+    // Select fields should always be green (they have options so always have a value)
+    const isSelectField = field.type === 'select' && field.options && field.options.length > 0;
+
+    const requiredBgClassName = isEditing && !isCheck
+      ? (field.required
+        ? (isFilled ? 'bg-success-light' : 'bg-error-light')
+        : ''
+      ) || (isSelectField ? 'bg-success-light' : '')
+      : '';
+
+
+
+    const checkBorderClassName = isCheck && checkStatus !== 'pending'
+      ? (checkStatus === 'pass' ? 'border-l-4 border-l-success' : 'border-l-4 border-l-error')
+      : '';
+
+    const checkIconPrefix = isCheck && checkStatus !== 'pending'
+      ? (checkStatus === 'pass' ? '✓ ' : '✗ ')
+      : '';
+
+    const fieldError = fieldErrors[effectiveFieldId];
+
     const commonProps = {
       id: field.id,
       name: field.id,
       label: field.label,
       required: field.required || false,
-      disabled: !isEditing,
+      disabled: !isEditing || isCheck,
+      readOnly: field.readOnly || false,
       autoComplete: "off",
+      requiredBgClassName,
+      checkBorderClassName,
+      checkIconPrefix,
+      error: fieldError,
     };
 
     const getSizeClass = () => {
@@ -545,7 +2297,7 @@ const PerformanceSheet = () => {
               {...commonProps}
               type="text"
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
             />
           );
         case "number":
@@ -554,7 +2306,7 @@ const PerformanceSheet = () => {
               {...commonProps}
               type="number"
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
             />
           );
         case "date":
@@ -562,7 +2314,7 @@ const PerformanceSheet = () => {
             <DatePicker
               {...commonProps}
               value={value}
-              onChange={(date) => handleFieldChange(field.id, date)}
+              onChange={(date) => handleFieldChange(effectiveFieldId, date)}
             />
           );
         case "textarea":
@@ -570,17 +2322,18 @@ const PerformanceSheet = () => {
             <Textarea
               {...commonProps}
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
               rows={4}
             />
           );
         case "select":
+          const dynamicOptions = getDynamicOptions(field.id, field);
           return (
             <Select
               {...commonProps}
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              options={field.options || []}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
+              options={dynamicOptions}
             />
           );
         case "checkbox":
@@ -588,7 +2341,7 @@ const PerformanceSheet = () => {
             <Checkbox
               {...commonProps}
               checked={!!value}
-              onChange={(e) => handleFieldChange(field.id, e.target.checked)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.checked)}
             />
           );
         default:
@@ -597,14 +2350,14 @@ const PerformanceSheet = () => {
               {...commonProps}
               type="text"
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(effectiveFieldId, e.target.value)}
             />
           );
       }
     };
 
     return (
-      <div key={field.id} className={getSizeClass()}>
+      <div key={effectiveFieldId} className={getSizeClass()}>
         {renderInput()}
       </div>
     );
@@ -642,7 +2395,7 @@ const PerformanceSheet = () => {
         <Button variant="secondary-outline" onClick={() => setModalType('links')}>
           <Link size={16} /> Links ({links.length})
         </Button>
-        <Button variant="secondary" onClick={handleEdit} disabled={!isLockConnected}>
+        <Button variant="secondary" onClick={handleEdit}>
           <Lock size={16} /> Edit
         </Button>
       </div>
@@ -961,7 +2714,7 @@ const PerformanceSheet = () => {
       default:
         return null;
     }
-  };
+  }
 
   if (sheetLoading) {
     return (
@@ -1006,7 +2759,41 @@ const PerformanceSheet = () => {
       <div className="flex-1 overflow-auto">
         <div className="flex justify-center w-full">
           <div className="p-8 max-w-4xl w-full">
-            {activeTabData?.sections?.map((section: any, index: number) => {
+            {/* Scenario tabs for tabs that use scenarios */}
+            {['tddbhd', 'str-utility', 'roll-str-backbend', 'feed', 'shear'].includes(activeTab) && (
+              <div className="mb-6">
+                <ScenarioTabs
+                  activeScenario={activeScenarios[activeTab] || 1}
+                  maxScenarios={['feed', 'shear'].includes(activeTab) ? 2 : 4}
+                  onScenarioChange={(scenario) => {
+                    setActiveScenarios(prev => ({
+                      ...prev,
+                      [activeTab]: scenario
+                    }));
+                  }}
+                />
+              </div>
+            )}
+
+            {activeTabData?.sections?.filter((section: any) => {
+              // Handle section-level conditionals
+              if (section.conditionalVisibility) {
+                const dependentValue = getNestedValue(formData, section.conditionalVisibility.dependsOn);
+                if (section.conditionalVisibility.showWhen && dependentValue !== section.conditionalVisibility.showWhen) {
+                  return false;
+                }
+                if (section.conditionalVisibility.hideWhen) {
+                  if (Array.isArray(section.conditionalVisibility.hideWhen)) {
+                    if (section.conditionalVisibility.hideWhen.includes(dependentValue)) {
+                      return false;
+                    }
+                  } else if (dependentValue === section.conditionalVisibility.hideWhen) {
+                    return false;
+                  }
+                }
+              }
+              return true;
+            })?.map((section: any, index: number) => {
               const isCollapsed = collapsedSections.has(section.id);
               const totalFields = section.fields?.length || 0;
               const filledFields = section.fields?.filter((field: any) => {
@@ -1023,6 +2810,23 @@ const PerformanceSheet = () => {
                       <span className={`text-sm ${filledFields === totalFields ? 'text-success' : 'text-error'}`}>
                         {filledFields}/{totalFields}
                       </span>
+                      {(() => {
+                        const checkStats = getSectionCheckStats(section);
+                        if (!checkStats) return null;
+
+                        return (
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium border ${checkStats.failed > 0
+                            ? 'bg-error/10 text-error border-error/30'
+                            : checkStats.pending > 0
+                              ? 'bg-warning/10 text-warning border-warning/30'
+                              : 'bg-success/10 text-success border-success/30'
+                            }`}>
+                            {checkStats.failed > 0 ? `${checkStats.failed} ✗` :
+                              checkStats.pending > 0 ? `${checkStats.passed}/${checkStats.total} ✓` :
+                                `${checkStats.total} ✓`}
+                          </span>
+                        );
+                      })()}
                       <button
                         type="button"
                         onClick={() => toggleSection(section.id)}
@@ -1043,6 +2847,25 @@ const PerformanceSheet = () => {
                       }}
                     >
                       {section.fields
+                        ?.filter((field: any) => {
+                          // Handle field-level conditionals
+                          if (field.conditional) {
+                            const dependentValue = getNestedValue(formData, field.conditional.dependsOn);
+                            if (field.conditional.showWhen && dependentValue !== field.conditional.showWhen) {
+                              return false;
+                            }
+                            if (field.conditional.hideWhen) {
+                              if (Array.isArray(field.conditional.hideWhen)) {
+                                if (field.conditional.hideWhen.includes(dependentValue)) {
+                                  return false;
+                                }
+                              } else if (dependentValue === field.conditional.hideWhen) {
+                                return false;
+                              }
+                            }
+                          }
+                          return true;
+                        })
                         ?.sort((a: any, b: any) => a.sequence - b.sequence)
                         .map((field: any) => renderField(field))}
                     </div>
@@ -1056,7 +2879,7 @@ const PerformanceSheet = () => {
 
       <Modal
         isOpen={modalType !== null}
-        onClose={modalType === 'continue' ? () => {} : closeModal}
+        onClose={modalType === 'continue' ? () => { } : closeModal}
         title={getModalConfig().title}
         size={getModalConfig().size}
         overflow={getModalConfig().overflow}>

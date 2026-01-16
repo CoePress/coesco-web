@@ -7,6 +7,32 @@ from pydantic import BaseModel
 from typing import Optional
 
 ######################################################
+# Scenario-Based Models
+######################################################
+# MaterialScenario represents a single material specification scenario
+class MaterialScenario(BaseModel):
+    scenarioId: int
+    label: Optional[str] = ""
+    materialThickness: float
+    materialWidth: float
+    materialType: str
+    maxYieldStrength: float
+    maxTensileStrength: Optional[float] = None
+    coilWeight: Optional[float] = None
+    reqMaxFPM: Optional[float] = None
+    coilOD: Optional[float] = None
+    coilID: Optional[float] = None
+
+# MaterialSpecsScenario represents material specs calculations for a scenario
+class MaterialSpecsScenario(BaseModel):
+    scenarioId: int
+    yieldStrength: Optional[float] = None
+    materialTensile: Optional[float] = None
+    minBendRadius: Optional[float] = None
+    minLoopLength: Optional[float] = None
+    coilODCalculated: Optional[float] = None
+
+######################################################
 # Base Calculation Models
 ######################################################
 # RFQ FPM calculation input
@@ -99,6 +125,7 @@ class roll_str_backbend_input(BaseModel):
     material_thickness: float
     str_model: str
     num_str_rolls: int
+    hidden_value: float = 9957.34211927781
 
 # Hidden Constant Calculation for Roll Str Backbend
 class hidden_const_input(BaseModel):

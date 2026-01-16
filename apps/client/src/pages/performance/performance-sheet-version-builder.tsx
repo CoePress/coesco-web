@@ -14,6 +14,7 @@ interface Field {
   size: number;
   sequence: number;
   required: boolean;
+  readOnly?: boolean;
   default?: any;
   options?: { value: string; label: string }[];
 }
@@ -224,11 +225,11 @@ const PerformanceSheetVersionBuilder = () => {
       setSections(sections.map(section =>
         section.id === sectionId
           ? {
-              ...section,
-              sections: section.sections.map(sub =>
-                sub.id === subsection.id ? subsection : sub
-              )
-            }
+            ...section,
+            sections: section.sections.map(sub =>
+              sub.id === subsection.id ? subsection : sub
+            )
+          }
           : section
       ));
     }
@@ -334,18 +335,18 @@ const PerformanceSheetVersionBuilder = () => {
     setSections(sections.map(section =>
       section.id === sectionId
         ? {
-            ...section,
-            sections: section.sections.map(subsection =>
-              subsection.id === subsectionId
-                ? {
-                    ...subsection,
-                    fields: isNew
-                      ? [...subsection.fields, field]
-                      : subsection.fields.map(f => f.id === field.id ? field : f)
-                  }
-                : subsection
-            )
-          }
+          ...section,
+          sections: section.sections.map(subsection =>
+            subsection.id === subsectionId
+              ? {
+                ...subsection,
+                fields: isNew
+                  ? [...subsection.fields, field]
+                  : subsection.fields.map(f => f.id === field.id ? field : f)
+              }
+              : subsection
+          )
+        }
         : section
     ));
 
@@ -361,13 +362,13 @@ const PerformanceSheetVersionBuilder = () => {
     setSections(sections.map(section =>
       section.id === sectionId
         ? {
-            ...section,
-            sections: section.sections.map(subsection =>
-              subsection.id === subsectionId
-                ? { ...subsection, fields: subsection.fields.filter(f => f.id !== fieldId) }
-                : subsection
-            )
-          }
+          ...section,
+          sections: section.sections.map(subsection =>
+            subsection.id === subsectionId
+              ? { ...subsection, fields: subsection.fields.filter(f => f.id !== fieldId) }
+              : subsection
+          )
+        }
         : section
     ));
     setDeleteConfirmation(null);
@@ -726,7 +727,7 @@ const PerformanceSheetVersionBuilder = () => {
       {isSubsectionModalOpen && editingSubsection && (
         <SubsectionEditorModal
           subsection={editingSubsection}
-          onSave={(subsection : any) => {
+          onSave={(subsection: any) => {
             const isNew = !selectedSection?.sections.some(s => s.id === subsection.id);
             saveSubsection(selectedSectionId!, subsection, isNew);
           }}
@@ -740,7 +741,7 @@ const PerformanceSheetVersionBuilder = () => {
       {isFieldModalOpen && editingField && (
         <FieldEditorModal
           field={editingField}
-          onSave={(field : any) => {
+          onSave={(field: any) => {
             const isNew = !selectedSubsection?.fields.some(f => f.id === field.id);
             saveField(selectedSectionId!, selectedSubsectionId!, field, isNew);
           }}
@@ -798,11 +799,10 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
         {sortedSections.map((section: any, index: number) => (
           <div
             key={section.id}
-            className={`border border-border rounded ${
-              selectedSectionId === section.id
-                ? 'bg-primary/10 border-primary'
-                : 'bg-surface'
-            }`}
+            className={`border border-border rounded ${selectedSectionId === section.id
+              ? 'bg-primary/10 border-primary'
+              : 'bg-surface'
+              }`}
           >
             <div
               className="p-2 cursor-pointer"
@@ -870,11 +870,10 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
         {sortedSubsections.map((subsection: any, index: number) => (
           <div
             key={subsection.id}
-            className={`border border-border rounded ${
-              selectedSubsectionId === subsection.id
-                ? 'bg-primary/10 border-primary'
-                : 'bg-surface'
-            }`}
+            className={`border border-border rounded ${selectedSubsectionId === subsection.id
+              ? 'bg-primary/10 border-primary'
+              : 'bg-surface'
+              }`}
           >
             <div
               className="p-2 cursor-pointer"

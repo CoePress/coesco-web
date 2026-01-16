@@ -1,3 +1,5 @@
+import { read } from "fs";
+
 export const DAYS_PER_WEEK_OPTIONS = [
   { value: "1", label: "1 Day" },
   { value: "2", label: "2 Days" },
@@ -13,10 +15,26 @@ export const YES_NO_OPTIONS = [
   { value: "no", label: "No" },
 ];
 
+export const LINE_APPLICATION_OPTIONS = [
+  { value: "Press Feed", label: "Press Feed" },
+  { value: "Cut to Length", label: "Cut to Length" },
+  { value: "Standalone", label: "Standalone" },
+];
+
 export const LINE_TYPE_OPTIONS = [
-  { value: "new", label: "New Line" },
-  { value: "retrofit", label: "Retrofit" },
-  { value: "upgrade", label: "Upgrade" },
+  { value: "Conventional", label: "Conventional" },
+  { value: "Compact", label: "Compact" },
+];
+
+export const LINE_TYPE_STANDALONE_OPTIONS = [
+  { value: "Feed", label: "Feed" },
+  { value: "Straightener", label: "Straightener" },
+  { value: "Reel-Motorized", label: "Reel-Motorized" },
+  { value: "Reel-Pull Off", label: "Reel-Pull Off" },
+  { value: "Straightener-Reel Combination", label: "Straightener-Reel Combination" },
+  { value: "Other", label: "Other" },
+  { value: "Feed-Shear", label: "Feed-Shear" },
+  { value: "Threading Table", label: "Threading Table" },
 ];
 
 export const PULL_THRU_OPTIONS = [
@@ -66,33 +84,116 @@ export const ROLL_TYPE_OPTIONS = [
 ];
 
 export const BACKPLATE_TYPE_OPTIONS = [
-  { value: "standard", label: "Standard" },
-  { value: "quick-change", label: "Quick Change" },
-  { value: "hydraulic", label: "Hydraulic" },
+  { value: "Standard Backplate", label: "Standard Backplate" },
+  { value: "Full OD Backplate", label: "Full OD Backplate" },
 ];
 
 export const TYPE_OF_LINE_OPTIONS = [
-  { value: "blanking", label: "Blanking" },
-  { value: "progressive", label: "Progressive" },
-  { value: "transfer", label: "Transfer" },
-  { value: "other", label: "Other" },
+  { value: "Compact", label: "Compact" },
+  { value: "Compact CTL", label: "Compact CTL" },
+  { value: "Conventional", label: "Conventional" },
+  { value: "Conventional CTL", label: "Conventional CTL" },
+  { value: "Pull Through", label: "Pull Through" },
+  { value: "Pull Through Compact", label: "Pull Through Compact" },
+  { value: "Pull Through CTL", label: "Pull Through CTL" },
+  { value: "Feed", label: "Feed" },
+  { value: "Feed-Pull Through", label: "Feed-Pull Through" },
+  { value: "Feed-Pull Through-Shear", label: "Feed-Pull Through-Shear" },
+  { value: "Feed-Shear", label: "Feed-Shear" },
+  { value: "Straightener", label: "Straightener" },
+  { value: "Straightener-Reel Combination", label: "Straightener-Reel Combination" },
+  { value: "Reel-Motorized", label: "Reel-Motorized" },
+  { value: "Reel-Pull Off", label: "Reel-Pull Off" },
+  { value: "Threading Table", label: "Threading Table" },
+  { value: "Other", label: "Other" },
 ];
 
 export const PASSLINE_OPTIONS = [
-  { value: "36", label: "36\"" },
+  { value: "37", label: "37\"" },
+  { value: "39", label: "39\"" },
+  { value: "40", label: "40\"" },
+  { value: "40.5", label: "40.5\"" },
+  { value: "41", label: "41\"" },
+  { value: "41.5", label: "41.5\"" },
   { value: "42", label: "42\"" },
+  { value: "43", label: "43\"" },
+  { value: "43.625", label: "43.625\"" },
+  { value: "44", label: "44\"" },
+  { value: "45", label: "45\"" },
+  { value: "45.5", label: "45.5\"" },
+  { value: "46", label: "46\"" },
+  { value: "46.5", label: "46.5\"" },
+  { value: "47", label: "47\"" },
+  { value: "47.4", label: "47.4\"" },
+  { value: "47.5", label: "47.5\"" },
   { value: "48", label: "48\"" },
+  { value: "48.5", label: "48.5\"" },
+  { value: "49", label: "49\"" },
+  { value: "49.5", label: "49.5\"" },
+  { value: "50", label: "50\"" },
+  { value: "50.5", label: "50.5\"" },
+  { value: "50.75", label: "50.75\"" },
+  { value: "51", label: "51\"" },
+  { value: "51.5", label: "51.5\"" },
+  { value: "51.75", label: "51.75\"" },
+  { value: "52", label: "52\"" },
+  { value: "52.25", label: "52.25\"" },
+  { value: "52.5", label: "52.5\"" },
+  { value: "53", label: "53\"" },
   { value: "54", label: "54\"" },
+  { value: "54.5", label: "54.5\"" },
+  { value: "54.75", label: "54.75\"" },
+  { value: "55", label: "55\"" },
+  { value: "55.25", label: "55.25\"" },
+  { value: "55.5", label: "55.5\"" },
+  { value: "55.75", label: "55.75\"" },
+  { value: "56", label: "56\"" },
+  { value: "56.5", label: "56.5\"" },
+  { value: "57", label: "57\"" },
+  { value: "58", label: "58\"" },
+  { value: "58.25", label: "58.25\"" },
+  { value: "59", label: "59\"" },
+  { value: "59.5", label: "59.5\"" },
   { value: "60", label: "60\"" },
+  { value: "60.5", label: "60.5\"" },
+  { value: "61", label: "61\"" },
+  { value: "62", label: "62\"" },
+  { value: "62.5", label: "62.5\"" },
+  { value: "63", label: "63\"" },
+  { value: "64", label: "64\"" },
+  { value: "64.5", label: "64.5\"" },
+  { value: "65", label: "65\"" },
+  { value: "66", label: "66\"" },
+  { value: "66.5", label: "66.5\"" },
+  { value: "67", label: "67\"" },
+  { value: "70", label: "70\"" },
+  { value: "72", label: "72\"" },
+  { value: "75", label: "75\"" },
+  { value: "76", label: "76\"" },
 ];
 
 export const FEED_MODEL_OPTIONS = [
-  { value: "sigma-5", label: "Sigma 5 Feed" },
-  { value: "sigma-5-pull-thru", label: "Sigma 5 Pull Thru" },
-  { value: "allen-bradley", label: "Allen Bradley MPL Feed" },
+  { value: "CPRF-S1", label: "CPRF-S1" },
+  { value: "CPRF-S2", label: "CPRF-S2" },
+  { value: "CPRF-S2 PLUS", label: "CPRF-S2 PLUS" },
+  { value: "CPRF-S3", label: "CPRF-S3" },
+  { value: "CPRF-S3 PLUS", label: "CPRF-S3 PLUS" },
+  { value: "CPRF-S4", label: "CPRF-S4" },
+  { value: "CPRF-S4 PLUS", label: "CPRF-S4 PLUS" },
+  { value: "CPRF-S5", label: "CPRF-S5" },
+  { value: "CPRF-S6", label: "CPRF-S6" },
+  { value: "CPRF-S7", label: "CPRF-S7" },
+  { value: "CPRF-S8", label: "CPRF-S8" },
+];
+
+export const FEED_TYPE_OPTIONS = [
+  { value: "Sigma 5", label: "Sigma 5" },
+  { value: "Sigma 5 w/ Pull Through", label: "Sigma 5 w/ Pull Through" },
+  { value: "Allen Bradley MPL - Feed", label: "Allen Bradley MPL - Feed" },
 ];
 
 export const MACHINE_WIDTH_OPTIONS = [
+  { value: "6", label: "6\"" },
   { value: "12", label: "12\"" },
   { value: "18", label: "18\"" },
   { value: "24", label: "24\"" },
@@ -102,6 +203,9 @@ export const MACHINE_WIDTH_OPTIONS = [
   { value: "48", label: "48\"" },
   { value: "54", label: "54\"" },
   { value: "60", label: "60\"" },
+  { value: "66", label: "66\"" },
+  { value: "72", label: "72\"" },
+  { value: "78", label: "78\"" },
 ];
 
 export const PRESS_APPLICATION_OPTIONS = [
@@ -117,11 +221,39 @@ export const STRAIGHTENER_ROLLS_OPTIONS = [
 ];
 
 export const STR_FEED_RATE_OPTIONS = [
+  { value: "42", label: "42 ft/min" },
+  { value: "57", label: "57 ft/min" },
   { value: "60", label: "60 ft/min" },
+  { value: "65", label: "65 ft/min" },
+  { value: "69", label: "69 ft/min" },
+  { value: "72", label: "72 ft/min" },
+  { value: "73", label: "73 ft/min" },
+  { value: "76", label: "76 ft/min" },
+  { value: "79", label: "79 ft/min" },
   { value: "80", label: "80 ft/min" },
+  { value: "84", label: "84 ft/min" },
+  { value: "85", label: "85 ft/min" },
+  { value: "92", label: "92 ft/min" },
+  { value: "95", label: "95 ft/min" },
+  { value: "96", label: "96 ft/min" },
   { value: "100", label: "100 ft/min" },
+  { value: "101", label: "101 ft/min" },
+  { value: "105", label: "105 ft/min" },
+  { value: "115", label: "115 ft/min" },
+  { value: "116", label: "116 ft/min" },
   { value: "120", label: "120 ft/min" },
+  { value: "122", label: "122 ft/min" },
+  { value: "140", label: "140 ft/min" },
+  { value: "146", label: "146 ft/min" },
   { value: "150", label: "150 ft/min" },
+  { value: "153", label: "153 ft/min" },
+  { value: "157", label: "157 ft/min" },
+  { value: "160", label: "160 ft/min" },
+  { value: "165", label: "165 ft/min" },
+  { value: "177", label: "177 ft/min" },
+  { value: "180", label: "180 ft/min" },
+  { value: "200", label: "200 ft/min" },
+  { value: "224", label: "224 ft/min" },
 ];
 
 export const FEED_ANGLE_OPTIONS = [
@@ -133,18 +265,16 @@ export const FEED_ANGLE_OPTIONS = [
 ];
 
 export const STR_MODEL_OPTIONS = [
-  { value: "STR-12", label: "STR-12" },
-  { value: "STR-18", label: "STR-18" },
-  { value: "STR-24", label: "STR-24" },
-  { value: "STR-30", label: "STR-30" },
-  { value: "STR-36", label: "STR-36" },
-  { value: "STR-42", label: "STR-42" },
-  { value: "STR-48", label: "STR-48" },
-  { value: "STR-54", label: "STR-54" },
-  { value: "STR-60", label: "STR-60" },
+  { value: "CPPS-250", label: "CPPS-250" },
+  { value: "CPPS-306", label: "CPPS-306" },
+  { value: "CPPS-350", label: "CPPS-350" },
+  { value: "CPPS-406", label: "CPPS-406" },
+  { value: "CPPS-507", label: "CPPS-507" },
+  { value: "SPGPS-810", label: "SPGPS-810" },
 ];
 
 export const STR_WIDTH_OPTIONS = [
+  { value: "6", label: "6\"" },
   { value: "12", label: "12\"" },
   { value: "18", label: "18\"" },
   { value: "24", label: "24\"" },
@@ -154,12 +284,14 @@ export const STR_WIDTH_OPTIONS = [
   { value: "48", label: "48\"" },
   { value: "54", label: "54\"" },
   { value: "60", label: "60\"" },
+  { value: "66", label: "66\"" },
+  { value: "72", label: "72\"" },
+  { value: "78", label: "78\"" },
 ];
 
 export const PAYOFF_OPTIONS = [
-  { value: "coil", label: "Coil" },
-  { value: "cradle", label: "Cradle" },
-  { value: "mandrel", label: "Mandrel" },
+  { value: "top", label: "Top" },
+  { value: "bottom", label: "Bottom" },
 ];
 
 export const STR_HORSEPOWER_OPTIONS = [
@@ -171,6 +303,12 @@ export const STR_HORSEPOWER_OPTIONS = [
   { value: "20", label: "20 HP" },
   { value: "25", label: "25 HP" },
   { value: "30", label: "30 HP" },
+  { value: "40", label: "40 HP" },
+  { value: "50", label: "50 HP" },
+  { value: "60", label: "60 HP" },
+  { value: "75", label: "75 HP" },
+  { value: "100", label: "100 HP" },
+  { value: "125", label: "125 HP" },
 ];
 
 export const SHEAR_TYPE_OPTIONS = [
@@ -179,20 +317,21 @@ export const SHEAR_TYPE_OPTIONS = [
 ];
 
 export const REEL_STYLE_OPTIONS = [
-  { value: "single", label: "Single Reel" },
-  { value: "dual", label: "Dual Reel" },
-  { value: "turret", label: "Turret Style" },
+  { value: "Single Ended", label: "Single Ended" },
+  { value: "Double Ended", label: "Double Ended" },
 ];
 
 export const REEL_MODEL_OPTIONS = [
-  { value: "6", label: "6" },
-  { value: "8", label: "8" },
-  { value: "10", label: "10" },
-  { value: "12", label: "12" },
-  { value: "14", label: "14" },
-  { value: "16", label: "16" },
-  { value: "18", label: "18" },
-  { value: "20", label: "20" },
+  { value: "CPR-040", label: "CPR-040" },
+  { value: "CPR-060", label: "CPR-060" },
+  { value: "CPR-080", label: "CPR-080" },
+  { value: "CPR-100", label: "CPR-100" },
+  { value: "CPR-150", label: "CPR-150" },
+  { value: "CPR-200", label: "CPR-200" },
+  { value: "CPR-300", label: "CPR-300" },
+  { value: "CPR-400", label: "CPR-400" },
+  { value: "CPR-500", label: "CPR-500" },
+  { value: "CPR-600", label: "CPR-600" },
 ];
 
 export const REEL_HORSEPOWER_OPTIONS = [
@@ -220,43 +359,424 @@ export const REEL_WIDTH_OPTIONS = [
   { value: "60", label: "60" },
   { value: "66", label: "66" },
   { value: "72", label: "72" },
+  { value: "78", label: "78" },
 ];
 
 export const BACKPLATE_DIAMETER_OPTIONS = [
-  { value: "11.75", label: "11.75" },
-  { value: "13.5", label: "13.5" },
-  { value: "15.5", label: "15.5" },
-  { value: "17.5", label: "17.5" },
-  { value: "19.5", label: "19.5" },
+  { value: "23", label: "23" },
+  { value: "27", label: "27" },
+  { value: "72", label: "72" },
 ];
 
 export const HYDRAULIC_THREADING_DRIVE_OPTIONS = [
-  { value: "none", label: "None" },
-  { value: "standard", label: "Standard" },
-  { value: "high-torque", label: "High Torque" },
+  { value: "None", label: "None" },
+  { value: "22 cu in (D-15125)", label: "22 cu in (D-15125)" },
+  { value: "38 cu in (D-15125)", label: "38 cu in (D-15125)" },
+  { value: "22 cu in (D-12689)", label: "22 cu in (D-12689)" },
+  { value: "38 cu in (D-13374)", label: "38 cu in (D-13374)" },
+  { value: "60 cu in (D-13374)", label: "60 cu in (D-13374)" },
+  { value: "60 cu in (D-13382)", label: "60 cu in (D-13382)" },
 ];
 
 export const HOLD_DOWN_ASSY_OPTIONS = [
-  { value: "none", label: "None" },
-  { value: "pneumatic", label: "Pneumatic" },
-  { value: "hydraulic", label: "Hydraulic" },
-  { value: "spring-loaded", label: "Spring Loaded" },
+  { value: "None", label: "None" },
+  { value: "LD_STANDARD", label: "LD Standard" },
+  { value: "LD_NARROW", label: "LD Narrow" },
+  { value: "LD_MOTORIZED", label: "LD Motorized" },
+  { value: "SD", label: "SD" },
+  { value: "SD_MOTORIZED", label: "SD Motorized" },
+  { value: "MD", label: "MD" },
+  { value: "HD_Single", label: "HD Single" },
+  { value: "HD_Dual", label: "HD Dual" },
+  { value: "XD", label: "XD" },
+  { value: "XXD", label: "XXD" },
+];
+
+export const CYLINDER_OPTIONS = [
+  { value: "Air", label: "Air" },
+  { value: "4in Air", label: "4in Air" },
+  { value: "5in Air", label: "5in Air" },
+  { value: "8in Air", label: "8in Air" },
+  { value: "Hydraulic", label: "Hydraulic" },
 ];
 
 export const BRAKE_MODEL_OPTIONS = [
-  { value: "DB-10", label: "DB-10" },
-  { value: "DB-15", label: "DB-15" },
-  { value: "DB-20", label: "DB-20" },
-  { value: "DB-25", label: "DB-25" },
-  { value: "DB-30", label: "DB-30" },
+  { value: "Single Stage", label: "Single Stage" },
+  { value: "Double Stage", label: "Double Stage" },
+  { value: "Triple Stage", label: "Triple Stage" },
+  { value: "Failsafe - Single Stage", label: "Failsafe - Single Stage" },
+  { value: "Failsafe - Double Stage", label: "Failsafe - Double Stage" },
 ];
 
 export const BRAKE_QUANTITY_OPTIONS = [
   { value: "1", label: "1" },
   { value: "2", label: "2" },
   { value: "3", label: "3" },
-  { value: "4", label: "4" },
 ];
+
+// Reel model dependency mappings
+export const REEL_MODEL_DEPENDENCIES = {
+  "CPR-040": {
+    widths: ["12", "18", "24", "30", "36"],
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW"]
+  },
+  "CPR-060": {
+    widths: ["18", "24", "30", "36"],
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
+  },
+  "CPR-080": {
+    widths: ["18", "24", "30", "36"],
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
+  },
+  "CPR-100": {
+    widths: ["24", "30", "36", "42", "48", "54", "60"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-150": {
+    widths: ["24", "30", "36", "42", "48", "54", "60"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-200": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-300": {
+    widths: ["30", "36", "42", "48", "54", "60", "66", "72"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-400": {
+    widths: ["36", "42", "48", "54", "60", "66", "72"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-500": {
+    widths: ["42", "48", "54", "60", "66", "72", "78"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-600": {
+    widths: ["48", "54", "60", "66", "72", "78"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  }
+};
+
+// Add hold down assembly to cylinder options mapping (model-specific)
+export const HOLD_DOWN_CYLINDER_DEPENDENCIES: Record<string, Record<string, string[]>> = {
+  "CPR-040": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air"],
+    "LD_NARROW": ["4in Air"]
+  },
+  "CPR-060": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
+    "LD_NARROW": ["4in Air"],
+    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+  },
+  "CPR-080": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
+    "LD_NARROW": ["4in Air"],
+    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+  },
+  "CPR-100": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-150": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-200": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-300": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-400": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-500": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-600": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  }
+};
+
+// Helper functions to get dependent options
+export const getReelWidthOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return REEL_WIDTH_OPTIONS;
+
+  return dependencies.widths.map(width => ({ value: width, label: width }));
+};
+
+export const getBackplateDiameterOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return BACKPLATE_DIAMETER_OPTIONS;
+
+  return dependencies.backplateDiameters.map(diameter => ({ value: diameter, label: diameter }));
+};
+
+export const getHydThreadingDriveOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return HYDRAULIC_THREADING_DRIVE_OPTIONS;
+
+  return dependencies.hydThreadingDrives.map(drive => ({ value: drive, label: drive }));
+};
+
+export const getHoldDownAssyOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return HOLD_DOWN_ASSY_OPTIONS;
+
+  return dependencies.holdDownAssys.map(assy => ({ value: assy, label: HOLD_DOWN_ASSY_OPTIONS.find(opt => opt.value === assy)?.label || assy }));
+};
+
+export const getCylinderOptionsForHoldDownAssy = (model: string, holdDownAssy: string) => {
+  const modelDependencies = HOLD_DOWN_CYLINDER_DEPENDENCIES[model];
+  if (!modelDependencies) return CYLINDER_OPTIONS;
+
+  const cylinderOptions = modelDependencies[holdDownAssy];
+  if (!cylinderOptions) return CYLINDER_OPTIONS;
+
+  return cylinderOptions.map(cylinder => ({ value: cylinder, label: cylinder }));
+};
+
+// STR model dependency mappings
+export const STR_MODEL_DEPENDENCIES = {
+  "CPPS-250": {
+    widths: ["6", "12", "18", "24", "30", "36", "42", "48", "54"],
+    horsepowers: ["3", "5", "7.5"],
+    feedRatesByHorsepower: {
+      "3": ["42", "65", "85", "105", "165"],
+      "5": ["42", "65", "85", "105", "165"],
+      "7.5": ["42", "65", "85", "105", "165"]
+    }
+  },
+  "CPPS-306": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
+    horsepowers: ["20", "25", "30", "40", "50"],
+    feedRatesByHorsepower: {
+      "20": ["80", "100", "120", "140", "160", "200"],
+      "25": ["80", "100", "120", "140", "160", "200"],
+      "30": ["80", "100", "120", "140", "160", "200"],
+      "40": ["80", "100", "120", "140", "160", "200"],
+      "50": ["80", "100", "120", "140", "160", "200"]
+    }
+  },
+  "CPPS-350": {
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54", "60"],
+    horsepowers: ["5", "7.5", "10", "15", "20"],
+    feedRatesByHorsepower: {
+      "5": ["57", "76", "92", "115", "153"],
+      "7.5": ["65", "72", "96", "115", "153"],
+      "10": ["65", "79", "95", "115", "153"],
+      "15": ["69", "84", "95", "122", "157", "177"],
+      "20": ["73", "101", "116", "146", "224"]
+    }
+  },
+  "CPPS-406": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+    horsepowers: ["20", "25", "30", "40", "50", "60", "75"],
+    feedRatesByHorsepower: {
+      "20": ["80", "100", "120", "140", "160", "180", "200"],
+      "25": ["80", "100", "120", "140", "160", "180", "200"],
+      "30": ["80", "100", "120", "140", "160", "180", "200"],
+      "40": ["80", "100", "120", "140", "160", "180", "200"],
+      "50": ["80", "100", "120", "140", "160", "180", "200"],
+      "60": ["80", "100", "120", "140", "160", "180", "200"],
+      "75": ["100", "120", "140", "160", "200"]
+    }
+  },
+  "CPPS-507": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+    horsepowers: ["40", "50", "60", "75", "100", "125"],
+    feedRatesByHorsepower: {
+      "40": ["80", "100", "120", "140", "160", "200"],
+      "50": ["80", "100", "120", "140", "160", "200"],
+      "60": ["80", "100", "120", "140", "160", "200"],
+      "75": ["80", "100", "120", "140", "160", "200"],
+      "100": ["120", "140", "160", "200"],
+      "125": ["120", "140", "160", "200"]
+    }
+  },
+  "SPGPS-810": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+    horsepowers: ["40", "50", "60", "75", "100", "125"],
+    feedRatesByHorsepower: {
+      "40": ["80", "100", "120", "140", "160", "200"],
+      "50": ["80", "100", "120", "140", "160", "200"],
+      "60": ["80", "100", "120", "140", "160", "200"],
+      "75": ["80", "100", "120", "140", "160", "200"],
+      "100": ["120", "140", "160", "200"],
+      "125": ["120", "140", "160", "200"]
+    }
+  }
+};
+
+// Helper functions to get STR dependent options
+export const getStrWidthOptionsForModel = (model: string) => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies) return STR_WIDTH_OPTIONS;
+
+  return dependencies.widths.map(width => ({ value: width, label: `${width}"` }));
+};
+
+export const getStrHorsepowerOptionsForModel = (model: string) => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies) return STR_HORSEPOWER_OPTIONS;
+
+  return dependencies.horsepowers.map(hp => ({ value: hp, label: `${hp} HP` }));
+};
+
+export const getStrFeedRateOptionsForModelAndHorsepower = (model: string, horsepower: string) => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies) return STR_FEED_RATE_OPTIONS;
+
+  // Find the feed rates for the specific model and horsepower
+  switch (model) {
+    case "CPPS-250":
+      if (["3", "5", "7.5"].includes(horsepower)) {
+        return ["42", "65", "85", "105", "165"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+    case "CPPS-306":
+      if (["20", "25", "30", "40", "50"].includes(horsepower)) {
+        return ["80", "100", "120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+    case "CPPS-350":
+      if (horsepower === "5") return ["57", "76", "92", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "7.5") return ["65", "72", "96", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "10") return ["65", "79", "95", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "15") return ["69", "84", "95", "122", "157", "177"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "20") return ["73", "101", "116", "146", "224"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      break;
+    case "CPPS-406":
+      if (["20", "25", "30", "40", "50", "60"].includes(horsepower)) {
+        return ["80", "100", "120", "140", "160", "180", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      if (horsepower === "75") {
+        return ["100", "120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+    case "CPPS-507":
+    case "SPGPS-810":
+      if (["40", "50", "60", "75"].includes(horsepower)) {
+        return ["80", "100", "120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      if (["100", "125"].includes(horsepower)) {
+        return ["120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+  }
+
+  return STR_FEED_RATE_OPTIONS;
+};
+
+// Feed model dependency mappings
+export const FEED_MODEL_DEPENDENCIES = {
+  "CPRF-S1": {
+    widths: ["6", "12", "18", "24"]
+  },
+  "CPRF-S2": {
+    widths: ["6", "12", "18", "24", "30"]
+  },
+  "CPRF-S2 PLUS": {
+    widths: ["6", "12", "18", "24", "30"]
+  },
+  "CPRF-S3": {
+    widths: ["12", "18", "24", "30", "36", "42"]
+  },
+  "CPRF-S3 PLUS": {
+    widths: ["12", "18", "24", "30", "36", "42"]
+  },
+  "CPRF-S4": {
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54"]
+  },
+  "CPRF-S4 PLUS": {
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54"]
+  },
+  "CPRF-S5": {
+    widths: ["18", "24", "30", "36", "42", "48", "54", "60"]
+  },
+  "CPRF-S6": {
+    widths: ["18", "24", "30", "36", "42", "48", "54", "60", "66", "72"]
+  },
+  "CPRF-S7": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"]
+  },
+  "CPRF-S8": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"]
+  }
+};
+
+// Helper function to get feed machine width options for model
+export const getFeedMachineWidthOptionsForModel = (model: string) => {
+  const dependencies = FEED_MODEL_DEPENDENCIES[model as keyof typeof FEED_MODEL_DEPENDENCIES];
+  if (!dependencies) return MACHINE_WIDTH_OPTIONS;
+
+  return dependencies.widths.map(width => ({ value: width, label: `${width}"` }));
+};
 
 // | "rfq"
 // | "material-specs"
@@ -394,11 +914,29 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           required: true,
         },
         {
+          id: "common.customerInfo.daysPerWeek",
+          label: "Days per Week Operating",
+          type: "select",
+          size: 1,
+          sequence: 15,
+          required: false,
+          options: DAYS_PER_WEEK_OPTIONS,
+        },
+        {
+          id: "common.customerInfo.shiftsPerDay",
+          label: "Shifts per Day",
+          type: "select",
+          size: 1,
+          sequence: 16,
+          required: false,
+          options: DAYS_PER_WEEK_OPTIONS,
+        },
+        {
           id: "rfq.dates.idealDeliveryDate",
           label: "Ideal Delivery Date",
           type: "date",
           size: 1,
-          sequence: 15,
+          sequence: 17,
           required: true,
         },
         {
@@ -406,8 +944,24 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           label: "Decision Date",
           type: "date",
           size: 1,
-          sequence: 16,
+          sequence: 18,
           required: true,
+        },
+        {
+          id: "rfq.dates.earliestDeliveryDate",
+          label: "Earliest Delivery Date",
+          type: "date",
+          size: 1,
+          sequence: 19,
+          required: false,
+        },
+        {
+          id: "rfq.dates.latestDeliveryDate",
+          label: "Latest Delivery Date",
+          type: "date",
+          size: 1,
+          sequence: 20,
+          required: false,
         },
       ],
     },
@@ -420,10 +974,12 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
         {
           id: "feed.feed.application",
           label: "Application",
-          type: "text",
+          type: "select",
           size: 2,
           sequence: 1,
           required: true,
+          options: LINE_APPLICATION_OPTIONS,
+          default: "Press Feed",
         },
         {
           id: "common.equipment.feed.lineType",
@@ -433,6 +989,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 2,
           required: true,
           options: LINE_TYPE_OPTIONS,
+          default: "Conventional",
         },
         {
           id: "feed.feed.pullThru.isPullThru",
@@ -442,6 +999,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 3,
           required: true,
           options: PULL_THRU_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.runningCosmeticMaterial",
@@ -451,6 +1009,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 4,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
       ],
     },
@@ -467,6 +1026,9 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: true,
+          validation: {
+            min: "common.coil.minCoilWidth",
+          },
         },
         {
           id: "common.coil.minCoilWidth",
@@ -475,6 +1037,9 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: true,
+          validation: {
+            max: "common.coil.maxCoilWidth",
+          },
         },
         {
           id: "common.coil.maxCoilOD",
@@ -499,80 +1064,119 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: true,
+          validation: {
+            max: "common.coil.maxCoilHandlingCap",
+          },
+        },
+        {
+          id: "common.coil.maxCoilHandlingCap",
+          label: "Max Coil Handling Capacity (lbs)",
+          type: "number",
+          size: 1,
+          sequence: 6,
+          required: false,
+          validation: {
+            min: "common.coil.maxCoilWeight",
+          },
         },
         {
           id: "rfq.coil.slitEdge",
           label: "Slit Edge",
           type: "select",
           size: 1,
-          sequence: 6,
+          sequence: 7,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.millEdge",
           label: "Mill Edge",
           type: "select",
           size: 1,
-          sequence: 7,
+          sequence: 8,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.requireCoilCar",
           label: "Require Coil Car",
           type: "select",
           size: 1,
-          sequence: 8,
+          sequence: 9,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.runningOffBackplate",
           label: "Running Off Backplate",
           type: "select",
           size: 1,
-          sequence: 9,
+          sequence: 10,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.requireRewinding",
           label: "Require Rewinding",
           type: "select",
           size: 1,
-          sequence: 10,
+          sequence: 11,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.coil.changeTimeConcern",
           label: "Change Time Concern",
           type: "select",
           size: 1,
-          sequence: 11,
+          sequence: 12,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
+        },
+        {
+          id: "rfq.coil.timeChangeGoal",
+          label: "Time Change Goal (mins)",
+          type: "number",
+          size: 1,
+          sequence: 13,
+          required: false,
         },
         {
           id: "rfq.coil.loading",
           label: "Coil Loading Method",
           type: "select",
           size: 1,
-          sequence: 12,
+          sequence: 14,
           required: true,
           options: COIL_LOADING_OPTIONS,
+          default: "Operator Side",
+        },
+        {
+          id: "common.equipment.feed.direction",
+          label: "Feed Direction",
+          type: "select",
+          size: 1,
+          sequence: 15,
+          required: true,
+          options: FEED_DIRECTION_OPTIONS,
+          default: "left-to-right",
         },
       ],
     },
     {
-      id: "section-material-specs",
-      title: "Material Specifications",
+      id: "section-material-scenario-1",
+      title: "Material Specification - Scenario 1 (Primary)",
       sequence: 4,
       columns: 4,
       fields: [
         {
-          id: "common.material.materialThickness",
+          id: "common.materialScenarios[0].materialThickness",
           label: "Material Thickness (in)",
           type: "number",
           size: 1,
@@ -580,15 +1184,15 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           required: true,
         },
         {
-          id: "common.material.coilWidth",
-          label: "Coil Width (in)",
+          id: "common.materialScenarios[0].materialWidth",
+          label: "Material Width (in)",
           type: "number",
           size: 1,
           sequence: 2,
           required: true,
         },
         {
-          id: "common.material.materialType",
+          id: "common.materialScenarios[0].materialType",
           label: "Material Type",
           type: "select",
           size: 1,
@@ -597,104 +1201,286 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           options: MATERIAL_TYPE_OPTIONS,
         },
         {
-          id: "common.material.maxYieldStrength",
+          id: "common.materialScenarios[0].maxYieldStrength",
           label: "Max Yield Strength (PSI)",
           type: "number",
           size: 1,
           sequence: 4,
           required: true,
         },
+        {
+          id: "common.materialScenarios[0].maxTensileStrength",
+          label: "Max Tensile Strength (PSI)",
+          type: "number",
+          size: 1,
+          sequence: 5,
+          required: false,
+        },
       ],
     },
     {
-      id: "section-equipment-config",
-      title: "Equipment Configuration",
+      id: "section-material-scenario-2",
+      title: "Material Specification - Scenario 2",
       sequence: 5,
       columns: 4,
       fields: [
         {
-          id: "common.equipment.feed.controlsLevel",
-          label: "Controls Level",
-          type: "select",
-          size: 1,
-          sequence: 1,
-          required: true,
-          options: CONTROLS_LEVEL_OPTIONS,
-        },
-        {
-          id: "common.equipment.feed.typeOfLine",
-          label: "Type of Line",
-          type: "text",
-          size: 1,
-          sequence: 2,
-          required: true,
-        },
-        {
-          id: "common.equipment.feed.passline",
-          label: "Passline Height (in)",
+          id: "common.materialScenarios[1].materialThickness",
+          label: "Material Thickness (in)",
           type: "number",
           size: 1,
-          sequence: 3,
-          required: true,
+          sequence: 1,
+          required: false,
         },
         {
-          id: "common.equipment.feed.direction",
-          label: "Feed Direction",
+          id: "common.materialScenarios[1].materialWidth",
+          label: "Material Width (in)",
+          type: "number",
+          size: 1,
+          sequence: 2,
+          required: false,
+        },
+        {
+          id: "common.materialScenarios[1].materialType",
+          label: "Material Type",
           type: "select",
+          size: 1,
+          sequence: 3,
+          required: false,
+          options: MATERIAL_TYPE_OPTIONS,
+        },
+        {
+          id: "common.materialScenarios[1].maxYieldStrength",
+          label: "Max Yield Strength (PSI)",
+          type: "number",
           size: 1,
           sequence: 4,
-          required: true,
-          options: FEED_DIRECTION_OPTIONS,
+          required: false,
         },
         {
-          id: "common.equipment.straightener.rollType",
-          label: "Straightener Roll Type",
-          type: "select",
+          id: "common.materialScenarios[1].maxTensileStrength",
+          label: "Max Tensile Strength (PSI)",
+          type: "number",
           size: 1,
           sequence: 5,
-          required: true,
-          options: ROLL_TYPE_OPTIONS,
+          required: false,
+        },
+      ],
+    },
+    {
+      id: "section-material-scenario-3",
+      title: "Material Specification - Scenario 3",
+      sequence: 6,
+      columns: 4,
+      fields: [
+        {
+          id: "common.materialScenarios[2].materialThickness",
+          label: "Material Thickness (in)",
+          type: "number",
+          size: 1,
+          sequence: 1,
+          required: false,
         },
         {
-          id: "materialSpecs.reel.backplate.type",
-          label: "Backplate Type",
-          type: "select",
+          id: "common.materialScenarios[2].materialWidth",
+          label: "Material Width (in)",
+          type: "number",
           size: 1,
-          sequence: 6,
-          required: true,
-          options: BACKPLATE_TYPE_OPTIONS,
+          sequence: 2,
+          required: false,
         },
         {
-          id: "materialSpecs.reel.style",
-          label: "Reel Style",
+          id: "common.materialScenarios[2].materialType",
+          label: "Material Type",
           type: "select",
           size: 1,
-          sequence: 7,
-          required: true,
-          options: REEL_STYLE_OPTIONS,
+          sequence: 3,
+          required: false,
+          options: MATERIAL_TYPE_OPTIONS,
+        },
+        {
+          id: "common.materialScenarios[2].maxYieldStrength",
+          label: "Max Yield Strength (PSI)",
+          type: "number",
+          size: 1,
+          sequence: 4,
+          required: false,
+        },
+        {
+          id: "common.materialScenarios[2].maxTensileStrength",
+          label: "Max Tensile Strength (PSI)",
+          type: "number",
+          size: 1,
+          sequence: 5,
+          required: false,
+        },
+      ],
+    },
+    {
+      id: "section-material-scenario-4",
+      title: "Material Specification - Scenario 4",
+      sequence: 7,
+      columns: 4,
+      fields: [
+        {
+          id: "common.materialScenarios[3].materialThickness",
+          label: "Material Thickness (in)",
+          type: "number",
+          size: 1,
+          sequence: 1,
+          required: false,
+        },
+        {
+          id: "common.materialScenarios[3].materialWidth",
+          label: "Material Width (in)",
+          type: "number",
+          size: 1,
+          sequence: 2,
+          required: false,
+        },
+        {
+          id: "common.materialScenarios[3].materialType",
+          label: "Material Type",
+          type: "select",
+          size: 1,
+          sequence: 3,
+          required: false,
+          options: MATERIAL_TYPE_OPTIONS,
+        },
+        {
+          id: "common.materialScenarios[3].maxYieldStrength",
+          label: "Max Yield Strength (PSI)",
+          type: "number",
+          size: 1,
+          sequence: 4,
+          required: false,
+        },
+        {
+          id: "common.materialScenarios[3].maxTensileStrength",
+          label: "Max Tensile Strength (PSI)",
+          type: "number",
+          size: 1,
+          sequence: 5,
+          required: false,
         },
       ],
     },
     {
       id: "section-press-info",
       title: "Press Information",
-      sequence: 6,
+      sequence: 8,
       columns: 4,
       fields: [
+        {
+          id: "rfq.press.gapFramePress",
+          label: "Gap Frame Press",
+          type: "checkbox",
+          size: 1,
+          sequence: 1,
+          required: false,
+        },
+        {
+          id: "rfq.press.hydraulicPress",
+          label: "Hydraulic Press",
+          type: "checkbox",
+          size: 1,
+          sequence: 2,
+          required: false,
+        },
+        {
+          id: "rfq.press.obi",
+          label: "OBI",
+          type: "checkbox",
+          size: 1,
+          sequence: 3,
+          required: false,
+        },
+        {
+          id: "rfq.press.servoPress",
+          label: "Servo Press",
+          type: "checkbox",
+          size: 1,
+          sequence: 4,
+          required: false,
+        },
+        {
+          id: "rfq.press.shearDieApplication",
+          label: "Shear Die Application",
+          type: "checkbox",
+          size: 1,
+          sequence: 5,
+          required: false,
+        },
+        {
+          id: "rfq.press.straightSidePress",
+          label: "Straight Side Press",
+          type: "checkbox",
+          size: 1,
+          sequence: 6,
+          required: false,
+        },
+        {
+          id: "rfq.press.other",
+          label: "Other",
+          type: "checkbox",
+          size: 1,
+          sequence: 7,
+          required: false,
+        },
+        {
+          id: "rfq.press.tonnageOfPress",
+          label: "Tonnage of Press",
+          type: "number",
+          size: 1,
+          sequence: 8,
+          required: false,
+        },
+        {
+          id: "rfq.press.strokeLength",
+          label: "Stroke Length (in)",
+          type: "number",
+          size: 1,
+          sequence: 9,
+          required: false,
+        },
         {
           id: "rfq.press.maxSPM",
           label: "Max SPM",
           type: "number",
           size: 1,
-          sequence: 1,
+          sequence: 10,
           required: true,
+        },
+        {
+          id: "rfq.press.bedWidth",
+          label: "Bed Width (in)",
+          type: "number",
+          size: 1,
+          sequence: 11,
+          required: false,
+        },
+        {
+          id: "common.press.bedLength",
+          label: "Bed Length (in)",
+          type: "number",
+          size: 1,
+          sequence: 12,
+          required: false,
+        },
+        {
+          id: "rfq.press.windowSize",
+          label: "Window Size (in)",
+          type: "number",
+          size: 1,
+          sequence: 13,
+          required: false,
         },
       ],
     },
     {
       id: "section-dies-info",
       title: "Dies Information",
-      sequence: 7,
+      sequence: 9,
       columns: 4,
       fields: [
         {
@@ -705,6 +1491,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.dies.progressiveDies",
@@ -714,6 +1501,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 2,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "rfq.dies.blankingDies",
@@ -723,29 +1511,22 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           sequence: 3,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
       ],
     },
     {
       id: "section-feed-requirements",
       title: "Feed Requirements",
-      sequence: 8,
-      columns: 4,
+      sequence: 10,
+      columns: 3,
       fields: [
-        {
-          id: "feed-requirements-header",
-          label: "Average Feed Rates",
-          type: "text",
-          size: 4,
-          sequence: 1,
-          required: false,
-        },
         {
           id: "common.feedRates.average.length",
           label: "Average Length (in)",
           type: "number",
           size: 1,
-          sequence: 2,
+          sequence: 1,
           required: true,
         },
         {
@@ -753,7 +1534,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           label: "Average SPM",
           type: "number",
           size: 1,
-          sequence: 3,
+          sequence: 2,
           required: true,
         },
         {
@@ -761,23 +1542,16 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           label: "Average FPM",
           type: "number",
           size: 1,
-          sequence: 4,
-          required: true,
-        },
-        {
-          id: "feed-requirements-max-header",
-          label: "Maximum Feed Rates",
-          type: "text",
-          size: 4,
-          sequence: 5,
+          sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.feedRates.max.length",
           label: "Max Length (in)",
           type: "number",
           size: 1,
-          sequence: 6,
+          sequence: 4,
           required: true,
         },
         {
@@ -785,7 +1559,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           label: "Max SPM",
           type: "number",
           size: 1,
-          sequence: 7,
+          sequence: 5,
           required: true,
         },
         {
@@ -793,23 +1567,16 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           label: "Max FPM",
           type: "number",
           size: 1,
-          sequence: 8,
-          required: true,
-        },
-        {
-          id: "feed-requirements-min-header",
-          label: "Minimum Feed Rates",
-          type: "text",
-          size: 4,
-          sequence: 9,
+          sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.feedRates.min.length",
           label: "Min Length (in)",
           type: "number",
           size: 1,
-          sequence: 10,
+          sequence: 7,
           required: true,
         },
         {
@@ -817,7 +1584,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           label: "Min SPM",
           type: "number",
           size: 1,
-          sequence: 11,
+          sequence: 8,
           required: true,
         },
         {
@@ -825,15 +1592,32 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           label: "Min FPM",
           type: "number",
           size: 1,
-          sequence: 12,
-          required: true,
+          sequence: 9,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "rfq.press.feedWindowDegrees",
+          label: "Feed Window (Degrees)",
+          type: "number",
+          size: 1,
+          sequence: 10,
+          required: false,
+        },
+        {
+          id: "rfq.press.cycleTime",
+          label: "Cycle Time (sec)",
+          type: "number",
+          size: 1,
+          sequence: 11,
+          required: false,
         },
       ],
     },
     {
       id: "section-space-mounting",
       title: "Space & Mounting Requirements",
-      sequence: 9,
+      sequence: 11,
       columns: 4,
       fields: [
         {
@@ -869,20 +1653,70 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           required: true,
         },
         {
+          id: "rfq.mount.feederMountedToPress",
+          label: "Feeder Mounted to Press",
+          type: "select",
+          size: 1,
+          sequence: 5,
+          required: false,
+          options: YES_NO_OPTIONS,
+          default: "no",
+        },
+        {
+          id: "rfq.mount.adequateSupport",
+          label: "Adequate Support",
+          type: "select",
+          size: 1,
+          sequence: 6,
+          required: false,
+          options: YES_NO_OPTIONS,
+          default: "no",
+        },
+        {
+          id: "rfq.mount.customMounting",
+          label: "Custom Mounting",
+          type: "select",
+          size: 1,
+          sequence: 7,
+          required: false,
+          options: YES_NO_OPTIONS,
+          default: "no",
+        },
+        {
+          id: "common.equipment.feed.passline",
+          label: "Passline (in)",
+          type: "select",
+          size: 1,
+          sequence: 8,
+          required: true,
+          options: PASSLINE_OPTIONS,
+        },
+        {
+          id: "common.equipment.feed.loopPit",
+          label: "Loop Pit",
+          type: "select",
+          size: 1,
+          sequence: 9,
+          required: false,
+          options: YES_NO_OPTIONS,
+          default: "no",
+        },
+        {
           id: "rfq.requireGuarding",
           label: "Require Guarding",
           type: "select",
           size: 1,
-          sequence: 5,
+          sequence: 10,
           required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
       ],
     },
     {
       id: "section-special-requirements",
       title: "Special Requirements",
-      sequence: 10,
+      sequence: 12,
       columns: 4,
       fields: [
         {
@@ -929,46 +1763,50 @@ export const MATERIAL_SPECS_PERFORMANCE_SHEET_SEED = {
       ],
     },
     {
-      id: "section-material-specifications",
-      title: "Material Specifications",
+      id: "section-material-specifications-scenario-1",
+      title: "Material Specifications - Scenario 1 (Primary)",
       sequence: 2,
       columns: 4,
       fields: [
         {
-          id: "common.material.coilWidth",
+          id: "common.materialScenarios[0].materialWidth",
           label: "Coil Width (in)",
           type: "number",
           size: 1,
           sequence: 1,
           required: true,
+          readOnly: true,
         },
         {
-          id: "common.coil.maxCoilWeight",
-          label: "Coil Weight (Max)",
+          id: "common.materialScenarios[0].coilWeight",
+          label: "Coil Weight (lbs)",
           type: "number",
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
-          id: "common.material.materialThickness",
+          id: "common.materialScenarios[0].materialThickness",
           label: "Material Thickness (in)",
           type: "number",
           size: 1,
           sequence: 3,
           required: true,
+          readOnly: true,
         },
         {
-          id: "common.material.materialType",
+          id: "common.materialScenarios[0].materialType",
           label: "Material Type",
           type: "select",
           size: 1,
           sequence: 4,
           required: true,
+          readOnly: true,
           options: MATERIAL_TYPE_OPTIONS,
         },
         {
-          id: "common.material.maxYieldStrength",
+          id: "materialSpecs.scenarios[0].yieldStrength",
           label: "Yield Strength (psi)",
           type: "number",
           size: 1,
@@ -976,7 +1814,7 @@ export const MATERIAL_SPECS_PERFORMANCE_SHEET_SEED = {
           required: true,
         },
         {
-          id: "common.material.maxTensileStrength",
+          id: "materialSpecs.scenarios[0].materialTensile",
           label: "Material Tensile (psi)",
           type: "number",
           size: 1,
@@ -984,59 +1822,410 @@ export const MATERIAL_SPECS_PERFORMANCE_SHEET_SEED = {
           required: false,
         },
         {
-          id: "common.material.reqMaxFPM",
+          id: "common.materialScenarios[0].reqMaxFPM",
           label: "Required Max FPM",
           type: "number",
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
         {
-          id: "common.coil.coilID",
-          label: "Coil I.D.",
+          id: "materialSpecs.scenarios[0].minBendRadius",
+          label: "Min Bend Radius (in)",
           type: "number",
           size: 1,
           sequence: 8,
           required: false,
+          readOnly: true,
         },
         {
-          id: "common.coil.maxCoilOD",
-          label: "Coil O.D.",
+          id: "materialSpecs.scenarios[0].minLoopLength",
+          label: "Min Loop Length (ft)",
           type: "number",
           size: 1,
           sequence: 9,
           required: false,
+          readOnly: true,
         },
         {
-          id: "materialSpecs.material.minBendRadius",
-          label: "Min Bend Radius (in)",
+          id: "common.materialScenarios[0].coilOD",
+          label: "Coil O.D.",
           type: "number",
           size: 1,
           sequence: 10,
           required: false,
+          readOnly: true,
         },
         {
-          id: "materialSpecs.material.minLoopLength",
-          label: "Min Loop Length (ft)",
+          id: "common.materialScenarios[0].coilID",
+          label: "Coil I.D.",
           type: "number",
           size: 1,
           sequence: 11,
           required: false,
+          readOnly: true,
         },
         {
-          id: "materialSpecs.material.calculatedCoilOD",
+          id: "materialSpecs.scenarios[0].coilODCalculated",
           label: "Coil O.D. Calculated",
           type: "number",
           size: 1,
           sequence: 12,
           required: false,
+          readOnly: true,
+        },
+      ],
+    },
+    {
+      id: "section-material-specifications-scenario-2",
+      title: "Material Specifications - Scenario 2",
+      sequence: 3,
+      columns: 4,
+      fields: [
+        {
+          id: "common.materialScenarios[1].materialWidth",
+          label: "Coil Width (in)",
+          type: "number",
+          size: 1,
+          sequence: 1,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[1].coilWeight",
+          label: "Coil Weight (lbs)",
+          type: "number",
+          size: 1,
+          sequence: 2,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[1].materialThickness",
+          label: "Material Thickness (in)",
+          type: "number",
+          size: 1,
+          sequence: 3,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[1].materialType",
+          label: "Material Type",
+          type: "select",
+          size: 1,
+          sequence: 4,
+          required: false,
+          readOnly: true,
+          options: MATERIAL_TYPE_OPTIONS,
+        },
+        {
+          id: "materialSpecs.scenarios[1].yieldStrength",
+          label: "Yield Strength (psi)",
+          type: "number",
+          size: 1,
+          sequence: 5,
+          required: false,
+        },
+        {
+          id: "materialSpecs.scenarios[1].materialTensile",
+          label: "Material Tensile (psi)",
+          type: "number",
+          size: 1,
+          sequence: 6,
+          required: false,
+        },
+        {
+          id: "common.materialScenarios[1].reqMaxFPM",
+          label: "Required Max FPM",
+          type: "number",
+          size: 1,
+          sequence: 7,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "materialSpecs.scenarios[1].minBendRadius",
+          label: "Min Bend Radius (in)",
+          type: "number",
+          size: 1,
+          sequence: 8,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "materialSpecs.scenarios[1].minLoopLength",
+          label: "Min Loop Length (ft)",
+          type: "number",
+          size: 1,
+          sequence: 9,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[1].coilOD",
+          label: "Coil O.D.",
+          type: "number",
+          size: 1,
+          sequence: 10,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[1].coilID",
+          label: "Coil I.D.",
+          type: "number",
+          size: 1,
+          sequence: 11,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "materialSpecs.scenarios[1].coilODCalculated",
+          label: "Coil O.D. Calculated",
+          type: "number",
+          size: 1,
+          sequence: 12,
+          required: false,
+          readOnly: true,
+        },
+      ],
+    },
+    {
+      id: "section-material-specifications-scenario-3",
+      title: "Material Specifications - Scenario 3",
+      sequence: 4,
+      columns: 4,
+      fields: [
+        {
+          id: "common.materialScenarios[2].materialWidth",
+          label: "Coil Width (in)",
+          type: "number",
+          size: 1,
+          sequence: 1,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[2].coilWeight",
+          label: "Coil Weight (lbs)",
+          type: "number",
+          size: 1,
+          sequence: 2,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[2].materialThickness",
+          label: "Material Thickness (in)",
+          type: "number",
+          size: 1,
+          sequence: 3,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[2].materialType",
+          label: "Material Type",
+          type: "select",
+          size: 1,
+          sequence: 4,
+          required: false,
+          readOnly: true,
+          options: MATERIAL_TYPE_OPTIONS,
+        },
+        {
+          id: "materialSpecs.scenarios[2].yieldStrength",
+          label: "Yield Strength (psi)",
+          type: "number",
+          size: 1,
+          sequence: 5,
+          required: false,
+        },
+        {
+          id: "materialSpecs.scenarios[2].materialTensile",
+          label: "Material Tensile (psi)",
+          type: "number",
+          size: 1,
+          sequence: 6,
+          required: false,
+        },
+        {
+          id: "common.materialScenarios[2].reqMaxFPM",
+          label: "Required Max FPM",
+          type: "number",
+          size: 1,
+          sequence: 7,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "materialSpecs.scenarios[2].minBendRadius",
+          label: "Min Bend Radius (in)",
+          type: "number",
+          size: 1,
+          sequence: 8,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "materialSpecs.scenarios[2].minLoopLength",
+          label: "Min Loop Length (ft)",
+          type: "number",
+          size: 1,
+          sequence: 9,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[2].coilOD",
+          label: "Coil O.D.",
+          type: "number",
+          size: 1,
+          sequence: 10,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[2].coilID",
+          label: "Coil I.D.",
+          type: "number",
+          size: 1,
+          sequence: 11,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "materialSpecs.scenarios[2].coilODCalculated",
+          label: "Coil O.D. Calculated",
+          type: "number",
+          size: 1,
+          sequence: 12,
+          required: false,
+          readOnly: true,
+        },
+      ],
+    },
+    {
+      id: "section-material-specifications-scenario-4",
+      title: "Material Specifications - Scenario 4",
+      sequence: 5,
+      columns: 4,
+      fields: [
+        {
+          id: "common.materialScenarios[3].materialWidth",
+          label: "Coil Width (in)",
+          type: "number",
+          size: 1,
+          sequence: 1,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[3].coilWeight",
+          label: "Coil Weight (lbs)",
+          type: "number",
+          size: 1,
+          sequence: 2,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[3].materialThickness",
+          label: "Material Thickness (in)",
+          type: "number",
+          size: 1,
+          sequence: 3,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[3].materialType",
+          label: "Material Type",
+          type: "select",
+          size: 1,
+          sequence: 4,
+          required: false,
+          readOnly: true,
+          options: MATERIAL_TYPE_OPTIONS,
+        },
+        {
+          id: "materialSpecs.scenarios[3].yieldStrength",
+          label: "Yield Strength (psi)",
+          type: "number",
+          size: 1,
+          sequence: 5,
+          required: false,
+        },
+        {
+          id: "materialSpecs.scenarios[3].materialTensile",
+          label: "Material Tensile (psi)",
+          type: "number",
+          size: 1,
+          sequence: 6,
+          required: false,
+        },
+        {
+          id: "common.materialScenarios[3].reqMaxFPM",
+          label: "Required Max FPM",
+          type: "number",
+          size: 1,
+          sequence: 7,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "materialSpecs.scenarios[3].minBendRadius",
+          label: "Min Bend Radius (in)",
+          type: "number",
+          size: 1,
+          sequence: 8,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "materialSpecs.scenarios[3].minLoopLength",
+          label: "Min Loop Length (ft)",
+          type: "number",
+          size: 1,
+          sequence: 9,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[3].coilOD",
+          label: "Coil O.D.",
+          type: "number",
+          size: 1,
+          sequence: 10,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "common.materialScenarios[3].coilID",
+          label: "Coil I.D.",
+          type: "number",
+          size: 1,
+          sequence: 11,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "materialSpecs.scenarios[3].coilODCalculated",
+          label: "Coil O.D. Calculated",
+          type: "number",
+          size: 1,
+          sequence: 12,
+          required: false,
+          readOnly: true,
         },
       ],
     },
     {
       id: "section-other-specifications",
       title: "Other Specifications",
-      sequence: 3,
+      sequence: 6,
       columns: 2,
       fields: [
         {
@@ -1069,10 +2258,13 @@ export const MATERIAL_SPECS_PERFORMANCE_SHEET_SEED = {
         {
           id: "common.equipment.feed.controls",
           label: "Feed Controls",
-          type: "text",
+          type: "select",
           size: 1,
           sequence: 4,
           required: true,
+          options: FEED_TYPE_OPTIONS,
+          defaultValue: "Sigma 5",
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.passline",
@@ -1175,6 +2367,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: false,
           options: REEL_MODEL_OPTIONS,
+          default: "CPR-040",
         },
         {
           id: "common.equipment.reel.width",
@@ -1184,6 +2377,8 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           sequence: 2,
           required: false,
           options: REEL_WIDTH_OPTIONS,
+          dependsOn: "common.equipment.reel.model",
+          dependencyType: "reelWidth",
         },
         {
           id: "common.equipment.reel.backplate.diameter",
@@ -1193,39 +2388,45 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           sequence: 3,
           required: false,
           options: BACKPLATE_DIAMETER_OPTIONS,
+          dependsOn: "common.equipment.reel.model",
+          dependencyType: "backplateDiameter",
         },
         {
-          id: "common.material.materialType",
+          id: "common.materialScenarios[0].materialType",
           label: "Material Type",
           type: "select",
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
           options: MATERIAL_TYPE_OPTIONS,
         },
         {
-          id: "common.material.coilWidth",
+          id: "common.materialScenarios[0].materialWidth",
           label: "Material Width (in)",
           type: "number",
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
-          id: "common.material.materialThickness",
+          id: "common.materialScenarios[0].materialThickness",
           label: "Material Thickness (in)",
           type: "number",
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
-          id: "common.material.maxYieldStrength",
+          id: "materialSpecs.scenarios[0].yieldStrength",
           label: "Material Yield Strength (psi)",
           type: "number",
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.airPressureAvailable",
@@ -1233,7 +2434,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 8,
-          required: false,
+          required: true,
         },
         {
           id: "tddbhd.reel.requiredDecelRate",
@@ -1241,7 +2442,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 9,
-          required: false,
+          required: true,
         },
       ],
     },
@@ -1258,6 +2459,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.coil.coilOD",
@@ -1266,6 +2468,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.dispReelMtr",
@@ -1274,6 +2477,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.webTension.psi",
@@ -1282,6 +2486,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.webTension.lbs",
@@ -1290,6 +2495,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.brakePadDiameter",
@@ -1298,6 +2504,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.cylinderBore",
@@ -1306,6 +2513,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.coefficientOfFriction",
@@ -1313,7 +2521,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 8,
-          required: false,
+          required: true,
         },
       ],
     },
@@ -1329,8 +2537,9 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "select",
           size: 1,
           sequence: 1,
-          required: false,
+          required: true,
           options: YES_NO_OPTIONS,
+          default: "no",
         },
         {
           id: "tddbhd.reel.threadingDrive.hydThreadingDrive",
@@ -1338,8 +2547,10 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "select",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
           options: HYDRAULIC_THREADING_DRIVE_OPTIONS,
+          dependsOn: "common.equipment.reel.model",
+          dependencyType: "hydThreadingDrive",
         },
         {
           id: "tddbhd.reel.torque.atMandrel",
@@ -1348,6 +2559,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.torque.rewindRequired",
@@ -1356,14 +2568,66 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.checks.tddbhdCheck",
-          label: "Passed",
+          label: "Overall Check",
           type: "text",
           size: 1,
           sequence: 5,
           required: false,
+        },
+        {
+          id: "tddbhd.reel.checks.minMaterialWidthCheck",
+          label: "Min Material Width Check",
+          type: "text",
+          size: 1,
+          sequence: 6,
+          required: false,
+        },
+        {
+          id: "tddbhd.reel.checks.airPressureCheck",
+          label: "Air Pressure Check",
+          type: "text",
+          size: 1,
+          sequence: 7,
+          required: false,
+        },
+        {
+          id: "tddbhd.reel.checks.rewindTorqueCheck",
+          label: "Rewind Torque Check",
+          type: "text",
+          size: 1,
+          sequence: 8,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "tddbhd.reel.checks.holdDownForceCheck",
+          label: "Hold Down Force Check",
+          type: "text",
+          size: 1,
+          sequence: 9,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "tddbhd.reel.checks.brakePressCheck",
+          label: "Brake Press Check",
+          type: "text",
+          size: 1,
+          sequence: 10,
+          required: false,
+        },
+        {
+          id: "tddbhd.reel.checks.torqueRequiredCheck",
+          label: "Torque Required Check",
+          type: "text",
+          size: 1,
+          sequence: 11,
+          required: false,
+          readOnly: true,
         },
       ],
     },
@@ -1379,8 +2643,10 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "select",
           size: 1,
           sequence: 1,
-          required: false,
+          required: true,
           options: HOLD_DOWN_ASSY_OPTIONS,
+          dependsOn: "common.equipment.reel.model",
+          dependencyType: "holdDownAssy",
         },
         {
           id: "tddbhd.reel.holddown.cylinderPressure",
@@ -1397,6 +2663,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.holddown.force.available",
@@ -1405,6 +2672,18 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
+        },
+        {
+          id: "tddbhd.reel.holddown.cylinder",
+          label: "Cylinder",
+          type: "select",
+          size: 1,
+          sequence: 5,
+          required: true,
+          options: CYLINDER_OPTIONS,
+          dependsOn: "tddbhd.reel.holddown.assy",
+          dependencyType: "cylinder",
         },
         {
           id: "tddbhd.reel.minMaterialWidth",
@@ -1413,6 +2692,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readonly: true,
         },
         {
           id: "tddbhd.reel.confirmedMinWidth",
@@ -1436,7 +2716,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "select",
           size: 1,
           sequence: 1,
-          required: false,
+          required: true,
           options: BRAKE_MODEL_OPTIONS,
         },
         {
@@ -1445,7 +2725,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           type: "select",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
           options: BRAKE_QUANTITY_OPTIONS,
         },
         {
@@ -1455,6 +2735,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.dragBrake.psiAirRequired",
@@ -1463,6 +2744,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.dragBrake.holdingForce",
@@ -1471,6 +2753,7 @@ export const TDDBHD_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -1546,6 +2829,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.reel.width",
@@ -1562,6 +2846,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.bearing.diameter.front",
@@ -1570,6 +2855,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.bearing.diameter.rear",
@@ -1578,6 +2864,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -1594,6 +2881,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.length",
@@ -1602,6 +2890,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.maxRPM",
@@ -1610,6 +2899,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.RpmFull",
@@ -1618,6 +2908,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.weight",
@@ -1626,6 +2917,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.inertia",
@@ -1634,6 +2926,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.mandrel.reflInertia",
@@ -1642,6 +2935,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -1666,6 +2960,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.backplate.weight",
@@ -1674,6 +2969,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.backplate.inertia",
@@ -1682,6 +2978,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.backplate.reflInertia",
@@ -1689,6 +2986,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 5,
+          readOnly: true,
           required: false,
         },
       ],
@@ -2050,6 +3348,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.full.torque",
@@ -2058,6 +3357,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2074,6 +3374,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.full.horsepowerRequired",
@@ -2082,22 +3383,25 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.empty.horsepowerCheck",
           label: "HP Check (Empty)",
-          type: "checkbox",
+          type: "text",
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.full.horsepowerCheck",
           label: "HP Check (Full)",
-          type: "checkbox",
+          type: "text",
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2114,6 +3418,7 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.torque.full.regen",
@@ -2122,6 +3427,25 @@ export const REEL_DRIVE_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
+        },
+        {
+          id: "reelDrive.reel.torque.empty.regenCheck",
+          label: "Regen Check (Empty)",
+          type: "text",
+          size: 1,
+          sequence: 3,
+          required: false,
+          readOnly: true,
+        },
+        {
+          id: "reelDrive.reel.torque.full.regenCheck",
+          label: "Regen Check (Full)",
+          type: "text",
+          size: 1,
+          sequence: 4,
+          required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2172,6 +3496,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: false,
           options: PAYOFF_OPTIONS,
+          default: "top",
         },
         {
           id: "common.equipment.straightener.model",
@@ -2190,6 +3515,8 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           sequence: 3,
           required: false,
           options: STR_WIDTH_OPTIONS,
+          dependsOn: "common.equipment.straightener.model",
+          dependencyType: "strWidth",
         },
         {
           id: "common.equipment.straightener.numberOfRolls",
@@ -2197,7 +3524,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 4,
-          required: false,
+          required: true,
         },
       ],
     },
@@ -2213,7 +3540,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 1,
-          required: false,
+          required: true,
         },
         {
           id: "common.coil.coilID",
@@ -2221,7 +3548,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.coilWidth",
@@ -2229,7 +3556,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 3,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.materialThickness",
@@ -2237,15 +3564,15 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 4,
-          required: false,
+          required: true,
         },
         {
-          id: "common.material.maxYieldStrength",
+          id: "common.material.yieldStrength",
           label: "Yield Strength (psi)",
           type: "number",
           size: 1,
           sequence: 5,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.materialType",
@@ -2272,6 +3599,8 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           sequence: 1,
           required: false,
           options: STR_HORSEPOWER_OPTIONS,
+          dependsOn: "common.equipment.straightener.model",
+          dependencyType: "strHorsepower",
         },
         {
           id: "strUtility.straightener.acceleration",
@@ -2279,7 +3608,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
         },
         {
           id: "strUtility.straightener.feedRate",
@@ -2289,6 +3618,9 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           sequence: 3,
           required: false,
           options: STR_FEED_RATE_OPTIONS,
+          dependsOn: "strUtility.straightener.horsepower",
+          dependencyType: "strFeedRate",
+          secondaryDependsOn: "common.equipment.straightener.model",
         },
         {
           id: "strUtility.straightener.autoBrakeCompensation",
@@ -2330,6 +3662,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.jackForceAvailable",
@@ -2338,6 +3671,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.maxRollDepth",
@@ -2346,6 +3680,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.modulus",
@@ -2354,6 +3689,7 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -2525,6 +3861,70 @@ export const STR_UTILITY_PERFORMANCE_SHEET_SEED = {
         },
       ],
     },
+    {
+      id: "section-checks",
+      title: "Validation Checks",
+      sequence: 7,
+      columns: 4,
+      fields: [
+        {
+          id: "strUtility.straightener.required.horsepowerCheck",
+          label: "Horsepower Check",
+          type: "text",
+          size: 1,
+          sequence: 1,
+          required: false,
+        },
+        {
+          id: "strUtility.straightener.required.jackForceCheck",
+          label: "Jack Force Check",
+          type: "text",
+          size: 1,
+          sequence: 2,
+          required: false,
+        },
+        {
+          id: "strUtility.straightener.required.backupRollsCheck",
+          label: "Backup Rolls Check",
+          type: "text",
+          size: 1,
+          sequence: 3,
+          required: false,
+        },
+        {
+          id: "strUtility.straightener.required.feedRateCheck",
+          label: "Feed Rate Check",
+          type: "text",
+          size: 1,
+          sequence: 4,
+          required: false,
+        },
+        {
+          id: "strUtility.straightener.required.pinchRollCheck",
+          label: "Pinch Roll Check",
+          type: "text",
+          size: 1,
+          sequence: 5,
+          required: false,
+        },
+        {
+          id: "strUtility.straightener.required.strRollCheck",
+          label: "Str Roll Check",
+          type: "text",
+          size: 1,
+          sequence: 6,
+          required: false,
+        },
+        {
+          id: "strUtility.straightener.required.fpmCheck",
+          label: "FPM Check",
+          type: "text",
+          size: 1,
+          sequence: 7,
+          required: false,
+        },
+      ],
+    },
   ],
 };
 
@@ -2579,7 +3979,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.coilWidth",
@@ -2587,15 +3987,15 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 3,
-          required: false,
+          required: true,
         },
         {
-          id: "common.material.maxYieldStrength",
+          id: "common.material.yieldStrength",
           label: "Yield Strength (psi)",
           type: "number",
           size: 1,
           sequence: 4,
-          required: false,
+          required: true,
         },
         {
           id: "strUtility.straightener.modulus",
@@ -2603,14 +4003,6 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 5,
-          required: false,
-        },
-        {
-          id: "common.material.materialDensity",
-          label: "Material Density (lb/in³)",
-          type: "number",
-          size: 1,
-          sequence: 6,
           required: false,
         },
       ],
@@ -2663,11 +4055,20 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           required: false,
         },
         {
+          id: "rollStrBackbend.straightener.rolls.backbend.hiddenValue",
+          label: "Hidden Calculation Value",
+          type: "number",
+          size: 1,
+          sequence: 6,
+          required: false,
+          defaultValue: 9957.34211927781,
+        },
+        {
           id: "rollStrBackbend.straightener.rolls.depth.withMaterial",
           label: "Max Roller Depth with Material (in)",
           type: "number",
           size: 1,
-          sequence: 6,
+          sequence: 7,
           required: false,
         },
         {
@@ -2675,7 +4076,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           label: "Total Depth Required (in)",
           type: "number",
           size: 1,
-          sequence: 7,
+          sequence: 8,
           required: false,
         },
         {
@@ -2683,7 +4084,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           label: "Total Force Required (lbs)",
           type: "number",
           size: 1,
-          sequence: 8,
+          sequence: 9,
           required: false,
         },
         {
@@ -2691,7 +4092,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           label: "Yield Requirements Met",
           type: "text",
           size: 1,
-          sequence: 9,
+          sequence: 10,
           required: false,
         },
       ],
@@ -2905,8 +4306,8 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
       ],
     },
     {
-      id: "section-middle-rollers",
-      title: "Middle Rollers",
+      id: "section-middle-roller-up",
+      title: "Middle Roller - Up Direction",
       sequence: 7,
       columns: 4,
       fields: [
@@ -2920,7 +4321,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
         },
         {
           id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.resultingRadius",
-          label: "Up - Resulting Radius (in)",
+          label: "Resulting Radius (in)",
           type: "number",
           size: 1,
           sequence: 2,
@@ -2928,7 +4329,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
         },
         {
           id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.curvatureDifference",
-          label: "Up - Curvature Difference",
+          label: "Curvature Difference",
           type: "number",
           size: 1,
           sequence: 3,
@@ -2936,10 +4337,18 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
         },
         {
           id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMoment",
-          label: "Up - Bending Moment (in-lbs)",
+          label: "Bending Moment (in-lbs)",
           type: "number",
           size: 1,
           sequence: 4,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.bendingMomentRatio",
+          label: "Bending Moment Ratio",
+          type: "number",
+          size: 1,
+          sequence: 5,
           required: false,
         },
         {
@@ -2947,31 +4356,103 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
           label: "Force Required (lbs)",
           type: "number",
           size: 1,
-          sequence: 5,
-          required: false,
-        },
-        {
-          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.springback",
-          label: "Up - Springback",
-          type: "number",
-          size: 1,
           sequence: 6,
           required: false,
         },
         {
-          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.resultingRadius",
-          label: "Down - Resulting Radius (in)",
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.springback",
+          label: "Springback",
           type: "number",
           size: 1,
           sequence: 7,
           required: false,
         },
         {
-          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.curvatureDifference",
-          label: "Down - Curvature Difference",
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.percentOfThicknessYielded",
+          label: "% Thickness Yielded",
           type: "number",
           size: 1,
           sequence: 8,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.numberOfYieldStrainsAtSurface",
+          label: "Yield Strains at Surface",
+          type: "number",
+          size: 1,
+          sequence: 9,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.up.radiusAfterSpringback",
+          label: "Radius After Springback (in)",
+          type: "number",
+          size: 1,
+          sequence: 10,
+          required: false,
+        },
+      ],
+    },
+    {
+      id: "section-middle-roller-down",
+      title: "Middle Roller - Down Direction",
+      sequence: 8,
+      columns: 4,
+      fields: [
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.resultingRadius",
+          label: "Resulting Radius (in)",
+          type: "number",
+          size: 1,
+          sequence: 1,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.curvatureDifference",
+          label: "Curvature Difference",
+          type: "number",
+          size: 1,
+          sequence: 2,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMoment",
+          label: "Bending Moment (in-lbs)",
+          type: "number",
+          size: 1,
+          sequence: 3,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.bendingMomentRatio",
+          label: "Bending Moment Ratio",
+          type: "number",
+          size: 1,
+          sequence: 4,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.springback",
+          label: "Springback",
+          type: "number",
+          size: 1,
+          sequence: 5,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.percentOfThicknessYielded",
+          label: "% Thickness Yielded",
+          type: "number",
+          size: 1,
+          sequence: 6,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.middle.down.radiusAfterSpringback",
+          label: "Radius After Springback (in)",
+          type: "number",
+          size: 1,
+          sequence: 7,
           required: false,
         },
       ],
@@ -2979,7 +4460,7 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
     {
       id: "section-last-roller-up",
       title: "Last Roller - Up Direction",
-      sequence: 8,
+      sequence: 9,
       columns: 5,
       fields: [
         {
@@ -3064,6 +4545,38 @@ export const ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED = {
         },
       ],
     },
+    {
+      id: "section-validation-checks",
+      title: "Validation Checks",
+      sequence: 6,
+      columns: 3,
+      fields: [
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.depthRequiredCheck",
+          label: "Depth Required Check",
+          type: "text",
+          size: 1,
+          sequence: 1,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.forceRequiredCheck",
+          label: "Force Required Check",
+          type: "text",
+          size: 1,
+          sequence: 2,
+          required: false,
+        },
+        {
+          id: "rollStrBackbend.straightener.rolls.backbend.rollers.percentYieldCheck",
+          label: "Percent Yield Check",
+          type: "text",
+          size: 1,
+          sequence: 3,
+          required: false,
+        },
+      ],
+    },
   ],
 };
 
@@ -3104,13 +4617,14 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
       columns: 3,
       fields: [
         {
-          id: "feed.feedType",
-          label: "Feed Type",
+          id: "common.equipment.feed.model",
+          label: "Feed Model",
           type: "select",
           size: 1,
           sequence: 1,
           required: true,
           options: FEED_MODEL_OPTIONS,
+          default: "CPRF-S1",
         },
         {
           id: "feed.feed.application",
@@ -3119,15 +4633,19 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
-          options: PRESS_APPLICATION_OPTIONS,
+          options: LINE_APPLICATION_OPTIONS,
+          readOnly: true,
         },
         {
-          id: "common.equipment.feed.model",
-          label: "Model",
-          type: "text",
+          id: "common.equipment.feed.type",
+          label: "Feed Type",
+          type: "select",
           size: 1,
           sequence: 3,
           required: false,
+          options: FEED_TYPE_OPTIONS,
+          defaultValue: "Sigma 5",
+          readOnly: true,
         },
         {
           id: "feed.feed.feedCheck",
@@ -3136,6 +4654,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.machineWidth",
@@ -3145,6 +4664,9 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           sequence: 5,
           required: false,
           options: MACHINE_WIDTH_OPTIONS,
+          dependsOn: "common.equipment.feed.model",
+          dependencyType: "feedMachineWidth",
+          default: "6",
         },
         {
           id: "common.equipment.feed.loopPit",
@@ -3164,22 +4686,6 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           required: false,
           options: YES_NO_OPTIONS,
         },
-        {
-          id: "common.equipment.feed.controlsLevel",
-          label: "Controls Level",
-          type: "text",
-          size: 1,
-          sequence: 8,
-          required: false,
-        },
-        {
-          id: "common.equipment.feed.controls",
-          label: "Feed Controls",
-          type: "text",
-          size: 1,
-          sequence: 9,
-          required: false,
-        },
       ],
     },
     {
@@ -3194,7 +4700,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 1,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.materialThickness",
@@ -3202,7 +4708,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 2,
-          required: false,
+          required: true,
         },
         {
           id: "common.press.bedLength",
@@ -3210,7 +4716,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 3,
-          required: false,
+          required: true,
         },
         {
           id: "common.material.materialDensity",
@@ -3219,6 +4725,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.materialInLoop",
@@ -3243,6 +4750,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.amp",
@@ -3251,15 +4759,18 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.strMaxSpeed",
           label: "STR Max Speed (ft/min)",
-          type: "select",
+          type: "number",
           size: 1,
           sequence: 3,
           required: false,
-          options: STR_FEED_RATE_OPTIONS,
+          readOnly: true,
+          dependsOn: "strUtility.straightener.feedRate",
+          dependencyType: "copy",
         },
         {
           id: "feed.feed.frictionInDie",
@@ -3267,7 +4778,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 4,
-          required: false,
+          required: true,
         },
         {
           id: "feed.feed.accelerationRate",
@@ -3275,7 +4786,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 5,
-          required: false,
+          required: true,
         },
         {
           id: "feed.feed.defaultAcceleration",
@@ -3284,6 +4795,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 6,
           required: false,
+          defaultValue: 60,
         },
         {
           id: "feed.feed.maxMotorRPM",
@@ -3331,7 +4843,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 12,
-          required: false,
+          required: true,
         },
         {
           id: "feed.feed.lengthIncrement",
@@ -3339,7 +4851,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "number",
           size: 1,
           sequence: 13,
-          required: false,
+          required: true,
         },
         {
           id: "feed.feed.feedAngle1",
@@ -3347,8 +4859,9 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "select",
           size: 1,
           sequence: 14,
-          required: false,
+          required: true,
           options: FEED_ANGLE_OPTIONS,
+          default: "180",
         },
         {
           id: "feed.feed.feedAngle2",
@@ -3356,8 +4869,9 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           type: "select",
           size: 1,
           sequence: 15,
-          required: false,
+          required: true,
           options: FEED_ANGLE_OPTIONS,
+          default: "180",
         },
       ],
     },
@@ -3470,6 +4984,10 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
       title: "Pull-Through Configuration",
       sequence: 6,
       columns: 4,
+      conditionalVisibility: {
+        dependsOn: "common.equipment.feed.type",
+        showWhen: "Sigma 5 w/ Pull Through"
+      },
       fields: [
         {
           id: "feed.feed.pullThru.centerDistance",
@@ -3478,6 +4996,10 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          conditional: {
+            dependsOn: "common.equipment.feed.type",
+            showWhen: "Sigma 5 w/ Pull Through"
+          },
         },
         {
           id: "feed.feed.pullThru.yieldStrength",
@@ -3486,6 +5008,10 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          conditional: {
+            dependsOn: "common.equipment.feed.type",
+            showWhen: "Sigma 5 w/ Pull Through"
+          },
         },
         {
           id: "feed.feed.pullThru.kConst",
@@ -3494,6 +5020,10 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          conditional: {
+            dependsOn: "common.equipment.feed.type",
+            showWhen: "Sigma 5 w/ Pull Through"
+          },
         },
         {
           id: "feed.feed.pullThru.pinchRolls",
@@ -3503,86 +5033,83 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           sequence: 4,
           required: false,
           options: STRAIGHTENER_ROLLS_OPTIONS,
+          conditional: {
+            dependsOn: "common.equipment.feed.type",
+            showWhen: "Sigma 5 w/ Pull Through"
+          },
         },
       ],
     },
     {
-      id: "section-feed-rates",
-      title: "Feed Length & Speed Settings",
-      sequence: 7,
+      id: "section-feed-checks",
+      title: "Validation Checks",
+      sequence: 10,
       columns: 3,
       fields: [
         {
-          id: "common.feedRates.average.length",
-          label: "Average Length",
-          type: "number",
+          id: "feed.feed.matchCheck",
+          label: "Match Check",
+          type: "text",
           size: 1,
           sequence: 1,
           required: false,
         },
         {
-          id: "common.feedRates.average.spm",
-          label: "Average SPM",
-          type: "number",
+          id: "feed.feed.torque.peakCheck",
+          label: "Peak Torque Check",
+          type: "text",
           size: 1,
           sequence: 2,
           required: false,
         },
         {
-          id: "common.feedRates.average.fpm",
-          label: "Average FPM",
-          type: "number",
+          id: "feed.feed.torque.accelerationCheck",
+          label: "Acceleration Check",
+          type: "text",
           size: 1,
           sequence: 3,
           required: false,
         },
         {
-          id: "common.feedRates.max.length",
-          label: "Max Length",
-          type: "number",
+          id: "feed.feed.torque.rms.motorCheck",
+          label: "Motor Check",
+          type: "text",
           size: 1,
           sequence: 4,
           required: false,
         },
         {
-          id: "common.feedRates.max.spm",
-          label: "Max SPM",
-          type: "number",
+          id: "feed.feed.torque.rms.feedAngle1Check",
+          label: "Feed Angle 1 Check",
+          type: "text",
           size: 1,
           sequence: 5,
           required: false,
         },
         {
-          id: "common.feedRates.max.fpm",
-          label: "Max FPM",
-          type: "number",
+          id: "feed.feed.torque.rms.feedAngle2Check",
+          label: "Feed Angle 2 Check",
+          type: "text",
           size: 1,
           sequence: 6,
           required: false,
         },
+      ],
+    },
+    {
+      id: "section-feed-performance",
+      title: "Feed Performance Data",
+      sequence: 7,
+      columns: 1,
+      fields: [
         {
-          id: "common.feedRates.min.length",
-          label: "Min Length",
-          type: "number",
-          size: 1,
-          sequence: 7,
+          id: "feed.feed.tableValues",
+          label: "Feed Performance Table & Graph",
+          type: "custom",
+          size: 2,
+          sequence: 1,
           required: false,
-        },
-        {
-          id: "common.feedRates.min.spm",
-          label: "Min SPM",
-          type: "number",
-          size: 1,
-          sequence: 8,
-          required: false,
-        },
-        {
-          id: "common.feedRates.min.fpm",
-          label: "Min FPM",
-          type: "number",
-          size: 1,
-          sequence: 9,
-          required: false,
+          readOnly: true,
         },
       ],
     },
@@ -3602,7 +5129,7 @@ export const SHEAR_PERFORMANCE_SHEET_SEED = {
       columns: 2,
       fields: [
         {
-          id: "common.customer.name",
+          id: "common.customer",
           label: "Customer",
           type: "text",
           size: 1,
@@ -3872,14 +5399,22 @@ export const SHEAR_PERFORMANCE_SHEET_SEED = {
       id: "section-conclusions",
       title: "Conclusions",
       sequence: 7,
-      columns: 1,
+      columns: 2,
       fields: [
+        {
+          id: "shear.shear.conclusions.force.requiredToShearCheck",
+          label: "Required to Shear Check",
+          type: "text",
+          size: 1,
+          sequence: 1,
+          required: false,
+        },
         {
           id: "shear.conclusions.notes",
           label: "Notes",
           type: "textarea",
           size: 2,
-          sequence: 1,
+          sequence: 2,
           required: false,
         },
       ],
@@ -3906,6 +5441,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "rfq.dates.date",
@@ -3914,6 +5450,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -3930,6 +5467,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.reel.width",
@@ -3938,7 +5476,10 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
+
+
         {
           id: "common.equipment.reel.backplate.diameter",
           label: "Backplate Diameter",
@@ -3946,6 +5487,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.motorization.isMotorized",
@@ -3954,6 +5496,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "materialSpecs.reel.style",
@@ -3962,6 +5505,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -3978,6 +5522,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "tddbhd.reel.threadingDrive.hydThreadingDrive",
@@ -3986,6 +5531,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -3996,20 +5542,22 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
       columns: 2,
       fields: [
         {
-          id: "tddbhd.reel.holddown.assy",
+          id: "tddbhd.scenarios[0].reel.holddown.assy",
           label: "Hold Down Assy",
           type: "text",
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
-          id: "tddbhd.reel.holddown.cylinderPressure",
+          id: "tddbhd.scenarios[0].reel.holddown.cylinderPressure",
           label: "Hold Down Cylinder",
           type: "text",
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -4020,23 +5568,26 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
       columns: 2,
       fields: [
         {
-          id: "tddbhd.reel.dragBrake.model",
+          id: "tddbhd.scenarios[0].reel.dragBrake.model",
           label: "Brake Model",
           type: "text",
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
-          id: "tddbhd.reel.dragBrake.quantity",
+          id: "tddbhd.scenarios[0].reel.dragBrake.quantity",
           label: "Brake Quantity",
           type: "text",
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
       ],
     },
+
     {
       id: "section-motorized-reel",
       title: "Motorized Reel",
@@ -4050,6 +5601,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.motorization.speed",
@@ -4058,6 +5610,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.motorization.accelRate",
@@ -4066,6 +5619,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "reelDrive.reel.motorization.regenRequired",
@@ -4074,6 +5628,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -4090,6 +5645,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.straightener.numberOfRolls",
@@ -4098,6 +5654,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "strUtility.straightener.payoff",
@@ -4106,6 +5663,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.straightener.width",
@@ -4114,30 +5672,34 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
-          id: "strUtility.straightener.feedRate",
+          id: "strUtility.scenarios[0].straightener.feedRate",
           label: "Feed Rate (ft/min)",
           type: "text",
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
-          id: "strUtility.straightener.acceleration",
+          id: "strUtility.scenarios[0].straightener.acceleration",
           label: "Acceleration (ft/sec)",
           type: "text",
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
-          id: "strUtility.straightener.horsepower",
+          id: "strUtility.scenarios[0].straightener.horsepower",
           label: "Horsepower (HP)",
           type: "text",
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
       ],
     },
@@ -4154,6 +5716,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.model",
@@ -4162,6 +5725,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 2,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.machineWidth",
@@ -4170,6 +5734,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 3,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.loopPit",
@@ -4178,6 +5743,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 4,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.fullWidthRolls",
@@ -4186,22 +5752,25 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 5,
           required: false,
+          readOnly: true,
         },
         {
-          id: "feed.feed.feedAngle1",
+          id: "feed.scenarios[0].feed.feedAngle1",
           label: "Feed Angle 1",
           type: "text",
           size: 1,
           sequence: 6,
           required: false,
+          readOnly: true,
         },
         {
-          id: "feed.feed.feedAngle2",
+          id: "feed.scenarios[0].feed.feedAngle2",
           label: "Feed Angle 2",
           type: "text",
           size: 1,
           sequence: 7,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.press.bedLength",
@@ -4210,30 +5779,34 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 8,
           required: false,
+          readOnly: true,
         },
         {
-          id: "common.equipment.feed.maximumVelocity",
+          id: "common.equipment.feed.maxVelocity",
           label: "Maximum Velocity ft/min",
           type: "text",
           size: 1,
           sequence: 9,
           required: false,
+          readOnly: true,
         },
         {
-          id: "feed.feed.accelerationRate",
+          id: "feed.scenarios[0].feed.accelerationRate",
           label: "Acceleration (ft/sec²)",
           type: "text",
           size: 1,
           sequence: 10,
           required: false,
+          readOnly: true,
         },
         {
-          id: "feed.feed.ratio",
+          id: "feed.scenarios[0].feed.ratio",
           label: "Ratio",
           type: "text",
           size: 1,
           sequence: 11,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.pullThru.straightenerRolls",
@@ -4242,6 +5815,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 12,
           required: false,
+          readOnly: true,
         },
         {
           id: "feed.feed.pullThru.pinchRolls",
@@ -4250,6 +5824,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 13,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.direction",
@@ -4258,6 +5833,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 14,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.controlsLevel",
@@ -4266,6 +5842,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 15,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.typeOfLine",
@@ -4274,6 +5851,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 16,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.passline",
@@ -4282,6 +5860,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 17,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.lightGuageNonMarking",
@@ -4290,6 +5869,7 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 18,
           required: false,
+          readOnly: true,
         },
         {
           id: "common.equipment.feed.nonMarking",
@@ -4298,22 +5878,24 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           size: 1,
           sequence: 19,
           required: false,
+          readOnly: true,
         },
       ],
     },
     {
       id: "section-performance-results",
-      title: "Performance Results",
+      title: "Feed Performance Data",
       sequence: 9,
       columns: 1,
       fields: [
         {
-          id: "feed.feed.tableValues",
-          label: "Performance Table Data",
-          type: "text",
+          id: "feed.scenarios[0].feed.tableValues",
+          label: "Feed Performance Table & Graph",
+          type: "custom",
           size: 2,
           sequence: 1,
           required: false,
+          readOnly: true,
         },
       ],
     },

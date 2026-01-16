@@ -8,7 +8,9 @@ interface CheckboxProps {
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   className?: string;
+  requiredBgClassName?: string;
 }
 
 const Checkbox = ({
@@ -19,21 +21,25 @@ const Checkbox = ({
   required = false,
   error,
   disabled = false,
+  readOnly = false,
   className = "",
+  requiredBgClassName = "",
 }: CheckboxProps) => {
   return (
-    <div className={`w-full flex items-center ${className}`}>
+    <div className={`w-full flex items-center ${requiredBgClassName ? `rounded p-2 transition-colors duration-200 ${requiredBgClassName}` : ''} ${className}`}>
       <input
         type="checkbox"
         id={name}
         name={name}
         checked={checked}
         onChange={onChange}
-        disabled={disabled}
+        disabled={disabled || readOnly}
+        readOnly={readOnly}
         className={`
           accent-primary
           w-4 h-4 rounded border focus:ring-2 focus:ring-primary focus:border-transparent
           disabled:bg-surface disabled:text-text-muted
+          ${readOnly ? "cursor-not-allowed" : ""}
           ${error ? "border-error" : "border-border"}
         `}
       />

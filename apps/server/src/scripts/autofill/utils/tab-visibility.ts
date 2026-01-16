@@ -183,10 +183,10 @@ function shouldShowStrUtility(config: TabVisibilityConfig): boolean {
 function shouldShowRollStrBackbend(config: TabVisibilityConfig): boolean {
   const { selectRoll, lineApplication, lineType } = config;
 
-  // For Press Feed and Cut to Length - show for any roll type selection
-  if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
-    return Boolean(selectRoll && selectRoll.length > 0);
-  }
+    // For Press Feed and Cut to Length - always show (don't require roll selection)
+    if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
+        return true;
+    }
 
   // For Standalone - show for straightener configurations
   if (lineApplication === "standalone") {

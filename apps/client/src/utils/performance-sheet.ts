@@ -90,6 +90,9 @@ export const RFQ_TYPE_OF_LINE_OPTIONS = [
   { value: "Conventional", label: "Conventional" },
 ];
 
+// Default STR model for new performance sheets
+export const DEFAULT_STR_MODEL = "CPPS-250";
+
 export const TYPE_OF_LINE_OPTIONS = [
   { value: "Compact", label: "Compact" },
   { value: "Compact CTL", label: "Compact CTL" },
@@ -228,21 +231,30 @@ export const REEL_MODEL_OPTIONS = [
 ];
 
 export const REEL_WIDTH_OPTIONS = [
-  { value: "24", Label: "24" },
-  { value: "30", Label: "30" },
-  { value: "36", Label: "36" },
-  { value: "42", Label: "42" },
-  { value: "48", Label: "48" },
-  { value: "54", Label: "54" },
-  { value: "60", Label: "60" },
+  { value: "12", label: "12" },
+  { value: "18", label: "18" },
+  { value: "24", label: "24" },
+  { value: "30", label: "30" },
+  { value: "36", label: "36" },
+  { value: "42", label: "42" },
+  { value: "48", label: "48" },
+  { value: "54", label: "54" },
+  { value: "60", label: "60" },
+  { value: "66", label: "66" },
+  { value: "72", label: "72" },
+  { value: "78", label: "78" },
 ];
 
 export const BACKPLATE_DIAMETER_OPTIONS = [
-  { value: "27", Label: "27" },
-  { value: "72", Label: "72" },
+  { value: "23", label: "23" },
+  { value: "27", label: "27" },
+  { value: "72", label: "72" },
 ];
 
 export const HYDRAULIC_THREADING_DRIVE_OPTIONS = [
+  { value: "None", label: "None" },
+  { value: "22 cu in (D-15125)", label: "22 cu in (D-15125)" },
+  { value: "38 cu in (D-15125)", label: "38 cu in (D-15125)" },
   { value: "22 cu in (D-12689)", label: "22 cu in (D-12689)" },
   { value: "38 cu in (D-13374)", label: "38 cu in (D-13374)" },
   { value: "60 cu in (D-13374)", label: "60 cu in (D-13374)" },
@@ -250,18 +262,224 @@ export const HYDRAULIC_THREADING_DRIVE_OPTIONS = [
 ];
 
 export const HOLD_DOWN_ASSY_OPTIONS = [
+  { value: "None", label: "None" },
+  { value: "LD_STANDARD", label: "LD Standard" },
+  { value: "LD_NARROW", label: "LD Narrow" },
+  { value: "LD_MOTORIZED", label: "LD Motorized" },
   { value: "SD", label: "SD" },
-  { value: "SD_MOTORIZED", label: "SD_MOTORIZED" },
+  { value: "SD_MOTORIZED", label: "SD Motorized" },
   { value: "MD", label: "MD" },
-  { value: "HD_SINGLE", label: "HD_SINGLE" },
-  { value: "HD_DUAL", label: "HD_DUAL" },
+  { value: "HD_Single", label: "HD Single" },
+  { value: "HD_Dual", label: "HD Dual" },
   { value: "XD", label: "XD" },
   { value: "XXD", label: "XXD" },
 ];
 
-export const HOLD_DOWN_CYLINDER_OPTIONS = [
-  { value: "hydraulic", label: "Hydraulic" },
+export const CYLINDER_OPTIONS = [
+  { value: "Air", label: "Air" },
+  { value: "4in Air", label: "4in Air" },
+  { value: "5in Air", label: "5in Air" },
+  { value: "8in Air", label: "8in Air" },
+  { value: "Hydraulic", label: "Hydraulic" },
 ];
+
+// Add hold down assembly to cylinder options mapping (model-specific)
+export const HOLD_DOWN_CYLINDER_DEPENDENCIES: Record<string, Record<string, string[]>> = {
+  "CPR-040": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air"],
+    "LD_NARROW": ["4in Air"]
+  },
+  "CPR-060": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
+    "LD_NARROW": ["4in Air"],
+    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+  },
+  "CPR-080": {
+    "None": ["Air"],
+    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
+    "LD_NARROW": ["4in Air"],
+    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+  },
+  "CPR-100": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-150": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-200": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-300": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-400": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-500": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  },
+  "CPR-600": {
+    "SD": ["Air", "Hydraulic"],
+    "SD_MOTORIZED": ["Air", "Hydraulic"],
+    "MD": ["Hydraulic"],
+    "HD_Single": ["Hydraulic"],
+    "HD_Dual": ["Hydraulic"],
+    "XD": ["Hydraulic"],
+    "XXD": ["Hydraulic"]
+  }
+};
+
+// Reel model dependency mappings
+export const REEL_MODEL_DEPENDENCIES = {
+  "CPR-040": {
+    widths: ["12", "18", "24", "30", "36"],
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW"]
+  },
+  "CPR-060": {
+    widths: ["18", "24", "30", "36"],
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
+  },
+  "CPR-080": {
+    widths: ["18", "24", "30", "36"],
+    backplateDiameters: ["23"],
+    hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
+  },
+  "CPR-100": {
+    widths: ["24", "30", "36", "42", "48", "54", "60"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-150": {
+    widths: ["24", "30", "36", "42", "48", "54", "60"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-200": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-300": {
+    widths: ["30", "36", "42", "48", "54", "60", "66", "72"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-400": {
+    widths: ["36", "42", "48", "54", "60", "66", "72"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-500": {
+    widths: ["42", "48", "54", "60", "66", "72", "78"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  },
+  "CPR-600": {
+    widths: ["48", "54", "60", "66", "72", "78"],
+    backplateDiameters: ["27", "72"],
+    hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+  }
+};
+
+// Helper functions to get dependent options
+export const getReelWidthOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return REEL_WIDTH_OPTIONS;
+
+  return dependencies.widths.map(width => ({ value: width, label: width }));
+};
+
+export const getBackplateDiameterOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return BACKPLATE_DIAMETER_OPTIONS;
+
+  return dependencies.backplateDiameters.map(diameter => ({ value: diameter, label: diameter }));
+};
+
+export const getHydThreadingDriveOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return HYDRAULIC_THREADING_DRIVE_OPTIONS;
+
+  return dependencies.hydThreadingDrives.map(drive => ({ value: drive, label: drive }));
+};
+
+export const getHoldDownAssyOptionsForModel = (model: string) => {
+  const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
+  if (!dependencies) return HOLD_DOWN_ASSY_OPTIONS;
+
+  return dependencies.holdDownAssys.map(assy => ({ value: assy, label: HOLD_DOWN_ASSY_OPTIONS.find(opt => opt.value === assy)?.label || assy }));
+};
+
+export const getCylinderOptionsForHoldDownAssy = (model: string, holdDownAssy: string) => {
+  const modelDependencies = HOLD_DOWN_CYLINDER_DEPENDENCIES[model];
+  if (!modelDependencies) return CYLINDER_OPTIONS;
+
+  const cylinderOptions = modelDependencies[holdDownAssy];
+  if (!cylinderOptions) return CYLINDER_OPTIONS;
+
+  return cylinderOptions.map(cylinder => ({ value: cylinder, label: cylinder }));
+};
+
+export const getDefaultCylinderForHoldDownAssy = (model: string, holdDownAssy: string): string | null => {
+  const modelDependencies = HOLD_DOWN_CYLINDER_DEPENDENCIES[model];
+  if (!modelDependencies) return null;
+
+  const cylinderOptions = modelDependencies[holdDownAssy];
+  if (!cylinderOptions || cylinderOptions.length === 0) return null;
+
+  // Return the first option as default
+  return cylinderOptions[0];
+};
 
 export const BRAKE_MODEL_OPTIONS = [
   { value: "Single Stage", label: "Single Stage" },
@@ -278,8 +496,8 @@ export const BRAKE_QUANTITY_OPTIONS = [
 ];
 
 export const PAYOFF_OPTIONS = [
-  { value: "TOP", label: "TOP" },
-  { value: "BOTTOM", label: "BOTTOM" },
+  { value: "top", label: "Top" },
+  { value: "bottom", label: "Bottom" },
 ];
 
 export const STR_MODEL_OPTIONS = [
@@ -292,6 +510,9 @@ export const STR_MODEL_OPTIONS = [
 ];
 
 export const STR_WIDTH_OPTIONS = [
+  { value: "6", label: "6\"" },
+  { value: "12", label: "12\"" },
+  { value: "18", label: "18\"" },
   { value: "24", label: "24\"" },
   { value: "30", label: "30\"" },
   { value: "36", label: "36\"" },
@@ -301,29 +522,183 @@ export const STR_WIDTH_OPTIONS = [
   { value: "60", label: "60\"" },
   { value: "66", label: "66\"" },
   { value: "72", label: "72\"" },
+  { value: "78", label: "78\"" },
 ];
 
 export const STR_HORSEPOWER_OPTIONS = [
+  { value: "3", label: "3 HP" },
+  { value: "5", label: "5 HP" },
+  { value: "7.5", label: "7.5 HP" },
+  { value: "10", label: "10 HP" },
+  { value: "15", label: "15 HP" },
   { value: "20", label: "20 HP" },
   { value: "25", label: "25 HP" },
   { value: "30", label: "30 HP" },
   { value: "40", label: "40 HP" },
   { value: "50", label: "50 HP" },
+  { value: "60", label: "60 HP" },
+  { value: "75", label: "75 HP" },
+  { value: "100", label: "100 HP" },
+  { value: "125", label: "125 HP" },
 ];
 
 export const STR_FEED_RATE_OPTIONS = [
-  { value: "80", label: "80 FPM" },
-  { value: "100", label: "100 FPM" },
-  { value: "120", label: "120 FPM" },
-  { value: "140", label: "140 FPM" },
-  { value: "160", label: "160 FPM" },
-  { value: "200", label: "200 FPM" },
+  { value: "42", label: "42 ft/min" },
+  { value: "57", label: "57 ft/min" },
+  { value: "60", label: "60 ft/min" },
+  { value: "65", label: "65 ft/min" },
+  { value: "69", label: "69 ft/min" },
+  { value: "72", label: "72 ft/min" },
+  { value: "73", label: "73 ft/min" },
+  { value: "76", label: "76 ft/min" },
+  { value: "79", label: "79 ft/min" },
+  { value: "80", label: "80 ft/min" },
+  { value: "84", label: "84 ft/min" },
+  { value: "85", label: "85 ft/min" },
+  { value: "92", label: "92 ft/min" },
+  { value: "95", label: "95 ft/min" },
+  { value: "96", label: "96 ft/min" },
+  { value: "100", label: "100 ft/min" },
+  { value: "101", label: "101 ft/min" },
+  { value: "105", label: "105 ft/min" },
+  { value: "115", label: "115 ft/min" },
+  { value: "116", label: "116 ft/min" },
+  { value: "120", label: "120 ft/min" },
+  { value: "122", label: "122 ft/min" },
+  { value: "140", label: "140 ft/min" },
+  { value: "146", label: "146 ft/min" },
+  { value: "150", label: "150 ft/min" },
+  { value: "153", label: "153 ft/min" },
+  { value: "157", label: "157 ft/min" },
+  { value: "160", label: "160 ft/min" },
+  { value: "165", label: "165 ft/min" },
+  { value: "177", label: "177 ft/min" },
+  { value: "180", label: "180 ft/min" },
+  { value: "200", label: "200 ft/min" },
+  { value: "224", label: "224 ft/min" },
 ];
 
+// STR model dependency mappings
+export const STR_MODEL_DEPENDENCIES = {
+  "CPPS-250": {
+    widths: ["6", "12", "18", "24", "30", "36", "42", "48", "54"],
+    horsepowers: ["3", "5", "7.5"]
+  },
+  "CPPS-306": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
+    horsepowers: ["20", "25", "30", "40", "50"]
+  },
+  "CPPS-350": {
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54", "60"],
+    horsepowers: ["5", "7.5", "10", "15", "20"]
+  },
+  "CPPS-406": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+    horsepowers: ["20", "25", "30", "40", "50", "60", "75"]
+  },
+  "CPPS-507": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+    horsepowers: ["40", "50", "60", "75", "100", "125"]
+  },
+  "SPGPS-810": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+    horsepowers: ["40", "50", "60", "75", "100", "125"]
+  }
+};
+
+// Helper functions to get STR dependent options
+export const getStrWidthOptionsForModel = (model: string) => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies) return STR_WIDTH_OPTIONS;
+
+  return dependencies.widths.map(width => ({ value: width, label: `${width}"` }));
+};
+
+export const getStrHorsepowerOptionsForModel = (model: string) => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies) return STR_HORSEPOWER_OPTIONS;
+
+  return dependencies.horsepowers.map(hp => ({ value: hp, label: `${hp} HP` }));
+};
+
+// Helper functions for STR defaults
+export const getDefaultStrWidthForModel = (model: string): string => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies || dependencies.widths.length === 0) return "12";
+
+  // Return the first available width as default
+  return dependencies.widths[0];
+};
+
+export const getDefaultStrHorsepowerForModel = (model: string): string => {
+  const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
+  if (!dependencies || dependencies.horsepowers.length === 0) return "3";
+
+  // Return the first available horsepower as default
+  return dependencies.horsepowers[0];
+};
+
+export const getStrFeedRateOptionsForModelAndHorsepower = (model: string, horsepower: string) => {
+  // Find the feed rates for the specific model and horsepower
+  switch (model) {
+    case "CPPS-250":
+      if (["3", "5", "7.5"].includes(horsepower)) {
+        return ["42", "65", "85", "105", "165"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+    case "CPPS-306":
+      if (["20", "25", "30", "40", "50"].includes(horsepower)) {
+        return ["80", "100", "120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+    case "CPPS-350":
+      if (horsepower === "5") return ["57", "76", "92", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "7.5") return ["65", "72", "96", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "10") return ["65", "79", "95", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "15") return ["69", "84", "95", "122", "157", "177"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "20") return ["73", "101", "116", "146", "224"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      break;
+    case "CPPS-406":
+      if (["20", "25", "30", "40", "50", "60"].includes(horsepower)) {
+        return ["80", "100", "120", "140", "160", "180", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      if (horsepower === "75") {
+        return ["100", "120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+    case "CPPS-507":
+    case "SPGPS-810":
+      if (["40", "50", "60", "75"].includes(horsepower)) {
+        return ["80", "100", "120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      if (["100", "125"].includes(horsepower)) {
+        return ["120", "140", "160", "200"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      }
+      break;
+  }
+
+  return STR_FEED_RATE_OPTIONS;
+};
+
 export const FEED_MODEL_OPTIONS = [
-  { value: "sigma-v-feed", label: "Sigma 5 Feed" },
-  { value: "sigma-v-straightener", label: "Sigma 5 Feed Pull Thru" },
-  { value: "allen-bradley", label: "Allen Bradley" },
+  { value: "CPRF-S1", label: "CPRF-S1" },
+  { value: "CPRF-S1 PLUS", label: "CPRF-S1 PLUS" },
+  { value: "CPRF-S2", label: "CPRF-S2" },
+  { value: "CPRF-S2 PLUS", label: "CPRF-S2 PLUS" },
+  { value: "CPRF-S3", label: "CPRF-S3" },
+  { value: "CPRF-S3 PLUS", label: "CPRF-S3 PLUS" },
+  { value: "CPRF-S4", label: "CPRF-S4" },
+  { value: "CPRF-S4 PLUS", label: "CPRF-S4 PLUS" },
+  { value: "CPRF-S5", label: "CPRF-S5" },
+  { value: "CPRF-S6", label: "CPRF-S6" },
+  { value: "CPRF-S7", label: "CPRF-S7" },
+  { value: "CPRF-S8", label: "CPRF-S8" },
+];
+
+export const FEED_TYPE_OPTIONS = [
+  { value: "Sigma 5", label: "Sigma 5" },
+  { value: "Sigma 5 w/ Pull Through", label: "Sigma 5 w/ Pull Through" },
+  { value: "Allen Bradley MPL - Feed", label: "Allen Bradley MPL - Feed" },
 ];
 
 export const SIGMA_5_FEED_MODEL_OPTIONS = [
@@ -374,6 +749,8 @@ export const ALLEN_BRADLEY_FEED_MODEL_OPTIONS = [
 ];
 
 export const MACHINE_WIDTH_OPTIONS = [
+  { value: "6", label: "6" },
+  { value: "12", label: "12" },
   { value: "18", label: "18" },
   { value: "24", label: "24" },
   { value: "30", label: "30" },
@@ -382,7 +759,58 @@ export const MACHINE_WIDTH_OPTIONS = [
   { value: "48", label: "48" },
   { value: "54", label: "54" },
   { value: "60", label: "60" },
+  { value: "66", label: "66" },
+  { value: "72", label: "72" },
+  { value: "78", label: "78" },
 ];
+
+// Feed model dependency mappings
+export const FEED_MODEL_DEPENDENCIES = {
+  "CPRF-S1": {
+    widths: ["6", "12", "18", "24"]
+  },
+  "CPRF-S1 PLUS": {
+    widths: ["6", "12", "18", "24"]
+  },
+  "CPRF-S2": {
+    widths: ["6", "12", "18", "24", "30"]
+  },
+  "CPRF-S2 PLUS": {
+    widths: ["6", "12", "18", "24", "30"]
+  },
+  "CPRF-S3": {
+    widths: ["12", "18", "24", "30", "36", "42"]
+  },
+  "CPRF-S3 PLUS": {
+    widths: ["12", "18", "24", "30", "36", "42"]
+  },
+  "CPRF-S4": {
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54"]
+  },
+  "CPRF-S4 PLUS": {
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54"]
+  },
+  "CPRF-S5": {
+    widths: ["18", "24", "30", "36", "42", "48", "54", "60"]
+  },
+  "CPRF-S6": {
+    widths: ["18", "24", "30", "36", "42", "48", "54", "60", "66", "72"]
+  },
+  "CPRF-S7": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"]
+  },
+  "CPRF-S8": {
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"]
+  }
+};
+
+// Helper function to get feed machine width options for model
+export const getFeedMachineWidthOptionsForModel = (model: string) => {
+  const dependencies = FEED_MODEL_DEPENDENCIES[model as keyof typeof FEED_MODEL_DEPENDENCIES];
+  if (!dependencies) return MACHINE_WIDTH_OPTIONS;
+
+  return dependencies.widths.map(width => ({ value: width, label: `${width}"` }));
+};
 
 export const STRAIGHTENER_ROLLS_OPTIONS = [
   { value: "5", label: "5 Rolls" },
@@ -470,7 +898,86 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
   const { patch, loading: updateLoading, error: updateError } = useApi();
 
   // Local state management
-  const [localData, setLocalData] = useState<PerformanceData>(initialData);
+  const [localData, setLocalData] = useState<PerformanceData>(() => {
+    // Initialize STR defaults if they don't exist
+    const initData = { ...initialData };
+
+    console.log("STR Initialization - Starting with initData:", initData);
+
+    // Check if this is a new sheet (no STR model set) or if STR fields need initialization
+    const strModel = initData?.common?.equipment?.straightener?.model;
+    const strWidth = initData?.common?.equipment?.straightener?.width;
+    const strHorsepower = initData?.strUtility?.straightener?.horsepower;
+
+    console.log("STR Initialization - Current values:", { strModel, strWidth, strHorsepower });
+
+    if (!strModel) {
+      console.log("STR Initialization - Setting default model:", DEFAULT_STR_MODEL);
+      // Set default STR model
+      if (!initData.common) initData.common = {};
+      if (!initData.common.equipment) initData.common.equipment = {};
+      if (!initData.common.equipment.straightener) initData.common.equipment.straightener = {};
+      initData.common.equipment.straightener.model = DEFAULT_STR_MODEL;
+    }
+
+    const finalStrModel = initData?.common?.equipment?.straightener?.model || DEFAULT_STR_MODEL;
+
+    // Initialize STR width if not set or is zero/empty
+    if (!strWidth || strWidth === 0 || (typeof strWidth === 'string' && strWidth === "")) {
+      const defaultWidth = parseFloat(getDefaultStrWidthForModel(finalStrModel));
+      console.log("STR Initialization - Setting default width:", defaultWidth, "for model:", finalStrModel);
+      if (!initData.common) initData.common = {};
+      if (!initData.common.equipment) initData.common.equipment = {};
+      if (!initData.common.equipment.straightener) initData.common.equipment.straightener = {};
+      initData.common.equipment.straightener.width = defaultWidth;
+    }
+
+    // Initialize STR horsepower if not set or is zero/empty
+    if (!strHorsepower || strHorsepower === 0 || (typeof strHorsepower === 'string' && strHorsepower === "")) {
+      const defaultHorsepower = parseFloat(getDefaultStrHorsepowerForModel(finalStrModel));
+      console.log("STR Initialization - Setting default horsepower:", defaultHorsepower, "for model:", finalStrModel);
+      if (!initData.strUtility) initData.strUtility = {};
+      if (!initData.strUtility.straightener) initData.strUtility.straightener = {};
+      initData.strUtility.straightener.horsepower = defaultHorsepower;
+    }
+
+    // Initialize STR utility coil weight capacity from max coil weight
+    const maxCoilWeight = initData?.common?.coil?.maxCoilWeight;
+    const strCoilWeight = (initData?.strUtility?.coil as any)?.maxCoilWeight;
+    if (maxCoilWeight && (!strCoilWeight || strCoilWeight === 0)) {
+      console.log("STR Initialization - Setting coil weight capacity:", maxCoilWeight);
+      if (!initData.strUtility) initData.strUtility = {};
+      if (!initData.strUtility.coil) initData.strUtility.coil = {};
+      (initData.strUtility.coil as any).maxCoilWeight = maxCoilWeight;
+    }
+
+    // Initialize number of rolls based on type of roll
+    const typeOfRoll = initData?.materialSpecs?.straightener?.rolls?.typeOfRoll;
+    const numberOfRolls = initData?.common?.equipment?.straightener?.numberOfRolls;
+    if (typeOfRoll && (!numberOfRolls || numberOfRolls === 0)) {
+      let rollCount = "";
+
+      // Extract number from any format using regex
+      if (typeof typeOfRoll === 'string') {
+        const rollMatch = typeOfRoll.match(/(\d+)\s*Roll/i);
+        if (rollMatch) {
+          rollCount = rollMatch[1];
+          console.log("STR Initialization - Extracted roll count:", rollCount, "from:", typeOfRoll);
+        }
+      }
+
+      if (rollCount) {
+        console.log("STR Initialization - Setting number of rolls:", rollCount, "for type:", typeOfRoll);
+        if (!initData.common) initData.common = {};
+        if (!initData.common.equipment) initData.common.equipment = {};
+        if (!initData.common.equipment.straightener) initData.common.equipment.straightener = {};
+        initData.common.equipment.straightener.numberOfRolls = parseFloat(rollCount);
+      }
+    }
+
+    console.log("STR Initialization - Final initData:", initData);
+    return initData;
+  });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -500,10 +1007,55 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
       try {
         console.log("=== PERFORMANCE DATA SERVICE SAVE ===");
         const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
+
+        // Add detailed logging for tddbhd fields
+        console.log("TDDBHD Debug - Material Properties:", {
+          materialThickness: updatedData?.common?.material?.materialThickness,
+          coilWidth: updatedData?.common?.material?.coilWidth,
+          coilWeight: updatedData?.common?.material?.coilWeight,
+          maxYieldStrength: updatedData?.common?.material?.maxYieldStrength,
+          reqMaxFPM: updatedData?.common?.material?.reqMaxFPM
+        });
+
+        console.log("TDDBHD Debug - Coil Properties:", {
+          maxCoilOD: updatedData?.common?.coil?.maxCoilOD,
+          coilID: updatedData?.common?.coil?.coilID
+        });
+
+        console.log("TDDBHD Debug - Equipment Properties:", {
+          reelModel: updatedData?.common?.equipment?.reel?.model,
+          reelWidth: updatedData?.common?.equipment?.reel?.width,
+          holddownAssy: updatedData?.tddbhd?.reel?.holddown?.assy,
+          cylinder: updatedData?.tddbhd?.reel?.holddown?.cylinder,
+          cylinderPressure: updatedData?.tddbhd?.reel?.holddown?.cylinderPressure,
+          airPressure: updatedData?.tddbhd?.reel?.airPressureAvailable
+        });
+
+        console.log("=== CRITICAL ZERO VALUE CHECK ===");
+        console.log("Air Pressure Available:", updatedData?.tddbhd?.reel?.airPressureAvailable);
+        console.log("Cylinder Pressure:", updatedData?.tddbhd?.reel?.holddown?.cylinderPressure);
+        console.log("Material Thickness:", updatedData?.common?.material?.materialThickness);
+        console.log("Coil Width:", updatedData?.common?.material?.coilWidth);
+        console.log("Coil ID:", updatedData?.common?.coil?.coilID);
+        console.log("Coil Weight:", updatedData?.common?.material?.coilWeight);
+        console.log("STR HP:", updatedData?.common?.equipment?.straightener?.horsepower);
+        console.log("Reel Width:", updatedData?.common?.equipment?.reel?.width);
+        console.log("Reel Horsepower:", updatedData?.common?.equipment?.reel?.horsepower);
+        console.log("Max Yield Strength:", updatedData?.common?.material?.maxYieldStrength);
+        console.log("Max Coil OD:", updatedData?.common?.coil?.maxCoilOD);
+        console.log("Decel Rate:", updatedData?.tddbhd?.reel?.requiredDecelRate);
+        console.log("Coefficient of Friction:", updatedData?.tddbhd?.reel?.coefficientOfFriction);
+        console.log("=== END ZERO VALUE CHECK ===");
+
         console.log("1. Sending data to backend:", JSON.stringify(updatedData, null, 2));
 
         const response = await patch(`/performance/sheets/${performanceSheetId}`, { data: updatedData });
         console.log("2. Backend response:", response);
+
+        // Log any calculation errors specifically
+        if (response?.tddbhd && typeof response.tddbhd === 'string' && response.tddbhd.includes('ERROR')) {
+          console.error("TDDBHD Calculation Error:", response.tddbhd);
+        }
 
         // Handle calculated values from backend - merge the entire response
         if (response) {
@@ -548,6 +1100,16 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
     const checked = (e.target as HTMLInputElement).checked;
     const actualValue = type === "checkbox" ? checked : value;
 
+    // Log critical field changes that might affect tddbhd calculation
+    if (name.includes('material') || name.includes('coil') || name.includes('reel') || name.includes('tddbhd')) {
+      console.log("CRITICAL FIELD CHANGE for TDDBHD:", {
+        fieldName: name,
+        oldValue: getFieldValue(name),
+        newValue: actualValue,
+        type: type
+      });
+    }
+
     // Clear field error
     if (fieldErrors[name]) {
       setFieldErrors((prev) => {
@@ -561,6 +1123,12 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
     const error = validateField(name, actualValue);
     if (error) {
       setFieldErrors(prev => ({ ...prev, [name]: error }));
+      return;
+    }
+
+    // Check if this is an STR model change
+    if (name === "common.equipment.straightener.model") {
+      handleStrModelChange(actualValue as string);
       return;
     }
 
@@ -636,6 +1204,50 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
     return current;
   }, [localData]);
 
+  // Handler for STR model changes that updates dependent fields
+  const handleStrModelChange = useCallback((newModel: string) => {
+    if (!isEditing) return;
+
+    console.log("STR Model changed to:", newModel);
+
+    // Get the current values
+    const currentWidth = getFieldValue("common.equipment.straightener.width");
+    const currentHorsepower = getFieldValue("strUtility.straightener.horsepower");
+
+    // Get valid options for the new model
+    const validWidths = getStrWidthOptionsForModel(newModel).map(opt => opt.value);
+    const validHorsepowers = getStrHorsepowerOptionsForModel(newModel).map(opt => opt.value);
+
+    // Check if current values are still valid (handle undefined safely)
+    const isCurrentWidthValid = currentWidth !== undefined && validWidths.includes(currentWidth.toString());
+    const isCurrentHorsepowerValid = currentHorsepower !== undefined && validHorsepowers.includes(currentHorsepower.toString());
+
+    // Update model first
+    setLocalData(prevData => setNestedValue(prevData, "common.equipment.straightener.model", newModel));
+
+    // Update width if current value is invalid
+    if (!isCurrentWidthValid) {
+      const defaultWidth = parseFloat(getDefaultStrWidthForModel(newModel));
+      console.log("Updating STR width to:", defaultWidth);
+      setLocalData(prevData => setNestedValue(prevData, "common.equipment.straightener.width", defaultWidth));
+      pendingChangesRef.current["common.equipment.straightener.width"] = defaultWidth;
+    }
+
+    // Update horsepower if current value is invalid
+    if (!isCurrentHorsepowerValid) {
+      const defaultHorsepower = parseFloat(getDefaultStrHorsepowerForModel(newModel));
+      console.log("Updating STR horsepower to:", defaultHorsepower);
+      setLocalData(prevData => setNestedValue(prevData, "strUtility.straightener.horsepower", defaultHorsepower));
+      pendingChangesRef.current["strUtility.straightener.horsepower"] = defaultHorsepower;
+    }
+
+    // Track all changes
+    pendingChangesRef.current["common.equipment.straightener.model"] = newModel;
+    setIsDirty(true);
+
+    debouncedSave();
+  }, [isEditing, getFieldValue, debouncedSave]);
+
   // Reset to initial data
   const resetData = useCallback(() => {
     setLocalData(initialData);
@@ -675,6 +1287,12 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
     getFieldError,
     hasPendingChanges: isDirty,
     isLoading: updateLoading,
+    // STR utility helpers
+    handleStrModelChange,
+    getStrWidthOptionsForModel,
+    getStrHorsepowerOptionsForModel,
+    getDefaultStrWidthForModel,
+    getDefaultStrHorsepowerForModel,
   };
 }
 

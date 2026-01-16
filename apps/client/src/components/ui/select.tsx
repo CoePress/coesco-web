@@ -12,12 +12,16 @@ type SelectProps = {
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   className?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   required?: boolean;
   id?: string;
   name?: string;
   label?: string;
   placeholder?: string;
   error?: string;
+  requiredBgClassName?: string;
+  checkBorderClassName?: string;
+  checkIconPrefix?: string;
 };
 
 const Select = ({
@@ -26,12 +30,16 @@ const Select = ({
   onChange,
   className = "",
   disabled = false,
+  readOnly = false,
   required = false,
   id,
   name,
   label,
   placeholder,
   error,
+  requiredBgClassName = "",
+  checkBorderClassName = "",
+  checkIconPrefix = "",
 }: SelectProps) => {
   return (
     <div>
@@ -46,7 +54,7 @@ const Select = ({
       <select
         value={value}
         onChange={onChange}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         required={required}
         id={id}
         name={name}
@@ -55,13 +63,18 @@ const Select = ({
           bg-foreground text-text
           focus:outline-none focus:border-primary
           disabled:bg-surface disabled:text-text-muted
+          transition-colors duration-200
           ${error ? "border-error" : "border-border"}
+          ${requiredBgClassName}
+          ${checkBorderClassName}
+          ${readOnly ? "cursor-not-allowed" : ""}
           ${className}
         `}>
         {placeholder && (
           <option
             value=""
-            disabled>
+            disabled
+            className="bg-foreground text-text-muted">
             {placeholder}
           </option>
         )}
@@ -69,7 +82,8 @@ const Select = ({
           <option
             key={option.value}
             value={option.value}
-            disabled={option.disabled}>
+            disabled={option.disabled}
+            className="bg-foreground text-text">
             {option.label}
           </option>
         ))}

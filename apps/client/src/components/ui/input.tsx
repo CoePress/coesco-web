@@ -17,6 +17,9 @@ type InputProps = {
   min?: number;
   max?: number;
   autoComplete?: string;
+  requiredBgClassName?: string;
+  checkBorderClassName?: string;
+  checkIconPrefix?: string;
 };
 
 const Input = ({
@@ -36,7 +39,28 @@ const Input = ({
   min,
   max,
   autoComplete,
+  requiredBgClassName = "",
+  checkBorderClassName = "",
+  checkIconPrefix = "",
 }: InputProps) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (type === "number") {
+      const allowedKeys = [
+        "Backspace", "Delete", "Tab", "Escape", "Enter",
+        "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+        "Home", "End", ".", "-"
+      ];
+
+      const isNumber = /^[0-9]$/.test(e.key);
+      const isAllowedKey = allowedKeys.includes(e.key);
+      const isCtrlCmd = e.ctrlKey || e.metaKey;
+
+      if (!isNumber && !isAllowedKey && !isCtrlCmd) {
+        e.preventDefault();
+      }
+    }
+  };
+
   return (
     <div className="w-full">
       {label && (
@@ -50,9 +74,10 @@ const Input = ({
       <input
         type={type}
         placeholder={placeholder}
-        value={value}
+        value={checkIconPrefix && value ? `${checkIconPrefix}${value}` : (type === 'number' && (value === 'NONE' || value === 'N/A') ? '' : value)}
         onChange={onChange}
         onBlur={onBlur}
+        onKeyDown={handleKeyDown}
         disabled={disabled}
         required={required}
         id={id}
@@ -60,13 +85,17 @@ const Input = ({
         readOnly={readOnly}
         min={min}
         max={max}
+        step={type === "number" ? "any" : undefined}
         autoComplete={autoComplete}
         className={`
           w-full text-sm px-3 py-1.5 rounded
           border focus:outline-none focus:border-primary
           bg-foreground text-text
           disabled:bg-surface disabled:text-text-muted
+          transition-colors duration-200
           ${error ? "border-error" : "border-border"}
+          ${requiredBgClassName}
+          ${checkBorderClassName}
           ${className}
         `}
       />
