@@ -4,7 +4,7 @@
  * (Migrated from client to server)
  */
 
-import { PerformanceData } from '../types/performance-data.types';
+import type { PerformanceData } from "../types/performance-data.types";
 
 export interface TabVisibilityConfig {
     lineApplication?: string;
@@ -30,25 +30,27 @@ export function getVisibleTabs(data: PerformanceData): VisibleTab[] {
     // Normalize application values to handle both "Press Feed" and "pressFeed" formats
     const rawApplication = data?.feed?.feed?.application;
     const normalizedApplication = rawApplication
-        ? rawApplication.toLowerCase().replace(/\s+/g, '')
+        ? rawApplication.toLowerCase().replace(/\s+/g, "")
         : undefined;
 
     const config: TabVisibilityConfig = {
-        lineApplication: normalizedApplication === 'pressfeed' ? 'pressFeed' :
-            normalizedApplication === 'cuttolength' ? 'cutToLength' :
-                normalizedApplication === 'standalone' ? 'standalone' : rawApplication,
+        lineApplication: normalizedApplication === "pressfeed"
+            ? "pressFeed"
+            : normalizedApplication === "cuttolength"
+                ? "cutToLength"
+                : normalizedApplication === "standalone" ? "standalone" : rawApplication,
         lineType: data?.common?.equipment?.feed?.lineType,
         pullThrough: data?.feed?.feed?.pullThru?.isPullThru,
         controlsLevel: data?.common?.equipment?.feed?.controlsLevel,
         typeOfLine: data?.common?.equipment?.feed?.typeOfLine,
         feedControls: data?.materialSpecs?.feed?.controls,
-        selectRoll: data?.materialSpecs?.straightener?.rolls?.typeOfRoll || data?.rollStrBackbend?.straightener?.rolls?.typeOfRoll || (data?.materialSpecs?.straightener as any)?.selectRoll
+        selectRoll: data?.materialSpecs?.straightener?.rolls?.typeOfRoll || data?.rollStrBackbend?.straightener?.rolls?.typeOfRoll || (data?.materialSpecs?.straightener as any)?.selectRoll,
     };
 
     // Always visible tabs
     const baseVisibleTabs: VisibleTab[] = [
         { label: "RFQ", value: "rfq" },
-        { label: "Material Specs", value: "material-specs" }
+        { label: "Material Specs", value: "material-specs" },
     ];
 
     // Determine additional tabs based on configuration
@@ -56,7 +58,7 @@ export function getVisibleTabs(data: PerformanceData): VisibleTab[] {
 
     // Equipment Summary is always last
     const summaryTab: VisibleTab[] = [
-        { label: "Equipment Summary", value: "summary-report" }
+        { label: "Equipment Summary", value: "summary-report" },
     ];
 
     return [...baseVisibleTabs, ...additionalTabs, ...summaryTab];
@@ -84,7 +86,7 @@ function determineAdditionalTabs(config: TabVisibilityConfig): VisibleTab[] {
         tabs.push({
             label: "Roll Straightener",
             value: "roll-str-backbend",
-            dynamicLabel: rollLabel
+            dynamicLabel: rollLabel,
         });
     }
 
@@ -99,7 +101,7 @@ function determineAdditionalTabs(config: TabVisibilityConfig): VisibleTab[] {
         tabs.push({
             label: "Feed",
             value: "feed",
-            dynamicLabel: feedLabel
+            dynamicLabel: feedLabel,
         });
     }
 
@@ -138,16 +140,16 @@ function shouldShowReelDrive(config: TabVisibilityConfig): boolean {
 
     // For Press Feed and Cut to Length - show for pull through configurations
     if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
-        return pullThrough === "Yes" ||
-            (typeOfLine && typeOfLine.toLowerCase().includes("pull through")) ||
-            (lineType === "Compact" && pullThrough === "Yes");
+        return pullThrough === "Yes"
+            || (typeOfLine && typeOfLine.toLowerCase().includes("pull through"))
+            || (lineType === "Compact" && pullThrough === "Yes");
     }
 
     // For Standalone - show for reel configurations and straightener-reel combination
     if (lineApplication === "standalone") {
-        return lineType === "Reel-Motorized" ||
-            lineType === "Reel-Pull Off" ||
-            lineType === "Straightener-Reel Combination";
+        return lineType === "Reel-Motorized"
+            || lineType === "Reel-Pull Off"
+            || lineType === "Straightener-Reel Combination";
     }
 
     return false;
@@ -161,8 +163,8 @@ function shouldShowStrUtility(config: TabVisibilityConfig): boolean {
 
     // For Press Feed and Cut to Length
     if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
-        const isConventional = lineType === "Conventional" ||
-            Boolean(typeOfLine && typeOfLine.toLowerCase().includes("conventional"));
+        const isConventional = lineType === "Conventional"
+            || Boolean(typeOfLine && typeOfLine.toLowerCase().includes("conventional"));
         // Show STR Utility for all Conventional lines (removed SyncMaster requirement)
         return isConventional;
     }
@@ -181,9 +183,9 @@ function shouldShowStrUtility(config: TabVisibilityConfig): boolean {
 function shouldShowRollStrBackbend(config: TabVisibilityConfig): boolean {
     const { selectRoll, lineApplication, lineType } = config;
 
-    // For Press Feed and Cut to Length - always show (don't require roll selection)
+    // For Press Feed and Cut to Length - show for any roll type selection
     if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
-        return true;
+        return Boolean(selectRoll && selectRoll.length > 0);
     }
 
     // For Standalone - show for straightener configurations
@@ -231,16 +233,17 @@ function shouldShowShear(config: TabVisibilityConfig): boolean {
     }
 
     // Legacy logic for type of line mentions
-    return (typeOfLine && typeOfLine.includes("CTL")) ||
-        (typeOfLine && typeOfLine.includes("Shear")) ||
-        false;
+    return (typeOfLine && typeOfLine.includes("CTL"))
+        || (typeOfLine && typeOfLine.includes("Shear"))
+        || false;
 }
 
 /**
  * Gets the dynamic label for Roll Straightener tab
  */
 function getRollStrBackbendLabel(selectRoll?: string): string {
-    if (!selectRoll) return "Roll Straightener";
+    if (!selectRoll)
+        return "Roll Straightener";
 
     // Always return "Roll Str Backbend" regardless of roll number
     return "Roll Str Backbend";
@@ -266,6 +269,6 @@ export function getAllAvailableTabs(): VisibleTab[] {
         { label: "Str Utility", value: "str-utility" },
         { label: "Roll Straightener", value: "roll-str-backbend" },
         { label: "Feed", value: "feed" },
-        { label: "Shear", value: "shear" }
+        { label: "Shear", value: "shear" },
     ];
 }
