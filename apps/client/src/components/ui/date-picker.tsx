@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
 interface DatePickerProps {
@@ -37,9 +37,7 @@ const DatePicker = ({
   checkIconPrefix = ''
 }: DatePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMonth, setViewMonth] = useState<Date>(new Date());
-  const [inputValue, setInputValue] = useState('');
   const pickerRef = useRef<HTMLDivElement>(null);
 
   const monthNames = [
@@ -49,17 +47,28 @@ const DatePicker = ({
 
   const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
+  // Derive display value from prop - no state needed
+  const displayValue = useMemo(() => {
+    if (!value) return '';
+    const [year, month, day] = value.split('-').map(Number);
+    const m = month.toString().padStart(2, '0');
+    const d = day.toString().padStart(2, '0');
+    return `${m}/${d}/${year}`;
+  }, [value]);
+
+  // Local input state for user typing
+  const [inputValue, setInputValue] = useState(displayValue);
+
+  // Sync local input when prop changes
   useEffect(() => {
-    if (value) {
-      const [year, month, day] = value.split('-').map(Number);
-      const date = new Date(year, month - 1, day);
-      setSelectedDate(date);
-      setViewMonth(date);
-      setInputValue(formatDateForDisplay(date));
-    } else {
-      setSelectedDate(null);
-      setInputValue('');
-    }
+    setInputValue(displayValue);
+  }, [displayValue]);
+
+  // Derive selected date from value
+  const selectedDate = useMemo(() => {
+    if (!value) return null;
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
   }, [value]);
 
   useEffect(() => {
@@ -73,24 +82,9 @@ const DatePicker = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const formatDateForDisplay = (date: Date): string => {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
-  };
-
-  const formatDateForValue = (date: Date): string => {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${year}-${month}-${day}`;
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
     setInputValue(input);
-  };
 
     const datePattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
     const match = input.match(datePattern);
@@ -110,7 +104,11 @@ const DatePicker = ({
         if (isDateInRange(date)) {
           setSelectedDate(date);
           setViewMonth(date);
-          onChange(formatDateForValue(date));
+          // Format inline
+          const m = (date.getMonth() + 1).toString().padStart(2, '0');
+          const d = date.getDate().toString().padStart(2, '0');
+          const y = date.getFullYear();
+          onChange(`${y}-${m}-${d}`);
         }
       }
     }
@@ -140,9 +138,13 @@ const DatePicker = ({
     const date = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day);
 
     if (isDateInRange(date)) {
-      setSelectedDate(date);
-      setInputValue(formatDateForDisplay(date));
-      onChange(formatDateForValue(date));
+      // Format inline for display
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day_str = date.getDate().toString().padStart(2, '0');
+      const year = date.getFullYear();
+      setInputValue(`${month}/${day_str}/${year}`);
+      // Format inline for value
+      onChange(`${year}-${month}-${day_str}`);
       setIsOpen(false);
     }
   };

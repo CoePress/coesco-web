@@ -1,15 +1,15 @@
-import { prisma } from "@/utils/prisma";
 import {
-  RFQ_PERFORMANCE_SHEET_SEED,
-  MATERIAL_SPECS_PERFORMANCE_SHEET_SEED,
-  TDDBHD_PERFORMANCE_SHEET_SEED,
-  REEL_DRIVE_PERFORMANCE_SHEET_SEED,
-  STR_UTILITY_PERFORMANCE_SHEET_SEED,
-  ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED,
   FEED_PERFORMANCE_SHEET_SEED,
+  MATERIAL_SPECS_PERFORMANCE_SHEET_SEED,
+  REEL_DRIVE_PERFORMANCE_SHEET_SEED,
+  RFQ_PERFORMANCE_SHEET_SEED,
+  ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED,
   SHEAR_PERFORMANCE_SHEET_SEED,
+  STR_UTILITY_PERFORMANCE_SHEET_SEED,
   SUMMARY_REPORT_PERFORMANCE_SHEET_SEED,
+  TDDBHD_PERFORMANCE_SHEET_SEED,
 } from "@/templates/performance-sheet";
+import { prisma } from "@/utils/prisma";
 
 const FULL_TEMPLATE_SECTIONS = [
   RFQ_PERFORMANCE_SHEET_SEED,
@@ -54,10 +54,12 @@ async function updatePerformanceSheetTemplate() {
 
     console.log("\n🎉 All performance sheet versions updated!");
     console.log("🔄 Please refresh your browser to see the changes");
-  } catch (error) {
+  }
+  catch (error) {
     console.error("❌ Error updating template:", error);
     throw error;
-  } finally {
+  }
+  finally {
     await prisma.$disconnect();
   }
 }

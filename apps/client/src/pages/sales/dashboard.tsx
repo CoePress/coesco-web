@@ -98,7 +98,7 @@ const SalesDashboard = () => {
     if (!showYearly && timeframe === 'yearly') {
       setTimeframe('quarterly');
     }
-  }, [dateRangeDays, timeframe, showDaily, showQuarterly, showYearly]);
+  }, [dateRangeDays, /* timeframe, */ showDaily, showQuarterly, showYearly]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -218,7 +218,8 @@ const SalesDashboard = () => {
 
     fetchQuoteValues();
     return () => controller.abort();
-  }, [journeys, api]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [journeys /* , api */]);
 
   const companiesById = useMemo(() =>
     new Map(companies.map(c => [c.Company_ID, c])),
@@ -1165,10 +1166,10 @@ const SalesDashboard = () => {
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-2 h-2 rounded ${journey.Journey_Status === "won"
-                                ? "bg-success"
-                                : journey.Journey_Status === "lost"
-                                  ? "bg-error"
-                                  : "bg-primary"
+                              ? "bg-success"
+                              : journey.Journey_Status === "lost"
+                                ? "bg-error"
+                                : "bg-primary"
                               }`}
                           />
                           <div className="flex-1">

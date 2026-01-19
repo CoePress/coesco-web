@@ -1473,6 +1473,7 @@ model TeamsChatCache {
   @@unique([employeeId, recipientUserId])
   @@index([employeeId])
   @@map("teams_chat_cache")
+}
 model CostCode {
   id          String   @id @default(uuid())
   jobSfx      String   @unique

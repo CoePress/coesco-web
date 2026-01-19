@@ -1,5 +1,3 @@
-import { read } from "fs";
-
 export const DAYS_PER_WEEK_OPTIONS = [
   { value: "1", label: "1 Day" },
   { value: "2", label: "2 Days" },
@@ -420,186 +418,192 @@ export const REEL_MODEL_DEPENDENCIES = {
     widths: ["12", "18", "24", "30", "36"],
     backplateDiameters: ["23"],
     hydThreadingDrives: ["None"],
-    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW"]
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW"],
   },
   "CPR-060": {
     widths: ["18", "24", "30", "36"],
     backplateDiameters: ["23"],
     hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
-    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"],
   },
   "CPR-080": {
     widths: ["18", "24", "30", "36"],
     backplateDiameters: ["23"],
     hydThreadingDrives: ["22 cu in (D-15125)", "38 cu in (D-15125)", "None"],
-    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"]
+    holdDownAssys: ["None", "LD_STANDARD", "LD_NARROW", "LD_MOTORIZED"],
   },
   "CPR-100": {
     widths: ["24", "30", "36", "42", "48", "54", "60"],
     backplateDiameters: ["27", "72"],
     hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
-    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"],
   },
   "CPR-150": {
     widths: ["24", "30", "36", "42", "48", "54", "60"],
     backplateDiameters: ["27", "72"],
     hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
-    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"],
   },
   "CPR-200": {
     widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
     backplateDiameters: ["27", "72"],
     hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
-    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"],
   },
   "CPR-300": {
     widths: ["30", "36", "42", "48", "54", "60", "66", "72"],
     backplateDiameters: ["27", "72"],
     hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
-    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"],
   },
   "CPR-400": {
     widths: ["36", "42", "48", "54", "60", "66", "72"],
     backplateDiameters: ["27", "72"],
     hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
-    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"],
   },
   "CPR-500": {
     widths: ["42", "48", "54", "60", "66", "72", "78"],
     backplateDiameters: ["27", "72"],
     hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
-    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"],
   },
   "CPR-600": {
     widths: ["48", "54", "60", "66", "72", "78"],
     backplateDiameters: ["27", "72"],
     hydThreadingDrives: ["22 cu in (D-12689)", "38 cu in (D-13374)", "60 cu in (D-13374)", "60 cu in (D-13382)"],
-    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"]
-  }
+    holdDownAssys: ["SD", "SD_MOTORIZED", "MD", "HD_Single", "HD_Dual", "XD", "XXD"],
+  },
 };
 
 // Add hold down assembly to cylinder options mapping (model-specific)
 export const HOLD_DOWN_CYLINDER_DEPENDENCIES: Record<string, Record<string, string[]>> = {
   "CPR-040": {
-    "None": ["Air"],
-    "LD_STANDARD": ["4in Air", "5in Air"],
-    "LD_NARROW": ["4in Air"]
+    None: ["Air"],
+    LD_STANDARD: ["4in Air", "5in Air"],
+    LD_NARROW: ["4in Air"],
   },
   "CPR-060": {
-    "None": ["Air"],
-    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
-    "LD_NARROW": ["4in Air"],
-    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+    None: ["Air"],
+    LD_STANDARD: ["4in Air", "5in Air", "8in Air"],
+    LD_NARROW: ["4in Air"],
+    LD_MOTORIZED: ["4in Air", "5in Air", "Hydraulic"],
   },
   "CPR-080": {
-    "None": ["Air"],
-    "LD_STANDARD": ["4in Air", "5in Air", "8in Air"],
-    "LD_NARROW": ["4in Air"],
-    "LD_MOTORIZED": ["4in Air", "5in Air", "Hydraulic"]
+    None: ["Air"],
+    LD_STANDARD: ["4in Air", "5in Air", "8in Air"],
+    LD_NARROW: ["4in Air"],
+    LD_MOTORIZED: ["4in Air", "5in Air", "Hydraulic"],
   },
   "CPR-100": {
-    "SD": ["Air", "Hydraulic"],
-    "SD_MOTORIZED": ["Air", "Hydraulic"],
-    "MD": ["Hydraulic"],
-    "HD_Single": ["Hydraulic"],
-    "HD_Dual": ["Hydraulic"],
-    "XD": ["Hydraulic"],
-    "XXD": ["Hydraulic"]
+    SD: ["Air", "Hydraulic"],
+    SD_MOTORIZED: ["Air", "Hydraulic"],
+    MD: ["Hydraulic"],
+    HD_Single: ["Hydraulic"],
+    HD_Dual: ["Hydraulic"],
+    XD: ["Hydraulic"],
+    XXD: ["Hydraulic"],
   },
   "CPR-150": {
-    "SD": ["Air", "Hydraulic"],
-    "SD_MOTORIZED": ["Air", "Hydraulic"],
-    "MD": ["Hydraulic"],
-    "HD_Single": ["Hydraulic"],
-    "HD_Dual": ["Hydraulic"],
-    "XD": ["Hydraulic"],
-    "XXD": ["Hydraulic"]
+    SD: ["Air", "Hydraulic"],
+    SD_MOTORIZED: ["Air", "Hydraulic"],
+    MD: ["Hydraulic"],
+    HD_Single: ["Hydraulic"],
+    HD_Dual: ["Hydraulic"],
+    XD: ["Hydraulic"],
+    XXD: ["Hydraulic"],
   },
   "CPR-200": {
-    "SD": ["Air", "Hydraulic"],
-    "SD_MOTORIZED": ["Air", "Hydraulic"],
-    "MD": ["Hydraulic"],
-    "HD_Single": ["Hydraulic"],
-    "HD_Dual": ["Hydraulic"],
-    "XD": ["Hydraulic"],
-    "XXD": ["Hydraulic"]
+    SD: ["Air", "Hydraulic"],
+    SD_MOTORIZED: ["Air", "Hydraulic"],
+    MD: ["Hydraulic"],
+    HD_Single: ["Hydraulic"],
+    HD_Dual: ["Hydraulic"],
+    XD: ["Hydraulic"],
+    XXD: ["Hydraulic"],
   },
   "CPR-300": {
-    "SD": ["Air", "Hydraulic"],
-    "SD_MOTORIZED": ["Air", "Hydraulic"],
-    "MD": ["Hydraulic"],
-    "HD_Single": ["Hydraulic"],
-    "HD_Dual": ["Hydraulic"],
-    "XD": ["Hydraulic"],
-    "XXD": ["Hydraulic"]
+    SD: ["Air", "Hydraulic"],
+    SD_MOTORIZED: ["Air", "Hydraulic"],
+    MD: ["Hydraulic"],
+    HD_Single: ["Hydraulic"],
+    HD_Dual: ["Hydraulic"],
+    XD: ["Hydraulic"],
+    XXD: ["Hydraulic"],
   },
   "CPR-400": {
-    "SD": ["Air", "Hydraulic"],
-    "SD_MOTORIZED": ["Air", "Hydraulic"],
-    "MD": ["Hydraulic"],
-    "HD_Single": ["Hydraulic"],
-    "HD_Dual": ["Hydraulic"],
-    "XD": ["Hydraulic"],
-    "XXD": ["Hydraulic"]
+    SD: ["Air", "Hydraulic"],
+    SD_MOTORIZED: ["Air", "Hydraulic"],
+    MD: ["Hydraulic"],
+    HD_Single: ["Hydraulic"],
+    HD_Dual: ["Hydraulic"],
+    XD: ["Hydraulic"],
+    XXD: ["Hydraulic"],
   },
   "CPR-500": {
-    "SD": ["Air", "Hydraulic"],
-    "SD_MOTORIZED": ["Air", "Hydraulic"],
-    "MD": ["Hydraulic"],
-    "HD_Single": ["Hydraulic"],
-    "HD_Dual": ["Hydraulic"],
-    "XD": ["Hydraulic"],
-    "XXD": ["Hydraulic"]
+    SD: ["Air", "Hydraulic"],
+    SD_MOTORIZED: ["Air", "Hydraulic"],
+    MD: ["Hydraulic"],
+    HD_Single: ["Hydraulic"],
+    HD_Dual: ["Hydraulic"],
+    XD: ["Hydraulic"],
+    XXD: ["Hydraulic"],
   },
   "CPR-600": {
-    "SD": ["Air", "Hydraulic"],
-    "SD_MOTORIZED": ["Air", "Hydraulic"],
-    "MD": ["Hydraulic"],
-    "HD_Single": ["Hydraulic"],
-    "HD_Dual": ["Hydraulic"],
-    "XD": ["Hydraulic"],
-    "XXD": ["Hydraulic"]
-  }
+    SD: ["Air", "Hydraulic"],
+    SD_MOTORIZED: ["Air", "Hydraulic"],
+    MD: ["Hydraulic"],
+    HD_Single: ["Hydraulic"],
+    HD_Dual: ["Hydraulic"],
+    XD: ["Hydraulic"],
+    XXD: ["Hydraulic"],
+  },
 };
 
 // Helper functions to get dependent options
-export const getReelWidthOptionsForModel = (model: string) => {
+export function getReelWidthOptionsForModel(model: string) {
   const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
-  if (!dependencies) return REEL_WIDTH_OPTIONS;
+  if (!dependencies)
+    return REEL_WIDTH_OPTIONS;
 
   return dependencies.widths.map(width => ({ value: width, label: width }));
-};
+}
 
-export const getBackplateDiameterOptionsForModel = (model: string) => {
+export function getBackplateDiameterOptionsForModel(model: string) {
   const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
-  if (!dependencies) return BACKPLATE_DIAMETER_OPTIONS;
+  if (!dependencies)
+    return BACKPLATE_DIAMETER_OPTIONS;
 
   return dependencies.backplateDiameters.map(diameter => ({ value: diameter, label: diameter }));
-};
+}
 
-export const getHydThreadingDriveOptionsForModel = (model: string) => {
+export function getHydThreadingDriveOptionsForModel(model: string) {
   const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
-  if (!dependencies) return HYDRAULIC_THREADING_DRIVE_OPTIONS;
+  if (!dependencies)
+    return HYDRAULIC_THREADING_DRIVE_OPTIONS;
 
   return dependencies.hydThreadingDrives.map(drive => ({ value: drive, label: drive }));
-};
+}
 
-export const getHoldDownAssyOptionsForModel = (model: string) => {
+export function getHoldDownAssyOptionsForModel(model: string) {
   const dependencies = REEL_MODEL_DEPENDENCIES[model as keyof typeof REEL_MODEL_DEPENDENCIES];
-  if (!dependencies) return HOLD_DOWN_ASSY_OPTIONS;
+  if (!dependencies)
+    return HOLD_DOWN_ASSY_OPTIONS;
 
   return dependencies.holdDownAssys.map(assy => ({ value: assy, label: HOLD_DOWN_ASSY_OPTIONS.find(opt => opt.value === assy)?.label || assy }));
-};
+}
 
-export const getCylinderOptionsForHoldDownAssy = (model: string, holdDownAssy: string) => {
+export function getCylinderOptionsForHoldDownAssy(model: string, holdDownAssy: string) {
   const modelDependencies = HOLD_DOWN_CYLINDER_DEPENDENCIES[model];
-  if (!modelDependencies) return CYLINDER_OPTIONS;
+  if (!modelDependencies)
+    return CYLINDER_OPTIONS;
 
   const cylinderOptions = modelDependencies[holdDownAssy];
-  if (!cylinderOptions) return CYLINDER_OPTIONS;
+  if (!cylinderOptions)
+    return CYLINDER_OPTIONS;
 
   return cylinderOptions.map(cylinder => ({ value: cylinder, label: cylinder }));
-};
+}
 
 // STR model dependency mappings
 export const STR_MODEL_DEPENDENCIES = {
@@ -607,90 +611,93 @@ export const STR_MODEL_DEPENDENCIES = {
     widths: ["6", "12", "18", "24", "30", "36", "42", "48", "54"],
     horsepowers: ["3", "5", "7.5"],
     feedRatesByHorsepower: {
-      "3": ["42", "65", "85", "105", "165"],
-      "5": ["42", "65", "85", "105", "165"],
-      "7.5": ["42", "65", "85", "105", "165"]
-    }
+      3: ["42", "65", "85", "105", "165"],
+      5: ["42", "65", "85", "105", "165"],
+      7.5: ["42", "65", "85", "105", "165"],
+    },
   },
   "CPPS-306": {
     widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
     horsepowers: ["20", "25", "30", "40", "50"],
     feedRatesByHorsepower: {
-      "20": ["80", "100", "120", "140", "160", "200"],
-      "25": ["80", "100", "120", "140", "160", "200"],
-      "30": ["80", "100", "120", "140", "160", "200"],
-      "40": ["80", "100", "120", "140", "160", "200"],
-      "50": ["80", "100", "120", "140", "160", "200"]
-    }
+      20: ["80", "100", "120", "140", "160", "200"],
+      25: ["80", "100", "120", "140", "160", "200"],
+      30: ["80", "100", "120", "140", "160", "200"],
+      40: ["80", "100", "120", "140", "160", "200"],
+      50: ["80", "100", "120", "140", "160", "200"],
+    },
   },
   "CPPS-350": {
     widths: ["12", "18", "24", "30", "36", "42", "48", "54", "60"],
     horsepowers: ["5", "7.5", "10", "15", "20"],
     feedRatesByHorsepower: {
-      "5": ["57", "76", "92", "115", "153"],
-      "7.5": ["65", "72", "96", "115", "153"],
-      "10": ["65", "79", "95", "115", "153"],
-      "15": ["69", "84", "95", "122", "157", "177"],
-      "20": ["73", "101", "116", "146", "224"]
-    }
+      5: ["57", "76", "92", "115", "153"],
+      7.5: ["65", "72", "96", "115", "153"],
+      10: ["65", "79", "95", "115", "153"],
+      15: ["69", "84", "95", "122", "157", "177"],
+      20: ["73", "101", "116", "146", "224"],
+    },
   },
   "CPPS-406": {
     widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
     horsepowers: ["20", "25", "30", "40", "50", "60", "75"],
     feedRatesByHorsepower: {
-      "20": ["80", "100", "120", "140", "160", "180", "200"],
-      "25": ["80", "100", "120", "140", "160", "180", "200"],
-      "30": ["80", "100", "120", "140", "160", "180", "200"],
-      "40": ["80", "100", "120", "140", "160", "180", "200"],
-      "50": ["80", "100", "120", "140", "160", "180", "200"],
-      "60": ["80", "100", "120", "140", "160", "180", "200"],
-      "75": ["100", "120", "140", "160", "200"]
-    }
+      20: ["80", "100", "120", "140", "160", "180", "200"],
+      25: ["80", "100", "120", "140", "160", "180", "200"],
+      30: ["80", "100", "120", "140", "160", "180", "200"],
+      40: ["80", "100", "120", "140", "160", "180", "200"],
+      50: ["80", "100", "120", "140", "160", "180", "200"],
+      60: ["80", "100", "120", "140", "160", "180", "200"],
+      75: ["100", "120", "140", "160", "200"],
+    },
   },
   "CPPS-507": {
     widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
     horsepowers: ["40", "50", "60", "75", "100", "125"],
     feedRatesByHorsepower: {
-      "40": ["80", "100", "120", "140", "160", "200"],
-      "50": ["80", "100", "120", "140", "160", "200"],
-      "60": ["80", "100", "120", "140", "160", "200"],
-      "75": ["80", "100", "120", "140", "160", "200"],
-      "100": ["120", "140", "160", "200"],
-      "125": ["120", "140", "160", "200"]
-    }
+      40: ["80", "100", "120", "140", "160", "200"],
+      50: ["80", "100", "120", "140", "160", "200"],
+      60: ["80", "100", "120", "140", "160", "200"],
+      75: ["80", "100", "120", "140", "160", "200"],
+      100: ["120", "140", "160", "200"],
+      125: ["120", "140", "160", "200"],
+    },
   },
   "SPGPS-810": {
     widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
     horsepowers: ["40", "50", "60", "75", "100", "125"],
     feedRatesByHorsepower: {
-      "40": ["80", "100", "120", "140", "160", "200"],
-      "50": ["80", "100", "120", "140", "160", "200"],
-      "60": ["80", "100", "120", "140", "160", "200"],
-      "75": ["80", "100", "120", "140", "160", "200"],
-      "100": ["120", "140", "160", "200"],
-      "125": ["120", "140", "160", "200"]
-    }
-  }
+      40: ["80", "100", "120", "140", "160", "200"],
+      50: ["80", "100", "120", "140", "160", "200"],
+      60: ["80", "100", "120", "140", "160", "200"],
+      75: ["80", "100", "120", "140", "160", "200"],
+      100: ["120", "140", "160", "200"],
+      125: ["120", "140", "160", "200"],
+    },
+  },
 };
 
 // Helper functions to get STR dependent options
-export const getStrWidthOptionsForModel = (model: string) => {
+export function getStrWidthOptionsForModel(model: string) {
   const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
-  if (!dependencies) return STR_WIDTH_OPTIONS;
+  if (!dependencies)
+    return STR_WIDTH_OPTIONS;
 
   return dependencies.widths.map(width => ({ value: width, label: `${width}"` }));
-};
+}
 
-export const getStrHorsepowerOptionsForModel = (model: string) => {
+export function getStrHorsepowerOptionsForModel(model: string) {
   const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
-  if (!dependencies) return STR_HORSEPOWER_OPTIONS;
+  if (!dependencies)
+    return STR_HORSEPOWER_OPTIONS;
 
   return dependencies.horsepowers.map(hp => ({ value: hp, label: `${hp} HP` }));
-};
+}
 
-export const getStrFeedRateOptionsForModelAndHorsepower = (model: string, horsepower: string) => {
+export function getStrFeedRateOptionsForModelAndHorsepower(model: string, horsepower: string) {
   const dependencies = STR_MODEL_DEPENDENCIES[model as keyof typeof STR_MODEL_DEPENDENCIES];
-  if (!dependencies) return STR_FEED_RATE_OPTIONS;
+  if (!dependencies)
+    return STR_FEED_RATE_OPTIONS;
 
   // Find the feed rates for the specific model and horsepower
   switch (model) {
@@ -705,11 +712,16 @@ export const getStrFeedRateOptionsForModelAndHorsepower = (model: string, horsep
       }
       break;
     case "CPPS-350":
-      if (horsepower === "5") return ["57", "76", "92", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
-      if (horsepower === "7.5") return ["65", "72", "96", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
-      if (horsepower === "10") return ["65", "79", "95", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
-      if (horsepower === "15") return ["69", "84", "95", "122", "157", "177"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
-      if (horsepower === "20") return ["73", "101", "116", "146", "224"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "5")
+        return ["57", "76", "92", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "7.5")
+        return ["65", "72", "96", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "10")
+        return ["65", "79", "95", "115", "153"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "15")
+        return ["69", "84", "95", "122", "157", "177"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
+      if (horsepower === "20")
+        return ["73", "101", "116", "146", "224"].map(rate => ({ value: rate, label: `${rate} ft/min` }));
       break;
     case "CPPS-406":
       if (["20", "25", "30", "40", "50", "60"].includes(horsepower)) {
@@ -731,52 +743,53 @@ export const getStrFeedRateOptionsForModelAndHorsepower = (model: string, horsep
   }
 
   return STR_FEED_RATE_OPTIONS;
-};
+}
 
 // Feed model dependency mappings
 export const FEED_MODEL_DEPENDENCIES = {
   "CPRF-S1": {
-    widths: ["6", "12", "18", "24"]
+    widths: ["6", "12", "18", "24"],
   },
   "CPRF-S2": {
-    widths: ["6", "12", "18", "24", "30"]
+    widths: ["6", "12", "18", "24", "30"],
   },
   "CPRF-S2 PLUS": {
-    widths: ["6", "12", "18", "24", "30"]
+    widths: ["6", "12", "18", "24", "30"],
   },
   "CPRF-S3": {
-    widths: ["12", "18", "24", "30", "36", "42"]
+    widths: ["12", "18", "24", "30", "36", "42"],
   },
   "CPRF-S3 PLUS": {
-    widths: ["12", "18", "24", "30", "36", "42"]
+    widths: ["12", "18", "24", "30", "36", "42"],
   },
   "CPRF-S4": {
-    widths: ["12", "18", "24", "30", "36", "42", "48", "54"]
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54"],
   },
   "CPRF-S4 PLUS": {
-    widths: ["12", "18", "24", "30", "36", "42", "48", "54"]
+    widths: ["12", "18", "24", "30", "36", "42", "48", "54"],
   },
   "CPRF-S5": {
-    widths: ["18", "24", "30", "36", "42", "48", "54", "60"]
+    widths: ["18", "24", "30", "36", "42", "48", "54", "60"],
   },
   "CPRF-S6": {
-    widths: ["18", "24", "30", "36", "42", "48", "54", "60", "66", "72"]
+    widths: ["18", "24", "30", "36", "42", "48", "54", "60", "66", "72"],
   },
   "CPRF-S7": {
-    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"]
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72"],
   },
   "CPRF-S8": {
-    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"]
-  }
+    widths: ["24", "30", "36", "42", "48", "54", "60", "66", "72", "78"],
+  },
 };
 
 // Helper function to get feed machine width options for model
-export const getFeedMachineWidthOptionsForModel = (model: string) => {
+export function getFeedMachineWidthOptionsForModel(model: string) {
   const dependencies = FEED_MODEL_DEPENDENCIES[model as keyof typeof FEED_MODEL_DEPENDENCIES];
-  if (!dependencies) return MACHINE_WIDTH_OPTIONS;
+  if (!dependencies)
+    return MACHINE_WIDTH_OPTIONS;
 
   return dependencies.widths.map(width => ({ value: width, label: `${width}"` }));
-};
+}
 
 // | "rfq"
 // | "material-specs"
@@ -4986,7 +4999,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
       columns: 4,
       conditionalVisibility: {
         dependsOn: "common.equipment.feed.type",
-        showWhen: "Sigma 5 w/ Pull Through"
+        showWhen: "Sigma 5 w/ Pull Through",
       },
       fields: [
         {
@@ -4998,7 +5011,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           required: false,
           conditional: {
             dependsOn: "common.equipment.feed.type",
-            showWhen: "Sigma 5 w/ Pull Through"
+            showWhen: "Sigma 5 w/ Pull Through",
           },
         },
         {
@@ -5010,7 +5023,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           required: false,
           conditional: {
             dependsOn: "common.equipment.feed.type",
-            showWhen: "Sigma 5 w/ Pull Through"
+            showWhen: "Sigma 5 w/ Pull Through",
           },
         },
         {
@@ -5022,7 +5035,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           required: false,
           conditional: {
             dependsOn: "common.equipment.feed.type",
-            showWhen: "Sigma 5 w/ Pull Through"
+            showWhen: "Sigma 5 w/ Pull Through",
           },
         },
         {
@@ -5035,7 +5048,7 @@ export const FEED_PERFORMANCE_SHEET_SEED = {
           options: STRAIGHTENER_ROLLS_OPTIONS,
           conditional: {
             dependsOn: "common.equipment.feed.type",
-            showWhen: "Sigma 5 w/ Pull Through"
+            showWhen: "Sigma 5 w/ Pull Through",
           },
         },
       ],
@@ -5478,7 +5491,6 @@ export const SUMMARY_REPORT_PERFORMANCE_SHEET_SEED = {
           required: false,
           readOnly: true,
         },
-
 
         {
           id: "common.equipment.reel.backplate.diameter",

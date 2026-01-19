@@ -30,13 +30,13 @@ export class ActivityService {
     const contactIds = await prisma.contact.findMany({
       where: {
         legacyCompanyId: companyId,
-        deletedAt: null
+        deletedAt: null,
       },
       select: {
         id: true,
         firstName: true,
-        lastName: true
-      }
+        lastName: true,
+      },
     });
 
     const contactIdList = contactIds.map(c => c.id);
@@ -45,29 +45,29 @@ export class ActivityService {
       where: {
         OR: [
           {
-            entityType: 'company',
-            entityId: companyId
+            entityType: "company",
+            entityId: companyId,
           },
           {
-            entityType: 'contact',
+            entityType: "contact",
             entityId: {
-              in: contactIdList
-            }
-          }
+              in: contactIdList,
+            },
+          },
         ],
-        deletedAt: null
+        deletedAt: null,
       },
       orderBy: {
-        timestamp: 'desc'
+        timestamp: "desc",
       },
-      take: 1000
+      take: 1000,
     });
 
-    const contactMap = new Map(contactIds.map(c => [c.id, `${c.firstName || ''} ${c.lastName || ''}`.trim()]));
+    const contactMap = new Map(contactIds.map(c => [c.id, `${c.firstName || ""} ${c.lastName || ""}`.trim()]));
 
     const activitiesWithContactNames = activities.map(activity => ({
       ...activity,
-      _contactName: activity.entityType === 'contact' ? contactMap.get(activity.entityId || '') || null : null
+      _contactName: activity.entityType === "contact" ? contactMap.get(activity.entityId || "") || null : null,
     }));
 
     return activitiesWithContactNames;

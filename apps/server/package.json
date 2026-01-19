@@ -58,6 +58,7 @@
     "socket.io": "^4.8.1",
     "supertest": "^7.1.4",
     "swagger-ui-express": "^5.0.1",
+    "vite-plugin-imagemin": "^0.4.0",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
     "xlsx": "^0.18.5",
@@ -95,8 +96,8 @@
     "nodemon": "^3.1.10",
     "prisma": "^6.19.0",
     "swagger-autogen": "^2.23.7",
-    "ts-jest": "^29.4.5",
-    "ts-node": "^10.9.2",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^1.7.1",
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.2"

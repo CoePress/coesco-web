@@ -295,22 +295,22 @@ export class SocketService {
 
           // Log TDDBHD raw results before mapping
           if (calculationResults.tddbhd?.scenarios) {
-            console.log('RAW TDDBHD CALCULATION RESULTS:', JSON.stringify(calculationResults.tddbhd.scenarios, null, 2));
+            console.log("RAW TDDBHD CALCULATION RESULTS:", JSON.stringify(calculationResults.tddbhd.scenarios, null, 2));
           }
 
           // Log STR Utility raw results before mapping
           if (calculationResults.str_utility?.scenarios) {
-            console.log('RAW STR UTILITY CALCULATION RESULTS:', JSON.stringify(calculationResults.str_utility.scenarios, null, 2));
+            console.log("RAW STR UTILITY CALCULATION RESULTS:", JSON.stringify(calculationResults.str_utility.scenarios, null, 2));
           }
 
           // Log Roll Str Backbend raw results before mapping
           if (calculationResults.roll_str_backbend?.scenarios) {
-            console.log('RAW ROLL STR BACKBEND CALCULATION RESULTS:', JSON.stringify(calculationResults.roll_str_backbend.scenarios, null, 2));
+            console.log("RAW ROLL STR BACKBEND CALCULATION RESULTS:", JSON.stringify(calculationResults.roll_str_backbend.scenarios, null, 2));
           }
 
           // Log Feed raw results before mapping
           if (calculationResults.feed?.scenarios) {
-            console.log('RAW FEED CALCULATION RESULTS:', JSON.stringify(calculationResults.feed.scenarios, null, 2));
+            console.log("RAW FEED CALCULATION RESULTS:", JSON.stringify(calculationResults.feed.scenarios, null, 2));
           }
 
           // Map results back to data structure using Python result mapping
@@ -318,28 +318,28 @@ export class SocketService {
 
           // Log TDDBHD mapped results
           if (mappedData.tddbhd?.scenarios) {
-            console.log('MAPPED TDDBHD RESULTS:', JSON.stringify(mappedData.tddbhd.scenarios, null, 2));
+            console.log("MAPPED TDDBHD RESULTS:", JSON.stringify(mappedData.tddbhd.scenarios, null, 2));
           }
 
           // Log STR Utility mapped results
           if (mappedData.strUtility?.scenarios) {
-            console.log('MAPPED STR UTILITY RESULTS:', JSON.stringify(mappedData.strUtility.scenarios, null, 2));
+            console.log("MAPPED STR UTILITY RESULTS:", JSON.stringify(mappedData.strUtility.scenarios, null, 2));
           }
 
           // Log Roll Str Backbend mapped results
           if (mappedData.rollStrBackbend?.scenarios) {
-            console.log('MAPPED ROLL STR BACKBEND RESULTS:', JSON.stringify(mappedData.rollStrBackbend.scenarios, null, 2));
+            console.log("MAPPED ROLL STR BACKBEND RESULTS:", JSON.stringify(mappedData.rollStrBackbend.scenarios, null, 2));
           }
 
           // Log Feed mapped results
           if (mappedData.feed?.scenarios) {
-            console.log('MAPPED FEED RESULTS:', JSON.stringify(mappedData.feed.scenarios, null, 2));
+            console.log("MAPPED FEED RESULTS:", JSON.stringify(mappedData.feed.scenarios, null, 2));
           }
 
-          console.log('SOCKET MAPPED DATA FPM VALUES:', {
+          console.log("SOCKET MAPPED DATA FPM VALUES:", {
             averageFpm: mappedData?.common?.feedRates?.average?.fpm,
             maxFpm: mappedData?.common?.feedRates?.max?.fpm,
-            minFpm: mappedData?.common?.feedRates?.min?.fpm
+            minFpm: mappedData?.common?.feedRates?.min?.fpm,
           });
 
           callback?.({ ok: true, result: mappedData });
@@ -400,7 +400,7 @@ export class SocketService {
   private async mapCalculationResults(originalData: Record<string, any>, calculationResults: Record<string, any>): Promise<Record<string, any>> {
     return new Promise((resolve, reject) => {
       const scriptPath = path.join(__dirname, "../../scripts/performance-sheet/utils/result_mapping.py");
-      const pythonScriptDir = path.join(__dirname, "../../scripts/performance-sheet").replace(/\\/g, '/');
+      const pythonScriptDir = path.join(__dirname, "../../scripts/performance-sheet").replace(/\\/g, "/");
       const python = spawn("python", ["-c", `
 import sys
 import json
@@ -424,7 +424,7 @@ print(json.dumps(mapped_data, default=str))
 
       const inputData = {
         originalData,
-        calculationResults
+        calculationResults,
       };
 
       python.stdin.write(JSON.stringify(inputData));

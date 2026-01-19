@@ -57,13 +57,11 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
 
   return (
     <div
-      className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden select-none ${
-        isOpen ? "w-60" : "w-[50px]"
-      } md:relative absolute z-50 hidden md:block`}>
+      className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden select-none ${isOpen ? "w-60" : "w-[50px]"
+        } md:relative absolute z-50 hidden md:block`}>
       <div className="flex flex-col h-full">
-        <div className={`flex items-center h-[57px] border-b border-border px-2 ${
-          isOpen ? "justify-between" : "justify-center"
-        }`}>
+        <div className={`flex items-center h-[57px] border-b border-border px-2 ${isOpen ? "justify-between" : "justify-center"
+          }`}>
           {isOpen && (
             <h1 className="text-xl font-semibold text-primary">
               {sidebarLabel}
@@ -71,146 +69,134 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
           )}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className={`flex justify-center items-center p-2 rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer ${
-              isOpen ? "" : "w-full"
-            }`}>
+            className={`flex justify-center items-center p-2 rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer ${isOpen ? "" : "w-full"
+              }`}>
             <ChevronsRight
               size={20}
-              className={`transition-transform duration-200 shrink-0 ${
-                isOpen ? "rotate-180" : ""
-              }`}
+              className={`transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180" : ""
+                }`}
             />
           </button>
         </div>
-          <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2">
-            {location.pathname.startsWith("/chat") ? (
-              <ChatSidebar
-                isOpen={isOpen}
-                onTooltipMouseEnter={onTooltipMouseEnter}
-                onTooltipMouseLeave={onTooltipMouseLeave}
-              />
-            ) : location.pathname.startsWith("/settings") ? (
-              <div className="flex flex-col gap-2">
-                <Link
-                  to="/settings?tab=general"
-                  onMouseEnter={(e) => onTooltipMouseEnter(e, "General")}
-                  onMouseLeave={onTooltipMouseLeave}
-                  className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
-                    location.search.includes("tab=general") || (!location.search.includes("tab=") && location.pathname === "/settings")
-                      ? "bg-surface text-text"
-                      : "text-text-muted hover:bg-surface"
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2">
+          {location.pathname.startsWith("/chat") ? (
+            <ChatSidebar
+              isOpen={isOpen}
+              onTooltipMouseEnter={onTooltipMouseEnter}
+              onTooltipMouseLeave={onTooltipMouseLeave}
+            />
+          ) : location.pathname.startsWith("/settings") ? (
+            <div className="flex flex-col gap-2">
+              <Link
+                to="/settings?tab=general"
+                onMouseEnter={(e) => onTooltipMouseEnter(e, "General")}
+                onMouseLeave={onTooltipMouseLeave}
+                className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${location.search.includes("tab=general") || (!location.search.includes("tab=") && location.pathname === "/settings")
+                    ? "bg-surface text-text"
+                    : "text-text-muted hover:bg-surface"
                   }`}>
-                  <LayoutDashboard size={18} className="flex-shrink-0" />
-                  <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                    isOpen ? "opacity-100" : "opacity-0"
+                <LayoutDashboard size={18} className="flex-shrink-0" />
+                <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${isOpen ? "opacity-100" : "opacity-0"
                   }`}>General</span>
-                </Link>
-                <Link
-                  to="/settings?tab=security"
-                  onMouseEnter={(e) => onTooltipMouseEnter(e, "Security")}
-                  onMouseLeave={onTooltipMouseLeave}
-                  className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
-                    location.search.includes("tab=security")
-                      ? "bg-surface text-text"
-                      : "text-text-muted hover:bg-surface"
+              </Link>
+              <Link
+                to="/settings?tab=security"
+                onMouseEnter={(e) => onTooltipMouseEnter(e, "Security")}
+                onMouseLeave={onTooltipMouseLeave}
+                className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${location.search.includes("tab=security")
+                    ? "bg-surface text-text"
+                    : "text-text-muted hover:bg-surface"
                   }`}>
-                  <Shield size={18} className="flex-shrink-0" />
-                  <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                    isOpen ? "opacity-100" : "opacity-0"
+                <Shield size={18} className="flex-shrink-0" />
+                <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${isOpen ? "opacity-100" : "opacity-0"
                   }`}>Security</span>
-                </Link>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {currentModule?.pages?.map((page) => {
-                  const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
-                  return (
-                    <Link
-                      key={page.slug || "index"}
-                      to={trimmer(fullPath)}
-                      onMouseEnter={(e) => onTooltipMouseEnter(e, page.label)}
-                      onMouseLeave={onTooltipMouseLeave}
-                      className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
-                        isActive(fullPath)
-                          ? "bg-background text-primary"
-                          : "text-text-muted hover:bg-surface"
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {currentModule?.pages?.map((page) => {
+                const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
+                return (
+                  <Link
+                    key={page.slug || "index"}
+                    to={trimmer(fullPath)}
+                    onMouseEnter={(e) => onTooltipMouseEnter(e, page.label)}
+                    onMouseLeave={onTooltipMouseLeave}
+                    className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${isActive(fullPath)
+                        ? "bg-background text-primary"
+                        : "text-text-muted hover:bg-surface"
                       }`}>
-                      {page.icon && <page.icon size={18} className="flex-shrink-0" />}
-                      <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                        isOpen ? "opacity-100" : "opacity-0"
+                    {page.icon && <page.icon size={18} className="flex-shrink-0" />}
+                    <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${isOpen ? "opacity-100" : "opacity-0"
                       }`}>{page.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </nav>
-          
-          <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
-            <Link
-              to="/settings"
-              onMouseEnter={(e) => onTooltipMouseEnter(e, "Settings")}
-              onMouseLeave={onTooltipMouseLeave}
-              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full">
-              <SettingsIcon size={18} className="flex-shrink-0" />
-              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                isOpen ? "opacity-100" : "opacity-0"
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </nav>
+
+        <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
+          <Link
+            to="/settings"
+            onMouseEnter={(e) => onTooltipMouseEnter(e, "Settings")}
+            onMouseLeave={onTooltipMouseLeave}
+            className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full">
+            <SettingsIcon size={18} className="flex-shrink-0" />
+            <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${isOpen ? "opacity-100" : "opacity-0"
               }`}>Settings</span>
-            </Link>
+          </Link>
 
-            <button
-              onClick={async () => {
-                onTooltipMouseLeave();
-                try {
-                  if (!screenshotAreaRef.current) return;
-                  setIsCapturing(true);
-                  const dataUrl = await htmlToImage.toPng(screenshotAreaRef.current);
-                  setScreenshot(dataUrl);
-                } catch (error) {
-                  setScreenshot(null);
-                } finally {
-                  setIsCapturing(false);
-                }
-                setIsBugModalOpen(true);
-              }}
-              onMouseEnter={(e) => onTooltipMouseEnter(e, "Report Bug")}
-              onMouseLeave={onTooltipMouseLeave}
-              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full">
-              {isCapturing ? (
-                <Loader2 size={18} className="flex-shrink-0 animate-spin" />
-              ) : (
-                <BugIcon size={18} className="flex-shrink-0" />
-              )}
-              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                isOpen ? "opacity-100" : "opacity-0"
+          <button
+            onClick={async () => {
+              onTooltipMouseLeave();
+              try {
+                if (!screenshotAreaRef.current) return;
+                setIsCapturing(true);
+                const dataUrl = await htmlToImage.toPng(screenshotAreaRef.current);
+                setScreenshot(dataUrl);
+              } catch (error) {
+                setScreenshot(null);
+              } finally {
+                setIsCapturing(false);
+              }
+              setIsBugModalOpen(true);
+            }}
+            onMouseEnter={(e) => onTooltipMouseEnter(e, "Report Bug")}
+            onMouseLeave={onTooltipMouseLeave}
+            className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full">
+            {isCapturing ? (
+              <Loader2 size={18} className="flex-shrink-0 animate-spin" />
+            ) : (
+              <BugIcon size={18} className="flex-shrink-0" />
+            )}
+            <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${isOpen ? "opacity-100" : "opacity-0"
               }`}>Report Bug</span>
-            </button>
+          </button>
 
-            <button
-              onClick={toggleTheme}
-              onMouseEnter={(e) => onTooltipMouseEnter(e, theme === "dark" ? "Light Mode" : "Dark Mode")}
-              onMouseLeave={onTooltipMouseLeave}
-              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full">
-              {theme === "dark" ? <Sun size={18} className="flex-shrink-0" /> : <Moon size={18} className="flex-shrink-0" />}
-              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                isOpen ? "opacity-100" : "opacity-0"
+          <button
+            onClick={toggleTheme}
+            onMouseEnter={(e) => onTooltipMouseEnter(e, theme === "dark" ? "Light Mode" : "Dark Mode")}
+            onMouseLeave={onTooltipMouseLeave}
+            className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full">
+            {theme === "dark" ? <Sun size={18} className="flex-shrink-0" /> : <Moon size={18} className="flex-shrink-0" />}
+            <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${isOpen ? "opacity-100" : "opacity-0"
               }`}>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-            </button>
+          </button>
 
-            <Link
-              key="main-menu"
-              to="/"
-              onMouseEnter={(e) => onTooltipMouseEnter(e, "Main Menu")}
-              onMouseLeave={onTooltipMouseLeave}
-              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full">
-              <Home size={18} className="flex-shrink-0" />
-              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-                isOpen ? "opacity-100" : "opacity-0"
+          <Link
+            key="main-menu"
+            to="/"
+            onMouseEnter={(e) => onTooltipMouseEnter(e, "Main Menu")}
+            onMouseLeave={onTooltipMouseLeave}
+            className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full">
+            <Home size={18} className="flex-shrink-0" />
+            <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${isOpen ? "opacity-100" : "opacity-0"
               }`}>Main Menu</span>
-            </Link>
-          </div>
+          </Link>
+        </div>
       </div>
-      
+
     </div>
   );
 };
@@ -221,7 +207,7 @@ type LayoutProps = {
 
 const Layout = ({ children }: LayoutProps) => {
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
-  const [hoveredTooltip, setHoveredTooltip] = useState<{text: string, rect: DOMRect} | null>(null);
+  const [hoveredTooltip, setHoveredTooltip] = useState<{ text: string, rect: DOMRect } | null>(null);
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -318,9 +304,8 @@ const Layout = ({ children }: LayoutProps) => {
           <nav className="flex items-center h-16 px-2">
             <Link
               to="/"
-              className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded transition-colors min-w-0 ${
-                location.pathname === "/" ? "text-primary" : "text-text-muted"
-              }`}>
+              className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded transition-colors min-w-0 ${location.pathname === "/" ? "text-primary" : "text-text-muted"
+                }`}>
               <Home size={20} className="flex-shrink-0" />
               <span className="text-xs truncate w-full text-center">Home</span>
             </Link>
@@ -334,9 +319,8 @@ const Layout = ({ children }: LayoutProps) => {
                 <Link
                   key={page.slug || "index"}
                   to={trimmedPath}
-                  className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded transition-colors min-w-0 ${
-                    isActive ? "text-primary" : "text-text-muted"
-                  }`}>
+                  className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded transition-colors min-w-0 ${isActive ? "text-primary" : "text-text-muted"
+                    }`}>
                   {page.icon && <page.icon size={20} className="flex-shrink-0" />}
                   <span className="text-xs truncate w-full text-center">{page.label}</span>
                 </Link>
@@ -352,7 +336,7 @@ const Layout = ({ children }: LayoutProps) => {
           </nav>
         </div>
       </div>
-      
+
       {hoveredTooltip && !isCommandBarOpen && !isBugModalOpen && (
         <div
           className="fixed px-2 py-1 bg-surface border border-border text-text text-xs rounded whitespace-nowrap z-[999] pointer-events-none shadow-lg"

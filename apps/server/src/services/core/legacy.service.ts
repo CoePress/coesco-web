@@ -965,15 +965,17 @@ export class LegacyService {
     }
 
     const parsedQuotes = quoteKeyValues
-      .filter(key => key && typeof key === 'string')
-      .map(key => {
+      .filter(key => key && typeof key === "string")
+      .map((key) => {
         const parts = key.split("-");
-        if (parts.length < 2) return null;
+        if (parts.length < 2)
+          return null;
 
         const qyear = Number.parseInt(parts[0], 10);
         const qnum = Number.parseInt(parts[1], 10);
 
-        if (Number.isNaN(qyear) || Number.isNaN(qnum)) return null;
+        if (Number.isNaN(qyear) || Number.isNaN(qnum))
+          return null;
 
         const qyear2Digit = qyear < 100 ? qyear : qyear % 100;
         const qyear4Digit = qyear < 100 ? 2000 + qyear : qyear;
@@ -989,7 +991,7 @@ export class LegacyService {
     try {
       const conditions = parsedQuotes
         .map(q => `((qyear = ${q.qyear2Digit} OR qyear = ${q.qyear4Digit}) AND qnum = ${q.qnum})`)
-        .join(' OR ');
+        .join(" OR ");
 
       const batchQuery = `
         SELECT qyear, qnum, QRev, SUM(salesprice) as total
@@ -1012,7 +1014,7 @@ export class LegacyService {
         const qnum = Number(row.qnum ?? row.QNUM ?? row.Qnum ?? 0);
         const qyear4Digit = qyear < 100 ? 2000 + qyear : qyear;
         const matchedQuote = parsedQuotes.find(q =>
-          (q.qyear2Digit === qyear || q.qyear4Digit === qyear || q.qyear4Digit === qyear4Digit) && q.qnum === qnum
+          (q.qyear2Digit === qyear || q.qyear4Digit === qyear || q.qyear4Digit === qyear4Digit) && q.qnum === qnum,
         );
 
         if (matchedQuote) {

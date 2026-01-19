@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import Layout from "./layout";
 import Loader from "../ui/loader";
@@ -45,6 +45,7 @@ export const ProtectedRoute = ({
   withLayout = true,
 }: ProtectedRouteProps) => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -73,12 +74,12 @@ export const ProtectedRoute = ({
   }
 
   if (!withLayout) {
-    return <Outlet />;
+    return <Outlet key={location.pathname} />;
   }
 
   return (
     <Layout>
-      <Outlet />
+      <Outlet key={location.pathname} />
     </Layout>
   );
 };

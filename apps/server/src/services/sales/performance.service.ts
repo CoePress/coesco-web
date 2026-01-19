@@ -1,12 +1,13 @@
 import type { PerformanceSheet, PerformanceSheetLink, PerformanceSheetVersion } from "@prisma/client";
 
+import { spawn } from "node:child_process";
+import * as path from "node:path";
+
 import type { IQueryParams } from "@/types";
 
 import { performanceSheetLinkRepository, performanceSheetRepository, performanceSheetVersionRepository } from "@/repositories";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
-import { spawn } from "child_process";
-import * as path from "path";
 
 export class PerformanceService {
   // Versions
@@ -105,7 +106,8 @@ export class PerformanceService {
                 // Only set the value if it hasn't been set already and has a default
                 if (field.default !== undefined && !this.hasNestedValue(initializedData, field.id)) {
                   this.setNestedValue(initializedData, field.id, field.default);
-                } else if (field.default === undefined && !this.hasNestedValue(initializedData, field.id)) {
+                }
+                else if (field.default === undefined && !this.hasNestedValue(initializedData, field.id)) {
                   // Only set null if no value exists yet
                   this.setNestedValue(initializedData, field.id, null);
                 }
@@ -117,26 +119,26 @@ export class PerformanceService {
     }
 
     // Set reference number to sheet name if available and not already set
-    console.log('Creating performance sheet with data:');
-    console.log('- rest.name:', rest.name);
-    console.log('- has referenceNumber:', this.hasNestedValue(initializedData, "referenceNumber"));
+    console.log("Creating performance sheet with data:");
+    console.log("- rest.name:", rest.name);
+    console.log("- has referenceNumber:", this.hasNestedValue(initializedData, "referenceNumber"));
     const currentReferenceNumber = this.getNestedValue(initializedData, "referenceNumber");
-    console.log('- current referenceNumber value:', currentReferenceNumber);
-    console.log('- initializedData before setting referenceNumber:', JSON.stringify(initializedData, null, 2));
+    console.log("- current referenceNumber value:", currentReferenceNumber);
+    console.log("- initializedData before setting referenceNumber:", JSON.stringify(initializedData, null, 2));
 
     if (rest.name && (!this.hasNestedValue(initializedData, "referenceNumber") || currentReferenceNumber === null || currentReferenceNumber === "")) {
       this.setNestedValue(initializedData, "referenceNumber", rest.name);
-      console.log('- set referenceNumber to:', rest.name);
+      console.log("- set referenceNumber to:", rest.name);
     }
 
-    console.log('- initializedData after setting referenceNumber:', JSON.stringify(initializedData, null, 2));
+    console.log("- initializedData after setting referenceNumber:", JSON.stringify(initializedData, null, 2));
 
     const mergedData = {
       ...initializedData,
       ...(sheetData && typeof sheetData === "object" && !Array.isArray(sheetData) ? sheetData : {}),
     };
 
-    console.log('- final mergedData:', JSON.stringify(mergedData, null, 2));
+    console.log("- final mergedData:", JSON.stringify(mergedData, null, 2));
 
     return performanceSheetRepository.create({
       ...rest,
@@ -151,55 +153,55 @@ export class PerformanceService {
       const updateResult = await performanceSheetRepository.update(id, data);
 
       // If data was provided, run calculations
-      if (data.data && typeof data.data === 'object') {
+      if (data.data && typeof data.data === "object") {
         logger.info(`Running calculations for performance sheet ${id}`);
 
         try {
           // Execute Python calculation script
           const calculationResults = await this.executePythonScript(data.data);
-          console.log('RAW CALCULATION RESULTS:', JSON.stringify(calculationResults, null, 2));
+          console.log("RAW CALCULATION RESULTS:", JSON.stringify(calculationResults, null, 2));
 
           // Map results back to data structure using Python result mapping
           const mappedData = await this.mapCalculationResults(data.data, calculationResults);
-          console.log('MAPPED DATA FPM VALUES:', {
+          console.log("MAPPED DATA FPM VALUES:", {
             averageFpm: mappedData?.common?.feedRates?.average?.fpm,
             maxFpm: mappedData?.common?.feedRates?.max?.fpm,
             minFpm: mappedData?.common?.feedRates?.min?.fpm,
-            minBendRadius: mappedData?.materialSpecs?.material?.minBendRadius
+            minBendRadius: mappedData?.materialSpecs?.material?.minBendRadius,
           });
 
           // Update the sheet with calculated values
           const finalResult = await performanceSheetRepository.update(id, {
             ...data,
-            data: mappedData
+            data: mappedData,
           });
 
           logger.info(`Successfully completed calculations for performance sheet ${id}`);
 
           // Return just the calculated data for frontend consumption
-          console.log('FINAL RESULT DATA CHECK:', {
+          console.log("FINAL RESULT DATA CHECK:", {
             finalResultSuccess: finalResult.success,
             hasData: !!finalResult.data,
             hasDataData: !!(finalResult.data && finalResult.data.data),
-            finalResultDataPreview: finalResult.data ? Object.keys(finalResult.data) : 'no data'
+            finalResultDataPreview: finalResult.data ? Object.keys(finalResult.data) : "no data",
           });
 
           if (finalResult.success && finalResult.data && finalResult.data.data) {
-            console.log('RETURNING FINAL RESULT DATA.DATA - FPM CHECK:', {
+            console.log("RETURNING FINAL RESULT DATA.DATA - FPM CHECK:", {
               averageFpm: finalResult.data.data?.common?.feedRates?.average?.fpm,
               maxFpm: finalResult.data.data?.common?.feedRates?.max?.fpm,
-              minFpm: finalResult.data.data?.common?.feedRates?.min?.fpm
+              minFpm: finalResult.data.data?.common?.feedRates?.min?.fpm,
             });
             return finalResult.data.data; // Return the data field which contains PerformanceData
           }
-          console.log('RETURNING MAPPED DATA FALLBACK - FPM CHECK:', {
+          console.log("RETURNING MAPPED DATA FALLBACK - FPM CHECK:", {
             averageFpm: mappedData?.common?.feedRates?.average?.fpm,
             maxFpm: mappedData?.common?.feedRates?.max?.fpm,
-            minFpm: mappedData?.common?.feedRates?.min?.fpm
+            minFpm: mappedData?.common?.feedRates?.min?.fpm,
           });
           return mappedData; // Fallback to mapped data
-
-        } catch (calcError) {
+        }
+        catch (calcError) {
           logger.error(`Calculation failed for performance sheet ${id}:`, calcError);
           // Return the data field from original update result even if calculations fail
           if (updateResult.success && updateResult.data && updateResult.data.data) {
@@ -214,8 +216,8 @@ export class PerformanceService {
         return updateResult.data.data; // Return the data field which contains PerformanceData
       }
       return data.data || {}; // Fallback to original data
-
-    } catch (error) {
+    }
+    catch (error) {
       logger.error(`Error updating performance sheet ${id}:`, error);
       throw error;
     }
@@ -359,7 +361,7 @@ export class PerformanceService {
   private async mapCalculationResults(originalData: Record<string, any>, calculationResults: Record<string, any>): Promise<Record<string, any>> {
     return new Promise((resolve, reject) => {
       const scriptPath = path.join(__dirname, "../../scripts/performance-sheet/utils/result_mapping.py");
-      const pythonScriptDir = path.join(__dirname, "../../scripts/performance-sheet").replace(/\\/g, '/');
+      const pythonScriptDir = path.join(__dirname, "../../scripts/performance-sheet").replace(/\\/g, "/");
       const python = spawn("python", ["-c", `
 import sys
 import json
@@ -383,7 +385,7 @@ print(json.dumps(mapped_data, default=str))
 
       const inputData = {
         originalData,
-        calculationResults
+        calculationResults,
       };
 
       python.stdin.write(JSON.stringify(inputData));

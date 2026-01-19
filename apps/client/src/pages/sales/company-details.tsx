@@ -383,6 +383,10 @@ function CompanyDetails() {
     updateField: (field: string, value: any) => {
       setCompanyEditData((prev: any) => ({ ...prev, [field]: value }));
     },
+    cancel: () => {
+      setCompanyEditingId(null);
+      setCompanyEditData({});
+    },
     save: async () => {
       if (companyEditingId === null) return;
       try {
@@ -391,237 +395,241 @@ function CompanyDetails() {
           throw new Error("Company not found");
 
         const updateData = {
-          Active: data.active ? 1 : 0,
-          IsDealer: parseInt32(data.isDealer, 0),
-          CreditStatus: data.creditStatus || "",
-          CreditLimit: parseNumber(data.creditLimit, 0),
-          AcctBalance: parseNumber(data.acctBalance, 0),
-          TermsCode: data.termsCode ? String(data.termsCode) : "",
-          CoeRSM: parseInt32(data.coeRSM, 0),
-          BalanceDate: data.balanceDate || null,
-          CreditNote: data.creditNote || null,
-          Notes: data.notes || null,
+          Active: companyEditData.active ? 1 : 0,
+          IsDealer: parseInt32(companyEditData.isDealer, 0),
+          CreditStatus: companyEditData.creditStatus || "",
+          CreditLimit: parseNumber(companyEditData.creditLimit, 0),
+          AcctBalance: parseNumber(companyEditData.acctBalance, 0),
+          TermsCode: companyEditData.termsCode ? String(companyEditData.termsCode) : "",
+          CoeRSM: parseInt32(companyEditData.coeRSM, 0),
+          BalanceDate: companyEditData.balanceDate || null,
+          CreditNote: companyEditData.creditNote || null,
+          Notes: companyEditData.notes || null,
         };
 
-        pendingCompanySaveDataRef.current = data;
-        return await api.patch(`/legacy/std/Company/${id}`, updateData);
-      },
-      onSuccess: (_result, _id) => {
-        const data = pendingCompanySaveDataRef.current;
+        pendingCompanySaveDataRef.current = companyEditData;
+        await api.patch(`/legacy/std/Company/${id}`, updateData);
+
+        // On success
+        const savedData = pendingCompanySaveDataRef.current;
         setCompany({
           ...company,
-          active: data.active,
-          isDealer: parseInt32(data.isDealer, 0),
-          creditStatus: data.creditStatus,
-          creditLimit: parseNumber(data.creditLimit, 0),
-          acctBalance: parseNumber(data.acctBalance, 0),
-          termsCode: data.termsCode,
-          coeRSM: parseInt32(data.coeRSM, 0),
-          balanceDate: data.balanceDate,
-          creditNote: data.creditNote,
-          notes: data.notes,
+          active: savedData.active,
+          isDealer: parseInt32(savedData.isDealer, 0),
+          creditStatus: savedData.creditStatus,
+          creditLimit: parseNumber(savedData.creditLimit, 0),
+          acctBalance: parseNumber(savedData.acctBalance, 0),
+          termsCode: savedData.termsCode,
+          coeRSM: parseInt32(savedData.coeRSM, 0),
+          balanceDate: savedData.balanceDate,
+          creditNote: savedData.creditNote,
+          notes: savedData.notes,
         });
         setIsCustomRsmInput(false);
         pendingCompanySaveDataRef.current = null;
-      },
-        onError: (error) => {
-          console.error("Error saving company details:", error);
-          pendingCompanySaveDataRef.current = null;
-        },
+      }
+      catch (error) {
+        console.error("Error saving company details:", error);
+        pendingCompanySaveDataRef.current = null;
+      }
+      finally {
+        setCompanySaving(false);
+      }
+    },
   };
 
-    const startCompanyEdit = () => {
-      setIsCustomRsmInput(false);
-      companyEditor.startEdit(true, {
-        active: company.active,
-        isDealer: company.isDealer,
-        creditStatus: company.creditStatus,
-        creditLimit: company.creditLimit,
-        acctBalance: company.acctBalance,
-        termsCode: company.termsCode,
-        coeRSM: company.coeRSM,
-        balanceDate: company.balanceDate,
-        creditNote: company.creditNote,
-        notes: company.notes,
-        website: company.website,
-      });
-    };
+  const startCompanyEdit = () => {
+    setIsCustomRsmInput(false);
+    companyEditor.startEdit(true, {
+      active: company.active,
+      isDealer: company.isDealer,
+      creditStatus: company.creditStatus,
+      creditLimit: company.creditLimit,
+      acctBalance: company.acctBalance,
+      termsCode: company.termsCode,
+      coeRSM: company.coeRSM,
+      balanceDate: company.balanceDate,
+      creditNote: company.creditNote,
+      notes: company.notes,
+      website: company.website,
+    });
+  };
 
-    const cancelCompanyEdit = () => {
-      companyEditor.cancel();
-      setIsCustomRsmInput(false);
-    };
+  const cancelCompanyEdit = () => {
+    companyEditor.cancel();
+    setIsCustomRsmInput(false);
+  };
 
-    const [notesEditingId, setNotesEditingId] = useState<boolean | null>(null);
-    const [notesEditData, setNotesEditData] = useState<any>({});
-    const [notesSaving, setNotesSaving] = useState(false);
+  const [notesEditingId, setNotesEditingId] = useState<boolean | null>(null);
+  const [notesEditData, setNotesEditData] = useState<any>({});
+  const [notesSaving, setNotesSaving] = useState(false);
 
-    const notesEditor = {
-      isEditing: notesEditingId !== null,
-      editingId: notesEditingId,
-      editData: notesEditData,
-      isSaving: notesSaving,
-      startEdit: (id: boolean, data: any) => {
-        setNotesEditingId(id);
-        setNotesEditData({ ...data });
-      },
-      updateField: (field: string, value: any) => {
-        setNotesEditData((prev: any) => ({ ...prev, [field]: value }));
-      },
-      save: async () => {
-        if (notesEditingId === null) return;
-        try {
-          setNotesSaving(true);
-          if (!company || !id)
-            throw new Error("Company not found");
+  const notesEditor = {
+    isEditing: notesEditingId !== null,
+    editingId: notesEditingId,
+    editData: notesEditData,
+    isSaving: notesSaving,
+    startEdit: (id: boolean, data: any) => {
+      setNotesEditingId(id);
+      setNotesEditData({ ...data });
+    },
+    updateField: (field: string, value: any) => {
+      setNotesEditData((prev: any) => ({ ...prev, [field]: value }));
+    },
+    save: async () => {
+      if (notesEditingId === null) return;
+      try {
+        setNotesSaving(true);
+        if (!company || !id)
+          throw new Error("Company not found");
 
-          const updateData = {
-            Notes: notesEditData.notes || null,
-          };
+        const updateData = {
+          Notes: notesEditData.notes || null,
+        };
 
-          pendingNotesSaveDataRef.current = notesEditData;
-          await api.patch(`/legacy/std/Company/${id}`, updateData);
-          setCompany({
-            ...company,
-            notes: pendingNotesSaveDataRef.current.notes,
-          });
-          pendingNotesSaveDataRef.current = null;
-          setNotesEditingId(null);
-          setNotesEditData({});
-        } catch (error) {
-          console.error("Error saving notes:", error);
-          pendingNotesSaveDataRef.current = null;
-        } finally {
-          setNotesSaving(false);
-        }
-      },
-      cancel: () => {
+        pendingNotesSaveDataRef.current = notesEditData;
+        await api.patch(`/legacy/std/Company/${id}`, updateData);
+        setCompany({
+          ...company,
+          notes: pendingNotesSaveDataRef.current.notes,
+        });
+        pendingNotesSaveDataRef.current = null;
         setNotesEditingId(null);
         setNotesEditData({});
-      },
-    };
+      } catch (error) {
+        console.error("Error saving notes:", error);
+        pendingNotesSaveDataRef.current = null;
+      } finally {
+        setNotesSaving(false);
+      }
+    },
+    cancel: () => {
+      setNotesEditingId(null);
+      setNotesEditData({});
+    },
+  };
 
-    const mapLegacyStageToId = (stage: any): number => {
-      const s = String(stage ?? "").toLowerCase();
-      if (!s)
-        return 1;
-      if (s.includes("qualify") || s.includes("qualifi") || s.includes("pain") || s.includes("discover"))
-        return 2;
-      if (s.includes("present") || s.includes("demo") || s.includes("proposal") || s.includes("quote"))
-        return 3;
-      if (s.includes("negot"))
-        return 4;
-      if (s.includes("po") || s.includes("won") || s.includes("closedwon") || s.includes("closed won") || s.includes("order"))
-        return 5;
-      if (s.includes("lost") || s.includes("closedlost") || s.includes("closed lost") || s.includes("declin"))
-        return 6;
-      if (s.includes("lead") || s.includes("open") || s.includes("new"))
-        return 1;
+  const mapLegacyStageToId = (stage: any): number => {
+    const s = String(stage ?? "").toLowerCase();
+    if (!s)
       return 1;
-    };
+    if (s.includes("qualify") || s.includes("qualifi") || s.includes("pain") || s.includes("discover"))
+      return 2;
+    if (s.includes("present") || s.includes("demo") || s.includes("proposal") || s.includes("quote"))
+      return 3;
+    if (s.includes("negot"))
+      return 4;
+    if (s.includes("po") || s.includes("won") || s.includes("closedwon") || s.includes("closed won") || s.includes("order"))
+      return 5;
+    if (s.includes("lost") || s.includes("closedlost") || s.includes("closed lost") || s.includes("declin"))
+      return 6;
+    if (s.includes("lead") || s.includes("open") || s.includes("new"))
+      return 1;
+    return 1;
+  };
 
-    const normalizeDate = (d: any) => {
-      if (!d)
-        return undefined;
-      const s = String(d);
+  const normalizeDate = (d: any) => {
+    if (!d)
+      return undefined;
+    const s = String(d);
 
-      if (s.startsWith("0000-00-00") || s === "0000-00-00")
-        return undefined;
+    if (s.startsWith("0000-00-00") || s === "0000-00-00")
+      return undefined;
 
-      let normalized = s;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-        normalized = `${s}T00:00:00`;
-      }
-      else if (s.includes(" ")) {
-        normalized = s.replace(" ", "T");
-      }
+    let normalized = s;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      normalized = `${s}T00:00:00`;
+    }
+    else if (s.includes(" ")) {
+      normalized = s.replace(" ", "T");
+    }
 
-      const testDate = new Date(normalized);
-      if (isNaN(testDate.getTime()))
-        return undefined;
+    const testDate = new Date(normalized);
+    if (isNaN(testDate.getTime()))
+      return undefined;
 
-      return normalized;
-    };
+    return normalized;
+  };
 
-    const parseConfidence = (v: any) => {
-      if (v == null || v === "")
-        return undefined;
-      const m = String(v).match(/\d+/);
-      return m ? Math.min(100, Math.max(0, Number(m[0]))) : undefined;
-    };
+  const parseConfidence = (v: any) => {
+    if (v == null || v === "")
+      return undefined;
+    const m = String(v).match(/\d+/);
+    return m ? Math.min(100, Math.max(0, Number(m[0]))) : undefined;
+  };
 
-    const normalizePriority = (v: any): string => {
-      const s = String(v ?? "").toUpperCase().trim();
-      if (s === "A" || s === "B" || s === "C" || s === "D")
-        return s;
-      if (s.startsWith("H"))
-        return "A";
-      if (s.startsWith("L"))
-        return "D";
-      if (s.startsWith("M"))
-        return "C";
+  const normalizePriority = (v: any): string => {
+    const s = String(v ?? "").toUpperCase().trim();
+    if (s === "A" || s === "B" || s === "C" || s === "D")
+      return s;
+    if (s.startsWith("H"))
+      return "A";
+    if (s.startsWith("L"))
+      return "D";
+    if (s.startsWith("M"))
       return "C";
+    return "C";
+  };
+
+  const adaptLegacyJourney = (raw: any) => {
+    const id = raw.ID;
+    const name = raw.Project_Name && String(raw.Project_Name).trim()
+      ? raw.Project_Name
+      : (raw.Target_Account || `Journey ${raw.ID}`);
+
+    const stage = mapLegacyStageToId(raw.Journey_Stage);
+    const value = Number(raw.Journey_Value ?? 0);
+    const priority = normalizePriority(raw.Priority);
+
+    const expectedDecisionDate
+      = normalizeDate(raw.Expected_Decision_Date)
+      ?? null;
+    const updatedAt
+      = normalizeDate(raw.Action_Date)
+      ?? normalizeDate(raw.CreateDT)
+      ?? undefined;
+
+    const customerId = String(raw.Company_ID ?? "");
+    const companyName = raw.Target_Account || undefined;
+    const confidence = parseConfidence(raw.Chance_To_Secure_order);
+
+    return {
+      id,
+      name,
+      stage,
+      value,
+      priority,
+      expectedDecisionDate,
+      updatedAt,
+      customerId,
+      companyName,
+      confidence,
+      Project_Name: raw.Project_Name,
+      Target_Account: raw.Target_Account,
+      Journey_Stage: raw.Journey_Stage,
+      Journey_Type: raw.Journey_Type,
+      Journey_Value: raw.Journey_Value,
+      Priority: raw.Priority,
+      Lead_Source: raw.Lead_Source,
+      Equipment_Type: raw.Equipment_Type,
+      Quote_Type: raw.Quote_Type,
+      RSM: raw.RSM,
+      RSM_Territory: raw.RSM_Territory,
+      Quote_Number: raw.Quote_Number,
+      Qty_of_Items: raw.Qty_of_Items,
+      CreateDT: raw.CreateDT,
+      Quote_Presentation_Date: raw.Quote_Presentation_Date,
+      Expected_Decision_Date: raw.Expected_Decision_Date,
+      Action_Date: raw.Action_Date,
+      Journey_Status: raw.Journey_Status,
+      Notes: raw.Notes,
+      Industry: raw.Industry,
+      Chance_To_Secure_order: raw.Chance_To_Secure_order,
+      Deleted: raw.Deleted === 1 || raw.Deleted === '1' || raw.Deleted === true ? 1 : 0,
     };
+  };
 
-    const adaptLegacyJourney = (raw: any) => {
-      const id = raw.ID;
-      const name = raw.Project_Name && String(raw.Project_Name).trim()
-        ? raw.Project_Name
-        : (raw.Target_Account || `Journey ${raw.ID}`);
-
-      const stage = mapLegacyStageToId(raw.Journey_Stage);
-      const value = Number(raw.Journey_Value ?? 0);
-      const priority = normalizePriority(raw.Priority);
-
-      const expectedDecisionDate
-        = normalizeDate(raw.Expected_Decision_Date)
-        ?? null;
-      const updatedAt
-        = normalizeDate(raw.Action_Date)
-        ?? normalizeDate(raw.CreateDT)
-        ?? undefined;
-
-      const customerId = String(raw.Company_ID ?? "");
-      const companyName = raw.Target_Account || undefined;
-      const confidence = parseConfidence(raw.Chance_To_Secure_order);
-
-      return {
-        id,
-        name,
-        stage,
-        value,
-        priority,
-        expectedDecisionDate,
-        updatedAt,
-        customerId,
-        companyName,
-        confidence,
-        Project_Name: raw.Project_Name,
-        Target_Account: raw.Target_Account,
-        Journey_Stage: raw.Journey_Stage,
-        Journey_Type: raw.Journey_Type,
-        Journey_Value: raw.Journey_Value,
-        Priority: raw.Priority,
-        Lead_Source: raw.Lead_Source,
-        Equipment_Type: raw.Equipment_Type,
-        Quote_Type: raw.Quote_Type,
-        RSM: raw.RSM,
-        RSM_Territory: raw.RSM_Territory,
-        Quote_Number: raw.Quote_Number,
-        Qty_of_Items: raw.Qty_of_Items,
-        CreateDT: raw.CreateDT,
-        Quote_Presentation_Date: raw.Quote_Presentation_Date,
-        Expected_Decision_Date: raw.Expected_Decision_Date,
-        Action_Date: raw.Action_Date,
-        Journey_Status: raw.Journey_Status,
-        Notes: raw.Notes,
-        Industry: raw.Industry,
-        Chance_To_Secure_order: raw.Chance_To_Secure_order,
-        Deleted: raw.Deleted === 1 || raw.Deleted === '1' || raw.Deleted === true ? 1 : 0,
-      };
-    };
-
-    useEffect(() => {
+  useEffect(() => {
     if (!id || id === "undefined" || id === "null") {
       setIsInitialLoading(false);
       return;
@@ -1715,8 +1723,8 @@ function CompanyDetails() {
                           type="button"
                           onClick={() => setIsCustomRsmInput(false)}
                           className={`px-3 py-1 text-xs rounded ${!isCustomRsmInput
-                              ? "bg-primary text-white"
-                              : "bg-surface text-text border border-border"
+                            ? "bg-primary text-white"
+                            : "bg-surface text-text border border-border"
                             }`}
                         >
                           Select RSM
@@ -1725,8 +1733,8 @@ function CompanyDetails() {
                           type="button"
                           onClick={() => setIsCustomRsmInput(true)}
                           className={`px-3 py-1 text-xs rounded ${isCustomRsmInput
-                              ? "bg-primary text-white"
-                              : "bg-surface text-text border border-border"
+                            ? "bg-primary text-white"
+                            : "bg-surface text-text border border-border"
                             }`}
                         >
                           Custom Employee #
@@ -1790,8 +1798,8 @@ function CompanyDetails() {
                 <button
                   onClick={() => setActiveTab("overview")}
                   className={`pb-2 border-b-2 font-semibold cursor-pointer text-xs md:text-sm ${activeTab === "overview"
-                      ? "border-primary/50 text-primary"
-                      : "border-transparent text-text-muted hover:text-primary"
+                    ? "border-primary/50 text-primary"
+                    : "border-transparent text-text-muted hover:text-primary"
                     }`}
                 >
                   Overview
@@ -1799,8 +1807,8 @@ function CompanyDetails() {
                 <button
                   onClick={() => setActiveTab("addresses")}
                   className={`pb-2 border-b-2 font-semibold cursor-pointer text-xs md:text-sm ${activeTab === "addresses"
-                      ? "border-primary/50 text-primary"
-                      : "border-transparent text-text-muted hover:text-primary"
+                    ? "border-primary/50 text-primary"
+                    : "border-transparent text-text-muted hover:text-primary"
                     }`}
                 >
                   Addresses
@@ -1808,8 +1816,8 @@ function CompanyDetails() {
                 <button
                   onClick={() => setActiveTab("interactions")}
                   className={`pb-2 border-b-2 font-semibold cursor-pointer text-xs md:text-sm ${activeTab === "interactions"
-                      ? "border-primary/50 text-primary"
-                      : "border-transparent text-text-muted hover:text-primary"
+                    ? "border-primary/50 text-primary"
+                    : "border-transparent text-text-muted hover:text-primary"
                     }`}
                 >
                   Interaction History
@@ -1817,8 +1825,8 @@ function CompanyDetails() {
                 <button
                   onClick={() => setActiveTab("purchase-history")}
                   className={`pb-2 border-b-2 font-semibold cursor-pointer text-xs md:text-sm ${activeTab === "purchase-history"
-                      ? "border-primary/50 text-primary"
-                      : "border-transparent text-text-muted hover:text-primary"
+                    ? "border-primary/50 text-primary"
+                    : "border-transparent text-text-muted hover:text-primary"
                     }`}
                 >
                   Purchase History
@@ -1826,8 +1834,8 @@ function CompanyDetails() {
                 <button
                   onClick={() => setActiveTab("credit")}
                   className={`pb-2 border-b-2 font-semibold cursor-pointer text-xs md:text-sm ${activeTab === "credit"
-                      ? "border-primary/50 text-primary"
-                      : "border-transparent text-text-muted hover:text-primary"
+                    ? "border-primary/50 text-primary"
+                    : "border-transparent text-text-muted hover:text-primary"
                     }`}
                 >
                   Credit Details
@@ -1835,8 +1843,8 @@ function CompanyDetails() {
                 <button
                   onClick={() => setActiveTab("relationships")}
                   className={`pb-2 border-b-2 font-semibold cursor-pointer text-xs md:text-sm ${activeTab === "relationships"
-                      ? "border-primary/50 text-primary"
-                      : "border-transparent text-text-muted hover:text-primary"
+                    ? "border-primary/50 text-primary"
+                    : "border-transparent text-text-muted hover:text-primary"
                     }`}
                 >
                   Relationships
@@ -1844,8 +1852,8 @@ function CompanyDetails() {
                 <button
                   onClick={() => setActiveTab("activity")}
                   className={`pb-2 border-b-2 font-semibold cursor-pointer text-xs md:text-sm ${activeTab === "activity"
-                      ? "border-primary/50 text-primary"
-                      : "border-transparent text-text-muted hover:text-primary"
+                    ? "border-primary/50 text-primary"
+                    : "border-transparent text-text-muted hover:text-primary"
                     }`}
                 >
                   Activity
@@ -2983,12 +2991,12 @@ function CompanyDetails() {
                                         : (
                                           displayData.CallStatus && displayData.CallStatus.trim() && (
                                             <span className={`text-xs px-2 py-0.5 rounded ${displayData.CallStatus === "O"
-                                                ? "bg-yellow-100 text-yellow-800"
-                                                : displayData.CallStatus === "C"
-                                                  ? "bg-green-100 text-green-800"
-                                                  : displayData.CallStatus === "F"
-                                                    ? "bg-blue-100 text-blue-800"
-                                                    : "bg-gray-100 text-gray-800"
+                                              ? "bg-yellow-100 text-yellow-800"
+                                              : displayData.CallStatus === "C"
+                                                ? "bg-green-100 text-green-800"
+                                                : displayData.CallStatus === "F"
+                                                  ? "bg-blue-100 text-blue-800"
+                                                  : "bg-gray-100 text-gray-800"
                                               }`}
                                             >
                                               {displayData.CallStatus === "O"
@@ -3319,14 +3327,14 @@ function CompanyDetails() {
                                         {job.jobNumber}
                                       </span>
                                       <span className={`text-xs px-2 py-0.5 rounded ${job.jobStatus === "A"
-                                          ? "bg-blue-100 text-blue-800"
-                                          : job.jobStatus === "C"
-                                            ? "bg-green-100 text-green-800"
-                                            : job.jobStatus === "S"
-                                              ? "bg-yellow-100 text-yellow-800"
-                                              : job.jobStatus === "X"
-                                                ? "bg-red-100 text-red-800"
-                                                : "bg-gray-100 text-gray-800"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : job.jobStatus === "C"
+                                          ? "bg-green-100 text-green-800"
+                                          : job.jobStatus === "S"
+                                            ? "bg-yellow-100 text-yellow-800"
+                                            : job.jobStatus === "X"
+                                              ? "bg-red-100 text-red-800"
+                                              : "bg-gray-100 text-gray-800"
                                         }`}
                                       >
                                         {job.jobStatus === "A"
@@ -4100,8 +4108,8 @@ function CompanyDetails() {
                                           {activity.activityType}
                                         </span>
                                         <span className={`px-2 py-1 rounded text-xs font-medium ${activity.sentiment === 'Positive' ? 'bg-success/20 text-success' :
-                                            activity.sentiment === 'Negative' ? 'bg-error/20 text-error' :
-                                              'bg-gray-100 text-gray-800'
+                                          activity.sentiment === 'Negative' ? 'bg-error/20 text-error' :
+                                            'bg-gray-100 text-gray-800'
                                           }`}>
                                           {activity.sentiment}
                                         </span>
