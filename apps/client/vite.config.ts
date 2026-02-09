@@ -64,6 +64,17 @@ export default defineConfig({
       usePolling: true,
       interval: 1000,
     },
+    proxy: {
+      "/socket.io": {
+        target: "http://localhost:3000",
+        ws: true,
+        changeOrigin: true,
+      },
+      "/v1": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     sourcemap: "hidden",
