@@ -14,7 +14,7 @@ import path from "node:path";
 import { Server } from "socket.io";
 import swaggerUi from "swagger-ui-express";
 
-import { __dev__, __prod__, __test__ } from "./config/env";
+import { __dev__, __prod__, __test__, env } from "./config/env";
 import { errorHandler, NotFoundError } from "./middleware/error.middleware";
 import { preventDirectoryTraversal, preventStaticFileServing } from "./middleware/security.middleware";
 import routes from "./routes";
@@ -23,7 +23,10 @@ import { logger } from "./utils/logger";
 const app = express();
 const server = createServer(app);
 
-const allowedOrigins = __dev__ || __test__ ? ["http://localhost:5173", "http://192.231.64.54:5173"] : ["https://portal.cpec.com", "https://cpec-portal.netlify.app"];
+const allowedOrigins = __dev__ || __test__
+  ? ["http://localhost:5173", "http://192.231.64.54:5173"]
+  : (env.CORS_ORIGINS?.split(",").map(s => s.trim()).filter(Boolean)
+    ?? ["https://portal.cpec.com"]);
 
 const corsOptions = {
   origin: allowedOrigins,

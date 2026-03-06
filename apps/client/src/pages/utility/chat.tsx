@@ -8,6 +8,7 @@ import MessageBox from "@/components/feature/message-box";
 import Loader from "@/components/ui/loader";
 import { IApiResponse } from "@/utils/types";
 import { CircleAlertIcon } from "lucide-react";
+import { env } from "@/config/env";
 
 type Message = {
   id: string;
@@ -34,9 +35,9 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(!!routeId);
   const [messagesError, setMessagesError] = useState<string | null>(null);
-  
+
   const { get } = useApi<IApiResponse<Message[]>>();
-  
+
   const fetchMessages = async (showLoading = true) => {
     if (!selectedChatId) {
       setMessages([]);
@@ -48,7 +49,7 @@ export default function ChatPage() {
       setMessagesLoading(true);
     }
     setMessagesError(null);
-    
+
     const response = await get(`/chat/${selectedChatId}/messages`, {
       page: 1,
       limit: 25,
@@ -59,7 +60,7 @@ export default function ChatPage() {
     } else {
       setMessagesError(response?.error || "Failed to load messages");
     }
-    
+
     setMessagesLoading(false);
   };
 
@@ -85,9 +86,9 @@ export default function ChatPage() {
         createdAt: new Date().toISOString(),
         createdById: employee.id,
       };
-      
+
       setMessages(prev => [tempUserMessage, ...prev]);
-      
+
       socket.emit("message:user", { employeeId: employee.id, chatId, message: payload.message }, (ack?: { ok?: boolean; chatId?: string }) => {
         if (ack?.ok) {
           if (ack.chatId && ack.chatId !== selectedChatId) {
@@ -125,7 +126,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (socketRef.current) return;
 
-    const socket = io("http://localhost:8080/chat", {
+    const socket = io(`${env.VITE_BASE_URL}/chat`, {
       withCredentials: true,
       transports: ["websocket"],
       query: { employeeId: employee?.id ?? "" },
@@ -183,9 +184,9 @@ export default function ChatPage() {
         content,
         createdAt: new Date().toISOString(),
       };
-      
+
       setMessages(prev => [tempSystemMessage, ...prev]);
-      
+
       setTimeout(() => {
         fetchMessages(false);
       }, 100);
@@ -200,7 +201,7 @@ export default function ChatPage() {
   return (
     <div className="min-h-[100dvh] bg-background text-text flex">
       <div className="flex-1 flex flex-col">
-        <PageHeader 
+        <PageHeader
           title="Chat"
           description={selectedChatId ? `Chat ID: ${selectedChatId}` : "Start a new conversation"}
           actions={
@@ -274,9 +275,8 @@ export default function ChatPage() {
                         </div>
 
                         <div
-                          className={`chat-bubble text-sm text-text ${
-                            isSelf ? "bg-surface" : "bg-foreground"
-                          }`}
+                          className={`chat-bubble text-sm text-text ${isSelf ? "bg-surface" : "bg-foreground"
+                            }`}
                         >
                           {m.content}
                         </div>

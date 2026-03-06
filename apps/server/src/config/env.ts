@@ -69,6 +69,8 @@ const envSchema = z.object({
   BACKUP_DIR: z.string().optional(),
   BACKUP_RETENTION_DAYS: z.string().transform(Number).optional(),
   BACKUP_ENABLED: z.string().transform(val => val === "true").default("true"),
+
+  CORS_ORIGINS: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
