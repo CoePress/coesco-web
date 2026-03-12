@@ -1,5 +1,5 @@
-$PRODUCTION_HOST = "administrator@cp-portal-1"
-$PRODUCTION_PATH = "/home/administrator/coesco"
+$PRODUCTION_HOST = "system@raspberrypi"
+$PRODUCTION_PATH = "/home/pi/coesco-web/apps/server"
 
 Write-Host "=== Starting Server Deployment ===" -ForegroundColor Cyan
 
